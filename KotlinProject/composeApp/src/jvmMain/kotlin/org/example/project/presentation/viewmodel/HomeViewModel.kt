@@ -21,6 +21,7 @@ class HomeViewModel : ViewModel() {
     private val _learningActivities = mutableStateOf(LearningActivity.getDefaultActivities())
     private val _selectedNavigationItem = mutableStateOf("home")
     private val _isLoading = mutableStateOf(false)
+    private val _showProfile = mutableStateOf(false)
     
     // Public read-only state
     val user: State<User> = _user
@@ -28,6 +29,7 @@ class HomeViewModel : ViewModel() {
     val learningActivities: State<List<LearningActivity>> = _learningActivities
     val selectedNavigationItem: State<String> = _selectedNavigationItem
     val isLoading: State<Boolean> = _isLoading
+    val showProfile: State<Boolean> = _showProfile
     
     /**
      * Handles navigation item selection
@@ -36,12 +38,45 @@ class HomeViewModel : ViewModel() {
      * @param itemId The ID of the selected navigation item
      */
     fun onNavigationItemSelected(itemId: String) {
+        // Close profile if it was open
+        _showProfile.value = false
+        
         _selectedNavigationItem.value = itemId
         
         // Update navigation items to reflect selection
         _navigationItems.value = _navigationItems.value.map { item ->
             item.copy(isSelected = item.id == itemId)
         }
+    }
+    
+    /**
+     * Handles user avatar click to show profile
+     */
+    fun onUserAvatarClicked() {
+        _showProfile.value = true
+        
+        // Reset navigation selection when viewing profile
+        _navigationItems.value = _navigationItems.value.map { item ->
+            item.copy(isSelected = false)
+        }
+        _selectedNavigationItem.value = ""
+        
+        println("Opening profile")
+    }
+    
+    /**
+     * Handles closing profile view
+     */
+    fun onCloseProfile() {
+        _showProfile.value = false
+        
+        // Return to home
+        _selectedNavigationItem.value = "home"
+        _navigationItems.value = _navigationItems.value.map { item ->
+            item.copy(isSelected = item.id == "home")
+        }
+        
+        println("Closing profile")
     }
     
     /**

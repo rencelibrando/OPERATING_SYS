@@ -3,12 +3,12 @@ package org.example.project.domain.model
 /**
  * Represents a learning activity available in the WordBridge application
  * 
- * @property id Unique identifier for the activity
- * @property title Display title of the activity
- * @property description Brief description of what the activity does
- * @property icon Icon identifier for the activity
- * @property route Navigation route for this activity
- * @property isEnabled Whether this activity is currently enabled
+ * @Variable id Unique identifier for the activity
+ * @Variable title Display title of the activity
+ * @Variable description Brief description of what the activity does
+ * @Variable icon Icon identifier for the activity
+ * @Variable route Navigation route for this activity
+ * @Variable isEnabled Whether this activity is currently enabled
  */
 data class LearningActivity(
     val id: String,
@@ -21,8 +21,14 @@ data class LearningActivity(
     companion object {
         /**
          * Creates the default learning activities for the home screen
+         * Returns empty list for template/clean UI
          */
-        fun getDefaultActivities(): List<LearningActivity> = listOf(
+        fun getDefaultActivities(): List<LearningActivity> = emptyList()
+        
+        /**
+         * Creates sample learning activities for demonstration purposes
+         */
+        fun getSampleActivities(): List<LearningActivity> = listOf(
             LearningActivity(
                 id = "start_lesson",
                 title = "Start Lesson",

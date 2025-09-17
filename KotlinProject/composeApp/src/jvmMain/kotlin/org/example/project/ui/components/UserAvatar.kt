@@ -1,6 +1,7 @@
 package org.example.project.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -23,6 +24,7 @@ import org.example.project.ui.theme.WordBridgeColors
  * @param size The size of the avatar
  * @param backgroundColor The background color of the avatar
  * @param textColor The color of the initials text
+ * @param onClick Optional click handler for the avatar
  * @param modifier Optional modifier for styling
  */
 @Composable
@@ -31,13 +33,15 @@ fun UserAvatar(
     size: Dp = 40.dp,
     backgroundColor: Color = WordBridgeColors.PrimaryPurple,
     textColor: Color = WordBridgeColors.BackgroundWhite,
+    onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
             .size(size)
             .clip(CircleShape)
-            .background(backgroundColor),
+            .background(backgroundColor)
+            .let { if (onClick != null) it.clickable { onClick() } else it },
         contentAlignment = Alignment.Center
     ) {
         Text(

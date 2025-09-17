@@ -1,16 +1,14 @@
 package org.example.project.domain.model
 
 /**
- * Represents a user in the WordBridge application
- * 
- * @property id Unique identifier for the user
- * @property name Display name of the user
- * @property level Current learning level (e.g., "Intermediate Level")
- * @property streak Current learning streak in days
- * @property xpPoints Total XP points earned
- * @property wordsLearned Total number of words learned
- * @property accuracy Learning accuracy percentage
- * @property avatarInitials User's initials for avatar display
+ * @Variable id Unique identifier for the user
+ * @Variable name Display name of the user
+ * @Variable level Current learning level (e.g., "Intermediate Level")
+ * @Variable streak Current learning streak in days
+ * @Variable xpPoints Total XP points earned
+ * @Variable wordsLearned Total number of words learned
+ * @Variable accuracy Learning accuracy percentage
+ * @Variable avatarInitials User's initials for avatar display
  */
 data class User(
     val id: String,
@@ -23,17 +21,15 @@ data class User(
     val avatarInitials: String
 ) {
     companion object {
-        /**
-         * Creates a sample user for demonstration purposes
-         */
+
         fun sampleUser() = User(
             id = "user_001",
             name = "Sarah Chen",
-            level = "Intermediate Level",
-            streak = 7,
-            xpPoints = 1247,
-            wordsLearned = 342,
-            accuracy = 89,
+            level = "Beginner Level",
+            streak = 0,
+            xpPoints = 0,
+            wordsLearned = 0,
+            accuracy = 0,
             avatarInitials = "SC"
         )
     }

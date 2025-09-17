@@ -30,6 +30,8 @@ fun HomeScreen(
     val navigationItems by viewModel.navigationItems
     val learningActivities by viewModel.learningActivities
     val isLoading by viewModel.isLoading
+    val selectedNavigationItem by viewModel.selectedNavigationItem
+    val showProfile by viewModel.showProfile
     
     Row(
         modifier = modifier
@@ -42,59 +44,128 @@ fun HomeScreen(
             onNavigationItemClick = viewModel::onNavigationItemSelected
         )
         
-        // Main Content Area
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            // Header with user info
-            HomeHeader(
-                userName = user.name,
-                userLevel = user.level,
-                userInitials = user.avatarInitials
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Continue Learning Section
-            ContinueLearningCard(
-                onButtonClick = viewModel::onContinueLearningClicked,
-                isLoading = isLoading
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Main content in two columns
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(24.dp)
-            ) {
-                // Left Column - Learning Activities
+        // Main Content Area - Switch based on selected navigation item or profile view
+        when {
+            showProfile -> {
+                ProfileScreen(
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            selectedNavigationItem == "home" || selectedNavigationItem.isEmpty() -> {
                 Column(
-                    modifier = Modifier.weight(2f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(24.dp)
+                        .verticalScroll(rememberScrollState())
                 ) {
-                    learningActivities.forEach { activity ->
-                        LearningActivityCard(
-                            activity = activity,
-                            onClick = { viewModel.onLearningActivityClicked(activity.id) }
+                    // Header with user info
+                    HomeHeader(
+                        userName = user.name,
+                        userLevel = user.level,
+                        userInitials = user.avatarInitials,
+                        onUserAvatarClick = viewModel::onUserAvatarClicked
+                    )
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    // Continue Learning Section
+                    ContinueLearningCard(
+                        onButtonClick = viewModel::onContinueLearningClicked,
+                        isLoading = isLoading
+                    )
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    // Content based on whether user has learning activities
+                    if (learningActivities.isEmpty()) {
+                        // Empty state
+                        HomeEmptyState(
+                            onGetStartedClick = {
+                                // Navigate to lessons or show getting started guide
+                                viewModel.onNavigationItemSelected("lessons")
+                            }
                         )
-                        
-                        Spacer(modifier = Modifier.height(12.dp))
+                    } else {
+                        // Main content in two columns
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(24.dp)
+                        ) {
+                            // Left Column - Learning Activities
+                            Column(
+                                modifier = Modifier.weight(2f)
+                            ) {
+                                learningActivities.forEach { activity ->
+                                    LearningActivityCard(
+                                        activity = activity,
+                                        onClick = { viewModel.onLearningActivityClicked(activity.id) }
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                }
+                            }
+                            
+                            // Right Column - Progress
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                TodaysProgressCard(
+                                    streak = user.streak,
+                                    xpPoints = user.xpPoints,
+                                    wordsLearned = user.wordsLearned,
+                                    accuracy = user.accuracy
+                                )
+                            }
+                        }
                     }
                 }
-                
-                // Right Column - Progress
-                Column(
+            }
+            selectedNavigationItem == "lessons" -> {
+                LessonsScreen(
                     modifier = Modifier.weight(1f)
+                )
+            }
+            selectedNavigationItem == "vocabulary" -> {
+                VocabularyScreen(
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            selectedNavigationItem == "speaking" -> {
+                SpeakingScreen(
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            selectedNavigationItem == "ai_chat" -> {
+                AIChatScreen(
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            selectedNavigationItem == "progress" -> {
+                ProgressScreen(
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            selectedNavigationItem == "settings" -> {
+                SettingsScreen(
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            else -> {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    TodaysProgressCard(
-                        streak = user.streak,
-                        xpPoints = user.xpPoints,
-                        wordsLearned = user.wordsLearned,
-                        accuracy = user.accuracy
+                    Text(
+                        text = "Page not found",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = WordBridgeColors.TextPrimary
                     )
                 }
             }
@@ -110,6 +181,7 @@ private fun HomeHeader(
     userName: String,
     userLevel: String,
     userInitials: String,
+    onUserAvatarClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -136,10 +208,11 @@ private fun HomeHeader(
             )
         }
         
-        // User avatar
+        // User avatar (clickable)
         UserAvatar(
             initials = userInitials,
-            size = 48.dp
+            size = 48.dp,
+            onClick = onUserAvatarClick
         )
     }
 }

@@ -3,11 +3,11 @@ package org.example.project.domain.model
 /**
  * Represents a navigation item in the sidebar
  * 
- * @property id Unique identifier for the navigation item
- * @property title Display title of the navigation item
- * @property icon Icon identifier or resource name
- * @property route Navigation route for this item
- * @property isSelected Whether this item is currently selected
+ * @Variable id Unique identifier for the navigation item
+ * @Variable title Display title of the navigation item
+ * @Variable icon Icon identifier or resource name
+ * @Variable route Navigation route for this item
+ * @Variable isSelected Whether this item is currently selected
  */
 data class NavigationItem(
     val id: String,
