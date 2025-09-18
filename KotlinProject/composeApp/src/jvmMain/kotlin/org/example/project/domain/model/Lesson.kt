@@ -27,15 +27,10 @@ data class Lesson(
     val isAvailable: Boolean = true
 ) {
     companion object {
-        /**
-         * Creates sample lessons for the lessons screen
-         * Returns empty list for template/clean UI
-         */
+        
         fun getSampleLessons(): List<Lesson> = emptyList()
         
-        /**
-         * Creates demonstration lessons for testing purposes
-         */
+
         fun getDemoLessons(): List<Lesson> = listOf(
             Lesson(
                 id = "grammar_mastery",
