@@ -19,15 +19,10 @@ data class LearningActivity(
     val isEnabled: Boolean = true
 ) {
     companion object {
-        /**
-         * Creates the default learning activities for the home screen
-         * Returns empty list for template/clean UI
-         */
+       
         fun getDefaultActivities(): List<LearningActivity> = emptyList()
         
-        /**
-         * Creates sample learning activities for demonstration purposes
-         */
+       
         fun getSampleActivities(): List<LearningActivity> = listOf(
             LearningActivity(
                 id = "start_lesson",

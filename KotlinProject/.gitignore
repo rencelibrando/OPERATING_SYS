@@ -1,4 +1,4 @@
-*.iml
+e api*.iml
 .kotlin
 .gradle
 **/build/
@@ -13,6 +13,18 @@ captures
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
 !*.xcodeproj/xcshareddata/
-!*.xcodeproj/project.xcworkspace/
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
+
+# Environment files
+#.env
+#.env.local
+#.env.development
+#.env.production
+#.env.staging
+
+# Supabase
+.supabase/
+
+# Secrets
+#secrets/
