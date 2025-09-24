@@ -4,8 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,14 +14,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.example.project.presentation.viewmodel.HomeViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.core.auth.User as AuthUser
 
-/**
- * Main home screen of the WordBridge application
- * 
- * Displays the user's dashboard with navigation, progress, and learning activities
- */
 @Composable
 fun HomeScreen(
+    authenticatedUser: AuthUser? = null,
+    onSignOut: (() -> Unit)? = null,
     viewModel: HomeViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -32,6 +29,20 @@ fun HomeScreen(
     val isLoading by viewModel.isLoading
     val selectedNavigationItem by viewModel.selectedNavigationItem
     val showProfile by viewModel.showProfile
+    
+    // Use authenticated user data if available, otherwise fall back to sample data
+    val displayUser = authenticatedUser?.let { authUser ->
+        org.example.project.domain.model.User(
+            id = authUser.id,
+            name = authUser.fullName,
+            level = "Beginner Level", // Default level, could be enhanced later
+            streak = 0, // Default streak, could be enhanced later
+            xpPoints = 0, // Default XP, could be enhanced later
+            wordsLearned = 0, // Default words, could be enhanced later
+            accuracy = 0, // Default accuracy, could be enhanced later
+            avatarInitials = authUser.initials
+        )
+    } ?: user
     
     Row(
         modifier = modifier
@@ -48,6 +59,7 @@ fun HomeScreen(
         when {
             showProfile -> {
                 ProfileScreen(
+                    authenticatedUser = authenticatedUser,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -61,10 +73,12 @@ fun HomeScreen(
                 ) {
                     // Header with user info
                     HomeHeader(
-                        userName = user.name,
-                        userLevel = user.level,
-                        userInitials = user.avatarInitials,
-                        onUserAvatarClick = viewModel::onUserAvatarClicked
+                        userName = displayUser.name,
+                        userLevel = displayUser.level,
+                        userInitials = displayUser.avatarInitials,
+                        onUserAvatarClick = viewModel::onUserAvatarClicked,
+                        authenticatedUser = authenticatedUser,
+                        onSignOut = onSignOut
                     )
                     
                     Spacer(modifier = Modifier.height(24.dp))
@@ -182,6 +196,8 @@ private fun HomeHeader(
     userLevel: String,
     userInitials: String,
     onUserAvatarClick: () -> Unit,
+    authenticatedUser: AuthUser? = null,
+    onSignOut: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -208,11 +224,34 @@ private fun HomeHeader(
             )
         }
         
-        // User avatar (clickable)
-        UserAvatar(
-            initials = userInitials,
-            size = 48.dp,
-            onClick = onUserAvatarClick
-        )
+        // User avatar and sign out options
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (authenticatedUser != null && onSignOut != null) {
+                // Sign out button
+                TextButton(
+                    onClick = onSignOut,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = WordBridgeColors.TextSecondary
+                    )
+                ) {
+                    Text(
+                        text = "Sign Out",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+            }
+            
+            // User avatar (clickable - this is now the only way to access profile)
+            UserAvatar(
+                initials = userInitials,
+                profileImageUrl = authenticatedUser?.profileImageUrl,
+                size = 48.dp,
+                onClick = onUserAvatarClick
+            )
+        }
     }
 }

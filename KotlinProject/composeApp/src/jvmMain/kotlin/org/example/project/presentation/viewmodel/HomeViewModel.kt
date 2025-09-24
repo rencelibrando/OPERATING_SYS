@@ -7,12 +7,7 @@ import org.example.project.domain.model.User
 import org.example.project.domain.model.NavigationItem
 import org.example.project.domain.model.LearningActivity
 
-/**
- * ViewModel for the Home screen
- * 
- * Manages the state and business logic for the home screen,
- * including user data, navigation state, and learning activities
- */
+
 class HomeViewModel : ViewModel() {
     
     // Private mutable state
@@ -31,12 +26,7 @@ class HomeViewModel : ViewModel() {
     val isLoading: State<Boolean> = _isLoading
     val showProfile: State<Boolean> = _showProfile
     
-    /**
-     * Handles navigation item selection
-     * Updates the selected state and triggers navigation
-     * 
-     * @param itemId The ID of the selected navigation item
-     */
+
     fun onNavigationItemSelected(itemId: String) {
         // Close profile if it was open
         _showProfile.value = false
@@ -49,9 +39,7 @@ class HomeViewModel : ViewModel() {
         }
     }
     
-    /**
-     * Handles user avatar click to show profile
-     */
+
     fun onUserAvatarClicked() {
         _showProfile.value = true
         
@@ -64,9 +52,7 @@ class HomeViewModel : ViewModel() {
         println("Opening profile")
     }
     
-    /**
-     * Handles closing profile view
-     */
+
     fun onCloseProfile() {
         _showProfile.value = false
         
@@ -78,23 +64,13 @@ class HomeViewModel : ViewModel() {
         
         println("Closing profile")
     }
-    
-    /**
-     * Handles learning activity click
-     * In a real implementation, this would navigate to the specific activity
-     * 
-     * @param activityId The ID of the clicked activity
-     */
+
     fun onLearningActivityClicked(activityId: String) {
         // TODO: Implement navigation to specific activity
         // For now, we'll just print the action (in real app, use navigation)
         println("Navigating to activity: $activityId")
     }
-    
-    /**
-     * Handles continue learning button click
-     * Resumes the user's learning journey
-     */
+
     fun onContinueLearningClicked() {
         _isLoading.value = true
         
@@ -105,11 +81,7 @@ class HomeViewModel : ViewModel() {
         // Reset loading state after simulation
         _isLoading.value = false
     }
-    
-    /**
-     * Refreshes user data
-     * In a real implementation, this would fetch data from a repository
-     */
+
     fun refreshUserData() {
         _isLoading.value = true
         
@@ -118,11 +90,7 @@ class HomeViewModel : ViewModel() {
         
         _isLoading.value = false
     }
-    
-    /**
-     * Updates user streak (for demonstration purposes)
-     * In a real app, this would be handled by the backend
-     */
+
     fun updateStreak(newStreak: Int) {
         _user.value = _user.value.copy(streak = newStreak)
     }

@@ -1,16 +1,6 @@
 package org.example.project.domain.model
 
-/**
- * Represents a chat message in the AI Chat system
- * 
- * @Variable id Unique identifier for the message
- * @Variable content The text content of the message
- * @Variable sender Who sent the message (user or AI)
- * @Variable timestamp When the message was sent
- * @Variable type Type of message (text, voice, etc.)
- * @Variable isTyping Whether this is a typing indicator
- * @Variable metadata Additional metadata for the message
- */
+
 data class ChatMessage(
     val id: String,
     val content: String,
@@ -21,67 +11,44 @@ data class ChatMessage(
     val metadata: Map<String, String> = emptyMap()
 ) {
     companion object {
-        /**
-         * Creates sample chat messages
-         * Returns empty list for template/clean UI
-         */
+    
         fun getSampleMessages(): List<ChatMessage> = emptyList()
         
-        /**
-         * Creates demonstration chat messages for testing purposes
-         */
         fun getDemoMessages(): List<ChatMessage> = listOf(
             ChatMessage(
                 id = "msg_1",
                 content = "Hello! I'm your AI language tutor. How can I help you today?",
                 sender = MessageSender.AI,
-                timestamp = System.currentTimeMillis() - 300000 // 5 minutes ago
+                timestamp = System.currentTimeMillis() - 300000 
             ),
             ChatMessage(
                 id = "msg_2", 
                 content = "Hi! I'd like to practice my conversation skills.",
                 sender = MessageSender.USER,
-                timestamp = System.currentTimeMillis() - 240000 // 4 minutes ago
+                timestamp = System.currentTimeMillis() - 240000 
             ),
             ChatMessage(
                 id = "msg_3",
                 content = "Perfect! Let's start with a casual conversation. What did you do this weekend?",
                 sender = MessageSender.AI,
-                timestamp = System.currentTimeMillis() - 180000 // 3 minutes ago
+                timestamp = System.currentTimeMillis() - 180000 
             )
         )
     }
 }
 
-/**
- * Represents who sent a message
- */
 enum class MessageSender {
     USER,
     AI
 }
 
-/**
- * Represents different types of messages
- */
 enum class MessageType {
     TEXT,
     VOICE,
     SYSTEM
 }
 
-/**
- * Represents a chat session with the AI tutor
- * 
- * @Variable id Unique identifier for the session
- * @Variable title Title/topic of the session
- * @Variable startTime When the session started
- * @Variable endTime When the session ended (null if ongoing)
- * @Variable messageCount Number of messages in the session
- * @Variable topic Main topic discussed
- * @Variable language Language being practiced
- * @Variable difficulty Difficulty level of the session
- */
+
 data class ChatSession(
     val id: String,
     val title: String,
@@ -93,21 +60,15 @@ data class ChatSession(
     val difficulty: String = "Intermediate"
 ) {
     companion object {
-        /**
-         * Creates sample chat sessions
-         * Returns empty list for template/clean UI
-         */
+
         fun getSampleSessions(): List<ChatSession> = emptyList()
-        
-        /**
-         * Creates demonstration chat sessions for testing purposes
-         */
+
         fun getDemoSessions(): List<ChatSession> = listOf(
             ChatSession(
                 id = "session_1",
                 title = "Weekend Activities",
-                startTime = System.currentTimeMillis() - 86400000, // 1 day ago
-                endTime = System.currentTimeMillis() - 86400000 + 1800000, // 30 minutes later
+                startTime = System.currentTimeMillis() - 86400000, 
+                endTime = System.currentTimeMillis() - 86400000 + 1800000, 
                 messageCount = 15,
                 topic = "Daily Life",
                 difficulty = "Beginner"
@@ -115,8 +76,8 @@ data class ChatSession(
             ChatSession(
                 id = "session_2",
                 title = "Travel Planning",
-                startTime = System.currentTimeMillis() - 172800000, // 2 days ago
-                endTime = System.currentTimeMillis() - 172800000 + 2700000, // 45 minutes later
+                startTime = System.currentTimeMillis() - 172800000, 
+                endTime = System.currentTimeMillis() - 172800000 + 2700000, 
                 messageCount = 23,
                 topic = "Travel",
                 difficulty = "Intermediate"
@@ -125,18 +86,6 @@ data class ChatSession(
     }
 }
 
-/**
- * Represents an AI chat bot personality/tutor
- * 
- * @Variable id Unique identifier for the bot
- * @Variable name Display name of the bot
- * @Variable description Brief description of the bot's specialty
- * @Variable avatar Avatar/icon for the bot
- * @Variable personality Personality traits
- * @Variable specialties Areas of expertise
- * @Variable difficulty Recommended difficulty level
- * @Variable isAvailable Whether this bot is available
- */
 data class ChatBot(
     val id: String,
     val name: String,
@@ -148,9 +97,6 @@ data class ChatBot(
     val isAvailable: Boolean = true
 ) {
     companion object {
-        /**
-         * Creates available chat bots
-         */
         fun getAvailableBots(): List<ChatBot> = listOf(
             ChatBot(
                 id = "emma",
@@ -192,9 +138,6 @@ data class ChatBot(
     }
 }
 
-/**
- * Represents a chat feature for the empty state
- */
 data class ChatFeature(
     val id: String,
     val title: String,

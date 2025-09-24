@@ -2,18 +2,14 @@ package org.example.project.data.repository
 
 import org.example.project.domain.model.*
 
-/**
- * Repository interface for learning-related operations
- */
 interface LearningRepository {
     
-    // Progress Tracking
     suspend fun getLearningProgress(userId: String): Result<LearningProgress?>
     suspend fun updateLearningProgress(progress: LearningProgress): Result<LearningProgress>
     suspend fun getSkillProgress(userId: String, skillArea: SkillArea): Result<SkillProgress?>
     suspend fun updateSkillProgress(userId: String, skillArea: SkillArea, progress: SkillProgress): Result<Unit>
     
-    // Lessons
+
     suspend fun getAllLessons(): Result<List<Lesson>>
     suspend fun getLessonsByCategory(category: LessonCategory): Result<List<Lesson>>
     suspend fun getLessonsByDifficulty(difficulty: String): Result<List<Lesson>>
@@ -30,9 +26,7 @@ interface LearningRepository {
     suspend fun getAvailableAchievements(): Result<List<Achievement>>
 }
 
-/**
- * Represents user's progress in a specific lesson
- */
+
 data class UserLessonProgress(
     val userId: String,
     val lessonId: String,

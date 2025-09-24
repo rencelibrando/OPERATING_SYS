@@ -2,9 +2,6 @@ package org.example.project.data.repository
 
 import org.example.project.domain.model.*
 
-/**
- * Repository interface for user-related operations
- */
 interface UserRepository {
     
     // User Profile Operations

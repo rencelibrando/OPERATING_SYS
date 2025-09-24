@@ -17,14 +17,14 @@ captures
 **/xcshareddata/WorkspaceSettings.xcsettings
 
 # Environment files
-composeApp/.env
-.env.local
-.env.development
-.env.production
-.env.staging
+#composeApp/.env
+#.env.local
+#.env.development
+#.env.production
+#.env.staging
 
 # Supabase
-.supabase/
+#.supabase/
 
 # Secrets
-secrets/
+#secrets/

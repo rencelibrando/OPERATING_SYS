@@ -9,9 +9,6 @@ import kotlinx.coroutines.delay
 import org.example.project.core.auth.*
 import org.example.project.core.utils.ValidationUtils
 
-/**
- * ViewModel for managing authentication state and operations with real email verification
- */
 class AuthViewModel : ViewModel() {
     
     private val authService = RealSupabaseAuthService()
@@ -65,10 +62,7 @@ class AuthViewModel : ViewModel() {
         
         checkAuthenticationStatus()
     }
-    
-    /**
-     * Check current authentication status
-     */
+
     fun checkAuthenticationStatus() {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
@@ -89,10 +83,7 @@ class AuthViewModel : ViewModel() {
             }
         }
     }
-    
-    /**
-     * Sign in user with email verification check
-     */
+
     fun signIn() {
         if (!validateLoginForm()) return
         
@@ -124,10 +115,7 @@ class AuthViewModel : ViewModel() {
             }
         }
     }
-    
-    /**
-     * Sign up new user with email verification
-     */
+
     fun signUp() {
         if (!validateSignUpForm()) return
         
@@ -173,10 +161,7 @@ class AuthViewModel : ViewModel() {
             }
         }
     }
-    
-    /**
-     * Sign out current user
-     */
+
     fun signOut() {
         viewModelScope.launch {
             try {
@@ -190,10 +175,7 @@ class AuthViewModel : ViewModel() {
             }
         }
     }
-    
-    /**
-     * Resend verification email
-     */
+
     fun resendVerificationEmail(email: String) {
         _isLoading.value = true
         clearError()
@@ -219,10 +201,7 @@ class AuthViewModel : ViewModel() {
             }
         }
     }
-    
-    /**
-     * Go back to login screen from verification screen
-     */
+
     fun goBackToLogin() {
         // Stop any running verification server
         authService.stopVerificationServer()
@@ -230,10 +209,7 @@ class AuthViewModel : ViewModel() {
         _isLoading.value = false
         clearError()
     }
-    
-    /**
-     * Handle completion of signup process - redirect to sign in
-     */
+
     fun onSignupComplete() {
         _authState.value = AuthState.Unauthenticated
         _isLoginMode.value = true
@@ -242,14 +218,10 @@ class AuthViewModel : ViewModel() {
         clearError()
         clearAllForms()
     }
-    
-    /**
-     * Start automatic polling for email verification with progressive intervals
-     */
+
     private fun startEmailVerificationPolling() {
         viewModelScope.launch {
             try {
-                // Progressive polling: start frequent, then gradually increase intervals
                 var attempts = 0
                 val maxAttempts = 60 // Total attempts over ~10 minutes
                 

@@ -14,9 +14,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.components.AnimatedNetworkBackground
 
-/**
- * Success screen displayed when signup is completed and user should sign in
- */
 @Composable
 fun SignupCompleteScreen(
     email: String,
@@ -69,9 +66,6 @@ fun SignupCompleteScreen(
     }
 }
 
-/**
- * App branding component
- */
 @Composable
 private fun AppBranding() {
     Card(
@@ -130,9 +124,6 @@ private fun AppBranding() {
     }
 }
 
-/**
- * Signup success card with sign-in prompt
- */
 @Composable
 private fun SignupSuccessCard(
     email: String,

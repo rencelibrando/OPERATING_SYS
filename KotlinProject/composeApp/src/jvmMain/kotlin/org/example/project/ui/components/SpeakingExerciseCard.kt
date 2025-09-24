@@ -15,13 +15,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.SpeakingExercise
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Speaking exercise card component displaying exercise information
- * 
- * @param exercise The speaking exercise data
- * @param onStartClick Callback when start button is clicked
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun SpeakingExerciseCard(
     exercise: SpeakingExercise,

@@ -10,12 +10,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Empty state component for home screen learning activities
- * 
- * @param onGetStartedClick Callback when "Get Started" button is clicked
- * @param modifier Optional modifier for styling
- */
+
 @Composable
 fun HomeEmptyState(
     onGetStartedClick: () -> Unit,

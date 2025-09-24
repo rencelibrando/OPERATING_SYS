@@ -14,12 +14,7 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.VocabularyFeature
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Vocabulary feature card component for displaying app features
- * 
- * @param feature The vocabulary feature data
- * @param modifier Optional modifier for styling
- */
+
 @Composable
 fun VocabularyFeatureCard(
     feature: VocabularyFeature,

@@ -16,15 +16,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * A card component that displays user progress statistics
- * 
- * @param title The title of the progress metric
- * @param value The current value to display
- * @param valueColor The color of the value text
- * @param icon Optional icon to display (for future implementation)
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun ProgressCard(
     title: String,

@@ -1,15 +1,5 @@
 package org.example.project.domain.model
 
-/**
- * Represents a learning activity available in the WordBridge application
- * 
- * @Variable id Unique identifier for the activity
- * @Variable title Display title of the activity
- * @Variable description Brief description of what the activity does
- * @Variable icon Icon identifier for the activity
- * @Variable route Navigation route for this activity
- * @Variable isEnabled Whether this activity is currently enabled
- */
 data class LearningActivity(
     val id: String,
     val title: String,

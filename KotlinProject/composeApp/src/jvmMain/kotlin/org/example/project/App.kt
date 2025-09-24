@@ -181,20 +181,12 @@ private fun AuthenticatedApp(
     user: org.example.project.core.auth.User,
     onSignOut: () -> Unit
 ) {
-    // For now, show the HomeScreen with a user header
-    // In the future, this could be a navigation host with multiple screens
-    Column(modifier = Modifier.fillMaxSize()) {
-        // User header
-        UserHeader(
-            user = user,
-            onSignOut = onSignOut
-        )
-        
-        // Main content
-        HomeScreen(
-            modifier = Modifier.fillMaxSize()
-        )
-    }
+    // Show the HomeScreen directly - it will handle displaying the authenticated user info
+    HomeScreen(
+        authenticatedUser = user,
+        onSignOut = onSignOut,
+        modifier = Modifier.fillMaxSize()
+    )
 }
 
 /**

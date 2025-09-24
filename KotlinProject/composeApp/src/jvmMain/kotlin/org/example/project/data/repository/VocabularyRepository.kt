@@ -2,9 +2,6 @@ package org.example.project.data.repository
 
 import org.example.project.domain.model.*
 
-/**
- * Repository interface for vocabulary-related operations
- */
 interface VocabularyRepository {
     
     // Vocabulary Words
@@ -29,9 +26,6 @@ interface VocabularyRepository {
     suspend fun getWordsForReview(userId: String, limit: Int = 10): Result<List<UserVocabularyWord>>
 }
 
-/**
- * Represents a user's relationship with a vocabulary word
- */
 data class UserVocabularyWord(
     val userId: String,
     val wordId: String,
@@ -43,9 +37,6 @@ data class UserVocabularyWord(
     val masteryLevel: Int = 0 // 0-100
 )
 
-/**
- * Represents user's vocabulary statistics
- */
 data class VocabularyStats(
     val totalWords: Int,
     val newWords: Int,

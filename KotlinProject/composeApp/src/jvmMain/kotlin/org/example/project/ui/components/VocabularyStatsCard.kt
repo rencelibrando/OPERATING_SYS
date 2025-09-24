@@ -13,15 +13,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Vocabulary statistics card component
- * 
- * @param title The title/label for the stat
- * @param count The count/number to display
- * @param icon The icon to display
- * @param backgroundColor Background color for the icon
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun VocabularyStatsCard(
     title: String,

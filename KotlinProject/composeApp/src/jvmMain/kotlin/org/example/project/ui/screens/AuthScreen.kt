@@ -24,9 +24,6 @@ import org.example.project.presentation.viewmodel.AuthViewModel
 import org.example.project.ui.components.AnimatedNetworkBackground
 import org.example.project.core.auth.AuthState
 
-/**
- * Clean authentication screen with login and signup functionality
- */
 @Composable
 fun AuthScreen(
     modifier: Modifier = Modifier,

@@ -17,12 +17,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.LevelProgress
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Level progress banner component showing current level and progress
- * 
- * @param levelProgress The level progress data
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun LevelProgressBanner(
     levelProgress: LevelProgress,

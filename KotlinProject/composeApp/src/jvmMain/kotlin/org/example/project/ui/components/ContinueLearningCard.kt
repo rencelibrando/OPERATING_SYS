@@ -13,16 +13,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * A prominent card component that encourages users to continue their learning journey
- * 
- * @param title The main title text
- * @param subtitle The subtitle or description text
- * @param buttonText The text for the action button
- * @param onButtonClick Callback when the button is clicked
- * @param isLoading Whether the button should show loading state
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun ContinueLearningCard(
     title: String = "Continue Your Journey",

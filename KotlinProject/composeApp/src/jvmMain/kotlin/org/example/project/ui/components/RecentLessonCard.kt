@@ -15,13 +15,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.RecentLesson
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Recent lesson card component for displaying recent learning activities
- * 
- * @param recentLesson The recent lesson data
- * @param onClick Callback when the card is clicked
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun RecentLessonCard(
     recentLesson: RecentLesson,

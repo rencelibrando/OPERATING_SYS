@@ -16,11 +16,6 @@ import org.example.project.presentation.viewmodel.*
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Settings screen of the WordBridge application
- * 
- * Displays user settings with toggles and preferences
- */
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = viewModel(),

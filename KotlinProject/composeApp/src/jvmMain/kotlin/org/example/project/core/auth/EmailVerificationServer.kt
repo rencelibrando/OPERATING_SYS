@@ -8,9 +8,6 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.URLDecoder
 
-/**
- * Simple HTTP server to handle email verification callbacks for desktop app
- */
 class EmailVerificationServer {
     
     private var serverSocket: ServerSocket? = null
@@ -72,7 +69,7 @@ class EmailVerificationServer {
                 
                 when {
                     urlPart.contains("/auth/callback") && urlPart.contains("access_token") -> {
-                        // Handle JavaScript callback with access token
+                        
                         val accessToken = extractAccessTokenFromQuery(urlPart)
                         sendSuccessResponse(writer)
                         onVerificationCallback?.invoke(accessToken)
@@ -84,7 +81,7 @@ class EmailVerificationServer {
                         }
                     }
                     urlPart.contains("/auth/callback") && urlPart.contains("error=") -> {
-                        // Handle JavaScript callback with error
+                        
                         val error = extractErrorFromQuery(urlPart)
                         sendErrorResponse(writer, error)
                         println("❌ Email verification error via JavaScript: $error")
@@ -96,7 +93,7 @@ class EmailVerificationServer {
                         }
                     }
                     urlPart.contains("access_token") -> {
-                        // Success case
+                        
                         val accessToken = extractAccessToken(urlPart)
                         sendSuccessResponse(writer)
                         onVerificationCallback?.invoke(accessToken)
@@ -108,14 +105,14 @@ class EmailVerificationServer {
                         }
                     }
                     urlPart.contains("error=") -> {
-                        // Error case - expired link, invalid token, etc.
+                        
                         val error = extractError(urlPart)
                         sendErrorResponse(writer, error)
                         println("❌ Email verification error: $error")
                         onVerificationCallback?.invoke(null)
                         
                         CoroutineScope(Dispatchers.IO).launch {
-                            delay(3000) // Give user time to read error
+                            delay(3000) 
                             stopServer()
                         }
                     }
@@ -229,7 +226,7 @@ class EmailVerificationServer {
                     <p>You can now close this tab and return to WordBridge.</p>
                 </div>
                 <script>
-                    // Auto-close the tab after 3 seconds
+                    
                     setTimeout(() => {
                         window.close();
                     }, 3000);
@@ -281,23 +278,23 @@ class EmailVerificationServer {
                     <p>This page will update automatically.</p>
                 </div>
                 <script>
-                    // Check for access token in URL fragment (after #)
+                    
                     function checkForAccessToken() {
                         const hash = window.location.hash;
                         console.log('Checking URL fragment:', hash);
                         
                         if (hash && hash.includes('access_token=')) {
-                            // Extract access token
+                            
                             const tokenMatch = hash.match(/access_token=([^&]+)/);
                             if (tokenMatch) {
                                 const accessToken = tokenMatch[1];
                                 console.log('Found access token:', accessToken.substring(0, 20) + '...');
                                 
-                                // Send token to server
+                                
                                 fetch('/auth/callback?access_token=' + encodeURIComponent(accessToken))
                                     .then(response => {
                                         console.log('Token sent to server successfully');
-                                        // The server will handle the rest and show success page
+                                        
                                     })
                                     .catch(error => {
                                         console.error('Error sending token to server:', error);
@@ -308,7 +305,7 @@ class EmailVerificationServer {
                         }
                         
                         if (hash && hash.includes('error=')) {
-                            // Handle error case
+                            
                             const errorMatch = hash.match(/error=([^&]+)/);
                             const errorCodeMatch = hash.match(/error_code=([^&]+)/);
                             const errorDescMatch = hash.match(/error_description=([^&]+)/);
@@ -320,7 +317,7 @@ class EmailVerificationServer {
                                 
                                 console.log('Found error in URL:', error, errorCode, errorDesc);
                                 
-                                // Send error to server
+                                
                                 fetch('/auth/callback?error=' + encodeURIComponent(error) + 
                                      '&error_code=' + encodeURIComponent(errorCode) + 
                                      '&error_description=' + encodeURIComponent(errorDesc))
@@ -335,17 +332,17 @@ class EmailVerificationServer {
                         return false;
                     }
                     
-                    // Check immediately when page loads
+                    
                     if (checkForAccessToken()) {
-                        // Token found and sent, wait for server response
+                        
                         document.querySelector('h1').textContent = 'Email Verified!';
                         document.querySelector('.waiting-icon').textContent = '✅';
                         document.querySelector('p').innerHTML = 'Your email has been successfully verified.<br>You can now close this tab and return to WordBridge.';
                     } else {
-                        // No token in URL, keep waiting
+                        
                         console.log('No access token found in URL fragment, waiting...');
                         
-                        // Check again every 2 seconds for changes
+                        
                         setInterval(() => {
                             if (checkForAccessToken()) {
                                 document.querySelector('h1').textContent = 'Email Verified!';
@@ -417,7 +414,7 @@ class EmailVerificationServer {
                     <button class="btn" onclick="window.close()">Close Tab</button>
                 </div>
                 <script>
-                    // Auto-close the tab after 10 seconds
+                    
                     setTimeout(() => {
                         window.close();
                     }, 10000);

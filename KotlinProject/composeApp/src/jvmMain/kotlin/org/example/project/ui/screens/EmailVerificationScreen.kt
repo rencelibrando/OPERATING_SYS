@@ -14,10 +14,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.components.AnimatedNetworkBackground
 
-/**
- * Email verification screen displayed after user signs up
- * Shows real email verification instructions and resend functionality
- */
 @Composable
 fun EmailVerificationScreen(
     email: String,

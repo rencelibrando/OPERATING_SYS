@@ -1,49 +1,23 @@
 package org.example.project.core.utils
 
-/**
- * Utility class for form validation logic
- */
 object ValidationUtils {
     
-    /**
-     * Validates email format
-     */
     fun isValidEmail(email: String): Boolean {
         return email.isNotBlank() && email.contains("@") && email.contains(".")
     }
-    
-    /**
-     * Validates password strength
-     */
     fun isValidPassword(password: String): Boolean {
         return password.length >= 6
     }
-    
-    /**
-     * Validates name field (not blank)
-     */
     fun isValidName(name: String): Boolean {
         return name.isNotBlank()
     }
-    
-    /**
-     * Validates that passwords match
-     */
     fun passwordsMatch(password: String, confirmPassword: String): Boolean {
         return password == confirmPassword
     }
-    
-    /**
-     * Validation result with error message
-     */
     data class ValidationResult(
         val isValid: Boolean,
         val errorMessage: String = ""
     )
-    
-    /**
-     * Validates login form
-     */
     fun validateLoginForm(email: String, password: String): ValidationResult {
         return when {
             email.isBlank() -> ValidationResult(false, "Email is required")
@@ -54,9 +28,6 @@ object ValidationUtils {
         }
     }
     
-    /**
-     * Validates signup form
-     */
     fun validateSignUpForm(
         firstName: String,
         lastName: String,

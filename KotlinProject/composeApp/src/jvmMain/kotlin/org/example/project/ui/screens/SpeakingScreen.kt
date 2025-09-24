@@ -18,11 +18,6 @@ import org.example.project.presentation.viewmodel.SpeakingViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Speaking Practice screen of the WordBridge application
- * 
- * Displays speaking exercises, statistics, sessions, and empty state
- */
 @Composable
 fun SpeakingScreen(
     viewModel: SpeakingViewModel = viewModel(),

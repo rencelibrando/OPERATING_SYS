@@ -18,11 +18,7 @@ import org.example.project.presentation.viewmodel.LessonsViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Lessons screen of the WordBridge application
- * 
- * Displays the user's lessons with level progress and lesson grid
- */
+
 @Composable
 fun LessonsScreen(
     viewModel: LessonsViewModel = viewModel(),
