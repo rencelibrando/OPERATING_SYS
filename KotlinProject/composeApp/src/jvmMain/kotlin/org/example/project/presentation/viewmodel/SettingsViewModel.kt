@@ -5,12 +5,6 @@ import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel
 import org.example.project.domain.model.*
 
-/**
- * ViewModel for the Settings screen
- * 
- * Manages the state and business logic for user settings,
- * including notifications, learning preferences, app settings, and privacy
- */
 class SettingsViewModel : ViewModel() {
     
     // Private mutable state
@@ -58,10 +52,7 @@ class SettingsViewModel : ViewModel() {
         
         saveSettings()
     }
-    
-    /**
-     * Handles learning setting changes
-     */
+
     fun onLearningSettingChanged(settingType: LearningSettingType, value: Any) {
         val currentSettings = _userSettings.value
         val updatedLearningSettings = when (settingType) {
@@ -94,10 +85,7 @@ class SettingsViewModel : ViewModel() {
         
         saveSettings()
     }
-    
-    /**
-     * Handles app setting changes
-     */
+
     fun onAppSettingChanged(settingType: AppSettingType, value: Any) {
         val currentSettings = _userSettings.value
         val updatedAppSettings = when (settingType) {
@@ -154,10 +142,7 @@ class SettingsViewModel : ViewModel() {
         
         saveSettings()
     }
-    
-    /**
-     * Handles account-related actions
-     */
+
     fun onAccountAction(action: AccountAction) {
         when (action) {
             AccountAction.EXPORT_DATA -> exportUserData()
@@ -171,23 +156,7 @@ class SettingsViewModel : ViewModel() {
             AccountAction.VIEW_TERMS -> viewTermsOfService()
         }
     }
-    
-    /**
-     * Refreshes settings from storage
-     */
-    fun refreshSettings() {
-        _isLoading.value = true
-        
-        // TODO: Load settings from repository/storage
-        // For now, simulate loading
-        _userSettings.value = UserSettings.getSampleSettings()
-        
-        _isLoading.value = false
-    }
-    
-    /**
-     * Saves settings to storage
-     */
+
     private fun saveSettings() {
         _isSaving.value = true
         
@@ -198,82 +167,49 @@ class SettingsViewModel : ViewModel() {
         _isSaving.value = false
     }
     
-    /**
-     * Exports user data
-     */
+
     private fun exportUserData() {
         // TODO: Implement data export functionality
         println("Exporting user data...")
     }
     
-    /**
-     * Deletes user account
-     */
+
     private fun deleteAccount() {
-        // TODO: Implement account deletion with confirmation
         println("Deleting account...")
     }
-    
-    /**
-     * Clears app cache
-     */
+
     private fun clearCache() {
-        // TODO: Implement cache clearing
         println("Clearing cache...")
     }
-    
-    /**
-     * Resets all settings to default
-     */
+
     private fun resetSettings() {
         _userSettings.value = UserSettings.getDefaultSettings()
         saveSettings()
     }
     
-    /**
-     * Opens contact support
-     */
+
     private fun contactSupport() {
-        // TODO: Open email client or support form
         println("Contacting support...")
     }
     
-    /**
-     * Opens app store for rating
-     */
+
     private fun rateApp() {
-        // TODO: Open app store rating page
         println("Rating app...")
     }
-    
-    /**
-     * Shares app with others
-     */
+
     private fun shareApp() {
-        // TODO: Open share dialog
         println("Sharing app...")
     }
-    
-    /**
-     * Opens privacy policy
-     */
+
     private fun viewPrivacyPolicy() {
-        // TODO: Open privacy policy URL
         println("Viewing privacy policy...")
     }
-    
-    /**
-     * Opens terms of service
-     */
+
     private fun viewTermsOfService() {
-        // TODO: Open terms of service URL
         println("Viewing terms of service...")
     }
 }
 
-/**
- * Enum for notification setting types
- */
 enum class NotificationSettingType {
     DAILY_REMINDERS,
     WEEKLY_PROGRESS,
@@ -287,9 +223,6 @@ enum class NotificationSettingType {
     VIBRATION_ENABLED
 }
 
-/**
- * Enum for learning setting types
- */
 enum class LearningSettingType {
     DAILY_GOAL_MINUTES,
     PREFERRED_DIFFICULTY,
@@ -303,9 +236,6 @@ enum class LearningSettingType {
     FONT_SIZE
 }
 
-/**
- * Enum for app setting types
- */
 enum class AppSettingType {
     AUTO_SAVE,
     DATA_SYNC,
@@ -317,9 +247,6 @@ enum class AppSettingType {
     HAPTIC_FEEDBACK
 }
 
-/**
- * Enum for privacy setting types
- */
 enum class PrivacySettingType {
     SHARE_PROGRESS,
     PUBLIC_PROFILE,
@@ -329,9 +256,6 @@ enum class PrivacySettingType {
     THIRD_PARTY_SHARING
 }
 
-/**
- * Enum for account actions
- */
 enum class AccountAction {
     EXPORT_DATA,
     DELETE_ACCOUNT,

@@ -1,20 +1,5 @@
 package org.example.project.domain.model
 
-/**
- * Represents a speaking exercise in the WordBridge application
- * 
- * @Variable id Unique identifier for the exercise
- * @Variable title Display title of the exercise
- * @Variable description Brief description of the exercise
- * @Variable type Type of speaking exercise
- * @Variable difficulty Difficulty level (Beginner, Intermediate, Advanced)
- * @Variable duration Estimated duration in minutes
- * @Variable category Category of the exercise
- * @Variable icon Icon identifier for the exercise
- * @Variable isAvailable Whether this exercise is available to the user
- * @Variable completionRate User's completion rate for this exercise (0-100)
- * @Variable lastAttempt Timestamp of last attempt (null if never attempted)
- */
 data class SpeakingExercise(
     val id: String,
     val title: String,
@@ -29,15 +14,9 @@ data class SpeakingExercise(
     val lastAttempt: Long? = null
 ) {
     companion object {
-        /**
-         * Creates sample speaking exercises
-         * Returns empty list for template/clean UI
-         */
+
         fun getSampleExercises(): List<SpeakingExercise> = emptyList()
-        
-        /**
-         * Creates demonstration speaking exercises for testing purposes
-         */
+
         fun getDemoExercises(): List<SpeakingExercise> = listOf(
             SpeakingExercise(
                 id = "pronunciation_basics",
@@ -89,9 +68,6 @@ data class SpeakingExercise(
     }
 }
 
-/**
- * Represents different types of speaking exercises
- */
 enum class SpeakingExerciseType(val displayName: String) {
     PRONUNCIATION("Pronunciation"),
     CONVERSATION("Conversation"),
@@ -101,20 +77,7 @@ enum class SpeakingExerciseType(val displayName: String) {
     SHADOWING("Shadowing")
 }
 
-/**
- * Represents a speaking practice session
- * 
- * @Variable id Unique identifier for the session
- * @Variable exerciseId ID of the associated exercise
- * @Variable startTime When the session started
- * @Variable endTime When the session ended (null if ongoing)
- * @Variable accuracyScore Accuracy score (0-100)
- * @Variable fluencyScore Fluency score (0-100)
- * @Variable pronunciationScore Pronunciation score (0-100)
- * @Variable overallScore Overall score (0-100)
- * @Variable feedback AI-generated feedback
- * @Variable recordingPath Path to the audio recording (if available)
- */
+
 data class SpeakingSession(
     val id: String,
     val exerciseId: String,
@@ -128,15 +91,10 @@ data class SpeakingSession(
     val recordingPath: String?
 ) {
     companion object {
-        /**
-         * Creates sample speaking sessions
-         * Returns empty list for template/clean UI
-         */
+
         fun getSampleSessions(): List<SpeakingSession> = emptyList()
         
-        /**
-         * Creates demonstration speaking sessions for testing purposes
-         */
+
         fun getDemoSessions(): List<SpeakingSession> = listOf(
             SpeakingSession(
                 id = "session_1",
@@ -165,19 +123,6 @@ data class SpeakingSession(
         )
     }
 }
-
-/**
- * Represents speaking practice statistics
- * 
- * @Variable totalSessions Total number of completed sessions
- * @Variable totalMinutes Total minutes of practice
- * @Variable averageAccuracy Average accuracy score across all sessions
- * @Variable averageFluency Average fluency score across all sessions
- * @Variable averagePronunciation Average pronunciation score across all sessions
- * @Variable currentStreak Current practice streak in days
- * @Variable longestStreak Longest practice streak in days
- * @Variable exercisesCompleted Number of exercises completed
- */
 data class SpeakingStats(
     val totalSessions: Int,
     val totalMinutes: Int,
@@ -212,10 +157,6 @@ data class SpeakingStats(
         )
     }
 }
-
-/**
- * Represents a speaking feature for the empty state
- */
 data class SpeakingFeature(
     val id: String,
     val title: String,
@@ -224,9 +165,6 @@ data class SpeakingFeature(
     val color: String
 ) {
     companion object {
-        /**
-         * Creates speaking features for the empty state
-         */
         fun getSpeakingFeatures(): List<SpeakingFeature> = listOf(
             SpeakingFeature(
                 id = "ai_feedback",
@@ -274,9 +212,6 @@ data class SpeakingFeature(
     }
 }
 
-/**
- * Represents speaking practice filter options
- */
 enum class SpeakingFilter(val displayName: String) {
     ALL("All"),
     PRONUNCIATION("Pronunciation"),

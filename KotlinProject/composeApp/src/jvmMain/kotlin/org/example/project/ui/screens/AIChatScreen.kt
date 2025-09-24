@@ -21,11 +21,6 @@ import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
 import org.example.project.domain.model.MessageSender
 
-/**
- * AI Chat screen of the WordBridge application
- * 
- * Displays chat interface with AI tutors and empty state
- */
 @Composable
 fun AIChatScreen(
     viewModel: AIChatViewModel = viewModel(),

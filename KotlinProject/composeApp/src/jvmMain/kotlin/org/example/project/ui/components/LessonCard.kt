@@ -15,14 +15,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.Lesson
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Lesson card component displaying lesson information and progress
- * 
- * @param lesson The lesson data
- * @param onContinueClick Callback when continue button is clicked
- * @param onStartClick Callback when start button is clicked
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun LessonCard(
     lesson: Lesson,

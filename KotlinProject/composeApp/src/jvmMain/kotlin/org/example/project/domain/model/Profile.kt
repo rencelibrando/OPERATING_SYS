@@ -1,16 +1,5 @@
 package org.example.project.domain.model
 
-/**
- * Represents a user profile in the WordBridge application
- * 
- * @Variable userId Unique identifier for the user
- * @Variable personalInfo Personal information
- * @Variable learningProfile Learning preferences and goals
- * @Variable accountInfo Account and subscription information
- * @Variable profileStats Profile statistics and achievements
- * @Variable createdAt When the profile was created
- * @Variable lastUpdated When the profile was last updated
- */
 data class UserProfile(
     val userId: String,
     val personalInfo: PersonalInfo,
@@ -21,9 +10,7 @@ data class UserProfile(
     val lastUpdated: Long
 ) {
     companion object {
-        /**
-         * Creates a default user profile
-         */
+
         fun getDefaultProfile(): UserProfile = UserProfile(
             userId = "user_001",
             personalInfo = PersonalInfo.getDefault(),
@@ -33,10 +20,7 @@ data class UserProfile(
             createdAt = System.currentTimeMillis(),
             lastUpdated = System.currentTimeMillis()
         )
-        
-        /**
-         * Creates a sample user profile for demo
-         */
+
         fun getSampleProfile(): UserProfile = UserProfile(
             userId = "user_001",
             personalInfo = PersonalInfo(
@@ -84,14 +68,12 @@ data class UserProfile(
     }
 }
 
-/**
- * Represents personal information
- */
 data class PersonalInfo(
     val firstName: String = "",
     val lastName: String = "",
     val email: String = "",
     val avatar: String = "",
+    val profileImageUrl: String? = null,
     val dateOfBirth: String? = null,
     val location: String? = null,
     val nativeLanguage: String = "",
@@ -114,9 +96,6 @@ data class PersonalInfo(
     }
 }
 
-/**
- * Represents learning profile and preferences
- */
 data class LearningProfile(
     val currentLevel: String = "Beginner",
     val primaryGoal: String = "",
@@ -156,9 +135,6 @@ data class LearningProfile(
     }
 }
 
-/**
- * Represents account and subscription information
- */
 data class AccountInfo(
     val subscriptionType: String = "Free",
     val subscriptionStatus: String = "Active",
@@ -176,9 +152,6 @@ data class AccountInfo(
     }
 }
 
-/**
- * Represents profile statistics
- */
 data class ProfileStats(
     val totalStudyTime: Int = 0, // in minutes
     val lessonsCompleted: Int = 0,
@@ -193,9 +166,6 @@ data class ProfileStats(
     }
 }
 
-/**
- * Represents editable profile fields
- */
 enum class ProfileField(val displayName: String, val isRequired: Boolean = false) {
     FIRST_NAME("First Name", true),
     LAST_NAME("Last Name", true),
@@ -214,9 +184,6 @@ enum class ProfileField(val displayName: String, val isRequired: Boolean = false
     MOTIVATIONS("Motivations")
 }
 
-/**
- * Represents profile sections for organization
- */
 enum class ProfileSection(val displayName: String, val icon: String) {
     PERSONAL_INFO("Personal Information", "👤"),
     LEARNING_PROFILE("Learning Profile", "📚"),
@@ -225,9 +192,6 @@ enum class ProfileSection(val displayName: String, val icon: String) {
     STATS("Statistics", "📊")
 }
 
-/**
- * Represents profile completion status
- */
 data class ProfileCompletion(
     val completionPercentage: Int,
     val missingFields: List<ProfileField>,

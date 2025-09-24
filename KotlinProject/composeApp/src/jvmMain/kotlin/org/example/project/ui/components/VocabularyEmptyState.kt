@@ -14,14 +14,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.VocabularyFeature
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Empty state component for vocabulary screen
- * 
- * @param features List of vocabulary features to display
- * @param onAddFirstWordClick Callback when "Add Your First Word" button is clicked
- * @param onExploreLessonsClick Callback when "explore lessons" link is clicked
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun VocabularyEmptyState(
     features: List<VocabularyFeature>,

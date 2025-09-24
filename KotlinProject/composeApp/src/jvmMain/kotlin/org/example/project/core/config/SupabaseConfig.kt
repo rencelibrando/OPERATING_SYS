@@ -4,10 +4,6 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.postgrest.Postgrest
 
-/**
- * Supabase configuration and client setup for real authentication
- * Credentials are embedded directly in the codebase
- */
 object SupabaseConfig {
     
     private const val SUPABASE_URL = "https://tgsivldflzyydwjgoqhd.supabase.co"
@@ -27,7 +23,7 @@ object SupabaseConfig {
     fun isConfigured(): Boolean {
         return SUPABASE_URL.isNotBlank() && 
                SUPABASE_ANON_KEY.isNotBlank() &&
-               SUPABASE_ANON_KEY.startsWith("eyJ") // Valid JWT token format
+               SUPABASE_ANON_KEY.startsWith("eyJ") 
     }
     fun getConfigStatus(): Map<String, Any> {
         return mapOf(

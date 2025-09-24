@@ -14,9 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Represents a lesson feature for the empty state
- */
+
 data class LessonFeature(
     val id: String,
     val title: String,
@@ -25,13 +23,7 @@ data class LessonFeature(
     val color: String
 )
 
-/**
- * Empty state component for lessons screen
- * 
- * @param onCreateFirstLessonClick Callback when "Create First Lesson" button is clicked
- * @param onExploreCurriculumClick Callback when "explore curriculum" link is clicked
- * @param modifier Optional modifier for styling
- */
+
 @Composable
 fun LessonsEmptyState(
     onCreateFirstLessonClick: () -> Unit,

@@ -15,9 +15,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.core.auth.User
 import org.example.project.ui.components.AnimatedNetworkBackground
 
-/**
- * Success screen displayed when email verification is completed
- */
 @Composable
 fun EmailVerificationSuccessScreen(
     user: User,
