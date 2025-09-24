@@ -204,7 +204,9 @@ class ProfileViewModel : ViewModel() {
                 lastUpdated = System.currentTimeMillis()
             )
             ProfileField.TARGET_LANGUAGES -> currentProfile.copy(
-                personalInfo = currentProfile.personalInfo.copy(targetLanguages = value as List<String>),
+                personalInfo = currentProfile.personalInfo.copy(
+                    targetLanguages = (value as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                ),
                 lastUpdated = System.currentTimeMillis()
             )
             ProfileField.BIO -> currentProfile.copy(
@@ -228,15 +230,21 @@ class ProfileViewModel : ViewModel() {
                 lastUpdated = System.currentTimeMillis()
             )
             ProfileField.FOCUS_AREAS -> currentProfile.copy(
-                learningProfile = currentProfile.learningProfile.copy(focusAreas = value as List<String>),
+                learningProfile = currentProfile.learningProfile.copy(
+                    focusAreas = (value as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                ),
                 lastUpdated = System.currentTimeMillis()
             )
             ProfileField.TIME_SLOTS -> currentProfile.copy(
-                learningProfile = currentProfile.learningProfile.copy(availableTimeSlots = value as List<String>),
+                learningProfile = currentProfile.learningProfile.copy(
+                    availableTimeSlots = (value as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                ),
                 lastUpdated = System.currentTimeMillis()
             )
             ProfileField.MOTIVATIONS -> currentProfile.copy(
-                learningProfile = currentProfile.learningProfile.copy(motivations = value as List<String>),
+                learningProfile = currentProfile.learningProfile.copy(
+                    motivations = (value as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                ),
                 lastUpdated = System.currentTimeMillis()
             )
         }
