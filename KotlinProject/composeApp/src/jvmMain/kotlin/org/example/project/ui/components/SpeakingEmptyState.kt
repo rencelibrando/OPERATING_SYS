@@ -15,14 +15,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.SpeakingFeature
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Empty state component for speaking practice screen
- * 
- * @param features List of speaking features to display
- * @param onStartFirstPracticeClick Callback when "Start First Practice" button is clicked
- * @param onExploreExercisesClick Callback when "explore exercises" link is clicked
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun SpeakingEmptyState(
     features: List<SpeakingFeature>,

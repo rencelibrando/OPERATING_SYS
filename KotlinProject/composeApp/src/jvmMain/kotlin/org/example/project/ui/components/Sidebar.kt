@@ -21,14 +21,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.NavigationItem
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Responsive sidebar navigation component for the WordBridge application
- * Shows only icons when not hovered, expands to show full content on hover
- * 
- * @param navigationItems List of navigation items to display
- * @param onNavigationItemClick Callback when a navigation item is clicked
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun Sidebar(
     navigationItems: List<NavigationItem>,

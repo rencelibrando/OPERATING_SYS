@@ -15,14 +15,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.ChatFeature
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Empty state component for AI Chat screen
- * 
- * @param features List of chat features to display
- * @param onStartFirstConversationClick Callback when "Start First Conversation" button is clicked
- * @param onExploreChatBotsClick Callback when "explore chat bots" link is clicked
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun AIChatEmptyState(
     features: List<ChatFeature>,

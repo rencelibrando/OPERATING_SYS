@@ -18,13 +18,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.LearningActivity
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * A card component for displaying learning activities
- * 
- * @param activity The learning activity data
- * @param onClick Callback when the card is clicked
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun LearningActivityCard(
     activity: LearningActivity,

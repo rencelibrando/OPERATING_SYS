@@ -13,16 +13,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Speaking statistics card component
- * 
- * @param title The title/label for the stat
- * @param value The value to display (can be number or string)
- * @param unit Optional unit (e.g., "mins", "%", "days")
- * @param icon The icon to display
- * @param backgroundColor Background color for the icon
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun SpeakingStatsCard(
     title: String,

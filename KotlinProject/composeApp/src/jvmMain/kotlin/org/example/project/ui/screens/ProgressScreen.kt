@@ -25,11 +25,6 @@ import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
 import org.example.project.domain.model.SkillArea
 
-/**
- * Progress Tracker screen of the WordBridge application
- * 
- * Displays learning progress, achievements, goals, and analytics
- */
 @Composable
 fun ProgressScreen(
     viewModel: ProgressViewModel = viewModel(),

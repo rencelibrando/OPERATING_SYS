@@ -16,11 +16,6 @@ import org.example.project.presentation.viewmodel.VocabularyViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Vocabulary screen of the WordBridge application
- * 
- * Displays the user's vocabulary bank with statistics, search, and empty state
- */
 @Composable
 fun VocabularyScreen(
     viewModel: VocabularyViewModel = viewModel(),

@@ -17,14 +17,6 @@ import org.example.project.ui.theme.WordBridgeColors
 import java.text.SimpleDateFormat
 import java.util.*
 
-/**
- * Speaking session card component for displaying completed sessions
- * 
- * @param session The speaking session data
- * @param exerciseTitle The title of the associated exercise
- * @param onReviewClick Callback when the review button is clicked
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun SpeakingSessionCard(
     session: SpeakingSession,

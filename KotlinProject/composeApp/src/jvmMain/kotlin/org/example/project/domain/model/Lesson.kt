@@ -1,19 +1,6 @@
 package org.example.project.domain.model
 
-/**
- * Represents a lesson in the WordBridge application
- * 
- * @Variable id Unique identifier for the lesson
- * @Variable title Display title of the lesson
- * @Variable category The lesson category (Grammar, Vocabulary, Conversation, Pronunciation)
- * @Variable difficulty Difficulty level (Beginner, Intermediate, Advanced)
- * @Variable duration Duration in minutes
- * @Variable lessonsCount Total number of lessons in this series
- * @Variable completedCount Number of completed lessons
- * @Variable progressPercentage Progress percentage (0-100)
- * @Variable icon Icon identifier for the lesson category
- * @Variable isAvailable Whether this lesson is available to the user
- */
+
 data class Lesson(
     val id: String,
     val title: String,
@@ -80,9 +67,6 @@ data class Lesson(
     }
 }
 
-/**
- * Represents different lesson categories
- */
 enum class LessonCategory(val displayName: String) {
     GRAMMAR("Grammar"),
     VOCABULARY("Vocabulary"),
@@ -90,9 +74,7 @@ enum class LessonCategory(val displayName: String) {
     PRONUNCIATION("Pronunciation")
 }
 
-/**
- * Represents user's level progress
- */
+
 data class LevelProgress(
     val level: Int,
     val title: String,
@@ -111,9 +93,6 @@ data class LevelProgress(
     }
 }
 
-/**
- * Represents a recent lesson for continuation
- */
 data class RecentLesson(
     val id: String,
     val title: String,

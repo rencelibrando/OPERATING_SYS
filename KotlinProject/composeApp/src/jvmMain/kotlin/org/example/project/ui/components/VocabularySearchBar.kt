@@ -15,16 +15,7 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.VocabularyFilter
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Search bar component for vocabulary screen
- * 
- * @param searchQuery Current search query
- * @param onSearchQueryChanged Callback when search query changes
- * @param selectedFilter Currently selected filter
- * @param onFilterSelected Callback when filter is selected
- * @param onAddWordClick Callback when add word button is clicked
- * @param modifier Optional modifier for styling
- */
+
 @Composable
 fun VocabularySearchBar(
     searchQuery: String,
