@@ -9,7 +9,13 @@ plugins {
 }
 
 kotlin {
-    jvm()
+    jvm {
+        compilations.all {
+            compilerOptions.configure {
+                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+            }
+        }
+    }
     
     sourceSets {
         commonMain.dependencies {
@@ -45,9 +51,6 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
-            
-            // Environment configuration (JVM only)
-            implementation(libs.dotenv.kotlin)
         }
     }
 }
