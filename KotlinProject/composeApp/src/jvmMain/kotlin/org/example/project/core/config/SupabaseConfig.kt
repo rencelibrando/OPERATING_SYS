@@ -11,17 +11,13 @@ object SupabaseConfig {
     
     // Set this to your hosted callback page, e.g. GitHub Pages URL:
     // Example: https://your-username.github.io/your-repo/auth/callback
-    const val EMAIL_REDIRECT_URL: String = "https://rencelibrando.github.io/KotlinProject/auth/callback.html"
+    const val EMAIL_REDIRECT_URL: String = "https://rencelibrando.github.io/OPERATING_SYS/auth/callback.html"
     
     val client = createSupabaseClient(
         supabaseUrl = SUPABASE_URL,
         supabaseKey = SUPABASE_ANON_KEY
     ) {
-        install(Auth) {
-            host = "localhost"
-            scheme = "http"
-        }
-        
+        install(Auth)
         install(Postgrest)
     }
     fun isConfigured(): Boolean {
