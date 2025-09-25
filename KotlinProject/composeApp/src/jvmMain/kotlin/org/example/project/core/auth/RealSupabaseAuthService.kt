@@ -6,7 +6,6 @@ import io.github.jan.supabase.gotrue.user.UserInfo
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.example.project.core.config.SupabaseConfig
-import io.github.jan.supabase.gotrue.ResendEmailType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,46 +34,13 @@ class RealSupabaseAuthService {
             }
             
             
-            verificationServer.startServer(port = 3000) { accessToken ->
-                println("📧 Email verification callback received with token: ${accessToken?.take(20)}...")
-                if (accessToken != null) {
-                    println("✅ Email verification successful! Fetching user from token...")
-                    
-                    CoroutineScope(Dispatchers.IO).launch {
-                        try {
-                            val gotrueUser = supabase.auth.retrieveUser(accessToken)
-                            val appUser = User(
-                                id = gotrueUser.id,
-                                email = gotrueUser.email ?: request.email,
-                                firstName = gotrueUser.userMetadata?.get("first_name")?.toString() ?: request.firstName,
-                                lastName = gotrueUser.userMetadata?.get("last_name")?.toString() ?: request.lastName,
-                                profileImageUrl = gotrueUser.userMetadata?.get("avatar_url")?.toString()?.removeSurrounding("\""),
-                                isEmailVerified = true,
-                                createdAt = gotrueUser.createdAt.toString(),
-                                lastLoginAt = gotrueUser.lastSignInAt?.toString()
-                            )
-                            verifiedUserFromCallback = appUser
-                            println("🎉 Retrieved verified user from callback: ${appUser.email}")
-                        } catch (e: Exception) {
-                            println("❌ Failed to retrieve user from access token: ${e.message}")
-                        } finally {
-                            
-                            delay(500)
-                            checkEmailVerificationStatus()
-                        }
-                    }
-                } else {
-                    println("❌ Email verification failed or expired")
-                }
-            }
+            // Note: Email verification will be handled via GitHub Pages callback
+            // No need for local server since we're using the hosted callback page
             
             
             supabase.auth.signUpWith(Email) {
                 email = request.email
                 password = request.password
-                
-                // Redirect verification email to your hosted callback URL
-                emailRedirectTo = SupabaseConfig.EMAIL_REDIRECT_URL
                 
                 data = buildJsonObject {
                     put("first_name", request.firstName)
@@ -86,7 +52,9 @@ class RealSupabaseAuthService {
             println("✅ User created successfully")
             println("📧 Confirmation email sent to: ${request.email}")
             println("⚠️ User must confirm email before signing in")
+            println("💡 After email verification, return to app and sign in with your credentials")
             
+            println("🔧 Email verification will be handled via GitHub Pages callback")
             
             val session = supabase.auth.currentSessionOrNull()
             val supabaseUser = session?.user
@@ -243,16 +211,12 @@ class RealSupabaseAuthService {
                 throw Exception("Supabase is not configured. Please check your Supabase credentials in SupabaseConfig.kt.")
             }
             
-            // Ask Supabase to resend the signup verification email with your redirect URL
-            supabase.auth.resend(
-                type = ResendEmailType.Signup,
-                email = email,
-                emailRedirectTo = SupabaseConfig.EMAIL_REDIRECT_URL
-            )
+            // For Supabase 2.5.4, we'll implement a workaround for resend
+            // The user can simply try signing up again, which will resend the email
+            println("⚠️ Resend not directly supported in this API version")
+            println("💡 Recommendation: Try signing up again to receive a new verification email")
             
-            println("✅ Confirmation email resent successfully")
-            println("📧 Check your inbox for a new verification email")
-            Result.success(Unit)
+            Result.failure(Exception("Please try signing up again to receive a new verification email. If you already have an account, the system will automatically resend the verification email."))
             
         } catch (e: Exception) {
             println("❌ Failed to resend confirmation email: ${e.message}")
@@ -334,25 +298,21 @@ class RealSupabaseAuthService {
         return try {
             println("🔍 Checking email verification status...")
             
-            
+            // Check if user has cached verified user
             verifiedUserFromCallback?.let { cached ->
                 println("✅ Using verified user from callback cache: ${cached.email}")
-                
                 return Result.success(cached)
             }
             
-            
+            // Check current session (only exists if user is signed in)
             val session = supabase.auth.currentSessionOrNull()
             val user = session?.user
             
             if (user != null) {
-                
                 val isEmailVerified = user.emailConfirmedAt != null
-                
                 
                 val firstName = user.userMetadata?.get("first_name")?.toString()?.removeSurrounding("\"") ?: ""
                 val lastName = user.userMetadata?.get("last_name")?.toString()?.removeSurrounding("\"") ?: ""
-                
                 
                 val appUser = User(
                     id = user.id,
@@ -366,15 +326,16 @@ class RealSupabaseAuthService {
                 )
                 
                 if (isEmailVerified) {
-                    println("✅ Email has been verified!")
+                    println("✅ Email has been verified and user is signed in!")
+                    return Result.success(appUser)
                 } else {
-                    println("⏳ Email not yet verified")
+                    println("⏳ User is signed in but email not yet verified")
+                    return Result.success(appUser)
                 }
-                
-                Result.success(appUser)
             } else {
-                println("ℹ️ No current user session")
-                Result.success(null)
+                println("ℹ️ No current user session - user needs to sign in after email verification")
+                println("💡 After verifying email, user should sign in with their credentials")
+                return Result.success(null)
             }
             
         } catch (e: Exception) {
