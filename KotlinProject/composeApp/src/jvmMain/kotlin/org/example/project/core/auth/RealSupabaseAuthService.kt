@@ -6,6 +6,7 @@ import io.github.jan.supabase.gotrue.user.UserInfo
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.example.project.core.config.SupabaseConfig
+import io.github.jan.supabase.gotrue.ResendEmailType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -72,6 +73,8 @@ class RealSupabaseAuthService {
                 email = request.email
                 password = request.password
                 
+                // Redirect verification email to your hosted callback URL
+                emailRedirectTo = SupabaseConfig.EMAIL_REDIRECT_URL
                 
                 data = buildJsonObject {
                     put("first_name", request.firstName)
@@ -240,10 +243,12 @@ class RealSupabaseAuthService {
                 throw Exception("Supabase is not configured. Please check your Supabase credentials in SupabaseConfig.kt.")
             }
             
-            
-            verificationServer.startServer(port = 3000) { accessToken ->
-                println("📧 Email verification callback received with token: ${accessToken?.take(20)}...")
-            }         
+            // Ask Supabase to resend the signup verification email with your redirect URL
+            supabase.auth.resend(
+                type = ResendEmailType.Signup,
+                email = email,
+                emailRedirectTo = SupabaseConfig.EMAIL_REDIRECT_URL
+            )
             
             println("✅ Confirmation email resent successfully")
             println("📧 Check your inbox for a new verification email")
