@@ -1,6 +1,5 @@
 e api*.iml
 .kotlin
-.gradle
 **/build/
 xcuserdata
 !src/**/build/
