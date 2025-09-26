@@ -192,7 +192,7 @@ private fun EmailVerificationCard(
             
             // Message
             Text(
-                text = message,
+                text = "We've sent a verification link to your email address. Click the link to verify your account, then return here to sign in.",
                 style = MaterialTheme.typography.bodyLarge,
                 color = Color.White.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center,
@@ -249,7 +249,7 @@ private fun EmailVerificationCard(
                             Spacer(modifier = Modifier.width(8.dp))
                         }
                         Text(
-                            text = if (isLoading) "Checking verification status..." else "⏳ Waiting for email verification",
+                            text = if (isLoading) "Sending verification email..." else "📧 Verification email sent!",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary,
                             textAlign = TextAlign.Center
@@ -257,7 +257,22 @@ private fun EmailVerificationCard(
                     }
                 }
                 
-                // Resend email button
+                // Primary action: Back to Sign In  
+                Button(
+                    onClick = onGoBack,
+                    enabled = !isLoading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(
+                        text = "Continue to Sign In",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+                
+                // Secondary action: Resend email button
                 OutlinedButton(
                     onClick = onResendEmail,
                     enabled = !isLoading,
@@ -280,34 +295,13 @@ private fun EmailVerificationCard(
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
-                
-                // Go back button
-                OutlinedButton(
-                    onClick = onGoBack,
-                    enabled = !isLoading,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color.White
-                    ),
-                    border = ButtonDefaults.outlinedButtonBorder(enabled = !isLoading).copy(
-                        brush = Brush.linearGradient(listOf(Color.White.copy(alpha = 0.5f), Color.White.copy(alpha = 0.5f)))
-                    )
-                ) {
-                    Text(
-                        text = "Back to Sign In",
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
             }
             
             Spacer(modifier = Modifier.height(24.dp))
             
             // Help text
             Text(
-                text = "Click the verification link in your email to automatically continue. We'll detect when you've verified your email and log you in. Check your spam folder if needed.",
+                text = "After clicking the verification link in your email, return to this app and click \"Back to Sign In\" to continue. Check your spam folder if needed.",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.6f),
                 textAlign = TextAlign.Center
