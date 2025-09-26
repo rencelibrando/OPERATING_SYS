@@ -140,14 +140,14 @@ class AuthViewModel : ViewModel() {
                         _authState.value = AuthState.Authenticated(response.user)
                         clearSignUpForm()
                     } else {
-                        // Email verification required
-                        _authState.value = AuthState.AwaitingEmailVerification(
-                            email = signUpEmail.trim(),
-                            message = "We've sent a verification email to ${signUpEmail.trim()}. Please check your inbox and click the verification link to complete your registration."
-                        )
+                        // Email verification required - automatically return to sign-in with message
+                        _authState.value = AuthState.Unauthenticated
+                        _isLoginMode.value = true // Switch to login mode
+                        setSuccess("Account created successfully! We've sent a verification email to ${signUpEmail.trim()}. Please check your inbox and click the verification link, then sign in with your credentials.")
+                        
+                        // Pre-fill the login email field with the signup email
+                        _loginEmail.value = signUpEmail.trim()
                         clearSignUpForm()
-                        // Start automatic email verification polling
-                        startEmailVerificationPolling()
                     }
                 } else {
                     setError("Failed to create account")
@@ -185,12 +185,13 @@ class AuthViewModel : ViewModel() {
                 val result = authService.resendVerificationEmail(email)
                 
                 if (result.isSuccess) {
-                    _authState.value = AuthState.AwaitingEmailVerification(
-                        email = email,
-                        message = "Verification email sent! Please check your inbox and click the verification link."
-                    )
-                    // Restart automatic email verification polling
-                    startEmailVerificationPolling()
+                    // Return to login form with success message
+                    _authState.value = AuthState.Unauthenticated
+                    _isLoginMode.value = true // Switch to login mode
+                    setSuccess("Verification email sent! Please check your inbox and click the verification link, then sign in with your credentials.")
+                    
+                    // Pre-fill the login email field
+                    _loginEmail.value = email
                 } else {
                     setError("Failed to send verification email")
                 }
