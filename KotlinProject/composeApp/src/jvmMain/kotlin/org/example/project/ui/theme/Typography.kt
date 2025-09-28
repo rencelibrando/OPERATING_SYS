@@ -6,12 +6,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-/**
- * Typography configuration for WordBridge application
- * Defines consistent text styles throughout the application
- */
+
 val WordBridgeTypography = Typography(
-    // Display styles
     displayLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
@@ -34,7 +30,6 @@ val WordBridgeTypography = Typography(
         letterSpacing = 0.sp,
     ),
     
-    // Headline styles
     headlineLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.SemiBold,
@@ -57,7 +52,6 @@ val WordBridgeTypography = Typography(
         letterSpacing = 0.sp,
     ),
     
-    // Title styles
     titleLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.SemiBold,
@@ -80,7 +74,6 @@ val WordBridgeTypography = Typography(
         letterSpacing = 0.1.sp,
     ),
     
-    // Body styles
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
@@ -103,7 +96,6 @@ val WordBridgeTypography = Typography(
         letterSpacing = 0.4.sp,
     ),
     
-    // Label styles
     labelLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,

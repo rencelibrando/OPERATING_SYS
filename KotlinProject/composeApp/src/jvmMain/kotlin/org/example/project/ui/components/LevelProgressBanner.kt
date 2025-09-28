@@ -17,12 +17,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.LevelProgress
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Level progress banner component showing current level and progress
- * 
- * @param levelProgress The level progress data
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun LevelProgressBanner(
     levelProgress: LevelProgress,
@@ -45,7 +39,6 @@ fun LevelProgressBanner(
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Header row with level and percentage
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -78,7 +71,6 @@ fun LevelProgressBanner(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Progress indicator
             Column {
                 Text(
                     text = "Complete",

@@ -15,14 +15,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.example.project.presentation.viewmodel.VocabularyViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.core.auth.User as AuthUser
 
-/**
- * Vocabulary screen of the WordBridge application
- * 
- * Displays the user's vocabulary bank with statistics, search, and empty state
- */
 @Composable
 fun VocabularyScreen(
+    authenticatedUser: AuthUser? = null,
+    onUserAvatarClick: (() -> Unit)? = null,
     viewModel: VocabularyViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -40,7 +38,6 @@ fun VocabularyScreen(
             .padding(24.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // Header with title and user info
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -54,16 +51,16 @@ fun VocabularyScreen(
                 color = WordBridgeColors.TextPrimary
             )
             
-            // User info placeholder - can be expanded later
             UserAvatar(
-                initials = "SC", // This should come from user data
-                size = 40.dp
+                initials = authenticatedUser?.initials ?: "U",
+                profileImageUrl = authenticatedUser?.profileImageUrl,
+                size = 48.dp,
+                onClick = onUserAvatarClick
             )
         }
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // Statistics Cards Row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -103,16 +100,13 @@ fun VocabularyScreen(
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // Content based on whether user has vocabulary words
         if (vocabularyStats.totalWords == 0) {
-            // Empty state
             VocabularyEmptyState(
                 features = vocabularyFeatures,
                 onAddFirstWordClick = viewModel::onAddFirstWordClicked,
                 onExploreLessonsClick = viewModel::onExploreLessonsClicked
             )
         } else {
-            // Search and filter bar
             VocabularySearchBar(
                 searchQuery = searchQuery,
                 onSearchQueryChanged = viewModel::onSearchQueryChanged,
@@ -123,14 +117,11 @@ fun VocabularyScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Vocabulary words list/grid
             if (filteredWords.isNotEmpty()) {
-                // TODO: Create VocabularyWordCard component and display filtered words
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     filteredWords.forEach { word ->
-                        // Placeholder for word cards
                         Text(
                             text = "${word.word} - ${word.definition}",
                             style = MaterialTheme.typography.bodyMedium,
@@ -139,7 +130,6 @@ fun VocabularyScreen(
                     }
                 }
             } else if (searchQuery.isNotEmpty() || selectedFilter.name != "ALL") {
-                // No results for search/filter
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()

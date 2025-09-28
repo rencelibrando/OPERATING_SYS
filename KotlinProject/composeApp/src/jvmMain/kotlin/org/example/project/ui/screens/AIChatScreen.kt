@@ -20,14 +20,12 @@ import org.example.project.presentation.viewmodel.AIChatViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
 import org.example.project.domain.model.MessageSender
+import org.example.project.core.auth.User as AuthUser
 
-/**
- * AI Chat screen of the WordBridge application
- * 
- * Displays chat interface with AI tutors and empty state
- */
 @Composable
 fun AIChatScreen(
+    authenticatedUser: AuthUser? = null,
+    onUserAvatarClick: (() -> Unit)? = null,
     viewModel: AIChatViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -43,7 +41,6 @@ fun AIChatScreen(
             .fillMaxSize()
             .padding(24.dp)
     ) {
-        // Header with title and user info
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -57,18 +54,17 @@ fun AIChatScreen(
                 color = WordBridgeColors.TextPrimary
             )
             
-            // User info placeholder - can be expanded later
             UserAvatar(
-                initials = "SC", // This should come from user data
-                size = 40.dp
+                initials = authenticatedUser?.initials ?: "U",
+                profileImageUrl = authenticatedUser?.profileImageUrl,
+                size = 48.dp,
+                onClick = onUserAvatarClick
             )
         }
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // Content based on whether user has started chatting
         if (chatMessages.isEmpty()) {
-            // Empty state
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -81,11 +77,9 @@ fun AIChatScreen(
                 )
             }
         } else {
-            // Chat interface
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Current bot info (if selected)
                 selectedBot?.let { bot ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -127,7 +121,6 @@ fun AIChatScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
                 
-                // Messages list
                 val listState = rememberLazyListState()
                 
                 LazyColumn(
@@ -143,7 +136,6 @@ fun AIChatScreen(
                         )
                     }
                     
-                    // Typing indicator
                     if (isTyping) {
                         item {
                             MessageBubble(
@@ -156,7 +148,6 @@ fun AIChatScreen(
                     }
                 }
                 
-                // Scroll to bottom when new message arrives
                 LaunchedEffect(chatMessages.size, isTyping) {
                     if (chatMessages.isNotEmpty() || isTyping) {
                         listState.animateScrollToItem(
@@ -167,7 +158,6 @@ fun AIChatScreen(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // Message input
                 ChatInput(
                     message = currentMessage,
                     onMessageChange = viewModel::onMessageChanged,
@@ -179,9 +169,7 @@ fun AIChatScreen(
     }
 }
 
-/**
- * Message bubble component for chat messages
- */
+
 @Composable
 private fun MessageBubble(
     message: String,
@@ -225,9 +213,7 @@ private fun MessageBubble(
     }
 }
 
-/**
- * Chat input component for typing messages
- */
+
 @Composable
 private fun ChatInput(
     message: String,
