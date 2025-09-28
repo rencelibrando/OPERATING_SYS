@@ -15,13 +15,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.RecentLesson
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Recent lesson card component for displaying recent learning activities
- * 
- * @param recentLesson The recent lesson data
- * @param onClick Callback when the card is clicked
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun RecentLessonCard(
     recentLesson: RecentLesson,
@@ -49,7 +42,6 @@ fun RecentLessonCard(
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Lesson icon
         Box(
             modifier = Modifier
                 .size(48.dp)
@@ -65,7 +57,6 @@ fun RecentLessonCard(
         
         Spacer(modifier = Modifier.width(12.dp))
         
-        // Lesson details
         Column(
             modifier = Modifier.weight(1f)
         ) {
@@ -84,7 +75,6 @@ fun RecentLessonCard(
             )
         }
         
-        // Progress indicator
         Box(
             modifier = Modifier
                 .size(32.dp)

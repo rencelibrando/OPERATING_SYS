@@ -15,14 +15,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.ChatFeature
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Empty state component for AI Chat screen
- * 
- * @param features List of chat features to display
- * @param onStartFirstConversationClick Callback when "Start First Conversation" button is clicked
- * @param onExploreChatBotsClick Callback when "explore chat bots" link is clicked
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun AIChatEmptyState(
     features: List<ChatFeature>,
@@ -38,7 +30,6 @@ fun AIChatEmptyState(
     ) {
         Spacer(modifier = Modifier.height(40.dp))
         
-        // Robot/AI icon
         Text(
             text = "🤖",
             style = MaterialTheme.typography.displayMedium
@@ -46,7 +37,6 @@ fun AIChatEmptyState(
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // Title
         Text(
             text = "Meet Your AI Language Tutors",
             style = MaterialTheme.typography.headlineMedium.copy(
@@ -58,7 +48,6 @@ fun AIChatEmptyState(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Description
         Text(
             text = "Start conversations with AI tutors who understand your learning needs. Practice real-world scenarios, get instant feedback, and improve your English through natural dialogue.",
             style = MaterialTheme.typography.bodyLarge,
@@ -69,7 +58,6 @@ fun AIChatEmptyState(
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        // Start First Conversation Button
         Button(
             onClick = onStartFirstConversationClick,
             modifier = Modifier.fillMaxWidth(0.6f),
@@ -90,7 +78,6 @@ fun AIChatEmptyState(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Explore chat bots link
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -113,7 +100,6 @@ fun AIChatEmptyState(
         
         Spacer(modifier = Modifier.height(48.dp))
         
-        // Features Grid
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -131,9 +117,7 @@ fun AIChatEmptyState(
     }
 }
 
-/**
- * Feature card component for chat features
- */
+
 @Composable
 private fun ChatFeatureCard(
     feature: ChatFeature,
@@ -161,7 +145,6 @@ private fun ChatFeatureCard(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            // Icon
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -179,7 +162,6 @@ private fun ChatFeatureCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Title
             Text(
                 text = feature.title,
                 style = MaterialTheme.typography.titleMedium.copy(
@@ -190,7 +172,6 @@ private fun ChatFeatureCard(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Description
             Text(
                 text = feature.description,
                 style = MaterialTheme.typography.bodyMedium,

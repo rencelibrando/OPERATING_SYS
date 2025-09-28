@@ -14,9 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Represents a lesson feature for the empty state
- */
+
 data class LessonFeature(
     val id: String,
     val title: String,
@@ -25,13 +23,7 @@ data class LessonFeature(
     val color: String
 )
 
-/**
- * Empty state component for lessons screen
- * 
- * @param onCreateFirstLessonClick Callback when "Create First Lesson" button is clicked
- * @param onExploreCurriculumClick Callback when "explore curriculum" link is clicked
- * @param modifier Optional modifier for styling
- */
+
 @Composable
 fun LessonsEmptyState(
     onCreateFirstLessonClick: () -> Unit,
@@ -77,7 +69,6 @@ fun LessonsEmptyState(
     ) {
         Spacer(modifier = Modifier.height(40.dp))
         
-        // Graduation cap icon
         Text(
             text = "🎓",
             style = MaterialTheme.typography.displayMedium
@@ -85,7 +76,6 @@ fun LessonsEmptyState(
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // Title
         Text(
             text = "Your Learning Journey Begins Here",
             style = MaterialTheme.typography.headlineMedium.copy(
@@ -97,7 +87,6 @@ fun LessonsEmptyState(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Description
         Text(
             text = "Start building your personalized learning path! Our AI will create lessons tailored to your goals and learning style. Choose from grammar, vocabulary, conversation, and pronunciation modules.",
             style = MaterialTheme.typography.bodyLarge,
@@ -108,7 +97,6 @@ fun LessonsEmptyState(
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        // Create First Lesson Button
         Button(
             onClick = onCreateFirstLessonClick,
             modifier = Modifier.fillMaxWidth(0.6f),
@@ -129,7 +117,6 @@ fun LessonsEmptyState(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Explore curriculum link
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -152,7 +139,6 @@ fun LessonsEmptyState(
         
         Spacer(modifier = Modifier.height(48.dp))
         
-        // Features Grid
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -168,9 +154,7 @@ fun LessonsEmptyState(
     }
 }
 
-/**
- * Feature card component for lesson features
- */
+
 @Composable
 private fun LessonFeatureCard(
     feature: LessonFeature,
@@ -198,7 +182,6 @@ private fun LessonFeatureCard(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            // Icon
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -216,7 +199,6 @@ private fun LessonFeatureCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Title
             Text(
                 text = feature.title,
                 style = MaterialTheme.typography.titleMedium.copy(
@@ -227,7 +209,6 @@ private fun LessonFeatureCard(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Description
             Text(
                 text = feature.description,
                 style = MaterialTheme.typography.bodyMedium,

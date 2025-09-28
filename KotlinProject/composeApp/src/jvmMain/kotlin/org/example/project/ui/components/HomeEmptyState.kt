@@ -10,12 +10,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Empty state component for home screen learning activities
- * 
- * @param onGetStartedClick Callback when "Get Started" button is clicked
- * @param modifier Optional modifier for styling
- */
+
 @Composable
 fun HomeEmptyState(
     onGetStartedClick: () -> Unit,
@@ -29,7 +24,6 @@ fun HomeEmptyState(
     ) {
         Spacer(modifier = Modifier.height(40.dp))
         
-        // Rocket/Start icon
         Text(
             text = "🚀",
             style = MaterialTheme.typography.displayMedium
@@ -37,7 +31,6 @@ fun HomeEmptyState(
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // Title
         Text(
             text = "Ready to Start Learning?",
             style = MaterialTheme.typography.headlineMedium.copy(
@@ -49,7 +42,6 @@ fun HomeEmptyState(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Description
         Text(
             text = "Welcome to WordBridge! Your personalized AI-powered language learning journey is about to begin. Start with lessons, build your vocabulary, or practice speaking - the choice is yours!",
             style = MaterialTheme.typography.bodyLarge,
@@ -60,7 +52,6 @@ fun HomeEmptyState(
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        // Get Started Button
         Button(
             onClick = onGetStartedClick,
             modifier = Modifier.fillMaxWidth(0.6f),
@@ -81,7 +72,6 @@ fun HomeEmptyState(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Explore sections hint
         Text(
             text = "Explore the sections in the sidebar to begin your learning adventure",
             style = MaterialTheme.typography.bodyMedium,

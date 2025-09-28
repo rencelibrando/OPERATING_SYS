@@ -1,20 +1,5 @@
 package org.example.project.domain.model
 
-/**
- * Represents overall learning progress for a user
- * 
- * @Variable userId Unique identifier for the user
- * @Variable overallLevel Current overall level (1-100)
- * @Variable xpPoints Total experience points earned
- * @Variable weeklyXP XP earned this week
- * @Variable monthlyXP XP earned this month
- * @Variable streakDays Current streak in days
- * @Variable longestStreak Longest streak achieved
- * @Variable totalStudyTime Total study time in minutes
- * @Variable weeklyStudyTime Study time this week in minutes
- * @Variable skillLevels Progress in different skill areas
- * @Variable lastUpdated When progress was last updated
- */
 data class LearningProgress(
     val userId: String,
     val overallLevel: Int,
@@ -29,10 +14,6 @@ data class LearningProgress(
     val lastUpdated: Long
 ) {
     companion object {
-        /**
-         * Creates sample learning progress
-         * Returns default progress for template/clean UI
-         */
         fun getSampleProgress(): LearningProgress = LearningProgress(
             userId = "user_001",
             overallLevel = 1,
@@ -48,10 +29,7 @@ data class LearningProgress(
             },
             lastUpdated = System.currentTimeMillis()
         )
-        
-        /**
-         * Creates demonstration learning progress for testing purposes
-         */
+
         fun getDemoProgress(): LearningProgress = LearningProgress(
             userId = "user_001",
             overallLevel = 15,
@@ -75,13 +53,6 @@ data class LearningProgress(
     }
 }
 
-/**
- * Represents progress in a specific skill area
- * 
- * @Variable level Current level in this skill
- * @Variable xp Current XP in this level
- * @Variable maxXP XP needed to reach next level
- */
 data class SkillProgress(
     val level: Int,
     val xp: Int,
@@ -91,9 +62,6 @@ data class SkillProgress(
         get() = if (maxXP > 0) (xp * 100 / maxXP) else 0
 }
 
-/**
- * Represents different skill areas
- */
 enum class SkillArea(val displayName: String, val icon: String, val color: String) {
     VOCABULARY("Vocabulary", "📚", "#8B5CF6"),
     GRAMMAR("Grammar", "📝", "#10B981"),
@@ -103,19 +71,6 @@ enum class SkillArea(val displayName: String, val icon: String, val color: Strin
     WRITING("Writing", "✍️", "#6366F1")
 }
 
-/**
- * Represents an achievement earned by the user
- * 
- * @Variable id Unique identifier for the achievement
- * @Variable title Display title of the achievement
- * @Variable description Description of what was achieved
- * @Variable icon Icon representing the achievement
- * @Variable category Category of achievement
- * @Variable xpReward XP points awarded for this achievement
- * @Variable unlockedAt When the achievement was unlocked (null if locked)
- * @Variable isRare Whether this is a rare achievement
- * @Variable requirements What needs to be done to unlock
- */
 data class Achievement(
     val id: String,
     val title: String,
@@ -131,15 +86,9 @@ data class Achievement(
         get() = unlockedAt != null
         
     companion object {
-        /**
-         * Creates sample achievements
-         * Returns empty list for template/clean UI
-         */
+
         fun getSampleAchievements(): List<Achievement> = emptyList()
-        
-        /**
-         * Creates demonstration achievements for testing purposes
-         */
+
         fun getDemoAchievements(): List<Achievement> = listOf(
             Achievement(
                 id = "first_lesson",
@@ -196,9 +145,6 @@ data class Achievement(
     }
 }
 
-/**
- * Represents different categories of achievements
- */
 enum class AchievementCategory(val displayName: String) {
     MILESTONE("Milestone"),
     STREAK("Streak"),
@@ -207,21 +153,6 @@ enum class AchievementCategory(val displayName: String) {
     SOCIAL("Social")
 }
 
-/**
- * Represents a learning goal set by the user
- * 
- * @Variable id Unique identifier for the goal
- * @Variable title Display title of the goal
- * @Variable description Description of the goal
- * @Variable type Type of goal (daily, weekly, monthly, custom)
- * @Variable target Target value to reach
- * @Variable current Current progress towards the goal
- * @Variable unit Unit of measurement (minutes, exercises, words, etc.)
- * @Variable deadline When the goal should be completed (null for no deadline)
- * @Variable createdAt When the goal was created
- * @Variable completedAt When the goal was completed (null if not completed)
- * @Variable isActive Whether this goal is currently active
- */
 data class LearningGoal(
     val id: String,
     val title: String,
@@ -237,20 +168,13 @@ data class LearningGoal(
 ) {
     val progressPercentage: Int
         get() = if (target > 0) (current * 100 / target).coerceAtMost(100) else 0
-        
+
     val isCompleted: Boolean
         get() = completedAt != null || current >= target
-        
+
     companion object {
-        /**
-         * Creates sample learning goals
-         * Returns empty list for template/clean UI
-         */
         fun getSampleGoals(): List<LearningGoal> = emptyList()
-        
-        /**
-         * Creates demonstration learning goals for testing purposes
-         */
+
         fun getDemoGoals(): List<LearningGoal> = listOf(
             LearningGoal(
                 id = "daily_practice",
@@ -292,9 +216,6 @@ data class LearningGoal(
     }
 }
 
-/**
- * Represents different types of goals
- */
 enum class GoalType(val displayName: String) {
     DAILY("Daily"),
     WEEKLY("Weekly"),
@@ -302,15 +223,6 @@ enum class GoalType(val displayName: String) {
     CUSTOM("Custom")
 }
 
-/**
- * Represents weekly progress data for charts
- * 
- * @Variable weekStartDate Start date of the week
- * @Variable dailyXP XP earned each day of the week (7 days)
- * @Variable dailyMinutes Minutes studied each day of the week
- * @Variable totalXP Total XP for the week
- * @Variable totalMinutes Total minutes for the week
- */
 data class WeeklyProgressData(
     val weekStartDate: Long,
     val dailyXP: List<Int>, // 7 values for each day
@@ -319,9 +231,7 @@ data class WeeklyProgressData(
     val totalMinutes: Int
 ) {
     companion object {
-        /**
-         * Creates sample weekly progress data
-         */
+
         fun getSampleWeeklyData(): WeeklyProgressData = WeeklyProgressData(
             weekStartDate = System.currentTimeMillis() - 518400000, // 6 days ago (start of week)
             dailyXP = listOf(0, 0, 0, 0, 0, 0, 0),
@@ -329,10 +239,7 @@ data class WeeklyProgressData(
             totalXP = 0,
             totalMinutes = 0
         )
-        
-        /**
-         * Creates demo weekly progress data
-         */
+
         fun getDemoWeeklyData(): WeeklyProgressData = WeeklyProgressData(
             weekStartDate = System.currentTimeMillis() - 518400000, // 6 days ago
             dailyXP = listOf(45, 60, 0, 80, 95, 70, 85), // Monday to Sunday

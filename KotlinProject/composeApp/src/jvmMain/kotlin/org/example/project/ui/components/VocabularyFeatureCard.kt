@@ -14,12 +14,7 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.VocabularyFeature
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Vocabulary feature card component for displaying app features
- * 
- * @param feature The vocabulary feature data
- * @param modifier Optional modifier for styling
- */
+
 @Composable
 fun VocabularyFeatureCard(
     feature: VocabularyFeature,
@@ -47,7 +42,6 @@ fun VocabularyFeatureCard(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            // Icon
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -63,7 +57,6 @@ fun VocabularyFeatureCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Title
             Text(
                 text = feature.title,
                 style = MaterialTheme.typography.titleMedium.copy(
@@ -74,7 +67,6 @@ fun VocabularyFeatureCard(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Description
             Text(
                 text = feature.description,
                 style = MaterialTheme.typography.bodyMedium,

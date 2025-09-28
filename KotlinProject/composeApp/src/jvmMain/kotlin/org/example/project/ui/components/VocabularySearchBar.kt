@@ -15,16 +15,7 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.VocabularyFilter
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Search bar component for vocabulary screen
- * 
- * @param searchQuery Current search query
- * @param onSearchQueryChanged Callback when search query changes
- * @param selectedFilter Currently selected filter
- * @param onFilterSelected Callback when filter is selected
- * @param onAddWordClick Callback when add word button is clicked
- * @param modifier Optional modifier for styling
- */
+
 @Composable
 fun VocabularySearchBar(
     searchQuery: String,
@@ -39,7 +30,6 @@ fun VocabularySearchBar(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Search field
         OutlinedTextField(
             value = searchQuery,
             onValueChange = onSearchQueryChanged,
@@ -58,7 +48,6 @@ fun VocabularySearchBar(
             singleLine = true
         )
         
-        // Filter buttons
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -78,7 +67,6 @@ fun VocabularySearchBar(
             }
         }
         
-        // Add Word button
         Button(
             onClick = onAddWordClick,
             colors = ButtonDefaults.buttonColors(

@@ -3,6 +3,8 @@ package org.example.project.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
@@ -15,21 +17,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import io.kamel.image.KamelImage
+import io.kamel.image.asyncPainterResource
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * A circular avatar component that displays user initials
- * 
- * @param initials The user's initials to display
- * @param size The size of the avatar
- * @param backgroundColor The background color of the avatar
- * @param textColor The color of the initials text
- * @param onClick Optional click handler for the avatar
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun UserAvatar(
     initials: String,
+    profileImageUrl: String? = null,
     size: Dp = 40.dp,
     backgroundColor: Color = WordBridgeColors.PrimaryPurple,
     textColor: Color = WordBridgeColors.BackgroundWhite,
@@ -44,12 +40,39 @@ fun UserAvatar(
             .let { if (onClick != null) it.clickable { onClick() } else it },
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = initials.take(2).uppercase(),
-            color = textColor,
-            style = MaterialTheme.typography.labelLarge.copy(
-                fontWeight = FontWeight.SemiBold
+        if (!profileImageUrl.isNullOrEmpty()) {
+            val painter = asyncPainterResource(data = profileImageUrl)
+            KamelImage(
+                resource = painter,
+                contentDescription = "Profile Picture",
+                modifier = Modifier.fillMaxSize(),
+                onLoading = {
+                    Text(
+                        text = initials.take(2).uppercase(),
+                        color = textColor,
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    )
+                },
+                onFailure = {
+                    Text(
+                        text = initials.take(2).uppercase(),
+                        color = textColor,
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    )
+                }
             )
-        )
+        } else {
+            Text(
+                text = initials.take(2).uppercase(),
+                color = textColor,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.SemiBold
+                )
+            )
+        }
     }
 }

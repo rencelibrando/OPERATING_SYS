@@ -17,14 +17,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.example.project.presentation.viewmodel.LessonsViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.core.auth.User as AuthUser
 
-/**
- * Lessons screen of the WordBridge application
- * 
- * Displays the user's lessons with level progress and lesson grid
- */
+
 @Composable
 fun LessonsScreen(
+    authenticatedUser: AuthUser? = null,
+    onUserAvatarClick: (() -> Unit)? = null,
     viewModel: LessonsViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -39,7 +38,6 @@ fun LessonsScreen(
             .padding(24.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // Header with title and user info
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -53,37 +51,32 @@ fun LessonsScreen(
                 color = WordBridgeColors.TextPrimary
             )
             
-            // User info placeholder - can be expanded later
             UserAvatar(
-                initials = "SC", // This should come from user data
-                size = 40.dp
+                initials = authenticatedUser?.initials ?: "U",
+                profileImageUrl = authenticatedUser?.profileImageUrl,
+                size = 48.dp,
+                onClick = onUserAvatarClick
             )
         }
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // Content based on whether user has lessons
         if (lessons.isEmpty()) {
-            // Empty state
             LessonsEmptyState(
                 onCreateFirstLessonClick = {
-                    // TODO: Navigate to lesson creation or show lesson setup
                     viewModel.onLessonClicked("create_first")
                 },
                 onExploreCurriculumClick = {
-                    // TODO: Navigate to curriculum templates
                     viewModel.onLessonClicked("explore_curriculum")
                 }
             )
         } else {
-            // Level Progress Banner
             LevelProgressBanner(
                 levelProgress = levelProgress
             )
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Lessons Grid
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -101,7 +94,6 @@ fun LessonsScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Continue Recent Lessons Section (only if there are recent lessons)
             if (recentLessons.isNotEmpty()) {
                 Text(
                     text = "Continue Recent Lessons",
@@ -113,7 +105,6 @@ fun LessonsScreen(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // Recent lessons list
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
