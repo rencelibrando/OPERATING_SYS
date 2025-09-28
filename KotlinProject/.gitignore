@@ -1,6 +1,5 @@
 e api*.iml
 .kotlin
-.gradle
 **/build/
 xcuserdata
 !src/**/build/
@@ -17,14 +16,14 @@ captures
 **/xcshareddata/WorkspaceSettings.xcsettings
 
 # Environment files
-#.env
-#.env.local
-#.env.development
-#.env.production
-#.env.staging
+composeApp/.env
+.env.local
+.env.development
+.env.production
+.env.staging
 
 # Supabase
-.supabase/
+#.supabase/
 
 # Secrets
 #secrets/

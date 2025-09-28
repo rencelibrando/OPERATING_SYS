@@ -1,15 +1,6 @@
 package org.example.project.domain.model
 
-/**
- * Represents user settings and preferences
- * 
- * @Variable userId Unique identifier for the user
- * @Variable notificationSettings Notification preferences
- * @Variable learningSettings Learning preferences
- * @Variable appSettings Application preferences
- * @Variable privacySettings Privacy preferences
- * @Variable lastUpdated When settings were last updated
- */
+
 data class UserSettings(
     val userId: String,
     val notificationSettings: NotificationSettings,
@@ -19,9 +10,7 @@ data class UserSettings(
     val lastUpdated: Long
 ) {
     companion object {
-        /**
-         * Creates default user settings
-         */
+
         fun getDefaultSettings(): UserSettings = UserSettings(
             userId = "user_001",
             notificationSettings = NotificationSettings.getDefault(),
@@ -31,9 +20,7 @@ data class UserSettings(
             lastUpdated = System.currentTimeMillis()
         )
         
-        /**
-         * Creates sample user settings for demo
-         */
+
         fun getSampleSettings(): UserSettings = UserSettings(
             userId = "user_001",
             notificationSettings = NotificationSettings(
@@ -83,9 +70,7 @@ data class UserSettings(
     }
 }
 
-/**
- * Represents notification settings
- */
+
 data class NotificationSettings(
     val dailyReminders: Boolean = true,
     val weeklyProgress: Boolean = true,
@@ -103,9 +88,7 @@ data class NotificationSettings(
     }
 }
 
-/**
- * Represents learning preferences
- */
+
 data class LearningSettings(
     val dailyGoalMinutes: Int = 15,
     val preferredDifficulty: String = "Beginner",
@@ -127,9 +110,6 @@ data class LearningSettings(
     }
 }
 
-/**
- * Represents application settings
- */
 data class AppSettings(
     val autoSave: Boolean = true,
     val dataSync: Boolean = true,
@@ -147,9 +127,6 @@ data class AppSettings(
     }
 }
 
-/**
- * Represents privacy settings
- */
 data class PrivacySettings(
     val shareProgress: Boolean = false,
     val publicProfile: Boolean = false,
@@ -163,9 +140,6 @@ data class PrivacySettings(
     }
 }
 
-/**
- * Represents a settings section for grouping related settings
- */
 data class SettingsSection(
     val id: String,
     val title: String,
@@ -174,9 +148,6 @@ data class SettingsSection(
     val items: List<SettingItem>
 )
 
-/**
- * Represents individual setting items
- */
 sealed class SettingItem {
     abstract val id: String
     abstract val title: String

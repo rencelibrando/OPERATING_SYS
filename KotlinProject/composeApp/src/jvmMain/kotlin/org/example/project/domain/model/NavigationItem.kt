@@ -1,14 +1,5 @@
 package org.example.project.domain.model
 
-/**
- * Represents a navigation item in the sidebar
- * 
- * @Variable id Unique identifier for the navigation item
- * @Variable title Display title of the navigation item
- * @Variable icon Icon identifier or resource name
- * @Variable route Navigation route for this item
- * @Variable isSelected Whether this item is currently selected
- */
 data class NavigationItem(
     val id: String,
     val title: String,
@@ -17,9 +8,6 @@ data class NavigationItem(
     val isSelected: Boolean = false
 ) {
     companion object {
-        /**
-         * Creates the default navigation items for the WordBridge application
-         */
         fun getDefaultNavigationItems(): List<NavigationItem> = listOf(
             NavigationItem(
                 id = "home",

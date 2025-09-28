@@ -17,14 +17,6 @@ import org.example.project.ui.theme.WordBridgeColors
 import java.text.SimpleDateFormat
 import java.util.*
 
-/**
- * Speaking session card component for displaying completed sessions
- * 
- * @param session The speaking session data
- * @param exerciseTitle The title of the associated exercise
- * @param onReviewClick Callback when the review button is clicked
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun SpeakingSessionCard(
     session: SpeakingSession,
@@ -69,7 +61,6 @@ fun SpeakingSessionCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Score indicator
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -88,7 +79,6 @@ fun SpeakingSessionCard(
             
             Spacer(modifier = Modifier.width(16.dp))
             
-            // Session details
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -124,7 +114,6 @@ fun SpeakingSessionCard(
                     )
                 }
                 
-                // Show individual scores if available
                 if (session.accuracyScore != null || session.fluencyScore != null || session.pronunciationScore != null) {
                     Spacer(modifier = Modifier.height(8.dp))
                     
@@ -158,7 +147,6 @@ fun SpeakingSessionCard(
                 }
             }
             
-            // Review button
             TextButton(
                 onClick = { onReviewClick(session.id) }
             ) {
@@ -174,9 +162,7 @@ fun SpeakingSessionCard(
     }
 }
 
-/**
- * Small score badge component
- */
+
 @Composable
 private fun ScoreBadge(
     label: String,

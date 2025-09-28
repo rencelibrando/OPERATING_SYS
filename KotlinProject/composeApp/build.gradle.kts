@@ -6,10 +6,20 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinx.serialization)
+    alias(libs.plugins.ktlint)
 }
 
 kotlin {
-    jvm()
+    jvm {
+        compilations.all {
+            compilerOptions.configure {
+                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_18)
+            }
+        }
+    }
+    
+    // Ensure we build with a JDK that supports jpackage and runtime bundling
+    jvmToolchain(18)
     
     sourceSets {
         commonMain.dependencies {
@@ -21,6 +31,7 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.kamel.image)
             
             // Supabase
             implementation(libs.supabase.postgrest)
@@ -45,11 +56,18 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
-            
-            // Environment configuration (JVM only)
-            implementation(libs.dotenv.kotlin)
         }
     }
+}
+
+ktlint {
+	android.set(false)
+	ignoreFailures.set(false)
+	disabledRules.set(setOf("standard:argument-list-wrapping"))
+	filter {
+		exclude("**/build/**")
+		exclude("**/generated/**")
+	}
 }
 
 
@@ -58,9 +76,35 @@ compose.desktop {
         mainClass = "org.example.project.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Exe, TargetFormat.Deb)
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "org.example.project"
             packageVersion = "1.0.0"
+            // Bundle a minimal JRE so the app runs on machines without Java installed
+            includeAllModules = true
+            // Optional: set vendor for Windows installer metadata
+            vendor = "ExampleOrg"
+            // Add modules commonly required for TLS and other functionality
+            modules("jdk.unsupported", "jdk.crypto.ec")
+            windows {
+                // Hide console window for release builds
+                console = false
+                // Create Start Menu entry and Desktop shortcut
+                menu = true
+                shortcut = true
+                // Set the application icon used for shortcuts and installer UI
+                // Points to your existing icon location
+                iconFile.set(project.file("src/jvmMain/composeResources/drawable/app.ico"))
+                // Keep this GUID constant across releases to enable in-place upgrades
+                upgradeUuid = "5a3e6f7e-4a2c-4c87-9c9a-9b2d1c1f4c55"
+            }
+        }
+        buildTypes {
+            release {
+                proguard {
+                    isEnabled.set(false)
+                    configurationFiles.from("proguard-rules.pro")
+                }
+            }
         }
     }
 }

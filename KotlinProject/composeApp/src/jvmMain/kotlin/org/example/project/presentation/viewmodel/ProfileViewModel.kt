@@ -3,19 +3,25 @@ package org.example.project.presentation.viewmodel
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import org.example.project.domain.model.*
+import org.example.project.core.auth.User as AuthUser
+import org.example.project.core.auth.RealSupabaseAuthService
+import org.example.project.core.profile.ProfileService
+import org.example.project.core.image.ImageUploadService
+import org.example.project.core.image.DesktopFilePicker
 
-/**
- * ViewModel for the Profile screen
- * 
- * Manages the state and business logic for user profile management,
- * including personal info, learning profile, and account settings
- */
 class ProfileViewModel : ViewModel() {
     
+    private val profileService = ProfileService()
+    private val imageUploadService = ImageUploadService()
+    private val authService = RealSupabaseAuthService()
+    private val filePicker = DesktopFilePicker()
+    
     // Private mutable state
-    private val _userProfile = mutableStateOf(UserProfile.getSampleProfile())
-    private val _profileCompletion = mutableStateOf(ProfileCompletion.calculate(UserProfile.getSampleProfile()))
+    private val _userProfile = mutableStateOf(UserProfile.getDefaultProfile())
+    private val _profileCompletion = mutableStateOf(ProfileCompletion.calculate(UserProfile.getDefaultProfile()))
     private val _isEditing = mutableStateOf(false)
     private val _editingField = mutableStateOf<ProfileField?>(null)
     private val _isLoading = mutableStateOf(false)
@@ -26,6 +32,11 @@ class ProfileViewModel : ViewModel() {
     private val _editingSection = mutableStateOf<ProfileSection?>(null)
     private val _editingPersonalInfo = mutableStateOf<PersonalInfo?>(null)
     private val _editingLearningProfile = mutableStateOf<LearningProfile?>(null)
+    
+    // Profile picture editing state
+    private val _isEditingProfilePicture = mutableStateOf(false)
+    private val _tempProfileImageBytes = mutableStateOf<ByteArray?>(null)
+    private val _tempProfileImageUrl = mutableStateOf<String?>(null)
     
     // Public read-only state
     val userProfile: State<UserProfile> = _userProfile
@@ -41,25 +52,80 @@ class ProfileViewModel : ViewModel() {
     val editingPersonalInfo: State<PersonalInfo?> = _editingPersonalInfo
     val editingLearningProfile: State<LearningProfile?> = _editingLearningProfile
     
-    /**
-     * Handles starting edit mode for a specific field
-     */
+    // Profile picture editing state
+    val isEditingProfilePicture: State<Boolean> = _isEditingProfilePicture
+    val tempProfileImageBytes: State<ByteArray?> = _tempProfileImageBytes
+    val tempProfileImageUrl: State<String?> = _tempProfileImageUrl
+
+    fun initializeWithAuthenticatedUser(authUser: AuthUser) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                println("🔄 Loading profile data for user: ${authUser.email}")
+                
+                // Load existing profile data from Supabase
+                val personalInfoResult = profileService.loadPersonalInfo()
+                val personalInfo = personalInfoResult.getOrNull() ?: PersonalInfo.getDefault()
+                
+                val learningProfileResult = profileService.loadLearningProfile()
+                val learningProfile = learningProfileResult.getOrNull() ?: LearningProfile.getDefault()
+                
+                // Merge with authenticated user data (auth data takes precedence)
+                val mergedPersonalInfo = personalInfo.copy(
+                    firstName = if (personalInfo.firstName.isNotEmpty()) personalInfo.firstName else authUser.firstName,
+                    lastName = if (personalInfo.lastName.isNotEmpty()) personalInfo.lastName else authUser.lastName,
+                    email = authUser.email,
+                    avatar = if (personalInfo.avatar.isNotEmpty()) personalInfo.avatar else authUser.initials
+                )
+                
+                val updatedProfile = UserProfile.getDefaultProfile().copy(
+                    userId = authUser.id,
+                    personalInfo = mergedPersonalInfo,
+                    learningProfile = learningProfile,
+                    lastUpdated = System.currentTimeMillis()
+                )
+                
+                _userProfile.value = updatedProfile
+                _profileCompletion.value = ProfileCompletion.calculate(updatedProfile)
+                
+                println("✅ Profile initialized with Supabase data for user: ${authUser.email}")
+                println("   firstName: ${mergedPersonalInfo.firstName}")
+                println("   lastName: ${mergedPersonalInfo.lastName}")
+                println("   profileImageUrl: ${mergedPersonalInfo.profileImageUrl}")
+            } catch (e: Exception) {
+                println("❌ Failed to initialize profile from Supabase: ${e.message}")
+                // Fallback to basic auth user data
+                val currentProfile = _userProfile.value
+                val updatedProfile = currentProfile.copy(
+                    userId = authUser.id,
+                    personalInfo = currentProfile.personalInfo.copy(
+                        firstName = authUser.firstName,
+                        lastName = authUser.lastName,
+                        email = authUser.email,
+                        avatar = authUser.initials
+                    )
+                )
+                _userProfile.value = updatedProfile
+                _profileCompletion.value = ProfileCompletion.calculate(updatedProfile)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+    
+
     fun onStartEditing(field: ProfileField) {
         _editingField.value = field
         _isEditing.value = true
     }
     
-    /**
-     * Handles canceling edit mode
-     */
+
     fun onCancelEditing() {
         _editingField.value = null
         _isEditing.value = false
     }
     
-    /**
-     * Handles starting section edit mode
-     */
+
     fun onStartSectionEdit(section: ProfileSection) {
         _editingSection.value = section
         when (section) {
@@ -75,18 +141,14 @@ class ProfileViewModel : ViewModel() {
         }
     }
     
-    /**
-     * Handles canceling section edit mode
-     */
+
     fun onCancelSectionEdit() {
         _editingSection.value = null
         _editingPersonalInfo.value = null
         _editingLearningProfile.value = null
     }
     
-    /**
-     * Updates personal info field during editing
-     */
+
     fun onUpdatePersonalInfoField(field: ProfileField, value: String) {
         val currentInfo = _editingPersonalInfo.value ?: return
         val updatedInfo = when (field) {
@@ -101,18 +163,12 @@ class ProfileViewModel : ViewModel() {
         }
         _editingPersonalInfo.value = updatedInfo
     }
-    
-    /**
-     * Updates target languages during editing
-     */
+
     fun onUpdateTargetLanguages(languages: List<String>) {
         val currentInfo = _editingPersonalInfo.value ?: return
         _editingPersonalInfo.value = currentInfo.copy(targetLanguages = languages)
     }
-    
-    /**
-     * Updates learning profile field during editing
-     */
+
     fun onUpdateLearningProfileField(field: ProfileField, value: Any) {
         val currentProfile = _editingLearningProfile.value ?: return
         val updatedProfile = when (field) {
@@ -124,10 +180,7 @@ class ProfileViewModel : ViewModel() {
         }
         _editingLearningProfile.value = updatedProfile
     }
-    
-    /**
-     * Updates learning profile list fields during editing
-     */
+
     fun onUpdateLearningProfileList(field: ProfileField, values: List<String>) {
         val currentProfile = _editingLearningProfile.value ?: return
         val updatedProfile = when (field) {
@@ -138,10 +191,7 @@ class ProfileViewModel : ViewModel() {
         }
         _editingLearningProfile.value = updatedProfile
     }
-    
-    /**
-     * Saves section changes
-     */
+
     fun onSaveSectionChanges() {
         val section = _editingSection.value ?: return
         val currentProfile = _userProfile.value
@@ -171,10 +221,7 @@ class ProfileViewModel : ViewModel() {
         onCancelSectionEdit()
         saveProfile()
     }
-    
-    /**
-     * Handles saving edited field
-     */
+
     fun onSaveField(field: ProfileField, value: Any) {
         val currentProfile = _userProfile.value
         
@@ -204,7 +251,9 @@ class ProfileViewModel : ViewModel() {
                 lastUpdated = System.currentTimeMillis()
             )
             ProfileField.TARGET_LANGUAGES -> currentProfile.copy(
-                personalInfo = currentProfile.personalInfo.copy(targetLanguages = value as List<String>),
+                personalInfo = currentProfile.personalInfo.copy(
+                    targetLanguages = (value as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                ),
                 lastUpdated = System.currentTimeMillis()
             )
             ProfileField.BIO -> currentProfile.copy(
@@ -228,15 +277,21 @@ class ProfileViewModel : ViewModel() {
                 lastUpdated = System.currentTimeMillis()
             )
             ProfileField.FOCUS_AREAS -> currentProfile.copy(
-                learningProfile = currentProfile.learningProfile.copy(focusAreas = value as List<String>),
+                learningProfile = currentProfile.learningProfile.copy(
+                    focusAreas = (value as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                ),
                 lastUpdated = System.currentTimeMillis()
             )
             ProfileField.TIME_SLOTS -> currentProfile.copy(
-                learningProfile = currentProfile.learningProfile.copy(availableTimeSlots = value as List<String>),
+                learningProfile = currentProfile.learningProfile.copy(
+                    availableTimeSlots = (value as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                ),
                 lastUpdated = System.currentTimeMillis()
             )
             ProfileField.MOTIVATIONS -> currentProfile.copy(
-                learningProfile = currentProfile.learningProfile.copy(motivations = value as List<String>),
+                learningProfile = currentProfile.learningProfile.copy(
+                    motivations = (value as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                ),
                 lastUpdated = System.currentTimeMillis()
             )
         }
@@ -247,57 +302,185 @@ class ProfileViewModel : ViewModel() {
         onCancelEditing()
         saveProfile()
     }
-    
-    /**
-     * Handles profile picture upload
-     */
+
     fun onUploadProfilePicture() {
-        // TODO: Implement profile picture upload
-        println("Uploading profile picture...")
+        viewModelScope.launch {
+            try {
+                _isSaving.value = true
+                
+                // Show file picker dialog
+                val imageBytes = filePicker.selectImage()
+                if (imageBytes == null) {
+                    println("No image selected")
+                    return@launch
+                }
+                
+                // Check file size (limit to 5MB)
+                val maxSize = 5 * 1024 * 1024 // 5MB
+                if (imageBytes.size > maxSize) {
+                    println("❌ Image too large. Please select an image smaller than 5MB")
+                    return@launch
+                }
+                
+                println("📸 Uploading image (${imageBytes.size} bytes)...")
+                
+                // Upload to Supabase Storage
+                val uploadResult = imageUploadService.uploadProfilePicture(imageBytes)
+                uploadResult.fold(
+                    onSuccess = { imageUrl ->
+                        println("🔗 Received image URL: $imageUrl")
+                        
+                        // Update profile with new image URL
+                        val currentProfile = _userProfile.value
+                        val updatedPersonalInfo = currentProfile.personalInfo.copy(
+                            profileImageUrl = imageUrl,
+                            avatar = "" // Clear emoji avatar when real image is uploaded
+                        )
+                        
+                        _userProfile.value = currentProfile.copy(
+                            personalInfo = updatedPersonalInfo,
+                            lastUpdated = System.currentTimeMillis()
+                        )
+                        
+                        println("📝 Updated profile with image URL: ${_userProfile.value.personalInfo.profileImageUrl}")
+                        
+                        _profileCompletion.value = ProfileCompletion.calculate(_userProfile.value)
+                        
+                        // Save to Supabase
+                        saveProfile()
+                        
+                        
+                        println("✅ Profile picture uploaded successfully!")
+                    },
+                    onFailure = { error ->
+                        println("❌ Failed to upload profile picture: ${error.message}")
+                        // TODO: Show error message to user
+                    }
+                )
+            } catch (e: Exception) {
+                println("❌ Error uploading profile picture: ${e.message}")
+            } finally {
+                _isSaving.value = false
+            }
+        }
+    }
+
+    fun onStartProfilePictureEdit() {
+        viewModelScope.launch {
+            try {
+                // Show file picker dialog
+                val imageBytes = filePicker.selectImage()
+                if (imageBytes == null) {
+                    println("No image selected")
+                    return@launch
+                }
+                
+                // Check file size (limit to 5MB)
+                val maxSize = 5 * 1024 * 1024 // 5MB
+                if (imageBytes.size > maxSize) {
+                    println("❌ Image too large. Please select an image smaller than 5MB")
+                    return@launch
+                }
+                
+                // Store temporarily and enter edit mode
+                _tempProfileImageBytes.value = imageBytes
+                _isEditingProfilePicture.value = true
+                
+                println("📸 Profile picture ready for preview (${imageBytes.size} bytes)")
+            } catch (e: Exception) {
+                println("❌ Error selecting profile picture: ${e.message}")
+            }
+        }
+    }
+
+    fun onSaveProfilePicture() {
+        val imageBytes = _tempProfileImageBytes.value
+        if (imageBytes == null) {
+            onCancelProfilePictureEdit()
+            return
+        }
+        
+        viewModelScope.launch {
+            try {
+                _isSaving.value = true
+                
+                println("📸 Uploading profile picture (${imageBytes.size} bytes)...")
+                
+                // Delete old profile picture if it exists
+                val currentProfile = _userProfile.value
+                val oldImageUrl = currentProfile.personalInfo.profileImageUrl
+                if (!oldImageUrl.isNullOrEmpty()) {
+                    println("🗑️ Deleting old profile picture: $oldImageUrl")
+                    imageUploadService.deleteProfilePicture(oldImageUrl)
+                }
+                
+                // Upload to Supabase Storage
+                val uploadResult = imageUploadService.uploadProfilePicture(imageBytes)
+                uploadResult.fold(
+                    onSuccess = { imageUrl ->
+                        println("🔗 Received image URL: $imageUrl")
+                        
+                        // Update profile with new image URL
+                        val updatedPersonalInfo = currentProfile.personalInfo.copy(
+                            profileImageUrl = imageUrl,
+                            avatar = "" // Clear emoji avatar when real image is uploaded
+                        )
+                        
+                        _userProfile.value = currentProfile.copy(
+                            personalInfo = updatedPersonalInfo,
+                            lastUpdated = System.currentTimeMillis()
+                        )
+                        
+                        println("📝 Updated profile with image URL: ${_userProfile.value.personalInfo.profileImageUrl}")
+                        
+                        _profileCompletion.value = ProfileCompletion.calculate(_userProfile.value)
+                        
+                        // Save to Supabase
+                        saveProfile()
+                        
+                        // Update user metadata in Supabase Auth
+                        updateUserMetadataInAuth(imageUrl)
+                        
+                        // Clear edit state
+                        onCancelProfilePictureEdit()
+                        
+                        println("✅ Profile picture saved successfully!")
+                    },
+                    onFailure = { error ->
+                        println("❌ Failed to upload profile picture: ${error.message}")
+                        // TODO: Show error message to user
+                    }
+                )
+            } catch (e: Exception) {
+                println("❌ Error saving profile picture: ${e.message}")
+            } finally {
+                _isSaving.value = false
+            }
+        }
+    }
+
+    fun onCancelProfilePictureEdit() {
+        _isEditingProfilePicture.value = false
+        _tempProfileImageBytes.value = null
+        _tempProfileImageUrl.value = null
     }
     
-    /**
-     * Handles account deletion request
-     */
+
     fun onRequestAccountDeletion() {
         _showDeleteConfirmation.value = true
     }
-    
-    /**
-     * Handles confirming account deletion
-     */
-    fun onConfirmAccountDeletion() {
-        _showDeleteConfirmation.value = false
-        // TODO: Implement account deletion
-        println("Deleting account...")
-    }
-    
-    /**
-     * Handles canceling account deletion
-     */
-    fun onCancelAccountDeletion() {
-        _showDeleteConfirmation.value = false
-    }
-    
-    /**
-     * Handles exporting profile data
-     */
+
+
+
     fun onExportData() {
-        // TODO: Implement data export
         println("Exporting profile data...")
     }
-    
-    /**
-     * Handles changing password
-     */
+
     fun onChangePassword() {
         // TODO: Navigate to password change screen
         println("Changing password...")
     }
-    
-    /**
-     * Handles enabling/disabling two-factor authentication
-     */
+
     fun onToggleTwoFactor(enabled: Boolean) {
         val currentProfile = _userProfile.value
         val updatedAccountInfo = currentProfile.accountInfo.copy(twoFactorEnabled = enabled)
@@ -309,113 +492,61 @@ class ProfileViewModel : ViewModel() {
         
         saveProfile()
     }
-    
-    /**
-     * Handles email verification
-     */
+
     fun onVerifyEmail() {
         // TODO: Send verification email
         println("Sending verification email...")
     }
-    
-    /**
-     * Handles phone verification
-     */
+
     fun onVerifyPhone() {
         // TODO: Send verification SMS
         println("Sending verification SMS...")
     }
     
-    /**
-     * Handles subscription management
-     */
+
     fun onManageSubscription() {
         // TODO: Navigate to subscription management
         println("Managing subscription...")
     }
-    
-    /**
-     * Refreshes profile data
-     */
-    fun refreshProfile() {
-        _isLoading.value = true
-        
-        // TODO: Load profile from repository/storage
-        // For now, simulate loading
-        _userProfile.value = UserProfile.getSampleProfile()
-        _profileCompletion.value = ProfileCompletion.calculate(_userProfile.value)
-        
-        _isLoading.value = false
-    }
-    
-    /**
-     * Saves profile data
-     */
+
     private fun saveProfile() {
         _isSaving.value = true
         
-        // TODO: Save profile to repository/storage
-        // For now, simulate saving
-        println("Saving profile: ${_userProfile.value}")
-        
-        _isSaving.value = false
-    }
-    
-    /**
-     * Gets available options for a specific field
-     */
-    fun getFieldOptions(field: ProfileField): List<String> {
-        return when (field) {
-            ProfileField.NATIVE_LANGUAGE, ProfileField.TARGET_LANGUAGES -> 
-                PersonalInfo.getAvailableLanguages()
-            ProfileField.CURRENT_LEVEL -> 
-                LearningProfile.getLevelOptions()
-            ProfileField.PRIMARY_GOAL -> 
-                LearningProfile.getGoalOptions()
-            ProfileField.LEARNING_STYLE -> 
-                LearningProfile.getLearningStyleOptions()
-            ProfileField.FOCUS_AREAS -> 
-                LearningProfile.getFocusAreaOptions()
-            ProfileField.TIME_SLOTS -> 
-                LearningProfile.getTimeSlotOptions()
-            ProfileField.MOTIVATIONS -> 
-                LearningProfile.getMotivationOptions()
-            else -> emptyList()
+        viewModelScope.launch {
+            try {
+                val profile = _userProfile.value
+                
+                // Save personal info to Supabase
+                profileService.updatePersonalInfo(profile.personalInfo)
+                
+                // Save learning profile to Supabase
+                profileService.updateLearningProfile(profile.learningProfile)
+                
+                println("✅ Profile saved to Supabase successfully")
+            } catch (e: Exception) {
+                println("❌ Failed to save profile to Supabase: ${e.message}")
+                // TODO: Show error message to user
+            } finally {
+                _isSaving.value = false
+            }
         }
     }
     
-    /**
-     * Gets current value for a specific field
-     */
-    fun getFieldValue(field: ProfileField): Any {
-        val profile = _userProfile.value
-        return when (field) {
-            ProfileField.FIRST_NAME -> profile.personalInfo.firstName
-            ProfileField.LAST_NAME -> profile.personalInfo.lastName
-            ProfileField.EMAIL -> profile.personalInfo.email
-            ProfileField.DATE_OF_BIRTH -> profile.personalInfo.dateOfBirth ?: ""
-            ProfileField.LOCATION -> profile.personalInfo.location ?: ""
-            ProfileField.NATIVE_LANGUAGE -> profile.personalInfo.nativeLanguage
-            ProfileField.TARGET_LANGUAGES -> profile.personalInfo.targetLanguages
-            ProfileField.BIO -> profile.personalInfo.bio ?: ""
-            ProfileField.CURRENT_LEVEL -> profile.learningProfile.currentLevel
-            ProfileField.PRIMARY_GOAL -> profile.learningProfile.primaryGoal
-            ProfileField.WEEKLY_GOAL_HOURS -> profile.learningProfile.weeklyGoalHours
-            ProfileField.LEARNING_STYLE -> profile.learningProfile.preferredLearningStyle
-            ProfileField.FOCUS_AREAS -> profile.learningProfile.focusAreas
-            ProfileField.TIME_SLOTS -> profile.learningProfile.availableTimeSlots
-            ProfileField.MOTIVATIONS -> profile.learningProfile.motivations
+    private suspend fun updateUserMetadataInAuth(profileImageUrl: String?) {
+        try {
+            println("🔐 Updating user metadata in Supabase Auth...")
+            val result = authService.updateUserMetadata(profileImageUrl)
+            result.fold(
+                onSuccess = {
+                    println("✅ User metadata updated in Supabase Auth successfully")
+                },
+                onFailure = { error ->
+                    println("❌ Failed to update user metadata in Supabase Auth: ${error.message}")
+                }
+            )
+        } catch (e: Exception) {
+            println("❌ Error updating user metadata in Supabase Auth: ${e.message}")
         }
     }
-    
-    /**
-     * Checks if a field can be edited
-     */
-    fun isFieldEditable(field: ProfileField): Boolean {
-        // Email might not be editable depending on verification status
-        return when (field) {
-            ProfileField.EMAIL -> !_userProfile.value.accountInfo.isEmailVerified
-            else -> true
-        }
-    }
+
 }

@@ -16,15 +16,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * A card component that displays user progress statistics
- * 
- * @param title The title of the progress metric
- * @param value The current value to display
- * @param valueColor The color of the value text
- * @param icon Optional icon to display (for future implementation)
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun ProgressCard(
     title: String,
@@ -62,7 +53,6 @@ fun ProgressCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.End
             ) {
-                // Add fire icon for streak
                 if (title == "Streak" && value.contains("days")) {
                     Text(
                         text = "🔥",
@@ -83,9 +73,7 @@ fun ProgressCard(
     }
 }
 
-/**
- * A specialized progress card for displaying today's progress summary
- */
+
 @Composable
 fun TodaysProgressCard(
     streak: Int,
@@ -120,7 +108,6 @@ fun TodaysProgressCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Progress metrics in a grid
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -167,9 +154,7 @@ fun TodaysProgressCard(
     }
 }
 
-/**
- * A small progress metric display component
- */
+
 @Composable
 private fun ProgressMetric(
     label: String,

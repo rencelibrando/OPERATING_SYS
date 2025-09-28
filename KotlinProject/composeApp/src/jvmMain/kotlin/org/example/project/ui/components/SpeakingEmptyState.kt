@@ -15,14 +15,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.SpeakingFeature
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Empty state component for speaking practice screen
- * 
- * @param features List of speaking features to display
- * @param onStartFirstPracticeClick Callback when "Start First Practice" button is clicked
- * @param onExploreExercisesClick Callback when "explore exercises" link is clicked
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun SpeakingEmptyState(
     features: List<SpeakingFeature>,
@@ -38,7 +30,6 @@ fun SpeakingEmptyState(
     ) {
         Spacer(modifier = Modifier.height(40.dp))
         
-        // Microphone icon
         Text(
             text = "🎤",
             style = MaterialTheme.typography.displayMedium
@@ -46,7 +37,6 @@ fun SpeakingEmptyState(
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // Title
         Text(
             text = "Perfect Your Speaking Skills",
             style = MaterialTheme.typography.headlineMedium.copy(
@@ -58,7 +48,6 @@ fun SpeakingEmptyState(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Description
         Text(
             text = "Start your journey to confident English speaking! Practice pronunciation, conversation skills, and fluency with AI-powered feedback. Record yourself, get instant analysis, and track your improvement over time.",
             style = MaterialTheme.typography.bodyLarge,
@@ -69,7 +58,6 @@ fun SpeakingEmptyState(
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        // Start First Practice Button
         Button(
             onClick = onStartFirstPracticeClick,
             modifier = Modifier.fillMaxWidth(0.6f),
@@ -90,7 +78,6 @@ fun SpeakingEmptyState(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Explore exercises link
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -113,7 +100,6 @@ fun SpeakingEmptyState(
         
         Spacer(modifier = Modifier.height(48.dp))
         
-        // Features Grid
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -131,9 +117,7 @@ fun SpeakingEmptyState(
     }
 }
 
-/**
- * Feature card component for speaking features
- */
+
 @Composable
 private fun SpeakingFeatureCard(
     feature: SpeakingFeature,
@@ -161,7 +145,6 @@ private fun SpeakingFeatureCard(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            // Icon
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -179,7 +162,6 @@ private fun SpeakingFeatureCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Title
             Text(
                 text = feature.title,
                 style = MaterialTheme.typography.titleMedium.copy(
@@ -190,7 +172,6 @@ private fun SpeakingFeatureCard(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Description
             Text(
                 text = feature.description,
                 style = MaterialTheme.typography.bodyMedium,

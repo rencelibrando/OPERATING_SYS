@@ -4,8 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,14 +14,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.example.project.presentation.viewmodel.HomeViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.core.auth.User as AuthUser
 
-/**
- * Main home screen of the WordBridge application
- * 
- * Displays the user's dashboard with navigation, progress, and learning activities
- */
 @Composable
 fun HomeScreen(
+    authenticatedUser: AuthUser? = null,
+    onSignOut: (() -> Unit)? = null,
     viewModel: HomeViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -33,21 +30,34 @@ fun HomeScreen(
     val selectedNavigationItem by viewModel.selectedNavigationItem
     val showProfile by viewModel.showProfile
     
+    val displayUser = authenticatedUser?.let { authUser ->
+        org.example.project.domain.model.User(
+            id = authUser.id,
+            name = authUser.fullName,
+            level = "Beginner Level", // Default level, could be enhanced later
+            streak = 0, // Default streak, could be enhanced later
+            xpPoints = 0, // Default XP, could be enhanced later
+            wordsLearned = 0, // Default words, could be enhanced later
+            accuracy = 0, // Default accuracy, could be enhanced later
+            avatarInitials = authUser.initials,
+            profileImageUrl = authUser.profileImageUrl
+        )
+    } ?: user
+    
     Row(
         modifier = modifier
             .fillMaxSize()
             .background(WordBridgeColors.BackgroundLight)
     ) {
-        // Sidebar Navigation
         Sidebar(
             navigationItems = navigationItems,
             onNavigationItemClick = viewModel::onNavigationItemSelected
         )
         
-        // Main Content Area - Switch based on selected navigation item or profile view
         when {
             showProfile -> {
                 ProfileScreen(
+                    authenticatedUser = authenticatedUser,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -59,17 +69,18 @@ fun HomeScreen(
                         .padding(24.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    // Header with user info
                     HomeHeader(
-                        userName = user.name,
-                        userLevel = user.level,
-                        userInitials = user.avatarInitials,
-                        onUserAvatarClick = viewModel::onUserAvatarClicked
+                        userName = displayUser.name,
+                        userLevel = displayUser.level,
+                        userInitials = displayUser.avatarInitials,
+                        userProfileImageUrl = displayUser.profileImageUrl,
+                        onUserAvatarClick = viewModel::onUserAvatarClicked,
+                        authenticatedUser = authenticatedUser,
+                        onSignOut = onSignOut
                     )
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
-                    // Continue Learning Section
                     ContinueLearningCard(
                         onButtonClick = viewModel::onContinueLearningClicked,
                         isLoading = isLoading
@@ -77,22 +88,17 @@ fun HomeScreen(
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
-                    // Content based on whether user has learning activities
                     if (learningActivities.isEmpty()) {
-                        // Empty state
                         HomeEmptyState(
                             onGetStartedClick = {
-                                // Navigate to lessons or show getting started guide
                                 viewModel.onNavigationItemSelected("lessons")
                             }
                         )
                     } else {
-                        // Main content in two columns
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(24.dp)
                         ) {
-                            // Left Column - Learning Activities
                             Column(
                                 modifier = Modifier.weight(2f)
                             ) {
@@ -106,7 +112,6 @@ fun HomeScreen(
                                 }
                             }
                             
-                            // Right Column - Progress
                             Column(
                                 modifier = Modifier.weight(1f)
                             ) {
@@ -123,26 +128,36 @@ fun HomeScreen(
             }
             selectedNavigationItem == "lessons" -> {
                 LessonsScreen(
+                    authenticatedUser = authenticatedUser,
+                    onUserAvatarClick = viewModel::onUserAvatarClicked,
                     modifier = Modifier.weight(1f)
                 )
             }
             selectedNavigationItem == "vocabulary" -> {
                 VocabularyScreen(
+                    authenticatedUser = authenticatedUser,
+                    onUserAvatarClick = viewModel::onUserAvatarClicked,
                     modifier = Modifier.weight(1f)
                 )
             }
             selectedNavigationItem == "speaking" -> {
                 SpeakingScreen(
+                    authenticatedUser = authenticatedUser,
+                    onUserAvatarClick = viewModel::onUserAvatarClicked,
                     modifier = Modifier.weight(1f)
                 )
             }
             selectedNavigationItem == "ai_chat" -> {
                 AIChatScreen(
+                    authenticatedUser = authenticatedUser,
+                    onUserAvatarClick = viewModel::onUserAvatarClicked,
                     modifier = Modifier.weight(1f)
                 )
             }
             selectedNavigationItem == "progress" -> {
                 ProgressScreen(
+                    authenticatedUser = authenticatedUser,
+                    onUserAvatarClick = viewModel::onUserAvatarClicked,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -173,15 +188,16 @@ fun HomeScreen(
     }
 }
 
-/**
- * Header section with welcome message and user info
- */
+
 @Composable
 private fun HomeHeader(
     userName: String,
     userLevel: String,
     userInitials: String,
+    userProfileImageUrl: String?,
     onUserAvatarClick: () -> Unit,
+    authenticatedUser: AuthUser? = null,
+    onSignOut: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -189,7 +205,6 @@ private fun HomeHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Welcome message
         Column {
             Text(
                 text = "Welcome Back, $userName!",
@@ -208,11 +223,31 @@ private fun HomeHeader(
             )
         }
         
-        // User avatar (clickable)
-        UserAvatar(
-            initials = userInitials,
-            size = 48.dp,
-            onClick = onUserAvatarClick
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (authenticatedUser != null && onSignOut != null) {
+                TextButton(
+                    onClick = onSignOut,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = WordBridgeColors.TextSecondary
+                    )
+                ) {
+                    Text(
+                        text = "Sign Out",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+            }
+            
+            UserAvatar(
+                initials = userInitials,
+                profileImageUrl = userProfileImageUrl,
+                size = 48.dp,
+                onClick = onUserAvatarClick
+            )
+        }
     }
 }

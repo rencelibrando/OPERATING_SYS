@@ -18,13 +18,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.LearningActivity
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * A card component for displaying learning activities
- * 
- * @param activity The learning activity data
- * @param onClick Callback when the card is clicked
- * @param modifier Optional modifier for styling
- */
 @Composable
 fun LearningActivityCard(
     activity: LearningActivity,
@@ -51,7 +44,6 @@ fun LearningActivityCard(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon placeholder
             IconPlaceholder(
                 icon = activity.icon,
                 modifier = Modifier.size(48.dp)
@@ -59,7 +51,6 @@ fun LearningActivityCard(
             
             Spacer(modifier = Modifier.width(16.dp))
             
-            // Content
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -80,7 +71,6 @@ fun LearningActivityCard(
                 )
             }
             
-            // Arrow indicator
             Text(
                 text = "→",
                 style = MaterialTheme.typography.titleLarge,
@@ -90,10 +80,7 @@ fun LearningActivityCard(
     }
 }
 
-/**
- * Icon placeholder component that displays emoji icons based on the icon type
- * In a real application, this would use actual icon resources
- */
+
 @Composable
 private fun IconPlaceholder(
     icon: String,
