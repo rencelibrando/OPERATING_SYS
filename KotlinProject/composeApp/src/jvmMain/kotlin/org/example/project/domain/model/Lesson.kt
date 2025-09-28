@@ -105,9 +105,7 @@ data class RecentLesson(
     companion object {
         fun getSampleRecentLessons(): List<RecentLesson> = emptyList()
         
-        /**
-         * Creates demonstration recent lessons for testing purposes
-         */
+        
         fun getDemoRecentLessons(): List<RecentLesson> = listOf(
             RecentLesson(
                 id = "present_perfect",

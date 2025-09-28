@@ -53,7 +53,6 @@ fun ProgressCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.End
             ) {
-                // Add fire icon for streak
                 if (title == "Streak" && value.contains("days")) {
                     Text(
                         text = "🔥",
@@ -74,9 +73,7 @@ fun ProgressCard(
     }
 }
 
-/**
- * A specialized progress card for displaying today's progress summary
- */
+
 @Composable
 fun TodaysProgressCard(
     streak: Int,
@@ -111,7 +108,6 @@ fun TodaysProgressCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Progress metrics in a grid
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -158,9 +154,7 @@ fun TodaysProgressCard(
     }
 }
 
-/**
- * A small progress metric display component
- */
+
 @Composable
 private fun ProgressMetric(
     label: String,

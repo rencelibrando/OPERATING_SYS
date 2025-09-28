@@ -24,9 +24,12 @@ import org.example.project.presentation.viewmodel.ProgressViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
 import org.example.project.domain.model.SkillArea
+import org.example.project.core.auth.User as AuthUser
 
 @Composable
 fun ProgressScreen(
+    authenticatedUser: AuthUser? = null,
+    onUserAvatarClick: (() -> Unit)? = null,
     viewModel: ProgressViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -44,7 +47,6 @@ fun ProgressScreen(
             .padding(24.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // Header with title and user info
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -58,24 +60,22 @@ fun ProgressScreen(
                 color = WordBridgeColors.TextPrimary
             )
             
-            // User info placeholder - can be expanded later
             UserAvatar(
-                initials = "SC", // This should come from user data
-                size = 40.dp
+                initials = authenticatedUser?.initials ?: "U",
+                profileImageUrl = authenticatedUser?.profileImageUrl,
+                size = 48.dp,
+                onClick = onUserAvatarClick
             )
         }
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // Content based on whether user has progress data
         if (learningProgress.xpPoints == 0 && achievements.isEmpty() && learningGoals.isEmpty()) {
-            // Empty state
             ProgressEmptyState(
                 onSetFirstGoalClick = viewModel::onSetFirstGoalClicked,
                 onExploreAchievementsClick = viewModel::onExploreAchievementsClicked
             )
         } else {
-            // Progress Overview Cards
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -117,7 +117,6 @@ fun ProgressScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Weekly Progress Chart
             Text(
                 text = "This Week's Progress",
                 style = MaterialTheme.typography.titleLarge.copy(
@@ -135,7 +134,6 @@ fun ProgressScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Skills Progress
             Text(
                 text = "Skills Progress",
                 style = MaterialTheme.typography.titleLarge.copy(
@@ -163,7 +161,6 @@ fun ProgressScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Current Goals
             if (activeGoals.isNotEmpty()) {
                 Text(
                     text = "Current Goals",
@@ -189,7 +186,6 @@ fun ProgressScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
             
-            // Recent Achievements
             if (unlockedAchievements.isNotEmpty()) {
                 Text(
                     text = "Recent Achievements",
@@ -216,9 +212,7 @@ fun ProgressScreen(
     }
 }
 
-/**
- * Empty state component for progress screen
- */
+
 @Composable
 private fun ProgressEmptyState(
     onSetFirstGoalClick: () -> Unit,
@@ -233,7 +227,6 @@ private fun ProgressEmptyState(
     ) {
         Spacer(modifier = Modifier.height(40.dp))
         
-        // Chart icon
         Text(
             text = "📊",
             style = MaterialTheme.typography.displayMedium
@@ -241,7 +234,6 @@ private fun ProgressEmptyState(
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // Title
         Text(
             text = "Track Your Learning Journey",
             style = MaterialTheme.typography.headlineMedium.copy(
@@ -253,7 +245,6 @@ private fun ProgressEmptyState(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Description
         Text(
             text = "Start your learning adventure and watch your progress grow! Set goals, earn achievements, and see your improvement over time with detailed analytics and insights.",
             style = MaterialTheme.typography.bodyLarge,
@@ -264,7 +255,6 @@ private fun ProgressEmptyState(
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        // Set First Goal Button
         Button(
             onClick = onSetFirstGoalClick,
             modifier = Modifier.fillMaxWidth(0.6f),
@@ -285,7 +275,6 @@ private fun ProgressEmptyState(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Explore achievements link
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -308,9 +297,7 @@ private fun ProgressEmptyState(
     }
 }
 
-/**
- * Simple progress stats card component
- */
+
 @Composable
 private fun ProgressStatsCard(
     title: String,
@@ -377,9 +364,7 @@ private fun ProgressStatsCard(
     }
 }
 
-/**
- * Simple weekly progress chart placeholder
- */
+
 @Composable
 private fun WeeklyProgressChart(
     dailyXP: List<Int>,
@@ -413,9 +398,7 @@ private fun WeeklyProgressChart(
     }
 }
 
-/**
- * Simple skill progress card
- */
+
 @Composable
 private fun SkillProgressCard(
     skill: SkillArea,
@@ -447,9 +430,7 @@ private fun SkillProgressCard(
     }
 }
 
-/**
- * Simple goal progress card
- */
+
 @Composable
 private fun GoalProgressCard(
     goal: org.example.project.domain.model.LearningGoal,
@@ -475,9 +456,7 @@ private fun GoalProgressCard(
     }
 }
 
-/**
- * Simple achievement card
- */
+
 @Composable
 private fun AchievementCard(
     achievement: org.example.project.domain.model.Achievement,

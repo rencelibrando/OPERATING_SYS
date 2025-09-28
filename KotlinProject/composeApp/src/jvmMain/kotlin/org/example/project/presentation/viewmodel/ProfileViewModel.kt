@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import org.example.project.domain.model.*
 import org.example.project.core.auth.User as AuthUser
+import org.example.project.core.auth.RealSupabaseAuthService
 import org.example.project.core.profile.ProfileService
 import org.example.project.core.image.ImageUploadService
 import org.example.project.core.image.DesktopFilePicker
@@ -15,6 +16,7 @@ class ProfileViewModel : ViewModel() {
     
     private val profileService = ProfileService()
     private val imageUploadService = ImageUploadService()
+    private val authService = RealSupabaseAuthService()
     private val filePicker = DesktopFilePicker()
     
     // Private mutable state
@@ -347,10 +349,6 @@ class ProfileViewModel : ViewModel() {
                         // Save to Supabase
                         saveProfile()
                         
-                        // Debug: Check what was actually saved
-                        println("🔍 Debug - Current profile after save:")
-                        println("   profileImageUrl: ${_userProfile.value.personalInfo.profileImageUrl}")
-                        println("   avatar: ${_userProfile.value.personalInfo.avatar}")
                         
                         println("✅ Profile picture uploaded successfully!")
                     },
@@ -408,6 +406,14 @@ class ProfileViewModel : ViewModel() {
                 
                 println("📸 Uploading profile picture (${imageBytes.size} bytes)...")
                 
+                // Delete old profile picture if it exists
+                val currentProfile = _userProfile.value
+                val oldImageUrl = currentProfile.personalInfo.profileImageUrl
+                if (!oldImageUrl.isNullOrEmpty()) {
+                    println("🗑️ Deleting old profile picture: $oldImageUrl")
+                    imageUploadService.deleteProfilePicture(oldImageUrl)
+                }
+                
                 // Upload to Supabase Storage
                 val uploadResult = imageUploadService.uploadProfilePicture(imageBytes)
                 uploadResult.fold(
@@ -415,7 +421,6 @@ class ProfileViewModel : ViewModel() {
                         println("🔗 Received image URL: $imageUrl")
                         
                         // Update profile with new image URL
-                        val currentProfile = _userProfile.value
                         val updatedPersonalInfo = currentProfile.personalInfo.copy(
                             profileImageUrl = imageUrl,
                             avatar = "" // Clear emoji avatar when real image is uploaded
@@ -432,6 +437,9 @@ class ProfileViewModel : ViewModel() {
                         
                         // Save to Supabase
                         saveProfile()
+                        
+                        // Update user metadata in Supabase Auth
+                        updateUserMetadataInAuth(imageUrl)
                         
                         // Clear edit state
                         onCancelProfilePictureEdit()
@@ -521,6 +529,23 @@ class ProfileViewModel : ViewModel() {
             } finally {
                 _isSaving.value = false
             }
+        }
+    }
+    
+    private suspend fun updateUserMetadataInAuth(profileImageUrl: String?) {
+        try {
+            println("🔐 Updating user metadata in Supabase Auth...")
+            val result = authService.updateUserMetadata(profileImageUrl)
+            result.fold(
+                onSuccess = {
+                    println("✅ User metadata updated in Supabase Auth successfully")
+                },
+                onFailure = { error ->
+                    println("❌ Failed to update user metadata in Supabase Auth: ${error.message}")
+                }
+            )
+        } catch (e: Exception) {
+            println("❌ Error updating user metadata in Supabase Auth: ${e.message}")
         }
     }
 

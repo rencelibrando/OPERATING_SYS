@@ -16,9 +16,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.*
 import kotlin.random.Random
 
-/**
- * Animated network background with moving nodes and connecting lines
- */
+
 @Composable
 fun AnimatedNetworkBackground(
     modifier: Modifier = Modifier,
@@ -30,7 +28,6 @@ fun AnimatedNetworkBackground(
     val primaryColor = MaterialTheme.colorScheme.primary
     val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
     
-    // Animated time value for continuous movement
     val infiniteTransition = rememberInfiniteTransition(label = "network_animation")
     val time by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -42,7 +39,6 @@ fun AnimatedNetworkBackground(
         label = "time_animation"
     )
     
-    // Pulsing effect for connections
     val pulse by infiniteTransition.animateFloat(
         initialValue = 0.3f,
         targetValue = 1f,
@@ -53,7 +49,6 @@ fun AnimatedNetworkBackground(
         label = "pulse_animation"
     )
 
-    // Remember nodes with initial positions and movement parameters
     val nodes = remember {
         (0 until nodeCount).map { index ->
             NetworkNode(
@@ -73,7 +68,6 @@ fun AnimatedNetworkBackground(
         val width = size.width
         val height = size.height
         
-        // Calculate current positions for all nodes
         val currentNodes = nodes.map { node ->
             val currentX = (node.initialX + node.speedX * time) % 1f
             val currentY = (node.initialY + node.speedY * time) % 1f
@@ -84,7 +78,6 @@ fun AnimatedNetworkBackground(
             )
         }
 
-        // Draw connections between nearby nodes with pulse effect
         drawConnections(
             nodes = currentNodes,
             width = width,
@@ -94,7 +87,6 @@ fun AnimatedNetworkBackground(
             pulse = pulse
         )
 
-        // Draw nodes with enhanced visibility
         drawNodes(
             nodes = currentNodes,
             width = width,
@@ -106,9 +98,7 @@ fun AnimatedNetworkBackground(
     }
 }
 
-/**
- * Data class representing a network node
- */
+
 private data class NetworkNode(
     val id: Int,
     val initialX: Float,
@@ -120,9 +110,7 @@ private data class NetworkNode(
     val currentY: Float = initialY
 )
 
-/**
- * Draw enhanced connections between nearby nodes with pulse effects
- */
+
 private fun DrawScope.drawConnections(
     nodes: List<NetworkNode>,
     width: Float,
@@ -148,7 +136,6 @@ private fun DrawScope.drawConnections(
                 val baseAlpha = distanceRatio * 0.6f
                 val pulsedAlpha = baseAlpha * pulse
                 
-                // Main connection line
                 drawLine(
                     color = color.copy(alpha = pulsedAlpha),
                     start = Offset(x1, y1),
@@ -156,7 +143,6 @@ private fun DrawScope.drawConnections(
                     strokeWidth = (1.5f + distanceRatio * 1f).dp.toPx()
                 )
                 
-                // Glow effect for stronger connections
                 if (distanceRatio > 0.7f) {
                     drawLine(
                         color = color.copy(alpha = pulsedAlpha * 0.3f),
@@ -170,9 +156,7 @@ private fun DrawScope.drawConnections(
     }
 }
 
-/**
- * Draw enhanced individual nodes with pulsing glow effect
- */
+
 private fun DrawScope.drawNodes(
     nodes: List<NetworkNode>,
     width: Float,
@@ -187,35 +171,30 @@ private fun DrawScope.drawNodes(
         val radius = node.radius.dp.toPx()
         val pulsedRadius = radius * (1f + pulse * 0.3f)
         
-        // Draw outer glow effect with pulse
         drawCircle(
             color = glowColor.copy(alpha = glowColor.alpha * pulse),
             radius = pulsedRadius * 4f,
             center = Offset(x, y)
         )
         
-        // Draw middle glow
         drawCircle(
             color = glowColor.copy(alpha = glowColor.alpha * 0.7f),
             radius = pulsedRadius * 2f,
             center = Offset(x, y)
         )
         
-        // Draw main node with enhanced visibility
         drawCircle(
             color = nodeColor,
             radius = pulsedRadius,
             center = Offset(x, y)
         )
         
-        // Draw bright inner core
         drawCircle(
             color = nodeColor.copy(alpha = 1f),
             radius = pulsedRadius * 0.6f,
             center = Offset(x, y)
         )
         
-        // Draw center highlight
         drawCircle(
             color = Color.White.copy(alpha = 0.8f * pulse),
             radius = pulsedRadius * 0.3f,

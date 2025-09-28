@@ -27,18 +27,15 @@ fun Sidebar(
     onNavigationItemClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Hover state management
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     
-    // Animated width based on hover state
     val sidebarWidth by animateDpAsState(
         targetValue = if (isHovered) 240.dp else 72.dp,
         animationSpec = tween(durationMillis = 200),
         label = "sidebar_width"
     )
     
-    // Animated padding based on hover state
     val sidebarPadding by animateDpAsState(
         targetValue = if (isHovered) 16.dp else 12.dp,
         animationSpec = tween(durationMillis = 200),
@@ -54,17 +51,14 @@ fun Sidebar(
             .padding(sidebarPadding),
         horizontalAlignment = if (isHovered) Alignment.Start else Alignment.CenterHorizontally
     ) {
-        // App title and branding (only show when expanded)
         if (isHovered) {
             SidebarHeader()
             Spacer(modifier = Modifier.height(24.dp))
         } else {
-            // Show compact logo when collapsed
             SidebarHeaderCompact()
             Spacer(modifier = Modifier.height(16.dp))
         }
         
-        // Navigation items
         navigationItems.forEach { item ->
             NavigationItemRow(
                 item = item,
@@ -77,16 +71,13 @@ fun Sidebar(
         
         Spacer(modifier = Modifier.weight(1f))
         
-        // Footer (only show when expanded)
         if (isHovered) {
             SidebarFooter()
         }
     }
 }
 
-/**
- * Header section of the sidebar with app branding (expanded state)
- */
+
 @Composable
 private fun SidebarHeader() {
     Column {
@@ -106,9 +97,7 @@ private fun SidebarHeader() {
     }
 }
 
-/**
- * Compact header section of the sidebar (collapsed state)
- */
+
 @Composable
 private fun SidebarHeaderCompact() {
     Box(
@@ -130,9 +119,7 @@ private fun SidebarHeaderCompact() {
     }
 }
 
-/**
- * Individual navigation item row with responsive layout
- */
+
 @Composable
 private fun NavigationItemRow(
     item: NavigationItem,
@@ -152,7 +139,6 @@ private fun NavigationItemRow(
     }
     
     if (isExpanded) {
-        // Expanded layout with icon and text
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -178,7 +164,6 @@ private fun NavigationItemRow(
             )
         }
     } else {
-        // Collapsed layout with only icon
         Box(
             modifier = Modifier
                 .size(48.dp)
@@ -196,10 +181,7 @@ private fun NavigationItemRow(
     }
 }
 
-/**
- * Navigation icon component that displays emoji icons
- * In a real application, this would use actual icon resources
- */
+
 @Composable
 private fun NavigationIcon(
     icon: String,
@@ -227,9 +209,7 @@ private fun NavigationIcon(
     )
 }
 
-/**
- * Footer section of the sidebar
- */
+
 @Composable
 private fun SidebarFooter() {
     Column {

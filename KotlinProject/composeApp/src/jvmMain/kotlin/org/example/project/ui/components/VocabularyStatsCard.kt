@@ -38,7 +38,6 @@ fun VocabularyStatsCard(
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Icon
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -54,7 +53,6 @@ fun VocabularyStatsCard(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Count
             Text(
                 text = count.toString(),
                 style = MaterialTheme.typography.headlineLarge.copy(
@@ -65,7 +63,6 @@ fun VocabularyStatsCard(
             
             Spacer(modifier = Modifier.height(4.dp))
             
-            // Title
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,

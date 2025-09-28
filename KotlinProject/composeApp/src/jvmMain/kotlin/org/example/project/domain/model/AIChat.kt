@@ -146,9 +146,7 @@ data class ChatFeature(
     val color: String
 ) {
     companion object {
-        /**
-         * Creates chat features for the empty state
-         */
+        
         fun getChatFeatures(): List<ChatFeature> = listOf(
             ChatFeature(
                 id = "natural_conversation",

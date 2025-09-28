@@ -35,7 +35,6 @@ fun EmailVerificationSuccessScreen(
                 )
             )
     ) {
-        // Animated network background
         AnimatedNetworkBackground(
             modifier = Modifier.fillMaxSize(),
             nodeCount = 35,
@@ -50,7 +49,6 @@ fun EmailVerificationSuccessScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Success card
             SuccessCard(
                 user = user,
                 message = message,
@@ -60,9 +58,7 @@ fun EmailVerificationSuccessScreen(
     }
 }
 
-/**
- * Success card with verification confirmation
- */
+
 @Composable
 private fun SuccessCard(
     user: User,
@@ -83,7 +79,6 @@ private fun SuccessCard(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Success icon
             Card(
                 modifier = Modifier.size(80.dp),
                 shape = RoundedCornerShape(16.dp),
@@ -104,7 +99,6 @@ private fun SuccessCard(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Title
             Text(
                 text = "Email Verified!",
                 style = MaterialTheme.typography.headlineMedium.copy(
@@ -116,7 +110,6 @@ private fun SuccessCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Message
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyLarge,
@@ -127,7 +120,6 @@ private fun SuccessCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Welcome message
             Text(
                 text = "Welcome to WordBridge, ${user.firstName}!",
                 style = MaterialTheme.typography.headlineSmall.copy(
@@ -139,7 +131,6 @@ private fun SuccessCard(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Loading indicator
             CircularProgressIndicator(
                 modifier = Modifier.size(32.dp),
                 color = MaterialTheme.colorScheme.primary,

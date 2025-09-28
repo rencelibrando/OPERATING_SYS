@@ -15,12 +15,10 @@ interface LearningRepository {
     suspend fun getLessonsByDifficulty(difficulty: String): Result<List<Lesson>>
     suspend fun getLesson(lessonId: String): Result<Lesson?>
     
-    // User Lesson Progress
     suspend fun getUserLessonProgress(userId: String, lessonId: String): Result<UserLessonProgress?>
     suspend fun updateUserLessonProgress(progress: UserLessonProgress): Result<UserLessonProgress>
     suspend fun getRecentLessons(userId: String, limit: Int = 5): Result<List<RecentLesson>>
     
-    // Achievements
     suspend fun getUserAchievements(userId: String): Result<List<Achievement>>
     suspend fun unlockAchievement(userId: String, achievementId: String): Result<Achievement>
     suspend fun getAvailableAchievements(): Result<List<Achievement>>

@@ -206,7 +206,6 @@ data class ProfileCompletion(
             var completedOptional = 0
             val missing = mutableListOf<ProfileField>()
             
-            // Check required fields
             requiredFields.forEach { field ->
                 when (field) {
                     ProfileField.FIRST_NAME -> {
@@ -229,7 +228,6 @@ data class ProfileCompletion(
                 }
             }
             
-            // Check optional fields
             optionalFields.forEach { field ->
                 when (field) {
                     ProfileField.DATE_OF_BIRTH -> {

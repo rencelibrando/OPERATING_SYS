@@ -13,7 +13,7 @@ kotlin {
     jvm {
         compilations.all {
             compilerOptions.configure {
-                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_18)
             }
         }
     }

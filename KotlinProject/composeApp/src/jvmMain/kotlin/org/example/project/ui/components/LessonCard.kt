@@ -41,7 +41,7 @@ fun LessonCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { /* Handle card click if needed */ },
+            .clickable {  },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = cardBackgroundColor
@@ -56,12 +56,10 @@ fun LessonCard(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            // Header with icon and title
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Icon
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -98,12 +96,10 @@ fun LessonCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Progress and stats row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Lessons progress
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -132,7 +128,6 @@ fun LessonCard(
                     )
                 }
                 
-                // Progress percentage
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -164,7 +159,6 @@ fun LessonCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Action button
             if (lesson.progressPercentage > 0) {
                 Button(
                     onClick = { onContinueClick(lesson.id) },

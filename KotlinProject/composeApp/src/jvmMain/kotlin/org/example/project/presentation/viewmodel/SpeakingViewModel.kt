@@ -99,12 +99,10 @@ class SpeakingViewModel : ViewModel() {
             feedback = "Great job! Keep practicing to improve your fluency."
         )
         
-        // Add completed session to sessions list
         _speakingSessions.value = _speakingSessions.value + completedSession
         _currentSession.value = null
         _isRecording.value = false
         
-        // Update statistics
         updateSpeakingStats()
         
         _isLoading.value = false

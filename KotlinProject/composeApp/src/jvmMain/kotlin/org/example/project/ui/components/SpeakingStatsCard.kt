@@ -39,7 +39,6 @@ fun SpeakingStatsCard(
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Icon
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -55,7 +54,6 @@ fun SpeakingStatsCard(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Value with optional unit
             Row(
                 verticalAlignment = Alignment.Bottom
             ) {
@@ -79,7 +77,6 @@ fun SpeakingStatsCard(
             
             Spacer(modifier = Modifier.height(4.dp))
             
-            // Title
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,

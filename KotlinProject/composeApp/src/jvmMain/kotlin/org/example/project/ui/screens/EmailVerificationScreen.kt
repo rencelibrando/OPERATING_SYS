@@ -37,7 +37,6 @@ fun EmailVerificationScreen(
                 )
             )
     ) {
-        // Animated network background
         AnimatedNetworkBackground(
             modifier = Modifier.fillMaxSize(),
             nodeCount = 35,
@@ -52,12 +51,10 @@ fun EmailVerificationScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // App branding
             AppBranding()
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Verification card
             EmailVerificationCard(
                 email = email,
                 message = message,
@@ -70,9 +67,7 @@ fun EmailVerificationScreen(
     }
 }
 
-/**
- * App branding component
- */
+
 @Composable
 private fun AppBranding() {
     Card(
@@ -87,7 +82,6 @@ private fun AppBranding() {
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier.padding(16.dp)
         ) {
-            // App icon
             Card(
                 modifier = Modifier.size(48.dp),
                 shape = RoundedCornerShape(12.dp),
@@ -131,9 +125,7 @@ private fun AppBranding() {
     }
 }
 
-/**
- * Email verification card with instructions and actions
- */
+
 @Composable
 private fun EmailVerificationCard(
     email: String,
@@ -157,7 +149,6 @@ private fun EmailVerificationCard(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Email icon
             Card(
                 modifier = Modifier.size(80.dp),
                 shape = RoundedCornerShape(16.dp),
@@ -178,7 +169,6 @@ private fun EmailVerificationCard(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Title
             Text(
                 text = "Check Your Email",
                 style = MaterialTheme.typography.headlineMedium.copy(
@@ -190,7 +180,6 @@ private fun EmailVerificationCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Message
             Text(
                 text = "We've sent a verification link to your email address. Click the link to verify your account, then return here to sign in.",
                 style = MaterialTheme.typography.bodyLarge,
@@ -201,7 +190,6 @@ private fun EmailVerificationCard(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Email address
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
@@ -220,12 +208,10 @@ private fun EmailVerificationCard(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Action buttons
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Automatic checking indicator
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -257,7 +243,6 @@ private fun EmailVerificationCard(
                     }
                 }
                 
-                // Primary action: Back to Sign In  
                 Button(
                     onClick = onGoBack,
                     enabled = !isLoading,
@@ -272,7 +257,6 @@ private fun EmailVerificationCard(
                     )
                 }
                 
-                // Secondary action: Resend email button
                 OutlinedButton(
                     onClick = onResendEmail,
                     enabled = !isLoading,
@@ -299,7 +283,6 @@ private fun EmailVerificationCard(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Help text
             Text(
                 text = "After clicking the verification link in your email, return to this app and click \"Back to Sign In\" to continue. Check your spam folder if needed.",
                 style = MaterialTheme.typography.bodySmall,

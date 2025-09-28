@@ -5,9 +5,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 
-/**
- * Light color scheme for WordBridge application
- */
+
 private val LightColorScheme = lightColorScheme(
     primary = WordBridgeColors.PrimaryPurple,
     onPrimary = WordBridgeColors.BackgroundWhite,
@@ -28,9 +26,7 @@ private val LightColorScheme = lightColorScheme(
     onError = WordBridgeColors.BackgroundWhite
 )
 
-/**
- * Dark color scheme for WordBridge application
- */
+
 private val DarkColorScheme = darkColorScheme(
     primary = WordBridgeColors.PrimaryPurpleLight,
     onPrimary = WordBridgeColors.SidebarBackgroundDark,
@@ -51,12 +47,7 @@ private val DarkColorScheme = darkColorScheme(
     onError = WordBridgeColors.BackgroundWhite
 )
 
-/**
- * WordBridge application theme
- * 
- * @param darkTheme Whether to use dark theme colors
- * @param content The content to apply the theme to
- */
+
 @Composable
 fun WordBridgeTheme(
     darkTheme: Boolean = false,
