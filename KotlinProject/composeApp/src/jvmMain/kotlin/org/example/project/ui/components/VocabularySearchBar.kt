@@ -30,7 +30,6 @@ fun VocabularySearchBar(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Search field
         OutlinedTextField(
             value = searchQuery,
             onValueChange = onSearchQueryChanged,
@@ -49,7 +48,6 @@ fun VocabularySearchBar(
             singleLine = true
         )
         
-        // Filter buttons
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -69,7 +67,6 @@ fun VocabularySearchBar(
             }
         }
         
-        // Add Word button
         Button(
             onClick = onAddWordClick,
             colors = ButtonDefaults.buttonColors(

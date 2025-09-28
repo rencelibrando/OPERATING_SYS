@@ -7,8 +7,11 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.utils.io.*
 import io.github.jan.supabase.gotrue.auth
+import io.github.jan.supabase.storage.Storage
+import io.github.jan.supabase.storage.storage
 import org.example.project.core.config.SupabaseConfig
 import java.util.*
+import kotlin.time.Duration.Companion.days
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -39,52 +42,33 @@ class ImageUploadService {
             
             println("📁 Uploading file: $fileName (${imageBytes.size} bytes)")
             
-            val accessToken = supabase.auth.currentAccessTokenOrNull()
-            if (accessToken == null) {
-                throw Exception("No access token available. User may not be authenticated.")
+            // Use Supabase Storage SDK
+            val storage = supabase.storage.from(bucketName)
+            
+            // Try to create bucket if it doesn't exist (this will fail silently if it already exists)
+            try {
+                supabase.storage.createBucket(bucketName)
+                println("📦 Created storage bucket: $bucketName")
+            } catch (e: Exception) {
+                println("📦 Bucket $bucketName already exists or creation failed: ${e.message}")
             }
             
+            val uploadResult = storage.upload(
+                path = fileName,
+                data = imageBytes,
+                upsert = true // Replace existing file with same name
+            )
             
-            val uploadUrl = "$storageEndpoint/$bucketName/$fileName"
+            println("📡 Upload result: $uploadResult")
             
+            // Get public URL
+            val publicUrl = storage.createSignedUrl(
+                path = fileName,
+                expiresIn = 365.days // 1 year
+            )
             
-            val contentType = when (fileExtension) {
-                ".jpg", ".jpeg" -> "image/jpeg"
-                ".png" -> "image/png"
-                ".gif" -> "image/gif"
-                ".bmp" -> "image/bmp"
-                ".webp" -> "image/webp"
-                else -> "image/jpeg" 
-            }
-            
-            println("🌐 Uploading to: $uploadUrl")
-            println("🔑 Using access token: ${accessToken.take(20)}...")
-            println("📋 Content-Type: $contentType")
-            println("📊 File size: ${imageBytes.size} bytes")
-            
-            
-            val response = httpClient.post(uploadUrl) {
-                headers {
-                    append("Authorization", "Bearer $accessToken")
-                    append("Content-Type", contentType)
-                    append("Cache-Control", "max-age=3600")
-                }
-                setBody(imageBytes)
-            }
-            
-            println("📡 Response status: ${response.status}")
-            println("📡 Response headers: ${response.headers}")
-            
-            
-            if (response.status.value in 200..299) {
-                
-                val publicUrl = "https://tgsivldflzyydwjgoqhd.supabase.co/storage/v1/object/public/$bucketName/$fileName"
-                println("✅ Profile picture uploaded successfully: $publicUrl")
-                Result.success(publicUrl)
-            } else {
-                val errorBody = response.bodyAsText()
-                throw Exception("Upload failed with status ${response.status.value}: $errorBody")
-            }
+            println("✅ Profile picture uploaded successfully: $publicUrl")
+            Result.success(publicUrl)
             
         } catch (e: Exception) {
             println("❌ Failed to upload profile picture: ${e.message}")
@@ -97,7 +81,6 @@ class ImageUploadService {
         return try {
             println("🗑️ Deleting profile picture from Supabase Storage")
             
-            
             val fileName = extractFileNameFromUrl(imageUrl)
             if (fileName == null) {
                 throw Exception("Invalid image URL")
@@ -105,33 +88,14 @@ class ImageUploadService {
             
             println("📁 Deleting file: $fileName")
             
+            // Use Supabase Storage SDK
+            val storage = supabase.storage.from(bucketName)
             
-            val accessToken = supabase.auth.currentAccessTokenOrNull()
-            if (accessToken == null) {
-                throw Exception("No access token available. User may not be authenticated.")
-            }
+            val deleteResult = storage.delete(listOf(fileName))
             
-            
-            val deleteUrl = "$storageEndpoint/$bucketName/$fileName"
-            
-            println("🌐 Deleting from: $deleteUrl")
-            println("🔑 Using access token: ${accessToken.take(20)}...")
-            
-            
-            val response = httpClient.delete(deleteUrl) {
-                headers {
-                    append("Authorization", "Bearer $accessToken")
-                }
-            }
-            
-            
-            if (response.status.value in 200..299) {
-                println("✅ Profile picture deleted successfully")
-                Result.success(Unit)
-            } else {
-                val errorBody = response.bodyAsText()
-                throw Exception("Delete failed with status ${response.status.value}: $errorBody")
-            }
+            println("📡 Delete result: $deleteResult")
+            println("✅ Profile picture deleted successfully")
+            Result.success(Unit)
             
         } catch (e: Exception) {
             println("❌ Failed to delete profile picture: ${e.message}")

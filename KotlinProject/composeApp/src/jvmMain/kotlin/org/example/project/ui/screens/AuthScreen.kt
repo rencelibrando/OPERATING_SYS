@@ -29,7 +29,6 @@ fun AuthScreen(
     modifier: Modifier = Modifier,
     authViewModel: AuthViewModel = viewModel()
 ) {
-    // Observe auth state to decide which screen to show
     val currentAuthState = authViewModel.authState.value
 
     Box(
@@ -46,7 +45,6 @@ fun AuthScreen(
                 )
             )
     ) {
-        // Animated network background
         AnimatedNetworkBackground(
             modifier = Modifier.fillMaxSize(),
             nodeCount = 35,
@@ -55,7 +53,6 @@ fun AuthScreen(
         )
         when (currentAuthState) {
             is AuthState.AwaitingEmailVerification -> {
-                // Show the email verification screen and stop rendering the auth form
                 EmailVerificationScreen(
                     email = currentAuthState.email,
                     message = currentAuthState.message,
@@ -66,7 +63,6 @@ fun AuthScreen(
                 )
             }
             is AuthState.EmailVerified -> {
-                // Show success screen while ViewModel transitions to SignupComplete
                 EmailVerificationSuccessScreen(
                     user = currentAuthState.user,
                     message = currentAuthState.message,
@@ -83,12 +79,10 @@ fun AuthScreen(
                 ) {
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    // App branding
                     AppBranding()
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
-                    // Authentication form
                     AuthenticationForm(
                         authViewModel = authViewModel,
                         modifier = Modifier.widthIn(max = 400.dp)
@@ -101,9 +95,7 @@ fun AuthScreen(
     }
 }
 
-/**
- * Compact app branding section with enhanced visibility
- */
+
 @Composable
 private fun AppBranding() {
     Card(
@@ -118,7 +110,6 @@ private fun AppBranding() {
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier.padding(16.dp)
         ) {
-            // Compact app icon
             Card(
                 modifier = Modifier.size(48.dp),
                 shape = RoundedCornerShape(12.dp),
@@ -162,9 +153,7 @@ private fun AppBranding() {
     }
 }
 
-/**
- * Main authentication form
- */
+
 @Composable
 private fun AuthenticationForm(
     authViewModel: AuthViewModel,
@@ -183,7 +172,6 @@ private fun AuthenticationForm(
                 .padding(20.dp)
                 .animateContentSize()
         ) {
-            // Form header
             FormHeader(
                 isLoginMode = authViewModel.isLoginMode,
                 onToggleMode = authViewModel::toggleAuthMode
@@ -191,7 +179,6 @@ private fun AuthenticationForm(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Success message
             if (authViewModel.successMessage.isNotEmpty()) {
                 SuccessMessage(
                     message = authViewModel.successMessage,
@@ -199,7 +186,6 @@ private fun AuthenticationForm(
                 )
             }
             
-            // Error message
             if (authViewModel.errorMessage.isNotEmpty()) {
                 ErrorMessage(
                     message = authViewModel.errorMessage,
@@ -207,7 +193,6 @@ private fun AuthenticationForm(
                 )
             }
             
-            // Form fields
             if (authViewModel.isLoginMode) {
                 LoginForm(authViewModel = authViewModel)
             } else {
@@ -216,7 +201,6 @@ private fun AuthenticationForm(
             
             Spacer(modifier = Modifier.height(20.dp))
             
-            // Submit button
             SubmitButton(
                 isLoginMode = authViewModel.isLoginMode,
                 isLoading = authViewModel.isLoading,
@@ -226,9 +210,7 @@ private fun AuthenticationForm(
     }
 }
 
-/**
- * Compact form header with title and mode toggle
- */
+
 @Composable
 private fun FormHeader(
     isLoginMode: Boolean,
@@ -245,7 +227,6 @@ private fun FormHeader(
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        // Toggle between login and signup
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -272,9 +253,7 @@ private fun FormHeader(
     }
 }
 
-/**
- * Compact success message display
- */
+
 @Composable
 private fun SuccessMessage(
     message: String,
@@ -296,9 +275,7 @@ private fun SuccessMessage(
     }
 }
 
-/**
- * Compact error message display
- */
+
 @Composable
 private fun ErrorMessage(
     message: String,
@@ -320,9 +297,7 @@ private fun ErrorMessage(
     }
 }
 
-/**
- * Compact login form fields
- */
+
 @Composable
 private fun LoginForm(authViewModel: AuthViewModel) {
     Column {
@@ -365,9 +340,7 @@ private fun LoginForm(authViewModel: AuthViewModel) {
     }
 }
 
-/**
- * Compact sign up form fields
- */
+
 @Composable
 private fun SignUpForm(authViewModel: AuthViewModel) {
     Column {
@@ -469,9 +442,7 @@ private fun SignUpForm(authViewModel: AuthViewModel) {
     }
 }
 
-/**
- * Compact submit button with loading state
- */
+
 @Composable
 private fun SubmitButton(
     isLoginMode: Boolean,

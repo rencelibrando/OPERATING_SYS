@@ -47,7 +47,6 @@ fun UserAvatar(
                 contentDescription = "Profile Picture",
                 modifier = Modifier.fillMaxSize(),
                 onLoading = {
-                    // Show initials while loading
                     Text(
                         text = initials.take(2).uppercase(),
                         color = textColor,
@@ -57,7 +56,6 @@ fun UserAvatar(
                     )
                 },
                 onFailure = {
-                    // Show initials on failure
                     Text(
                         text = initials.take(2).uppercase(),
                         color = textColor,
@@ -68,7 +66,6 @@ fun UserAvatar(
                 }
             )
         } else {
-            // Show initials
             Text(
                 text = initials.take(2).uppercase(),
                 color = textColor,

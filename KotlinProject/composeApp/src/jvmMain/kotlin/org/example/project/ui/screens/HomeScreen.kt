@@ -30,7 +30,6 @@ fun HomeScreen(
     val selectedNavigationItem by viewModel.selectedNavigationItem
     val showProfile by viewModel.showProfile
     
-    // Use authenticated user data if available, otherwise fall back to sample data
     val displayUser = authenticatedUser?.let { authUser ->
         org.example.project.domain.model.User(
             id = authUser.id,
@@ -40,7 +39,8 @@ fun HomeScreen(
             xpPoints = 0, // Default XP, could be enhanced later
             wordsLearned = 0, // Default words, could be enhanced later
             accuracy = 0, // Default accuracy, could be enhanced later
-            avatarInitials = authUser.initials
+            avatarInitials = authUser.initials,
+            profileImageUrl = authUser.profileImageUrl
         )
     } ?: user
     
@@ -49,13 +49,11 @@ fun HomeScreen(
             .fillMaxSize()
             .background(WordBridgeColors.BackgroundLight)
     ) {
-        // Sidebar Navigation
         Sidebar(
             navigationItems = navigationItems,
             onNavigationItemClick = viewModel::onNavigationItemSelected
         )
         
-        // Main Content Area - Switch based on selected navigation item or profile view
         when {
             showProfile -> {
                 ProfileScreen(
@@ -71,11 +69,11 @@ fun HomeScreen(
                         .padding(24.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    // Header with user info
                     HomeHeader(
                         userName = displayUser.name,
                         userLevel = displayUser.level,
                         userInitials = displayUser.avatarInitials,
+                        userProfileImageUrl = displayUser.profileImageUrl,
                         onUserAvatarClick = viewModel::onUserAvatarClicked,
                         authenticatedUser = authenticatedUser,
                         onSignOut = onSignOut
@@ -83,7 +81,6 @@ fun HomeScreen(
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
-                    // Continue Learning Section
                     ContinueLearningCard(
                         onButtonClick = viewModel::onContinueLearningClicked,
                         isLoading = isLoading
@@ -91,22 +88,17 @@ fun HomeScreen(
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
-                    // Content based on whether user has learning activities
                     if (learningActivities.isEmpty()) {
-                        // Empty state
                         HomeEmptyState(
                             onGetStartedClick = {
-                                // Navigate to lessons or show getting started guide
                                 viewModel.onNavigationItemSelected("lessons")
                             }
                         )
                     } else {
-                        // Main content in two columns
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(24.dp)
                         ) {
-                            // Left Column - Learning Activities
                             Column(
                                 modifier = Modifier.weight(2f)
                             ) {
@@ -120,7 +112,6 @@ fun HomeScreen(
                                 }
                             }
                             
-                            // Right Column - Progress
                             Column(
                                 modifier = Modifier.weight(1f)
                             ) {
@@ -137,26 +128,36 @@ fun HomeScreen(
             }
             selectedNavigationItem == "lessons" -> {
                 LessonsScreen(
+                    authenticatedUser = authenticatedUser,
+                    onUserAvatarClick = viewModel::onUserAvatarClicked,
                     modifier = Modifier.weight(1f)
                 )
             }
             selectedNavigationItem == "vocabulary" -> {
                 VocabularyScreen(
+                    authenticatedUser = authenticatedUser,
+                    onUserAvatarClick = viewModel::onUserAvatarClicked,
                     modifier = Modifier.weight(1f)
                 )
             }
             selectedNavigationItem == "speaking" -> {
                 SpeakingScreen(
+                    authenticatedUser = authenticatedUser,
+                    onUserAvatarClick = viewModel::onUserAvatarClicked,
                     modifier = Modifier.weight(1f)
                 )
             }
             selectedNavigationItem == "ai_chat" -> {
                 AIChatScreen(
+                    authenticatedUser = authenticatedUser,
+                    onUserAvatarClick = viewModel::onUserAvatarClicked,
                     modifier = Modifier.weight(1f)
                 )
             }
             selectedNavigationItem == "progress" -> {
                 ProgressScreen(
+                    authenticatedUser = authenticatedUser,
+                    onUserAvatarClick = viewModel::onUserAvatarClicked,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -187,14 +188,13 @@ fun HomeScreen(
     }
 }
 
-/**
- * Header section with welcome message and user info
- */
+
 @Composable
 private fun HomeHeader(
     userName: String,
     userLevel: String,
     userInitials: String,
+    userProfileImageUrl: String?,
     onUserAvatarClick: () -> Unit,
     authenticatedUser: AuthUser? = null,
     onSignOut: (() -> Unit)? = null,
@@ -205,7 +205,6 @@ private fun HomeHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Welcome message
         Column {
             Text(
                 text = "Welcome Back, $userName!",
@@ -224,12 +223,10 @@ private fun HomeHeader(
             )
         }
         
-        // User avatar and sign out options
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (authenticatedUser != null && onSignOut != null) {
-                // Sign out button
                 TextButton(
                     onClick = onSignOut,
                     colors = ButtonDefaults.textButtonColors(
@@ -245,10 +242,9 @@ private fun HomeHeader(
                 Spacer(modifier = Modifier.width(12.dp))
             }
             
-            // User avatar (clickable - this is now the only way to access profile)
             UserAvatar(
                 initials = userInitials,
-                profileImageUrl = authenticatedUser?.profileImageUrl,
+                profileImageUrl = userProfileImageUrl,
                 size = 48.dp,
                 onClick = onUserAvatarClick
             )

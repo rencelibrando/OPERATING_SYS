@@ -11,7 +11,6 @@ import org.example.project.domain.model.VocabularyFilter
 
 class VocabularyViewModel : ViewModel() {
     
-    // Private mutable state
     private val _vocabularyWords = mutableStateOf(VocabularyWord.getSampleWords())
     private val _vocabularyStats = mutableStateOf(VocabularyStats.getSampleStats())
     private val _vocabularyFeatures = mutableStateOf(VocabularyFeature.getVocabularyFeatures())
@@ -19,7 +18,6 @@ class VocabularyViewModel : ViewModel() {
     private val _selectedFilter = mutableStateOf(VocabularyFilter.ALL)
     private val _isLoading = mutableStateOf(false)
     
-    // Public read-only state
     val vocabularyWords: State<List<VocabularyWord>> = _vocabularyWords
     val vocabularyStats: State<VocabularyStats> = _vocabularyStats
     val vocabularyFeatures: State<List<VocabularyFeature>> = _vocabularyFeatures
@@ -27,7 +25,6 @@ class VocabularyViewModel : ViewModel() {
     val selectedFilter: State<VocabularyFilter> = _selectedFilter
     val isLoading: State<Boolean> = _isLoading
     
-    // Computed property for filtered words
     private val _filteredWords = mutableStateOf(emptyList<VocabularyWord>())
     val filteredWords: State<List<VocabularyWord>> = _filteredWords
     
@@ -69,12 +66,10 @@ class VocabularyViewModel : ViewModel() {
         val filter = _selectedFilter.value
         
         val filtered = words.filter { word ->
-            // Apply search filter
             val matchesSearch = query.isEmpty() || 
                 word.word.lowercase().contains(query) ||
                 word.definition.lowercase().contains(query)
             
-            // Apply status filter
             val matchesFilter = when (filter) {
                 VocabularyFilter.ALL -> true
                 VocabularyFilter.MASTERED -> word.status.name == "MASTERED"

@@ -35,7 +35,6 @@ fun SignupCompleteScreen(
                 )
             )
     ) {
-        // Animated network background
         AnimatedNetworkBackground(
             modifier = Modifier.fillMaxSize(),
             nodeCount = 35,
@@ -50,12 +49,10 @@ fun SignupCompleteScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // App branding
             AppBranding()
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Success card
             SignupSuccessCard(
                 email = email,
                 message = message,
@@ -80,7 +77,6 @@ private fun AppBranding() {
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier.padding(16.dp)
         ) {
-            // App icon
             Card(
                 modifier = Modifier.size(48.dp),
                 shape = RoundedCornerShape(12.dp),
@@ -145,7 +141,6 @@ private fun SignupSuccessCard(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Success icon
             Card(
                 modifier = Modifier.size(80.dp),
                 shape = RoundedCornerShape(16.dp),
@@ -166,7 +161,6 @@ private fun SignupSuccessCard(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Title
             Text(
                 text = "Account Created Successfully!",
                 style = MaterialTheme.typography.headlineMedium.copy(
@@ -178,7 +172,6 @@ private fun SignupSuccessCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Message
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyLarge,
@@ -189,7 +182,6 @@ private fun SignupSuccessCard(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Email address
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
@@ -208,7 +200,6 @@ private fun SignupSuccessCard(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Continue to sign in button
             Button(
                 onClick = onContinueToSignIn,
                 modifier = Modifier
@@ -229,7 +220,6 @@ private fun SignupSuccessCard(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Info text
             Text(
                 text = "Your email has been verified and your account is ready to use. Use the same credentials you just created to sign in.",
                 style = MaterialTheme.typography.bodySmall,

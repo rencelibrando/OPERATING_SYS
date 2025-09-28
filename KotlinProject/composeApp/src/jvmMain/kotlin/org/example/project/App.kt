@@ -24,7 +24,6 @@ fun App() {
     WordBridgeTheme {
         val authViewModel: AuthViewModel = viewModel()
         
-        // Database connection testing will be added once Supabase integration is stable
         
         when (authViewModel.authState.value) {
             is AuthState.Loading -> {
@@ -181,7 +180,6 @@ private fun AuthenticatedApp(
     user: org.example.project.core.auth.User,
     onSignOut: () -> Unit
 ) {
-    // Show the HomeScreen directly - it will handle displaying the authenticated user info
     HomeScreen(
         authenticatedUser = user,
         onSignOut = onSignOut,
@@ -216,7 +214,6 @@ private fun UserHeader(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // User avatar
                 Card(
                     modifier = Modifier.size(48.dp),
                     shape = MaterialTheme.shapes.large,
@@ -254,7 +251,6 @@ private fun UserHeader(
                 }
             }
             
-            // Sign out button
             TextButton(onClick = onSignOut) {
                 Text(
                     text = "Sign Out",
