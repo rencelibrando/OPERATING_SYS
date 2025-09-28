@@ -42,7 +42,7 @@ fun SpeakingExerciseCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { /* Handle card click if needed */ },
+            .clickable {  },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = cardBackgroundColor
@@ -57,12 +57,10 @@ fun SpeakingExerciseCard(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            // Header with icon and title
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Icon
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -127,7 +125,6 @@ fun SpeakingExerciseCard(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Description
             Text(
                 text = exercise.description,
                 style = MaterialTheme.typography.bodyMedium,
@@ -136,7 +133,6 @@ fun SpeakingExerciseCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Progress and stats row (if applicable)
             if (exercise.completionRate > 0 || exercise.lastAttempt != null) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -187,7 +183,6 @@ fun SpeakingExerciseCard(
                 Spacer(modifier = Modifier.height(16.dp))
             }
             
-            // Action button
             Button(
                 onClick = { onStartClick(exercise.id) },
                 modifier = Modifier.fillMaxWidth(),

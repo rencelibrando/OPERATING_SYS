@@ -4,7 +4,6 @@ import org.example.project.domain.model.*
 
 interface VocabularyRepository {
     
-    // Vocabulary Words
     suspend fun getAllVocabularyWords(): Result<List<VocabularyWord>>
     suspend fun getVocabularyWordsByCategory(category: String): Result<List<VocabularyWord>>
     suspend fun getVocabularyWordsByDifficulty(difficulty: String): Result<List<VocabularyWord>>
@@ -14,14 +13,12 @@ interface VocabularyRepository {
     suspend fun updateVocabularyWord(word: VocabularyWord): Result<VocabularyWord>
     suspend fun deleteVocabularyWord(wordId: String): Result<Unit>
     
-    // User Vocabulary Progress
     suspend fun getUserVocabulary(userId: String): Result<List<UserVocabularyWord>>
     suspend fun addWordToUserVocabulary(userId: String, wordId: String): Result<UserVocabularyWord>
     suspend fun updateUserWordStatus(userId: String, wordId: String, status: VocabularyStatus): Result<Unit>
     suspend fun getUserWordsByStatus(userId: String, status: VocabularyStatus): Result<List<UserVocabularyWord>>
     suspend fun removeWordFromUserVocabulary(userId: String, wordId: String): Result<Unit>
     
-    // Vocabulary Statistics
     suspend fun getUserVocabularyStats(userId: String): Result<VocabularyStats>
     suspend fun getWordsForReview(userId: String, limit: Int = 10): Result<List<UserVocabularyWord>>
 }

@@ -7,19 +7,15 @@ import org.example.project.domain.model.*
 
 class SettingsViewModel : ViewModel() {
     
-    // Private mutable state
     private val _userSettings = mutableStateOf(UserSettings.getSampleSettings())
     private val _isLoading = mutableStateOf(false)
     private val _isSaving = mutableStateOf(false)
     
-    // Public read-only state
     val userSettings: State<UserSettings> = _userSettings
     val isLoading: State<Boolean> = _isLoading
     val isSaving: State<Boolean> = _isSaving
     
-    /**
-     * Handles notification setting toggles
-     */
+    
     fun onNotificationToggle(settingType: NotificationSettingType, enabled: Boolean) {
         val currentSettings = _userSettings.value
         val updatedNotificationSettings = when (settingType) {
@@ -115,9 +111,7 @@ class SettingsViewModel : ViewModel() {
         saveSettings()
     }
     
-    /**
-     * Handles privacy setting changes
-     */
+    
     fun onPrivacySettingChanged(settingType: PrivacySettingType, enabled: Boolean) {
         val currentSettings = _userSettings.value
         val updatedPrivacySettings = when (settingType) {
@@ -160,26 +154,19 @@ class SettingsViewModel : ViewModel() {
     private fun saveSettings() {
         _isSaving.value = true
         
-        // TODO: Save settings to repository/storage
-        // For now, simulate saving
-        println("Saving settings: ${_userSettings.value}")
         
         _isSaving.value = false
     }
     
 
     private fun exportUserData() {
-        // TODO: Implement data export functionality
-        println("Exporting user data...")
     }
     
 
     private fun deleteAccount() {
-        println("Deleting account...")
     }
 
     private fun clearCache() {
-        println("Clearing cache...")
     }
 
     private fun resetSettings() {
@@ -189,24 +176,19 @@ class SettingsViewModel : ViewModel() {
     
 
     private fun contactSupport() {
-        println("Contacting support...")
     }
     
 
     private fun rateApp() {
-        println("Rating app...")
     }
 
     private fun shareApp() {
-        println("Sharing app...")
     }
 
     private fun viewPrivacyPolicy() {
-        println("Viewing privacy policy...")
     }
 
     private fun viewTermsOfService() {
-        println("Viewing terms of service...")
     }
 }
 

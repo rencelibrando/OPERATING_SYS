@@ -10,13 +10,11 @@ import org.example.project.domain.model.RecentLesson
 
 class LessonsViewModel : ViewModel() {
     
-    // Private mutable state
     private val _lessons = mutableStateOf(Lesson.getSampleLessons())
     private val _levelProgress = mutableStateOf(LevelProgress.getSampleProgress())
     private val _recentLessons = mutableStateOf(RecentLesson.getSampleRecentLessons())
     private val _isLoading = mutableStateOf(false)
     
-    // Public read-only state
     val lessons: State<List<Lesson>> = _lessons
     val levelProgress: State<LevelProgress> = _levelProgress
     val recentLessons: State<List<RecentLesson>> = _recentLessons
@@ -32,7 +30,6 @@ class LessonsViewModel : ViewModel() {
         // TODO: Implement continue lesson logic
         println("Continue lesson clicked: $lessonId")
         
-        // Simulate loading
         _isLoading.value = false
     }
 
@@ -41,18 +38,14 @@ class LessonsViewModel : ViewModel() {
         // TODO: Implement start lesson logic
         println("Start lesson clicked: $lessonId")
         
-        // Simulate loading
         _isLoading.value = false
     }
 
-    fun onRecentLessonClicked(recentLessonId: String) {
-
-        println("Recent lesson clicked: $recentLessonId")
+    fun onRecentLessonClicked(@Suppress("UNUSED_PARAMETER") recentLessonId: String) {
     }
 
     fun refreshLessons() {
         _isLoading.value = true
-        // Simulate loading and refresh
         _lessons.value = Lesson.getSampleLessons()
         _levelProgress.value = LevelProgress.getSampleProgress()
         _recentLessons.value = RecentLesson.getSampleRecentLessons()

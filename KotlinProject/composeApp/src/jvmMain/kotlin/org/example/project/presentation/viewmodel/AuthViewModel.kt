@@ -13,11 +13,9 @@ class AuthViewModel : ViewModel() {
     
     private val authService = RealSupabaseAuthService()
     
-    // Authentication state  
     private val _authState = mutableStateOf<AuthState>(AuthState.Loading)
     val authState: State<AuthState> = _authState
     
-    // Form states
     private val _loginEmail = mutableStateOf("")
     val loginEmail: String get() = _loginEmail.value
     
@@ -39,7 +37,6 @@ class AuthViewModel : ViewModel() {
     private val _signUpConfirmPassword = mutableStateOf("")
     val signUpConfirmPassword: String get() = _signUpConfirmPassword.value
     
-    // UI states
     private val _isLoading = mutableStateOf(false)
     val isLoading: Boolean get() = _isLoading.value
     
@@ -53,12 +50,6 @@ class AuthViewModel : ViewModel() {
     val isLoginMode: Boolean get() = _isLoginMode.value
     
     init {
-        // Debug: Print configuration status
-        val configStatus = org.example.project.core.config.SupabaseConfig.getConfigStatus()
-        println("🔧 Supabase Configuration Status:")
-        configStatus.forEach { (key, value) -> 
-            println("   $key: $value")
-        }
         
         checkAuthenticationStatus()
     }
@@ -135,17 +126,14 @@ class AuthViewModel : ViewModel() {
                 
                 if (result.isSuccess) {
                     val response = result.getOrThrow()
-                    // Check if email is verified
                     if (response.user.isEmailVerified) {
                         _authState.value = AuthState.Authenticated(response.user)
                         clearSignUpForm()
                     } else {
-                        // Email verification required - automatically return to sign-in with message
                         _authState.value = AuthState.Unauthenticated
                         _isLoginMode.value = true // Switch to login mode
                         setSuccess("Account created successfully! We've sent a verification email to ${signUpEmail.trim()}. Please check your inbox and click the verification link, then sign in with your credentials.")
                         
-                        // Pre-fill the login email field with the signup email
                         _loginEmail.value = signUpEmail.trim()
                         clearSignUpForm()
                     }
@@ -165,7 +153,6 @@ class AuthViewModel : ViewModel() {
     fun signOut() {
         viewModelScope.launch {
             try {
-                // Stop any running verification server
                 authService.stopVerificationServer()
                 authService.signOut()
                 _authState.value = AuthState.Unauthenticated
@@ -185,12 +172,10 @@ class AuthViewModel : ViewModel() {
                 val result = authService.resendVerificationEmail(email)
                 
                 if (result.isSuccess) {
-                    // Return to login form with success message
                     _authState.value = AuthState.Unauthenticated
                     _isLoginMode.value = true // Switch to login mode
                     setSuccess("Verification email sent! Please check your inbox and click the verification link, then sign in with your credentials.")
                     
-                    // Pre-fill the login email field
                     _loginEmail.value = email
                 } else {
                     setError("Failed to send verification email")
@@ -204,7 +189,6 @@ class AuthViewModel : ViewModel() {
     }
 
     fun goBackToLogin() {
-        // Stop any running verification server
         authService.stopVerificationServer()
         _authState.value = AuthState.Unauthenticated
         _isLoading.value = false
@@ -235,42 +219,33 @@ class AuthViewModel : ViewModel() {
                     }
                     delay(delayMs)
                     
-                    // Show loading state while checking
                     _isLoading.value = true
                     
-                    // Check email verification status using the specialized method
                     val result = authService.checkEmailVerificationStatus()
                     if (result.isSuccess) {
                         val user = result.getOrNull()
                         if (user != null && user.isEmailVerified) {
-                            // Show verification success message briefly
                             _authState.value = AuthState.EmailVerified(
                                 user = user,
                                 message = "Email verified successfully!"
                             )
-                            println("🎉 Email verified! Redirecting to sign-in.")
                             
-                            // After 2 seconds, transition to signup complete state
                             delay(2000L)
                             _authState.value = AuthState.SignupComplete(
                                 email = user.email,
                                 message = "Account created successfully! You can now sign in with your credentials."
                             )
-                            // Stop the verification server
                             authService.stopVerificationServer()
                             return@launch // Stop polling
                         }
                     }
                     
-                    // Clear loading state after check
                     _isLoading.value = false
                     attempts++
                 }
                 
-                // Clear loading state when done
                 _isLoading.value = false
                 
-                // If we've reached max attempts, show a message but continue waiting
                 if (attempts >= maxAttempts && _authState.value is AuthState.AwaitingEmailVerification) {
                     val currentState = _authState.value as AuthState.AwaitingEmailVerification
                     _authState.value = AuthState.AwaitingEmailVerification(

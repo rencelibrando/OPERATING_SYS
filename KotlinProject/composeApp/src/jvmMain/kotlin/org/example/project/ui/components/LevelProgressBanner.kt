@@ -39,7 +39,6 @@ fun LevelProgressBanner(
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Header row with level and percentage
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -72,7 +71,6 @@ fun LevelProgressBanner(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Progress indicator
             Column {
                 Text(
                     text = "Complete",

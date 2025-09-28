@@ -29,7 +29,6 @@ fun VocabularyEmptyState(
     ) {
         Spacer(modifier = Modifier.height(40.dp))
         
-        // Book icon
         Text(
             text = "📖",
             style = MaterialTheme.typography.displayMedium
@@ -37,7 +36,6 @@ fun VocabularyEmptyState(
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // Title
         Text(
             text = "Your Vocabulary Library Awaits",
             style = MaterialTheme.typography.headlineMedium.copy(
@@ -49,7 +47,6 @@ fun VocabularyEmptyState(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Description
         Text(
             text = "Start building your personal vocabulary collection! Add words you encounter during lessons, reading, or conversations. Our AI-powered system will help you master each word with personalized practice and smart review schedules.",
             style = MaterialTheme.typography.bodyLarge,
@@ -60,7 +57,6 @@ fun VocabularyEmptyState(
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        // Add First Word Button
         Button(
             onClick = onAddFirstWordClick,
             modifier = Modifier.fillMaxWidth(0.6f),
@@ -81,7 +77,6 @@ fun VocabularyEmptyState(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Explore lessons link
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -104,7 +99,6 @@ fun VocabularyEmptyState(
         
         Spacer(modifier = Modifier.height(48.dp))
         
-        // Features Grid
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
             horizontalArrangement = Arrangement.spacedBy(16.dp),

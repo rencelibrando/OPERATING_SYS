@@ -17,9 +17,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.example.project.presentation.viewmodel.SpeakingViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.core.auth.User as AuthUser
 
 @Composable
 fun SpeakingScreen(
+    authenticatedUser: AuthUser? = null,
+    onUserAvatarClick: (() -> Unit)? = null,
     viewModel: SpeakingViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -39,7 +42,6 @@ fun SpeakingScreen(
             .padding(24.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // Header with title and user info
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -53,25 +55,23 @@ fun SpeakingScreen(
                 color = WordBridgeColors.TextPrimary
             )
             
-            // User info placeholder - can be expanded later
             UserAvatar(
-                initials = "SC", // This should come from user data
-                size = 40.dp
+                initials = authenticatedUser?.initials ?: "U",
+                profileImageUrl = authenticatedUser?.profileImageUrl,
+                size = 48.dp,
+                onClick = onUserAvatarClick
             )
         }
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // Content based on whether user has speaking exercises
         if (speakingExercises.isEmpty()) {
-            // Empty state
             SpeakingEmptyState(
                 features = speakingFeatures,
                 onStartFirstPracticeClick = viewModel::onStartFirstPracticeClicked,
                 onExploreExercisesClick = viewModel::onExploreExercisesClicked
             )
         } else {
-            // Statistics Cards Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -118,7 +118,6 @@ fun SpeakingScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Filter buttons for exercises
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -140,7 +139,6 @@ fun SpeakingScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Speaking Exercises Grid
             if (filteredExercises.isNotEmpty()) {
                 Text(
                     text = "Speaking Exercises",
@@ -168,7 +166,6 @@ fun SpeakingScreen(
                 
                 Spacer(modifier = Modifier.height(32.dp))
             } else if (selectedFilter != org.example.project.domain.model.SpeakingFilter.ALL) {
-                // No exercises found for filter
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -198,7 +195,6 @@ fun SpeakingScreen(
                 }
             }
             
-            // Recent Sessions Section (only if there are sessions)
             if (speakingSessions.isNotEmpty()) {
                 Text(
                     text = "Recent Sessions",
@@ -210,12 +206,10 @@ fun SpeakingScreen(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // Sessions list
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     speakingSessions.take(5).forEach { session ->
-                        // Find exercise title for session
                         val exerciseTitle = speakingExercises.find { it.id == session.exerciseId }?.title 
                             ?: "Unknown Exercise"
                         
@@ -229,10 +223,9 @@ fun SpeakingScreen(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // View all sessions button
                 if (speakingSessions.size > 5) {
                     TextButton(
-                        onClick = { /* TODO: Navigate to all sessions */ },
+                        onClick = {  },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
@@ -245,7 +238,6 @@ fun SpeakingScreen(
             }
         }
         
-        // Current session overlay (if recording)
         if (currentSession != null) {
             Spacer(modifier = Modifier.height(24.dp))
             

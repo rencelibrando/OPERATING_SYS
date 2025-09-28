@@ -12,7 +12,6 @@ import org.example.project.domain.model.MessageType
 
 class AIChatViewModel : ViewModel() {
     
-    // Private mutable state
     private val _chatMessages = mutableStateOf(ChatMessage.getSampleMessages())
     private val _chatSessions = mutableStateOf(ChatSession.getSampleSessions())
     private val _availableBots = mutableStateOf(ChatBot.getAvailableBots())
@@ -23,7 +22,6 @@ class AIChatViewModel : ViewModel() {
     private val _isLoading = mutableStateOf(false)
     private val _currentSession = mutableStateOf<ChatSession?>(null)
     
-    // Public read-only state
     val chatMessages: State<List<ChatMessage>> = _chatMessages
     val chatSessions: State<List<ChatSession>> = _chatSessions
     val availableBots: State<List<ChatBot>> = _availableBots
@@ -42,7 +40,6 @@ class AIChatViewModel : ViewModel() {
         val messageText = _currentMessage.value.trim()
         if (messageText.isEmpty()) return
         
-        // Add user message
         val userMessage = ChatMessage(
             id = "msg_${System.currentTimeMillis()}",
             content = messageText,
@@ -54,22 +51,18 @@ class AIChatViewModel : ViewModel() {
         _chatMessages.value = _chatMessages.value + userMessage
         _currentMessage.value = ""
         
-        // Show typing indicator
         _isTyping.value = true
         
-        // Simulate AI response
         simulateAIResponse(messageText)
     }
 
     fun onBotSelected(bot: ChatBot) {
         _selectedBot.value = bot
         
-        // Start new session with selected bot
         startNewSession(bot)
     }
 
     fun onStartFirstConversationClicked() {
-        // Select default bot or show bot selection
         val defaultBot = _availableBots.value.firstOrNull()
         if (defaultBot != null) {
             onBotSelected(defaultBot)
@@ -104,7 +97,7 @@ class AIChatViewModel : ViewModel() {
         _isLoading.value = true
         
         // TODO: Implement actual data refresh from repository
-        // For now, simulate refresh
+    
         _chatSessions.value = ChatSession.getSampleSessions()
         _availableBots.value = ChatBot.getAvailableBots()
         
@@ -125,10 +118,8 @@ class AIChatViewModel : ViewModel() {
         
         _currentSession.value = newSession
         
-        // Clear previous messages
         _chatMessages.value = emptyList()
         
-        // Add welcome message from bot
         val welcomeMessage = ChatMessage(
             id = "welcome_${System.currentTimeMillis()}",
             content = getWelcomeMessage(bot),
@@ -144,7 +135,6 @@ class AIChatViewModel : ViewModel() {
     private fun simulateAIResponse(userMessage: String) {
         println("Simulating AI response to: $userMessage")
         
-        // For now, immediate response without coroutines to avoid import issues
         val aiResponse = generateAIResponse(userMessage)
         val aiMessage = ChatMessage(
             id = "ai_${System.currentTimeMillis()}",
@@ -168,8 +158,7 @@ class AIChatViewModel : ViewModel() {
         }
     }
 
-    private fun generateAIResponse(userMessage: String): String {
-        // Simple response generation (in real app, this would call AI service)
+    private fun generateAIResponse(@Suppress("UNUSED_PARAMETER") userMessage: String): String {
         val responses = listOf(
             "That's interesting! Can you tell me more about that?",
             "I understand. How do you feel about that situation?",

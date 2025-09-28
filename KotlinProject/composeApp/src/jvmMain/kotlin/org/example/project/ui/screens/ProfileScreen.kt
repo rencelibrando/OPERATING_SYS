@@ -48,7 +48,6 @@ fun ProfileScreen(
     val editingPersonalInfo by viewModel.editingPersonalInfo
     val editingLearningProfile by viewModel.editingLearningProfile
     
-    // Initialize the profile with authenticated user data if available
     LaunchedEffect(authenticatedUser) {
         authenticatedUser?.let { authUser ->
             println("🔄 ProfileScreen - Initializing profile for user: ${authUser.email}")
@@ -56,7 +55,6 @@ fun ProfileScreen(
         }
     }
     
-    // Profile data logging for debugging
     LaunchedEffect(userProfile, isLoading) {
         if (userProfile.personalInfo.firstName.isNotEmpty()) {
             println("✅ ProfileScreen - Profile loaded successfully: ${userProfile.personalInfo.fullName}")
@@ -69,7 +67,6 @@ fun ProfileScreen(
             .padding(24.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // Header with title and save indicator
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -83,7 +80,6 @@ fun ProfileScreen(
                 color = WordBridgeColors.TextPrimary
             )
             
-            // Save indicator
             if (isSaving) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -108,7 +104,6 @@ fun ProfileScreen(
 
         
         if (isLoading) {
-            // Loading state
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
@@ -116,7 +111,6 @@ fun ProfileScreen(
                 CircularProgressIndicator(color = WordBridgeColors.PrimaryPurple)
             }
         } else {
-            // Profile Header
             ProfileHeader(
                 profile = userProfile,
                 completion = profileCompletion,
@@ -130,7 +124,6 @@ fun ProfileScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Profile Completion Card
             if (profileCompletion.completionPercentage < 100) {
                 ProfileCompletionCard(
                     completion = profileCompletion
@@ -139,7 +132,6 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
             
-            // Personal Information Section
             ProfileSection(
                 title = "Personal Information",
                 icon = "👤",
@@ -149,7 +141,6 @@ fun ProfileScreen(
                 onCancel = viewModel::onCancelSectionEdit
             ) {
                 if (editingSection == ProfileSection.PERSONAL_INFO && editingPersonalInfo != null) {
-                    // Edit mode
                     PersonalInfoEditForm(
                         personalInfo = editingPersonalInfo!!,
                         onUpdateField = viewModel::onUpdatePersonalInfoField,
@@ -158,7 +149,6 @@ fun ProfileScreen(
                         onVerifyEmail = viewModel::onVerifyEmail
                     )
                 } else {
-                    // View mode
                     PersonalInfoViewMode(
                         personalInfo = userProfile.personalInfo,
                         isEmailVerified = userProfile.accountInfo.isEmailVerified,
@@ -169,7 +159,6 @@ fun ProfileScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Learning Profile Section
             ProfileSection(
                 title = "Learning Profile",
                 icon = "📚",
@@ -179,14 +168,12 @@ fun ProfileScreen(
                 onCancel = viewModel::onCancelSectionEdit
             ) {
                 if (editingSection == ProfileSection.LEARNING_PROFILE && editingLearningProfile != null) {
-                    // Edit mode
                     LearningProfileEditForm(
                         learningProfile = editingLearningProfile!!,
                         onUpdateField = viewModel::onUpdateLearningProfileField,
                         onUpdateList = viewModel::onUpdateLearningProfileList
                     )
                 } else {
-                    // View mode
                     LearningProfileViewMode(
                         learningProfile = userProfile.learningProfile
                     )
@@ -195,7 +182,6 @@ fun ProfileScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Account & Security Section
             ProfileSection(
                 title = "Account & Security",
                 icon = "🔒"
@@ -233,7 +219,6 @@ fun ProfileScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Statistics Section
             ProfileSection(
                 title = "Your Statistics",
                 icon = "📊"
@@ -243,49 +228,43 @@ fun ProfileScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Profile Customization Section
             ProfileSection(
                 title = "Profile Customization",
                 icon = "🎨"
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    // Theme selection
                     ProfileCustomizationItem(
                         label = "App Theme",
                         currentValue = "Light Mode",
                         options = listOf("Light Mode", "Dark Mode", "System Default"),
-                        onValueChange = { /* TODO: Implement theme switching */ }
+                        onValueChange = {  }
                     )
                     
-                    // Language preference
                     ProfileCustomizationItem(
                         label = "Display Language",
                         currentValue = "English",
                         options = listOf("English", "Spanish", "French", "German"),
-                        onValueChange = { /* TODO: Implement language switching */ }
+                        onValueChange = {  }
                     )
                     
-                    // Notification preferences
                     ProfileCustomizationItem(
                         label = "Notifications",
                         currentValue = "All Enabled",
                         options = listOf("All Enabled", "Learning Only", "Disabled"),
-                        onValueChange = { /* TODO: Implement notification settings */ }
+                        onValueChange = {  }
                     )
                     
-                    // Learning reminders
                     ProfileCustomizationItem(
                         label = "Learning Reminders",
                         currentValue = "Daily at 7 PM",
                         options = listOf("Daily at 7 PM", "Daily at 9 AM", "Every 2 days", "Disabled"),
-                        onValueChange = { /* TODO: Implement reminder settings */ }
+                        onValueChange = {  }
                     )
                 }
             }
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Account Actions
             ProfileSection(
                 title = "Account Actions",
                 icon = "⚙️"
@@ -311,9 +290,7 @@ fun ProfileScreen(
     }
 }
 
-/**
- * Profile header component with avatar and basic info
- */
+
 @Composable
 private fun ProfileHeader(
     profile: UserProfile,
@@ -337,12 +314,10 @@ private fun ProfileHeader(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Avatar with upload functionality - with prominent border to show it's clickable
             Box(
                 modifier = Modifier.size(110.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // Clickable border ring to show interactivity
                 Box(
                     modifier = Modifier
                         .size(110.dp)
@@ -359,7 +334,6 @@ private fun ProfileHeader(
                         }
                 )
                 
-                // Main avatar card
                 Card(
                     modifier = Modifier
                         .size(100.dp)
@@ -394,7 +368,7 @@ private fun ProfileHeader(
                     }
                 }
                 
-                // Click indicator - floating camera icon
+                    
                 if (!isEditingPicture) {
                     Box(
                         modifier = Modifier
@@ -408,7 +382,7 @@ private fun ProfileHeader(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "📷",
+                            text = if (profile.personalInfo.profileImageUrl.isNullOrEmpty()) "📷" else "✏️",
                             style = MaterialTheme.typography.bodySmall,
                             color = Color.White
                         )
@@ -418,7 +392,6 @@ private fun ProfileHeader(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Name - with fallback and styling
             Text(
                 text = if (profile.personalInfo.fullName.isBlank()) {
                     if (profile.personalInfo.firstName.isNotBlank() || profile.personalInfo.lastName.isNotBlank()) {
@@ -436,19 +409,60 @@ private fun ProfileHeader(
                 textAlign = TextAlign.Center
             )
             
-            // Email
             Text(
                 text = profile.personalInfo.email.ifBlank { "No email set" },
                 style = MaterialTheme.typography.bodyMedium,
                 color = WordBridgeColors.TextSecondary
             )
+            
+            // Show save/cancel buttons when editing profile picture
+            if (isEditingPicture) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = onCancelEditPhoto,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = WordBridgeColors.TextSecondary
+                        ),
+                        elevation = null
+                    ) {
+                        Text("Cancel")
+                    }
+                    
+                    Button(
+                        onClick = onSavePhoto,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = WordBridgeColors.PrimaryPurple
+                        ),
+                        enabled = !isSaving
+                    ) {
+                        if (isSaving) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color = Color.White
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Saving...", color = Color.White)
+                            }
+                        } else {
+                            Text("Save Picture", color = Color.White)
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
-/**
- * Profile completion card - simplified to show only progress bar
- */
+
 @Composable
 private fun ProfileCompletionCard(
     completion: ProfileCompletion,
@@ -463,6 +477,30 @@ private fun ProfileCompletionCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Profile Completion",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = WordBridgeColors.TextPrimary
+                )
+                
+                Text(
+                    text = "${completion.completionPercentage}%",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = WordBridgeColors.PrimaryPurple
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
             LinearProgressIndicator(
                 progress = { completion.completionPercentage / 100f },
                 modifier = Modifier.fillMaxWidth(),
@@ -473,9 +511,7 @@ private fun ProfileCompletionCard(
     }
 }
 
-/**
- * Profile section component with edit functionality
- */
+
 @Composable
 private fun ProfileSection(
     title: String,
@@ -521,7 +557,6 @@ private fun ProfileSection(
                     )
                 }
                 
-                // Edit/Save/Cancel buttons
                 if (isEditing) {
                     Row {
                         TextButton(onClick = onCancel ?: {}) {
@@ -563,9 +598,7 @@ private fun ProfileSection(
     }
 }
 
-/**
- * Profile field item component
- */
+
 @Composable
 private fun ProfileFieldItem(
     label: String,
@@ -645,7 +678,6 @@ private fun ProfileFieldItem(
     }
 }
 
-// Additional simplified components for brevity
 @Composable private fun AccountInfoItem(label: String, value: String, status: String, onClick: () -> Unit) {
     Card(onClick = onClick, colors = CardDefaults.cardColors(containerColor = Color.Transparent)) {
         Column(modifier = Modifier.padding(8.dp)) {
@@ -705,13 +737,10 @@ private fun ProfileFieldItem(
 }
 
 private fun formatDate(timestamp: Long): String {
-    // Simple date formatting - in real app would use proper date formatter
     return "Jan 2024"
 }
 
-/**
- * Profile customization item component
- */
+
 @Composable
 private fun ProfileCustomizationItem(
     label: String,
@@ -793,9 +822,7 @@ private fun ProfileCustomizationItem(
     }
 }
 
-/**
- * Personal Info view mode component
- */
+
 @Composable
 private fun PersonalInfoViewMode(
     personalInfo: PersonalInfo,
@@ -857,9 +884,7 @@ private fun PersonalInfoViewMode(
     }
 }
 
-/**
- * Personal Info edit form component
- */
+
 @Composable
 private fun PersonalInfoEditForm(
     personalInfo: PersonalInfo,
@@ -945,9 +970,7 @@ private fun PersonalInfoEditForm(
     }
 }
 
-/**
- * Learning Profile view mode component
- */
+
 @Composable
 private fun LearningProfileViewMode(
     learningProfile: LearningProfile
@@ -999,9 +1022,7 @@ private fun LearningProfileViewMode(
     }
 }
 
-/**
- * Learning Profile edit form component
- */
+
 @Composable
 private fun LearningProfileEditForm(
     learningProfile: LearningProfile,
@@ -1075,9 +1096,7 @@ private fun LearningProfileEditForm(
     }
 }
 
-/**
- * Avatar content component for displaying profile picture or initials
- */
+
 @Composable
 private fun AvatarContent(
     profile: UserProfile,
@@ -1089,7 +1108,6 @@ private fun AvatarContent(
         contentAlignment = Alignment.Center
     ) {
         when {
-            // Show temp image preview when editing
             isEditingPicture && tempImageBytes != null -> {
                 Box(
                     modifier = Modifier
@@ -1121,7 +1139,6 @@ private fun AvatarContent(
                     }
                 }
             }
-            // Show uploaded profile image
             !profile.personalInfo.profileImageUrl.isNullOrEmpty() -> {
                 Box(
                     modifier = Modifier
@@ -1131,7 +1148,6 @@ private fun AvatarContent(
                             CircleShape
                         )
                         .clickable {
-                            // Open image in browser
                             try {
                                 Desktop.getDesktop().browse(URI(profile.personalInfo.profileImageUrl))
                             } catch (e: Exception) {
@@ -1170,14 +1186,12 @@ private fun AvatarContent(
                     }
                 }
             }
-            // Show emoji avatar
             profile.personalInfo.avatar.isNotEmpty() && profile.personalInfo.avatar.length <= 2 -> {
                 Text(
                     text = profile.personalInfo.avatar,
                     style = MaterialTheme.typography.headlineLarge
                 )
             }
-            // Show initials
             else -> {
                 Text(
                     text = profile.personalInfo.initials,
@@ -1190,7 +1204,6 @@ private fun AvatarContent(
         }
     }
     
-    // Upload indicator overlay (only when not editing)
     if (!isEditingPicture) {
         Box(
             modifier = Modifier

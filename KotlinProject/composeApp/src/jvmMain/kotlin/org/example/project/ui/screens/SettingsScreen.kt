@@ -31,7 +31,6 @@ fun SettingsScreen(
             .padding(24.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // Header with title and user info
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -45,7 +44,6 @@ fun SettingsScreen(
                 color = WordBridgeColors.TextPrimary
             )
             
-            // Save indicator
             if (isSaving) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -68,7 +66,6 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(24.dp))
         
         if (isLoading) {
-            // Loading state
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
@@ -76,9 +73,7 @@ fun SettingsScreen(
                 CircularProgressIndicator(color = WordBridgeColors.PrimaryPurple)
             }
         } else {
-            // Settings sections
             
-            // Notifications Section
             SettingsSection(
                 title = "Notifications",
                 icon = "🔔",
@@ -131,7 +126,6 @@ fun SettingsScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Learning Section
             SettingsSection(
                 title = "Learning",
                 icon = "📚",
@@ -142,14 +136,14 @@ fun SettingsScreen(
                         title = "Daily Goal",
                         description = "Target minutes per day",
                         currentValue = "${userSettings.learningSettings.dailyGoalMinutes} minutes",
-                        onClick = { /* TODO: Show goal picker */ }
+                        onClick = {  }
                     )
                     
                     SettingsSelectionItem(
                         title = "Difficulty Level",
                         description = "Your current learning level",
                         currentValue = userSettings.learningSettings.preferredDifficulty,
-                        onClick = { /* TODO: Show difficulty picker */ }
+                        onClick = {  }
                     )
                     
                     SettingsToggleItem(
@@ -184,14 +178,13 @@ fun SettingsScreen(
                         title = "Font Size",
                         description = "Text size throughout the app",
                         currentValue = userSettings.learningSettings.fontSize,
-                        onClick = { /* TODO: Show font size picker */ }
+                        onClick = {  }
                     )
                 }
             }
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // App Section
             SettingsSection(
                 title = "App",
                 icon = "⚙️",
@@ -223,7 +216,7 @@ fun SettingsScreen(
                         title = "Cache Size",
                         description = "Storage used for offline content",
                         currentValue = userSettings.appSettings.cacheSize,
-                        onClick = { /* TODO: Show cache size picker */ }
+                        onClick = {  }
                     )
                     
                     SettingsToggleItem(
@@ -244,7 +237,6 @@ fun SettingsScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Privacy Section
             SettingsSection(
                 title = "Privacy",
                 icon = "🔒",
@@ -283,7 +275,6 @@ fun SettingsScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Account Section
             SettingsSection(
                 title = "Account",
                 icon = "👤",
@@ -340,9 +331,7 @@ fun SettingsScreen(
     }
 }
 
-/**
- * Settings section component
- */
+
 @Composable
 private fun SettingsSection(
     title: String,
@@ -397,9 +386,7 @@ private fun SettingsSection(
     }
 }
 
-/**
- * Settings toggle item component
- */
+
 @Composable
 private fun SettingsToggleItem(
     title: String,
@@ -446,9 +433,7 @@ private fun SettingsToggleItem(
     }
 }
 
-/**
- * Settings selection item component
- */
+
 @Composable
 private fun SettingsSelectionItem(
     title: String,
@@ -497,9 +482,7 @@ private fun SettingsSelectionItem(
     }
 }
 
-/**
- * Settings action item component
- */
+
 @Composable
 private fun SettingsActionItem(
     title: String,
@@ -535,9 +518,7 @@ private fun SettingsActionItem(
     }
 }
 
-/**
- * Settings info item component
- */
+
 @Composable
 private fun SettingsInfoItem(
     title: String,

@@ -13,7 +13,6 @@ import org.example.project.domain.model.GoalType
 
 class ProgressViewModel : ViewModel() {
     
-    // Private mutable state
     private val _learningProgress = mutableStateOf(LearningProgress.getSampleProgress())
     private val _achievements = mutableStateOf(Achievement.getSampleAchievements())
     private val _learningGoals = mutableStateOf(LearningGoal.getSampleGoals())
@@ -22,7 +21,6 @@ class ProgressViewModel : ViewModel() {
     private val _selectedSkill = mutableStateOf<SkillArea?>(null)
     private val _isLoading = mutableStateOf(false)
     
-    // Public read-only state
     val learningProgress: State<LearningProgress> = _learningProgress
     val achievements: State<List<Achievement>> = _achievements
     val learningGoals: State<List<LearningGoal>> = _learningGoals
@@ -31,7 +29,6 @@ class ProgressViewModel : ViewModel() {
     val selectedSkill: State<SkillArea?> = _selectedSkill
     val isLoading: State<Boolean> = _isLoading
     
-    // Computed properties
     private val _unlockedAchievements = mutableStateOf(emptyList<Achievement>())
     val unlockedAchievements: State<List<Achievement>> = _unlockedAchievements
     

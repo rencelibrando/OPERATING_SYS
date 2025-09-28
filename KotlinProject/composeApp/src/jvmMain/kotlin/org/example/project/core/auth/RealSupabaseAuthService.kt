@@ -31,13 +31,9 @@ class RealSupabaseAuthService {
                     println("   $key: $value")
                 }
                 throw Exception("Supabase is not configured. Please check your Supabase credentials in SupabaseConfig.kt.")
-            }
+            }           
             
-            
-            // Note: Email verification will be handled via GitHub Pages callback
-            // No need for local server since we're using the hosted callback page
-            
-            
+         
             supabase.auth.signUpWith(Email) {
                 email = request.email
                 password = request.password
@@ -211,8 +207,7 @@ class RealSupabaseAuthService {
                 throw Exception("Supabase is not configured. Please check your Supabase credentials in SupabaseConfig.kt.")
             }
             
-            // For Supabase 2.5.4, we'll implement a workaround for resend
-            // The user can simply try signing up again, which will resend the email
+
             println("⚠️ Resend not directly supported in this API version")
             println("💡 Recommendation: Try signing up again to receive a new verification email")
             
@@ -298,13 +293,11 @@ class RealSupabaseAuthService {
         return try {
             println("🔍 Checking email verification status...")
             
-            // Check if user has cached verified user
             verifiedUserFromCallback?.let { cached ->
                 println("✅ Using verified user from callback cache: ${cached.email}")
                 return Result.success(cached)
             }
             
-            // Check current session (only exists if user is signed in)
             val session = supabase.auth.currentSessionOrNull()
             val user = session?.user
             
@@ -329,21 +322,61 @@ class RealSupabaseAuthService {
                     println("✅ Email has been verified and user is signed in!")
                     return Result.success(appUser)
                 } else {
-                    println("⏳ User is signed in but email not yet verified")
+                    println("User is signed in but email not yet verified")
                     return Result.success(appUser)
                 }
             } else {
-                println("ℹ️ No current user session - user needs to sign in after email verification")
+                println("ℹNo current user session - user needs to sign in after email verification")
                 println("💡 After verifying email, user should sign in with their credentials")
                 return Result.success(null)
             }
             
         } catch (e: Exception) {
-            println("❌ Error checking email verification: ${e.message}")
+            println("Error checking email verification: ${e.message}")
             Result.failure(Exception("Failed to check email verification: ${e.message}"))
         }
     }
     
+    suspend fun updateUserMetadata(profileImageUrl: String?): Result<Unit> {
+        return try {
+            println("🔐 Updating user metadata with profile image URL: $profileImageUrl")
+            
+            val session = supabase.auth.currentSessionOrNull()
+            if (session == null) {
+                return Result.failure(Exception("No active session"))
+            }
+            
+            val currentUser = session.user
+            val currentMetadata = mutableMapOf<String, Any>()
+            currentUser?.userMetadata?.forEach { (key, value) ->
+                currentMetadata[key] = value ?: ""
+            }
+            
+            // Update the avatar_url in metadata
+            if (profileImageUrl != null) {
+                currentMetadata["avatar_url"] = profileImageUrl
+            } else {
+                currentMetadata.remove("avatar_url")
+            }
+            
+            // Update user metadata
+            supabase.auth.updateUser {
+                data = buildJsonObject {
+                    currentMetadata.forEach { (key, value) ->
+                        put(key, value.toString())
+                    }
+                }
+            }
+            
+            println("✅ User metadata updated successfully")
+            Result.success(Unit)
+            
+        } catch (e: Exception) {
+            println("❌ Failed to update user metadata: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
     fun getDebugInfo(): Map<String, Any> {
         val session = supabase.auth.currentSessionOrNull()
         val user = session?.user

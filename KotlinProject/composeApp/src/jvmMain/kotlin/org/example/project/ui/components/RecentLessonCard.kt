@@ -42,7 +42,6 @@ fun RecentLessonCard(
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Lesson icon
         Box(
             modifier = Modifier
                 .size(48.dp)
@@ -58,7 +57,6 @@ fun RecentLessonCard(
         
         Spacer(modifier = Modifier.width(12.dp))
         
-        // Lesson details
         Column(
             modifier = Modifier.weight(1f)
         ) {
@@ -77,7 +75,6 @@ fun RecentLessonCard(
             )
         }
         
-        // Progress indicator
         Box(
             modifier = Modifier
                 .size(32.dp)

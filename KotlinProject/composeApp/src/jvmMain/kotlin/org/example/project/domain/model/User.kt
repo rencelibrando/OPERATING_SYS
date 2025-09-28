@@ -8,7 +8,8 @@ data class User(
     val xpPoints: Int,
     val wordsLearned: Int,
     val accuracy: Int, // Percentage (0-100)
-    val avatarInitials: String
+    val avatarInitials: String,
+    val profileImageUrl: String? = null
 ) {
     companion object {
 
@@ -20,7 +21,8 @@ data class User(
             xpPoints = 0,
             wordsLearned = 0,
             accuracy = 0,
-            avatarInitials = "SC"
+            avatarInitials = "SC",
+            profileImageUrl = null
         )
     }
 }
