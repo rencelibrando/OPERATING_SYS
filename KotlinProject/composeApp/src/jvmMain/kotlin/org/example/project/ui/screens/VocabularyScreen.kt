@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -16,6 +17,13 @@ import org.example.project.presentation.viewmodel.VocabularyViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
 import org.example.project.core.auth.User as AuthUser
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.shape.RoundedCornerShape
+import org.example.project.domain.model.VocabularyStatus
+import org.example.project.domain.model.VocabularyWord
 
 @Composable
 fun VocabularyScreen(
@@ -32,6 +40,8 @@ fun VocabularyScreen(
     val filteredWords by viewModel.filteredWords
     val isLoading by viewModel.isLoading
     
+    var showAddDialog by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -112,7 +122,7 @@ fun VocabularyScreen(
                 onSearchQueryChanged = viewModel::onSearchQueryChanged,
                 selectedFilter = selectedFilter,
                 onFilterSelected = viewModel::onFilterSelected,
-                onAddWordClick = viewModel::onAddWordClicked
+                onAddWordClick = { showAddDialog = true }
             )
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -122,10 +132,9 @@ fun VocabularyScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     filteredWords.forEach { word ->
-                        Text(
-                            text = "${word.word} - ${word.definition}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = WordBridgeColors.TextPrimary
+                        VocabularyWordItem(
+                            word = word,
+                            onClick = viewModel::onVocabularyWordClicked
                         )
                     }
                 }
@@ -160,4 +169,92 @@ fun VocabularyScreen(
             }
         }
     }
+
+    if (showAddDialog) {
+        AddWordDialog(
+            onDismiss = { showAddDialog = false },
+            onSubmit = { word, definition ->
+                val newWord = VocabularyWord(
+                    id = "word_${System.currentTimeMillis()}",
+                    word = word,
+                    definition = definition,
+                    pronunciation = "",
+                    category = "General",
+                    difficulty = "Beginner",
+                    examples = emptyList(),
+                    status = VocabularyStatus.NEW,
+                    dateAdded = System.currentTimeMillis(),
+                    lastReviewed = null
+                )
+                viewModel.addWord(newWord)
+                showAddDialog = false
+            }
+        )
+    }
+}
+
+
+@Composable
+private fun VocabularyWordItem(
+    word: VocabularyWord,
+    onClick: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .padding(vertical = 8.dp)
+    ) {
+        Text(
+            text = word.word,
+            style = MaterialTheme.typography.titleMedium,
+            color = WordBridgeColors.TextPrimary
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = word.definition,
+            style = MaterialTheme.typography.bodyMedium,
+            color = WordBridgeColors.TextSecondary
+        )
+    }
+}
+
+
+@Composable
+private fun AddWordDialog(
+    onDismiss: () -> Unit,
+    onSubmit: (String, String) -> Unit
+) {
+    var word by remember { mutableStateOf("") }
+    var definition by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Vocabulary Word") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = word,
+                    onValueChange = { word = it },
+                    label = { Text("Word") }
+                )
+                OutlinedTextField(
+                    value = definition,
+                    onValueChange = { definition = it },
+                    label = { Text("Definition") }
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSubmit(word, definition) },
+                enabled = word.isNotBlank() && definition.isNotBlank()
+            ) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
 }
