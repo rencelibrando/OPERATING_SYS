@@ -118,6 +118,7 @@ class VocabularyViewModel(
                 _vocabularyWords.value = words
                 _vocabularyStats.value = calculateStats(words)
                 updateFilteredWords()
+                println("Refresh Successful.")
             }.onFailure {
                 // keep defaults
                 updateFilteredWords()
@@ -137,5 +138,9 @@ class VocabularyViewModel(
             }
             _isLoading.value = false
         }
+    }
+
+    fun refresh() {
+        loadAll()
     }
 }
