@@ -1,5 +1,6 @@
 package org.example.project.data.repository
 
+import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.serialization.SerialName
@@ -8,41 +9,111 @@ import org.example.project.core.config.SupabaseConfig
 import org.example.project.domain.model.VocabularyStatus
 import org.example.project.domain.model.VocabularyWord
 
-
 class VocabularyRepositoryImpl : VocabularyRepository {
 
     private val supabase = SupabaseConfig.client
 
+    // Get all vocabulary words for a specific user via user_vocabulary join
     override suspend fun getAllVocabularyWords(): Result<List<VocabularyWord>> = runCatching {
-        val rows = supabase.postgrest["vocabulary_words"]
-            .select()
-            .decodeAs<List<VocabularyWordDTO>>()
-        rows.map { it.toDomain() }
+        // Get current user ID from Supabase auth
+        val userId = supabase.auth.currentUserOrNull()?.id
+            ?: throw IllegalStateException("User not authenticated")
+
+        getUserVocabularyInternal(userId)
     }
 
     override suspend fun searchVocabularyWords(query: String): Result<List<VocabularyWord>> = runCatching {
-        val rows = supabase.postgrest["vocabulary_words"]
-            .select {
+        val userId = supabase.auth.currentUserOrNull()?.id
+            ?: throw IllegalStateException("User not authenticated")
+
+        // Search within user's vocabulary only
+        val userVocabRows = supabase.postgrest["user_vocabulary"]
+            .select(columns = Columns.raw("*, vocabulary_words(*)")) {
                 filter {
-                    or {
-                        ilike("word", "%$query%")
-                        ilike("definition", "%$query%")
-                    }
+                    eq("user_id", userId)
                 }
             }
-            .decodeAs<List<VocabularyWordDTO>>()
-        rows.map { it.toDomain() }
+            .decodeAs<List<UserVocabularyJoinDTO>>()
+
+        // Filter by search query on the word or definition
+        userVocabRows
+            .filter { join ->
+                join.vocabularyWord?.word?.contains(query, ignoreCase = true) == true ||
+                        join.vocabularyWord?.definition?.contains(query, ignoreCase = true) == true
+            }
+            .mapNotNull { it.toDomain() }
     }
 
     override suspend fun addVocabularyWord(word: VocabularyWord): Result<VocabularyWord> = runCatching {
-        val inserted = supabase.postgrest["vocabulary_words"]
-            .insert(
-                value = VocabularyWordDTO.fromDomain(word)
-            ) {
+        val userId = supabase.auth.currentUserOrNull()?.id
+            ?: throw IllegalStateException("User not authenticated")
+
+        // Step 1: Check if word already exists in vocabulary_words
+        val existing = supabase.postgrest["vocabulary_words"]
+            .select {
+                filter {
+                    eq("word", word.word)
+                }
+            }
+            .decodeSingleOrNull<VocabularyWordDTO>()
+
+        val wordId: String = if (existing != null) {
+            // Word exists, use its ID
+            existing.id!!
+        } else {
+            // Step 2: Insert new word into vocabulary_words
+            val inserted = supabase.postgrest["vocabulary_words"]
+                .insert(
+                    value = VocabularyWordDTO.fromDomain(word)
+                ) {
+                    select(Columns.ALL)
+                }
+                .decodeSingle<VocabularyWordDTO>()
+            inserted.id!!
+        }
+
+        // Step 3: Add entry to user_vocabulary (link user to word)
+        val userVocabEntry = UserVocabularyDTO(
+            userId = userId,
+            wordId = wordId,
+            status = "new",
+            reviewCount = 0,
+            correctCount = 0,
+            lastReviewed = null,
+            nextReview = null,
+            intervalDays = 1,
+            easeFactor = 2.50
+        )
+
+        supabase.postgrest["user_vocabulary"]
+            .insert(userVocabEntry) {
                 select(Columns.ALL)
             }
-            .decodeAs<VocabularyWordDTO>()
-        inserted.toDomain()
+            .decodeSingle<UserVocabularyDTO>()
+
+        // Step 4: Fetch the complete word data to return
+        val finalWord = supabase.postgrest["vocabulary_words"]
+            .select {
+                filter {
+                    eq("id", wordId)
+                }
+            }
+            .decodeSingle<VocabularyWordDTO>()
+
+        finalWord.toDomain()
+    }
+
+    // Helper function to get user's vocabulary
+    private suspend fun getUserVocabularyInternal(userId: String): List<VocabularyWord> {
+        val userVocabRows = supabase.postgrest["user_vocabulary"]
+            .select(columns = Columns.raw("*, vocabulary_words(*)")) {
+                filter {
+                    eq("user_id", userId)
+                }
+            }
+            .decodeAs<List<UserVocabularyJoinDTO>>()
+
+        return userVocabRows.mapNotNull { it.toDomain() }
     }
 
     // Not yet implemented – return simple defaults to keep UI functional
@@ -60,7 +131,7 @@ class VocabularyRepositoryImpl : VocabularyRepository {
     override suspend fun getWordsForReview(userId: String, limit: Int) = Result.success(emptyList<UserVocabularyWord>())
 }
 
-
+// DTO for vocabulary_words table
 @Serializable
 private data class VocabularyWordDTO(
     val id: String? = null,
@@ -93,7 +164,6 @@ private data class VocabularyWordDTO(
     companion object {
         fun fromDomain(w: VocabularyWord): VocabularyWordDTO {
             return VocabularyWordDTO(
-                // id is generated by the DB; omit to let Postgres assign UUID
                 word = w.word,
                 definition = w.definition,
                 pronunciation = w.pronunciation.ifBlank { null },
@@ -102,6 +172,58 @@ private data class VocabularyWordDTO(
                 category = w.category.ifBlank { "General" },
                 audioUrl = null,
                 imageUrl = null
+            )
+        }
+    }
+}
+
+// DTO for user_vocabulary table
+@Serializable
+private data class UserVocabularyDTO(
+    val id: String? = null,
+    @SerialName("user_id") val userId: String,
+    @SerialName("word_id") val wordId: String,
+    val status: String,
+    @SerialName("review_count") val reviewCount: Int = 0,
+    @SerialName("correct_count") val correctCount: Int = 0,
+    @SerialName("last_reviewed") val lastReviewed: String? = null,
+    @SerialName("next_review") val nextReview: String? = null,
+    @SerialName("interval_days") val intervalDays: Int = 1,
+    @SerialName("ease_factor") val easeFactor: Double = 2.50,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null
+)
+
+// DTO for joined query (user_vocabulary with vocabulary_words)
+@Serializable
+private data class UserVocabularyJoinDTO(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("word_id") val wordId: String,
+    val status: String,
+    @SerialName("review_count") val reviewCount: Int,
+    @SerialName("correct_count") val correctCount: Int,
+    @SerialName("last_reviewed") val lastReviewed: String?,
+    @SerialName("vocabulary_words") val vocabularyWord: VocabularyWordDTO?
+) {
+    fun toDomain(): VocabularyWord? {
+        return vocabularyWord?.let { word ->
+            VocabularyWord(
+                id = word.id ?: wordId,
+                word = word.word,
+                definition = word.definition,
+                pronunciation = word.pronunciation ?: "",
+                category = word.category,
+                difficulty = word.difficultyLevel,
+                examples = word.exampleSentence?.let { listOf(it) } ?: emptyList(),
+                status = when (status.lowercase()) {
+                    "learning" -> VocabularyStatus.LEARNING
+                    "reviewing" -> VocabularyStatus.NEED_REVIEW
+                    "mastered" -> VocabularyStatus.MASTERED
+                    else -> VocabularyStatus.NEW
+                },
+                dateAdded = System.currentTimeMillis(),
+                lastReviewed = lastReviewed?.let { System.currentTimeMillis() }
             )
         }
     }
