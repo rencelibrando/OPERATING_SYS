@@ -1,5 +1,6 @@
 package org.example.project.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -70,7 +71,7 @@ fun VocabularyScreen(
                     )
                 ) {
                     Text(
-                        text = "Reload",
+                        text = "Refresh",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -215,23 +216,40 @@ private fun VocabularyWordItem(
     word: VocabularyWord,
     onClick: (String) -> Unit
 ) {
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .padding(vertical = 8.dp)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            text = word.word,
-            style = MaterialTheme.typography.titleMedium,
-            color = WordBridgeColors.TextPrimary
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = word.definition,
-            style = MaterialTheme.typography.bodyMedium,
-            color = WordBridgeColors.TextSecondary
-        )
+        Column {
+            Text(
+                text = word.word,
+                style = MaterialTheme.typography.titleMedium,
+                color = WordBridgeColors.TextPrimary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = word.definition,
+                style = MaterialTheme.typography.bodyMedium,
+                color = WordBridgeColors.TextSecondary
+            )
+        }
+
+        TextButton(
+            onClick = { println("Practice ${word.word} Clicked.") },
+            colors = ButtonDefaults.textButtonColors(
+                contentColor = WordBridgeColors.TextPrimary
+            ),
+            border = BorderStroke(1.dp, WordBridgeColors.PrimaryPurple)
+        ) {
+            Text(
+                text = "Practice",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
     }
 }
 
