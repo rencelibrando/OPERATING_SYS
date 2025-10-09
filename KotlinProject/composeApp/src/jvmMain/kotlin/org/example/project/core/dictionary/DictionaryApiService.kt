@@ -32,12 +32,14 @@ class DictionaryApiService {
 
             val firstEntry = apiResponse.first()
             val firstMeaning = firstEntry.meanings.firstOrNull()
-            val firstDefinition = firstMeaning?.definitions?.firstOrNull()
+            val firstDefinition = firstMeaning?.definitions?.firstOrNull{ it.example?.isNotBlank() ?: false}
+            val firstPhonetics = firstEntry.phonetics.firstOrNull{it.audio.isNotBlank()}
 
             WordDefinition(
                 word = firstEntry.word,
                 definition = firstDefinition?.definition ?: "No definition available",
                 pronunciation = firstEntry.phonetic ?: "",
+                audio = firstPhonetics?.audio ?: "No audio URL available",
                 example = firstDefinition?.example,
                 partOfSpeech = firstMeaning?.partOfSpeech ?: "Unknown"
             )
@@ -51,8 +53,9 @@ data class WordDefinition(
     val word: String,
     val definition: String,
     val pronunciation: String,
+    val audio: String,
     val example: String?,
-    val partOfSpeech: String
+    val partOfSpeech: String,
 )
 
 class WordNotFoundException(message: String) : Exception(message)
@@ -61,7 +64,13 @@ class WordNotFoundException(message: String) : Exception(message)
 private data class DictionaryApiResponse(
     val word: String,
     val phonetic: String? = null,
+    val phonetics: List<Phonetics> = emptyList(),
     val meanings: List<Meaning> = emptyList()
+)
+
+@Serializable
+private data class Phonetics(
+    val audio: String
 )
 
 @Serializable

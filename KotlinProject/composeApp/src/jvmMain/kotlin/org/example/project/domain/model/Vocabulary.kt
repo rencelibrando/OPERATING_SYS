@@ -6,47 +6,13 @@ data class VocabularyWord(
     val definition: String,
     val pronunciation: String,
     val category: String,
+    val audioUrl: String,
     val difficulty: String,
     val examples: List<String>,
     val status: VocabularyStatus,
     val dateAdded: Long,
     val lastReviewed: Long?
-) {
-    companion object {
-        fun getSampleWords(): List<VocabularyWord> = listOf(
-            VocabularyWord(
-                id = "word_1",
-                word = "Serendipity",
-                definition = "The occurrence and development of events by chance in a happy or beneficial way",
-                pronunciation = "/ˌserənˈdipədē/",
-                category = "Noun",
-                difficulty = "Advanced",
-                examples = listOf(
-                    "Finding this job was pure serendipity.",
-                    "The serendipity of meeting you here is amazing."
-                ),
-                status = VocabularyStatus.MASTERED,
-                dateAdded = System.currentTimeMillis() - 86400000 * 7, // 7 days ago
-                lastReviewed = System.currentTimeMillis() - 86400000 * 2 // 2 days ago
-            ),
-            VocabularyWord(
-                id = "word_2",
-                word = "Eloquent",
-                definition = "Fluent or persuasive in speaking or writing",
-                pronunciation = "/ˈeləkwənt/",
-                category = "Adjective",
-                difficulty = "Intermediate",
-                examples = listOf(
-                    "She gave an eloquent speech.",
-                    "His eloquent writing impressed everyone."
-                ),
-                status = VocabularyStatus.LEARNING,
-                dateAdded = System.currentTimeMillis() - 86400000 * 3, // 3 days ago
-                lastReviewed = System.currentTimeMillis() - 86400000 // 1 day ago
-            )
-        )
-    }
-}
+)
 
 enum class VocabularyStatus(val displayName: String) {
     NEW("New"),
