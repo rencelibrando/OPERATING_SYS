@@ -189,13 +189,14 @@ fun VocabularyScreen(
     if (showAddDialog) {
         AddWordDialog(
             onDismiss = { showAddDialog = false },
-            onSubmit = { word, definition, pronunciation, example, category ->
+            onSubmit = { word, definition, pronunciation, audioUrl, example, category ->
                 val newWord = VocabularyWord(
                     id = "word_${System.currentTimeMillis()}",
                     word = word,
                     definition = definition,
                     pronunciation = pronunciation,
                     category = category,
+                    audioUrl = audioUrl,
                     difficulty = "Beginner",
                     examples = if (example != null) listOf(example) else emptyList(),
                     status = VocabularyStatus.NEW,
@@ -257,7 +258,7 @@ private fun VocabularyWordItem(
 @Composable
 private fun AddWordDialog(
     onDismiss: () -> Unit,
-    onSubmit: (String, String, String, String?, String) -> Unit
+    onSubmit: (String, String, String, String?, String, String) -> Unit
 ) {
     var word by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
@@ -464,6 +465,7 @@ private fun AddWordDialog(
                             def.word,
                             def.definition,
                             def.pronunciation,
+                            def.audio,
                             def.example,
                             def.partOfSpeech
                         )

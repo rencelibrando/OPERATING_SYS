@@ -141,7 +141,7 @@ private data class VocabularyWordDTO(
     @SerialName("example_sentence") val exampleSentence: String? = null,
     @SerialName("difficulty_level") val difficultyLevel: String,
     val category: String,
-    @SerialName("audio_url") val audioUrl: String? = null,
+    @SerialName("audio_url") val audioUrl: String,
     @SerialName("image_url") val imageUrl: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null
@@ -153,6 +153,7 @@ private data class VocabularyWordDTO(
             definition = definition,
             pronunciation = pronunciation ?: "",
             category = category,
+            audioUrl = audioUrl,
             difficulty = difficultyLevel,
             examples = exampleSentence?.let { listOf(it) } ?: emptyList(),
             status = VocabularyStatus.NEW,
@@ -170,7 +171,7 @@ private data class VocabularyWordDTO(
                 exampleSentence = w.examples.firstOrNull(),
                 difficultyLevel = w.difficulty.ifBlank { "Beginner" },
                 category = w.category.ifBlank { "General" },
-                audioUrl = null,
+                audioUrl = w.audioUrl,
                 imageUrl = null
             )
         }
@@ -214,6 +215,7 @@ private data class UserVocabularyJoinDTO(
                 definition = word.definition,
                 pronunciation = word.pronunciation ?: "",
                 category = word.category,
+                audioUrl = word.audioUrl,
                 difficulty = word.difficultyLevel,
                 examples = word.exampleSentence?.let { listOf(it) } ?: emptyList(),
                 status = when (status.lowercase()) {
