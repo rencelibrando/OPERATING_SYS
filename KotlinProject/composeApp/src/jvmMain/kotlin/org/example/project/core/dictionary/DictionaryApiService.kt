@@ -32,8 +32,8 @@ class DictionaryApiService {
 
             val firstEntry = apiResponse.first()
             val firstMeaning = firstEntry.meanings.firstOrNull()
-            val firstDefinition = firstMeaning?.definitions?.firstOrNull()
-            val firstPhonetics = firstEntry.phonetics.firstOrNull()
+            val firstDefinition = firstMeaning?.definitions?.firstOrNull{ it.example?.isNotBlank() ?: false}
+            val firstPhonetics = firstEntry.phonetics.firstOrNull{it.audio.isNotBlank()}
 
             WordDefinition(
                 word = firstEntry.word,

@@ -258,7 +258,7 @@ private fun VocabularyWordItem(
 @Composable
 private fun AddWordDialog(
     onDismiss: () -> Unit,
-    onSubmit: (String, String, String, String?, String, String) -> Unit
+    onSubmit: (String, String, String, String, String?, String) -> Unit
 ) {
     var word by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
