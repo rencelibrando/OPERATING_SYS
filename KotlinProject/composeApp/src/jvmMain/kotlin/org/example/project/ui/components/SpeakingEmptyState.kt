@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.example.project.domain.model.SpeakingFeature
+import org.example.project.presentation.viewmodel.SpeakingFeature
 import org.example.project.ui.theme.WordBridgeColors
 
 @Composable
