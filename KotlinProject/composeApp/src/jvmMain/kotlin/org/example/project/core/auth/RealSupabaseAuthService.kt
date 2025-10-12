@@ -27,7 +27,7 @@ class RealSupabaseAuthService {
             if (!SupabaseConfig.isConfigured()) {
                 val configStatus = SupabaseConfig.getConfigStatus()
                 println("❌ Supabase Configuration Error:")
-                configStatus.forEach { (key, value) -> 
+                configStatus.forEach { (key, value) ->
                     println("   $key: $value")
                 }
                 throw Exception("Supabase is not configured. Please check your Supabase credentials in SupabaseConfig.kt.")
@@ -119,7 +119,7 @@ class RealSupabaseAuthService {
             if (!SupabaseConfig.isConfigured()) {
                 val configStatus = SupabaseConfig.getConfigStatus()
                 println("❌ Supabase Configuration Error:")
-                configStatus.forEach { (key, value) -> 
+                configStatus.forEach { (key, value) ->
                     println("   $key: $value")
                 }
                 throw Exception("Supabase is not configured. Please check your Supabase credentials in SupabaseConfig.kt.")
@@ -201,7 +201,7 @@ class RealSupabaseAuthService {
             if (!SupabaseConfig.isConfigured()) {
                 val configStatus = SupabaseConfig.getConfigStatus()
                 println("❌ Supabase Configuration Error:")
-                configStatus.forEach { (key, value) -> 
+                configStatus.forEach { (key, value) ->
                     println("   $key: $value")
                 }
                 throw Exception("Supabase is not configured. Please check your Supabase credentials in SupabaseConfig.kt.")

@@ -1,28 +1,71 @@
 package org.example.project.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.example.project.presentation.viewmodel.HomeViewModel
-import org.example.project.ui.components.*
+import org.example.project.presentation.viewmodel.OnboardingViewModel
+import org.example.project.ui.components.ContinueLearningCard
+import org.example.project.ui.components.HomeEmptyState
+import org.example.project.ui.components.LearningActivityCard
+import org.example.project.ui.components.Sidebar
+import org.example.project.ui.components.TodaysProgressCard
+import org.example.project.ui.components.UserAvatar
 import org.example.project.ui.theme.WordBridgeColors
 import org.example.project.core.auth.User as AuthUser
+
 
 @Composable
 fun HomeScreen(
     authenticatedUser: AuthUser? = null,
     onSignOut: (() -> Unit)? = null,
+    onboardingViewModel: OnboardingViewModel = viewModel(),
     viewModel: HomeViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
+    val isOnboardingComplete by onboardingViewModel.isComplete
+    val isLoadingOnboarding by onboardingViewModel.isLoading
+
+    println("🏠🏠🏠 HomeScreen Check:")
+    println("    isOnboardingComplete: $isOnboardingComplete")
+    println("    isLoadingOnboarding: $isLoadingOnboarding")
+    println("    Should show onboarding: ${!isOnboardingComplete && !isLoadingOnboarding}")
+
+    if (!isOnboardingComplete && !isLoadingOnboarding) {
+        println("   ▶ SHOWING OnboardingScreen")
+        OnboardingScreen(
+            viewModel = onboardingViewModel,
+            onComplete = {
+                viewModel.refreshUserData()
+            },
+            modifier = modifier
+        )
+        return
+    } else {
+        println("   ⏭ SKIPPING OnboardingScreen - showing HomeScreen")
+    }
+
     val user by viewModel.user
     val navigationItems by viewModel.navigationItems
     val learningActivities by viewModel.learningActivities
