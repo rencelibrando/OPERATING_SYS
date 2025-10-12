@@ -14,7 +14,7 @@ class ProfileService {
     
     suspend fun updatePersonalInfo(personalInfo: PersonalInfo): Result<Unit> {
         return try {
-            println("💾 Updating personal info in Supabase")
+            println("Updating personal info in Supabase")
             
             if (!SupabaseConfig.isConfigured()) {
                 throw Exception("Supabase is not configured")
@@ -41,7 +41,7 @@ class ProfileService {
             }
             
             
-            println("🔍 ProfileService - Saving metadata:")
+            println("ProfileService - Saving metadata:")
             metadata.forEach { (key, value) ->
                 println("   $key: $value")
             }
@@ -51,11 +51,11 @@ class ProfileService {
                 data = metadata
             }
             
-            println("✅ Personal info updated successfully")
+            println("Personal info updated successfully")
             Result.success(Unit)
             
         } catch (e: Exception) {
-            println("❌ Failed to update personal info: ${e.message}")
+            println("Failed to update personal info: ${e.message}")
             Result.failure(e)
         }
     }
@@ -90,18 +90,18 @@ class ProfileService {
                 data = metadata
             }
             
-            println("✅ Learning profile updated successfully")
+            println("Learning profile updated successfully")
             Result.success(Unit)
             
         } catch (e: Exception) {
-            println("❌ Failed to update learning profile: ${e.message}")
+            println("Failed to update learning profile: ${e.message}")
             Result.failure(e)
         }
     }
     
     suspend fun loadPersonalInfo(): Result<PersonalInfo?> {
         return try {
-            println("📖 Loading personal info from Supabase")
+            println("Loading personal info from Supabase")
             
             val user = supabase.auth.currentUserOrNull()
             if (user == null) {
@@ -111,7 +111,7 @@ class ProfileService {
             val metadata = user.userMetadata
             
             
-            println("🔍 ProfileService - Loading metadata:")
+            println("ProfileService - Loading metadata:")
             metadata?.forEach { (key, value) ->
                 println("   $key: $value")
             }
@@ -130,17 +130,17 @@ class ProfileService {
                 bio = metadata?.get("bio")?.toString()?.removeSurrounding("\"")?.takeIf { it.isNotEmpty() }
             )
             
-            println("✅ Personal info loaded successfully")
+            println("Personal info loaded successfully")
             Result.success(personalInfo)
             
         } catch (e: Exception) {
-            println("❌ Failed to load personal info: ${e.message}")
+            println("Failed to load personal info: ${e.message}")
             Result.failure(e)
         }
     }
     suspend fun loadLearningProfile(): Result<LearningProfile?> {
         return try {
-            println("📖 Loading learning profile from Supabase")
+            println("Loading learning profile from Supabase")
             
             val user = supabase.auth.currentUserOrNull()
             if (user == null) {
@@ -161,11 +161,11 @@ class ProfileService {
                     ?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
             )
             
-            println("✅ Learning profile loaded successfully")
+            println("Learning profile loaded successfully")
             Result.success(learningProfile)
             
         } catch (e: Exception) {
-            println("❌ Failed to load learning profile: ${e.message}")
+            println("Failed to load learning profile: ${e.message}")
             Result.failure(e)
         }
     }

@@ -16,9 +16,15 @@ object SupabaseConfig {
         supabaseUrl = SUPABASE_URL,
         supabaseKey = SUPABASE_ANON_KEY
     ) {
-        install(Auth)
+        install(Auth) {
+            // Add better error logging
+            // autoLoadFromStorage = true
+        }
         install(Postgrest)
         install(Storage)
+        
+        // Enable HTTP logging
+        defaultLogLevel = io.github.jan.supabase.logging.LogLevel.DEBUG
     }
     fun isConfigured(): Boolean {
         return SUPABASE_URL.isNotBlank() && 
