@@ -23,7 +23,7 @@ fun OnboardingProgressIndicator(
     currentStep: Int,
     totalSteps: Int,
     currentCategory: OnboardingCategory,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val progress = if (totalSteps == 0) 0f else currentStep.toFloat() / totalSteps
 
@@ -31,33 +31,35 @@ fun OnboardingProgressIndicator(
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "${currentStep + 1} of $totalSteps",
                 style = MaterialTheme.typography.bodyMedium,
-                color = WordBridgeColors.TextSecondary
+                color = WordBridgeColors.TextSecondary,
             )
 
             Text(
                 text = friendlyCategoryLabel(currentCategory),
                 style = MaterialTheme.typography.bodyMedium,
-                color = WordBridgeColors.PrimaryPurple
+                color = WordBridgeColors.PrimaryPurple,
             )
         }
 
         Box(
-            modifier = Modifier
-                .padding(top = 8.dp)
-                .fillMaxWidth()
-                .height(10.dp)
-                .background(WordBridgeColors.PrimaryPurple.copy(alpha = 0.15f), RoundedCornerShape(50))
+            modifier =
+                Modifier
+                    .padding(top = 8.dp)
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .background(WordBridgeColors.PrimaryPurple.copy(alpha = 0.15f), RoundedCornerShape(50)),
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth(progress)
-                    .height(10.dp)
-                    .background(WordBridgeColors.PrimaryPurple, RoundedCornerShape(50))
+                modifier =
+                    Modifier
+                        .fillMaxWidth(progress)
+                        .height(10.dp)
+                        .background(WordBridgeColors.PrimaryPurple, RoundedCornerShape(50)),
             )
         }
     }
@@ -77,4 +79,3 @@ private fun friendlyCategoryLabel(category: OnboardingCategory): String {
         OnboardingCategory.FUTURE -> "Future vision"
     }
 }
-

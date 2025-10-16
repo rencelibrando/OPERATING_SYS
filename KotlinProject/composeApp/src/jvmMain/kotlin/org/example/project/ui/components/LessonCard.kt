@@ -20,177 +20,191 @@ fun LessonCard(
     lesson: Lesson,
     onContinueClick: (String) -> Unit,
     onStartClick: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val cardBackgroundColor = when (lesson.category.displayName) {
-        "Grammar" -> Color(0xFFFEF2F2) // Light red
-        "Vocabulary" -> Color(0xFFECFDF5) // Light green
-        "Conversation" -> Color(0xFFFEF3E2) // Light orange
-        "Pronunciation" -> Color(0xFFEBF8FF) // Light blue
-        else -> WordBridgeColors.BackgroundLight
-    }
-    
-    val iconBackgroundColor = when (lesson.category.displayName) {
-        "Grammar" -> Color(0xFFEF4444) // Red
-        "Vocabulary" -> Color(0xFF10B981) // Green
-        "Conversation" -> Color(0xFFF59E0B) // Orange
-        "Pronunciation" -> Color(0xFF3B82F6) // Blue
-        else -> WordBridgeColors.PrimaryPurple
-    }
-    
+    val cardBackgroundColor =
+        when (lesson.category.displayName) {
+            "Grammar" -> Color(0xFFFEF2F2) // Light red
+            "Vocabulary" -> Color(0xFFECFDF5) // Light green
+            "Conversation" -> Color(0xFFFEF3E2) // Light orange
+            "Pronunciation" -> Color(0xFFEBF8FF) // Light blue
+            else -> WordBridgeColors.BackgroundLight
+        }
+
+    val iconBackgroundColor =
+        when (lesson.category.displayName) {
+            "Grammar" -> Color(0xFFEF4444) // Red
+            "Vocabulary" -> Color(0xFF10B981) // Green
+            "Conversation" -> Color(0xFFF59E0B) // Orange
+            "Pronunciation" -> Color(0xFF3B82F6) // Blue
+            else -> WordBridgeColors.PrimaryPurple
+        }
+
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable {  },
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clickable { },
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = cardBackgroundColor
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp,
-            hoveredElevation = 4.dp
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = cardBackgroundColor,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 2.dp,
+                hoveredElevation = 4.dp,
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(iconBackgroundColor),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(iconBackgroundColor),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = lesson.icon,
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.width(12.dp))
-                
+
                 Column(
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     Text(
                         text = lesson.title,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        color = WordBridgeColors.TextPrimary
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                        color = WordBridgeColors.TextPrimary,
                     )
-                    
+
                     Text(
                         text = "Learn essential ${lesson.category.displayName.lowercase()} rules with AI-powered explanations and interactive exercises.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = WordBridgeColors.TextSecondary
+                        color = WordBridgeColors.TextSecondary,
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Column(
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             text = "${lesson.completedCount}",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = WordBridgeColors.TextPrimary
+                            style =
+                                MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                            color = WordBridgeColors.TextPrimary,
                         )
-                        
+
                         Text(
                             text = " Lessons",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = WordBridgeColors.TextSecondary
+                            color = WordBridgeColors.TextSecondary,
                         )
                     }
-                    
+
                     Text(
                         text = "Completed",
                         style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextSecondary
+                        color = WordBridgeColors.TextSecondary,
                     )
                 }
-                
+
                 Column(
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             text = "${lesson.progressPercentage}%",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = WordBridgeColors.TextPrimary
+                            style =
+                                MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                            color = WordBridgeColors.TextPrimary,
                         )
-                        
+
                         Text(
                             text = " Progress",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = WordBridgeColors.TextSecondary
+                            color = WordBridgeColors.TextSecondary,
                         )
                     }
-                    
+
                     Text(
                         text = "Progress",
                         style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextSecondary
+                        color = WordBridgeColors.TextSecondary,
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             if (lesson.progressPercentage > 0) {
                 Button(
                     onClick = { onContinueClick(lesson.id) },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = iconBackgroundColor
-                    ),
-                    shape = RoundedCornerShape(8.dp)
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = iconBackgroundColor,
+                        ),
+                    shape = RoundedCornerShape(8.dp),
                 ) {
                     Text(
                         text = "Continue Learning",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = Color.White
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium,
+                            ),
+                        color = Color.White,
                     )
                 }
             } else {
                 Button(
                     onClick = { onStartClick(lesson.id) },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = iconBackgroundColor
-                    ),
-                    shape = RoundedCornerShape(8.dp)
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = iconBackgroundColor,
+                        ),
+                    shape = RoundedCornerShape(8.dp),
                 ) {
                     Text(
                         text = "Start Lesson",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = Color.White
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium,
+                            ),
+                        color = Color.White,
                     )
                 }
             }

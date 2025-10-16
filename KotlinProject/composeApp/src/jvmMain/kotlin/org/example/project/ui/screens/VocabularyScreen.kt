@@ -3,6 +3,7 @@ package org.example.project.ui.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,23 +14,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
+import org.example.project.core.dictionary.DictionaryApiService
+import org.example.project.core.dictionary.WordNotFoundException
+import org.example.project.domain.model.VocabularyStatus
+import org.example.project.domain.model.VocabularyWord
 import org.example.project.presentation.viewmodel.VocabularyViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
 import org.example.project.core.auth.User as AuthUser
-import androidx.compose.foundation.shape.RoundedCornerShape
-import org.example.project.domain.model.VocabularyStatus
-import org.example.project.domain.model.VocabularyWord
-import kotlinx.coroutines.launch
-import org.example.project.core.dictionary.DictionaryApiService
-import org.example.project.core.dictionary.WordNotFoundException
 
 @Composable
 fun VocabularyScreen(
     authenticatedUser: AuthUser? = null,
     onUserAvatarClick: (() -> Unit)? = null,
     viewModel: VocabularyViewModel = viewModel(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val vocabularyWords by viewModel.vocabularyWords
     val vocabularyStats by viewModel.vocabularyStats
@@ -42,37 +42,40 @@ fun VocabularyScreen(
     var showAddDialog by remember { mutableStateOf(false) }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState())
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "Vocabulary Bank",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = WordBridgeColors.TextPrimary
+                style =
+                    MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
+                color = WordBridgeColors.TextPrimary,
             )
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 TextButton(
                     onClick = { viewModel.refresh() },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = WordBridgeColors.TextSecondary
-                    )
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = WordBridgeColors.TextSecondary,
+                        ),
                 ) {
                     Text(
                         text = "Refresh",
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                 }
 
@@ -80,7 +83,7 @@ fun VocabularyScreen(
                     initials = authenticatedUser?.initials ?: "U",
                     profileImageUrl = authenticatedUser?.profileImageUrl,
                     size = 48.dp,
-                    onClick = onUserAvatarClick
+                    onClick = onUserAvatarClick,
                 )
             }
         }
@@ -89,14 +92,14 @@ fun VocabularyScreen(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             VocabularyStatsCard(
                 title = "Total Words",
                 count = vocabularyStats.totalWords,
                 icon = "📚",
                 backgroundColor = Color(0xFF8B5CF6),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
 
             VocabularyStatsCard(
@@ -104,7 +107,7 @@ fun VocabularyScreen(
                 count = vocabularyStats.masteredWords,
                 icon = "✅",
                 backgroundColor = Color(0xFF10B981),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
 
             VocabularyStatsCard(
@@ -112,7 +115,7 @@ fun VocabularyScreen(
                 count = vocabularyStats.learningWords,
                 icon = "🎯",
                 backgroundColor = Color(0xFFF59E0B),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
 
             VocabularyStatsCard(
@@ -120,7 +123,7 @@ fun VocabularyScreen(
                 count = vocabularyStats.needReviewWords,
                 icon = "🔄",
                 backgroundColor = Color(0xFFEF4444),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
         }
 
@@ -130,7 +133,7 @@ fun VocabularyScreen(
             VocabularyEmptyState(
                 features = vocabularyFeatures,
                 onAddFirstWordClick = { showAddDialog = true },
-                onExploreLessonsClick = viewModel::onExploreLessonsClicked
+                onExploreLessonsClick = viewModel::onExploreLessonsClicked,
             )
         } else {
             VocabularySearchBar(
@@ -138,48 +141,50 @@ fun VocabularyScreen(
                 onSearchQueryChanged = viewModel::onSearchQueryChanged,
                 selectedFilter = selectedFilter,
                 onFilterSelected = viewModel::onFilterSelected,
-                onAddWordClick = { showAddDialog = true }
+                onAddWordClick = { showAddDialog = true },
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             if (filteredWords.isNotEmpty()) {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     filteredWords.forEach { word ->
                         VocabularyWordItem(
                             word = word,
-                            onClick = viewModel::onVocabularyWordClicked
+                            onClick = viewModel::onVocabularyWordClicked,
                         )
                     }
                 }
             } else if (searchQuery.isNotEmpty() || selectedFilter.name != "ALL") {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 48.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
                         text = "🔍",
-                        style = MaterialTheme.typography.displaySmall
+                        style = MaterialTheme.typography.displaySmall,
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
                         text = "No vocabulary words found",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = WordBridgeColors.TextPrimary
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Medium,
+                            ),
+                        color = WordBridgeColors.TextPrimary,
                     )
 
                     Text(
                         text = "Try adjusting your search or filter criteria",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = WordBridgeColors.TextSecondary
+                        color = WordBridgeColors.TextSecondary,
                     )
                 }
             }
@@ -190,74 +195,75 @@ fun VocabularyScreen(
         AddWordDialog(
             onDismiss = { showAddDialog = false },
             onSubmit = { word, definition, pronunciation, example, category ->
-                val newWord = VocabularyWord(
-                    id = "word_${System.currentTimeMillis()}",
-                    word = word,
-                    definition = definition,
-                    pronunciation = pronunciation,
-                    category = category,
-                    difficulty = "Beginner",
-                    examples = if (example != null) listOf(example) else emptyList(),
-                    status = VocabularyStatus.NEW,
-                    dateAdded = System.currentTimeMillis(),
-                    lastReviewed = null
-                )
+                val newWord =
+                    VocabularyWord(
+                        id = "word_${System.currentTimeMillis()}",
+                        word = word,
+                        definition = definition,
+                        pronunciation = pronunciation,
+                        category = category,
+                        difficulty = "Beginner",
+                        examples = if (example != null) listOf(example) else emptyList(),
+                        status = VocabularyStatus.NEW,
+                        dateAdded = System.currentTimeMillis(),
+                        lastReviewed = null,
+                    )
                 viewModel.addWord(newWord)
                 viewModel.loadAll()
                 showAddDialog = false
-            }
+            },
         )
     }
 }
 
-
 @Composable
 private fun VocabularyWordItem(
     word: VocabularyWord,
-    onClick: (String) -> Unit
+    onClick: (String) -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .padding(vertical = 8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Column {
             Text(
                 text = word.word,
                 style = MaterialTheme.typography.titleMedium,
-                color = WordBridgeColors.TextPrimary
+                color = WordBridgeColors.TextPrimary,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = word.definition,
                 style = MaterialTheme.typography.bodyMedium,
-                color = WordBridgeColors.TextSecondary
+                color = WordBridgeColors.TextSecondary,
             )
         }
 
         TextButton(
             onClick = { println("Practice ${word.word} Clicked.") },
-            colors = ButtonDefaults.textButtonColors(
-                contentColor = WordBridgeColors.TextPrimary
-            ),
-            border = BorderStroke(1.dp, WordBridgeColors.PrimaryPurple)
+            colors =
+                ButtonDefaults.textButtonColors(
+                    contentColor = WordBridgeColors.TextPrimary,
+                ),
+            border = BorderStroke(1.dp, WordBridgeColors.PrimaryPurple),
         ) {
             Text(
                 text = "Practice",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
             )
         }
     }
 }
 
-
 @Composable
 private fun AddWordDialog(
     onDismiss: () -> Unit,
-    onSubmit: (String, String, String, String?, String) -> Unit
+    onSubmit: (String, String, String, String?, String) -> Unit,
 ) {
     var word by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
@@ -296,15 +302,16 @@ private fun AddWordDialog(
         title = {
             Text(
                 "Add Vocabulary Word",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold
-                )
+                style =
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
             )
         },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 // Word input field
                 OutlinedTextField(
@@ -325,10 +332,10 @@ private fun AddWordDialog(
                         if (isLoading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp
+                                strokeWidth = 2.dp,
                             )
                         }
-                    }
+                    },
                 )
 
                 // Lookup button
@@ -336,37 +343,39 @@ private fun AddWordDialog(
                     onClick = { lookupWord() },
                     enabled = word.isNotBlank() && !isLoading,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = WordBridgeColors.PrimaryPurple
-                    )
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = WordBridgeColors.PrimaryPurple,
+                        ),
                 ) {
                     Text(
                         text = if (isLoading) "Looking up..." else "Look Up Definition",
-                        modifier = Modifier.padding(vertical = 4.dp)
+                        modifier = Modifier.padding(vertical = 4.dp),
                     )
                 }
 
                 // Error message
                 if (errorMessage != null) {
                     Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFFFEBEE)
-                        ),
-                        modifier = Modifier.fillMaxWidth()
+                        colors =
+                            CardDefaults.cardColors(
+                                containerColor = Color(0xFFFFEBEE),
+                            ),
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Row(
                             modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
                                 text = "❌",
-                                style = MaterialTheme.typography.titleMedium
+                                style = MaterialTheme.typography.titleMedium,
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = errorMessage!!,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFFC62828)
+                                color = Color(0xFFC62828),
                             )
                         }
                     }
@@ -375,32 +384,34 @@ private fun AddWordDialog(
                 // Definition display
                 if (wordDefinition != null) {
                     Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFE8F5E9)
-                        ),
-                        modifier = Modifier.fillMaxWidth()
+                        colors =
+                            CardDefaults.cardColors(
+                                containerColor = Color(0xFFE8F5E9),
+                            ),
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             // Word and pronunciation
                             Row(
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
                                     text = wordDefinition!!.word,
-                                    style = MaterialTheme.typography.titleLarge.copy(
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    color = Color(0xFF2E7D32)
+                                    style =
+                                        MaterialTheme.typography.titleLarge.copy(
+                                            fontWeight = FontWeight.Bold,
+                                        ),
+                                    color = Color(0xFF2E7D32),
                                 )
                                 if (wordDefinition!!.pronunciation.isNotBlank()) {
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         text = wordDefinition!!.pronunciation,
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = Color(0xFF558B2F)
+                                        color = Color(0xFF558B2F),
                                     )
                                 }
                             }
@@ -408,29 +419,31 @@ private fun AddWordDialog(
                             // Part of speech
                             Text(
                                 text = wordDefinition!!.partOfSpeech,
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = Color(0xFF689F38)
+                                style =
+                                    MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = FontWeight.Medium,
+                                    ),
+                                color = Color(0xFF689F38),
                             )
 
                             HorizontalDivider(
                                 color = Color(0xFFA5D6A7),
-                                thickness = 1.dp
+                                thickness = 1.dp,
                             )
 
                             // Definition
                             Text(
                                 text = "Definition:",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                color = Color(0xFF558B2F)
+                                style =
+                                    MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                    ),
+                                color = Color(0xFF558B2F),
                             )
                             Text(
                                 text = wordDefinition!!.definition,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFF1B5E20)
+                                color = Color(0xFF1B5E20),
                             )
 
                             // Example
@@ -438,17 +451,19 @@ private fun AddWordDialog(
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = "Example:",
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontWeight = FontWeight.SemiBold
-                                    ),
-                                    color = Color(0xFF558B2F)
+                                    style =
+                                        MaterialTheme.typography.bodySmall.copy(
+                                            fontWeight = FontWeight.SemiBold,
+                                        ),
+                                    color = Color(0xFF558B2F),
                                 )
                                 Text(
                                     text = "\"${wordDefinition!!.example}\"",
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                                    ),
-                                    color = Color(0xFF388E3C)
+                                    style =
+                                        MaterialTheme.typography.bodyMedium.copy(
+                                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                        ),
+                                    color = Color(0xFF388E3C),
                                 )
                             }
                         }
@@ -465,14 +480,15 @@ private fun AddWordDialog(
                             def.definition,
                             def.pronunciation,
                             def.example,
-                            def.partOfSpeech
+                            def.partOfSpeech,
                         )
                     }
                 },
                 enabled = wordDefinition != null,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = WordBridgeColors.PrimaryPurple
-                )
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = WordBridgeColors.PrimaryPurple,
+                    ),
             ) {
                 Text("Add to Vocabulary")
             }
@@ -481,9 +497,9 @@ private fun AddWordDialog(
             TextButton(onClick = onDismiss) {
                 Text(
                     "Cancel",
-                    color = WordBridgeColors.TextSecondary
+                    color = WordBridgeColors.TextSecondary,
                 )
             }
-        }
+        },
     )
 }
