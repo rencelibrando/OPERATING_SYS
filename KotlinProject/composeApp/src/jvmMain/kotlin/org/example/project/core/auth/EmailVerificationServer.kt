@@ -1,6 +1,9 @@
 package org.example.project.core.auth
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
@@ -9,25 +12,26 @@ import java.net.Socket
 import java.net.URLDecoder
 
 class EmailVerificationServer {
-    
     private var serverSocket: ServerSocket? = null
     private var isRunning = false
     private var onVerificationCallback: ((String?) -> Unit)? = null
-    
-   
-    fun startServer(port: Int = 3000, onVerification: (String?) -> Unit) {
+
+    fun startServer(
+        port: Int = 3000,
+        onVerification: (String?) -> Unit,
+    ) {
         if (isRunning) return
-        
+
         onVerificationCallback = onVerification
-        
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 serverSocket = ServerSocket(port)
                 isRunning = true
-                
+
                 println("🌐 Email verification server started on port $port")
                 println("📧 Waiting for email verification callback...")
-                
+
                 while (isRunning && !serverSocket!!.isClosed) {
                     try {
                         val clientSocket = serverSocket!!.accept()
@@ -44,7 +48,7 @@ class EmailVerificationServer {
             }
         }
     }
-   
+
     fun stopServer() {
         isRunning = false
         try {
@@ -54,65 +58,59 @@ class EmailVerificationServer {
             println("❌ Error stopping server: ${e.message}")
         }
     }
-    
-  
+
     private fun handleRequest(clientSocket: Socket) {
         try {
             val reader = BufferedReader(InputStreamReader(clientSocket.getInputStream()))
             val writer = OutputStreamWriter(clientSocket.getOutputStream())
-            
+
             val requestLine = reader.readLine()
             if (requestLine != null && requestLine.contains("GET")) {
-                
                 val urlPart = requestLine.split(" ")[1]
                 println("📥 Received request: $urlPart")
-                
+
                 when {
                     urlPart.contains("/auth/callback") && urlPart.contains("access_token") -> {
-                        
                         val accessToken = extractAccessTokenFromQuery(urlPart)
                         sendSuccessResponse(writer)
                         onVerificationCallback?.invoke(accessToken)
                         println("✅ Email verification callback received via JavaScript!")
-                        
+
                         CoroutineScope(Dispatchers.IO).launch {
-                            delay(1000) 
+                            delay(1000)
                             stopServer()
                         }
                     }
                     urlPart.contains("/auth/callback") && urlPart.contains("error=") -> {
-                        
                         val error = extractErrorFromQuery(urlPart)
                         sendErrorResponse(writer, error)
                         println("❌ Email verification error via JavaScript: $error")
                         onVerificationCallback?.invoke(null)
-                        
+
                         CoroutineScope(Dispatchers.IO).launch {
                             delay(3000)
                             stopServer()
                         }
                     }
                     urlPart.contains("access_token") -> {
-                        
                         val accessToken = extractAccessToken(urlPart)
                         sendSuccessResponse(writer)
                         onVerificationCallback?.invoke(accessToken)
                         println("✅ Email verification callback received!")
-                        
+
                         CoroutineScope(Dispatchers.IO).launch {
-                            delay(1000) 
+                            delay(1000)
                             stopServer()
                         }
                     }
                     urlPart.contains("error=") -> {
-                        
                         val error = extractError(urlPart)
                         sendErrorResponse(writer, error)
                         println("❌ Email verification error: $error")
                         onVerificationCallback?.invoke(null)
-                        
+
                         CoroutineScope(Dispatchers.IO).launch {
-                            delay(3000) 
+                            delay(3000)
                             stopServer()
                         }
                     }
@@ -121,23 +119,23 @@ class EmailVerificationServer {
                     }
                 }
             }
-            
+
             clientSocket.close()
-            
         } catch (e: Exception) {
             println("❌ Error handling request: ${e.message}")
         }
     }
-    
+
     private fun extractAccessToken(url: String): String? {
         return try {
-            val tokenPart = when {
-                url.contains("#access_token=") -> url.substringAfter("#access_token=")
-                url.contains("?access_token=") -> url.substringAfter("?access_token=")
-                url.contains("&access_token=") -> url.substringAfter("&access_token=")
-                else -> return null
-            }
-            
+            val tokenPart =
+                when {
+                    url.contains("#access_token=") -> url.substringAfter("#access_token=")
+                    url.contains("?access_token=") -> url.substringAfter("?access_token=")
+                    url.contains("&access_token=") -> url.substringAfter("&access_token=")
+                    else -> return null
+                }
+
             val token = tokenPart.split("&")[0]
             URLDecoder.decode(token, "UTF-8")
         } catch (e: Exception) {
@@ -145,53 +143,68 @@ class EmailVerificationServer {
             null
         }
     }
-    
+
     private fun extractError(url: String): String {
         return try {
-            val errorCode = if (url.contains("error_code=")) {
-                URLDecoder.decode(url.substringAfter("error_code=").split("&")[0], "UTF-8")
-            } else "unknown"
-            
-            val errorDescription = if (url.contains("error_description=")) {
-                URLDecoder.decode(url.substringAfter("error_description=").split("&")[0], "UTF-8")
-            } else "Unknown error"
-            
+            val errorCode =
+                if (url.contains("error_code=")) {
+                    URLDecoder.decode(url.substringAfter("error_code=").split("&")[0], "UTF-8")
+                } else {
+                    "unknown"
+                }
+
+            val errorDescription =
+                if (url.contains("error_description=")) {
+                    URLDecoder.decode(url.substringAfter("error_description=").split("&")[0], "UTF-8")
+                } else {
+                    "Unknown error"
+                }
+
             "$errorCode: $errorDescription"
         } catch (e: Exception) {
             "Error parsing error details"
         }
     }
-    
+
     private fun extractAccessTokenFromQuery(url: String): String? {
         return try {
             if (url.contains("access_token=")) {
                 val tokenPart = url.substringAfter("access_token=").split("&")[0]
                 URLDecoder.decode(tokenPart, "UTF-8")
-            } else null
+            } else {
+                null
+            }
         } catch (e: Exception) {
             println("❌ Error extracting access token from query: ${e.message}")
             null
         }
     }
-    
+
     private fun extractErrorFromQuery(url: String): String {
         return try {
-            val errorCode = if (url.contains("error_code=")) {
-                URLDecoder.decode(url.substringAfter("error_code=").split("&")[0], "UTF-8")
-            } else "unknown"
-            
-            val errorDescription = if (url.contains("error_description=")) {
-                URLDecoder.decode(url.substringAfter("error_description=").split("&")[0], "UTF-8")
-            } else "Unknown error"
-            
+            val errorCode =
+                if (url.contains("error_code=")) {
+                    URLDecoder.decode(url.substringAfter("error_code=").split("&")[0], "UTF-8")
+                } else {
+                    "unknown"
+                }
+
+            val errorDescription =
+                if (url.contains("error_description=")) {
+                    URLDecoder.decode(url.substringAfter("error_description=").split("&")[0], "UTF-8")
+                } else {
+                    "Unknown error"
+                }
+
             "$errorCode: $errorDescription"
         } catch (e: Exception) {
             "Error parsing error details from query"
         }
     }
-    
+
     private fun sendSuccessResponse(writer: OutputStreamWriter) {
-        val response = """
+        val response =
+            """
             HTTP/1.1 200 OK
             Content-Type: text/html
             Connection: close
@@ -233,17 +246,18 @@ class EmailVerificationServer {
                 </script>
             </body>
             </html>
-        """.trimIndent()
-        
+            """.trimIndent()
+
         writer.write(response)
         writer.flush()
     }
-    
+
     /**
      * Send waiting response to browser
      */
     private fun sendWaitingResponse(writer: OutputStreamWriter) {
-        val response = """
+        val response =
+            """
             HTTP/1.1 200 OK
             Content-Type: text/html
             Connection: close
@@ -354,17 +368,21 @@ class EmailVerificationServer {
                 </script>
             </body>
             </html>
-        """.trimIndent()
-        
+            """.trimIndent()
+
         writer.write(response)
         writer.flush()
     }
-    
+
     /**
      * Send error response to browser for expired/invalid links
      */
-    private fun sendErrorResponse(writer: OutputStreamWriter, error: String) {
-        val response = """
+    private fun sendErrorResponse(
+        writer: OutputStreamWriter,
+        error: String,
+    ) {
+        val response =
+            """
             HTTP/1.1 200 OK
             Content-Type: text/html
             Connection: close
@@ -421,8 +439,8 @@ class EmailVerificationServer {
                 </script>
             </body>
             </html>
-        """.trimIndent()
-        
+            """.trimIndent()
+
         writer.write(response)
         writer.flush()
     }

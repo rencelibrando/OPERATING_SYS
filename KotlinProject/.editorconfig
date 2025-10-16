@@ -1,0 +1,2 @@
+[*.{kt,kts}]
+disabled_rules=argument-list-wrapping,function-naming,filename

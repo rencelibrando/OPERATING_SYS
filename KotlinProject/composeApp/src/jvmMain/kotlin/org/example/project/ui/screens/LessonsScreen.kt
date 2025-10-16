@@ -19,48 +19,49 @@ import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
 import org.example.project.core.auth.User as AuthUser
 
-
 @Composable
 fun LessonsScreen(
     authenticatedUser: AuthUser? = null,
     onUserAvatarClick: (() -> Unit)? = null,
     viewModel: LessonsViewModel = viewModel(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val lessons by viewModel.lessons
     val levelProgress by viewModel.levelProgress
     val recentLessons by viewModel.recentLessons
     val isLoading by viewModel.isLoading
-    
+
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState())
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "Lessons",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = WordBridgeColors.TextPrimary
+                style =
+                    MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
+                color = WordBridgeColors.TextPrimary,
             )
-            
+
             UserAvatar(
                 initials = authenticatedUser?.initials ?: "U",
                 profileImageUrl = authenticatedUser?.profileImageUrl,
                 size = 48.dp,
-                onClick = onUserAvatarClick
+                onClick = onUserAvatarClick,
             )
         }
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         if (lessons.isEmpty()) {
             LessonsEmptyState(
                 onCreateFirstLessonClick = {
@@ -68,50 +69,51 @@ fun LessonsScreen(
                 },
                 onExploreCurriculumClick = {
                     viewModel.onLessonClicked("explore_curriculum")
-                }
+                },
             )
         } else {
             LevelProgressBanner(
-                levelProgress = levelProgress
+                levelProgress = levelProgress,
             )
-            
+
             Spacer(modifier = Modifier.height(32.dp))
-            
+
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.height(400.dp) // Fixed height to prevent scroll conflicts
+                modifier = Modifier.height(400.dp), // Fixed height to prevent scroll conflicts
             ) {
                 items(lessons) { lesson ->
                     LessonCard(
                         lesson = lesson,
                         onContinueClick = viewModel::onContinueLessonClicked,
-                        onStartClick = viewModel::onStartLessonClicked
+                        onStartClick = viewModel::onStartLessonClicked,
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(32.dp))
-            
+
             if (recentLessons.isNotEmpty()) {
                 Text(
                     text = "Continue Recent Lessons",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    color = WordBridgeColors.TextPrimary
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                    color = WordBridgeColors.TextPrimary,
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     recentLessons.forEach { recentLesson ->
                         RecentLessonCard(
                             recentLesson = recentLesson,
-                            onClick = viewModel::onRecentLessonClicked
+                            onClick = viewModel::onRecentLessonClicked,
                         )
                     }
                 }

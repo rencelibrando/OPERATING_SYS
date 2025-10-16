@@ -1,75 +1,77 @@
 package org.example.project.domain.model
 
-
 data class UserSettings(
     val userId: String,
     val notificationSettings: NotificationSettings,
     val learningSettings: LearningSettings,
     val appSettings: AppSettings,
     val privacySettings: PrivacySettings,
-    val lastUpdated: Long
+    val lastUpdated: Long,
 ) {
     companion object {
+        fun getDefaultSettings(): UserSettings =
+            UserSettings(
+                userId = "user_001",
+                notificationSettings = NotificationSettings.getDefault(),
+                learningSettings = LearningSettings.getDefault(),
+                appSettings = AppSettings.getDefault(),
+                privacySettings = PrivacySettings.getDefault(),
+                lastUpdated = System.currentTimeMillis(),
+            )
 
-        fun getDefaultSettings(): UserSettings = UserSettings(
-            userId = "user_001",
-            notificationSettings = NotificationSettings.getDefault(),
-            learningSettings = LearningSettings.getDefault(),
-            appSettings = AppSettings.getDefault(),
-            privacySettings = PrivacySettings.getDefault(),
-            lastUpdated = System.currentTimeMillis()
-        )
-        
-
-        fun getSampleSettings(): UserSettings = UserSettings(
-            userId = "user_001",
-            notificationSettings = NotificationSettings(
-                dailyReminders = true,
-                weeklyProgress = true,
-                achievementNotifications = true,
-                studyStreakReminders = true,
-                lessonRecommendations = false,
-                socialUpdates = true,
-                emailNotifications = true,
-                pushNotifications = true,
-                soundEnabled = true,
-                vibrationEnabled = false
-            ),
-            learningSettings = LearningSettings(
-                dailyGoalMinutes = 30,
-                preferredDifficulty = "Intermediate",
-                autoplayAudio = true,
-                showTranslations = true,
-                practiceReminders = true,
-                adaptiveLearning = true,
-                offlineMode = false,
-                darkMode = false,
-                languageInterface = "English",
-                fontSize = "Medium"
-            ),
-            appSettings = AppSettings(
-                autoSave = true,
-                dataSync = true,
-                wifiOnlyDownloads = true,
-                cacheSize = "100 MB",
-                analyticsEnabled = true,
-                crashReporting = true,
-                betaFeatures = false,
-                hapticFeedback = true
-            ),
-            privacySettings = PrivacySettings(
-                shareProgress = false,
-                publicProfile = false,
-                dataCollection = true,
-                personalization = true,
-                targetedAds = false,
-                thirdPartySharing = false
-            ),
-            lastUpdated = System.currentTimeMillis()
-        )
+        fun getSampleSettings(): UserSettings =
+            UserSettings(
+                userId = "user_001",
+                notificationSettings =
+                    NotificationSettings(
+                        dailyReminders = true,
+                        weeklyProgress = true,
+                        achievementNotifications = true,
+                        studyStreakReminders = true,
+                        lessonRecommendations = false,
+                        socialUpdates = true,
+                        emailNotifications = true,
+                        pushNotifications = true,
+                        soundEnabled = true,
+                        vibrationEnabled = false,
+                    ),
+                learningSettings =
+                    LearningSettings(
+                        dailyGoalMinutes = 30,
+                        preferredDifficulty = "Intermediate",
+                        autoplayAudio = true,
+                        showTranslations = true,
+                        practiceReminders = true,
+                        adaptiveLearning = true,
+                        offlineMode = false,
+                        darkMode = false,
+                        languageInterface = "English",
+                        fontSize = "Medium",
+                    ),
+                appSettings =
+                    AppSettings(
+                        autoSave = true,
+                        dataSync = true,
+                        wifiOnlyDownloads = true,
+                        cacheSize = "100 MB",
+                        analyticsEnabled = true,
+                        crashReporting = true,
+                        betaFeatures = false,
+                        hapticFeedback = true,
+                    ),
+                privacySettings =
+                    PrivacySettings(
+                        shareProgress = false,
+                        publicProfile = false,
+                        dataCollection = true,
+                        personalization = true,
+                        targetedAds = false,
+                        thirdPartySharing = false,
+                    ),
+                lastUpdated = System.currentTimeMillis(),
+            )
     }
 }
-
 
 data class NotificationSettings(
     val dailyReminders: Boolean = true,
@@ -81,13 +83,12 @@ data class NotificationSettings(
     val emailNotifications: Boolean = true,
     val pushNotifications: Boolean = true,
     val soundEnabled: Boolean = true,
-    val vibrationEnabled: Boolean = true
+    val vibrationEnabled: Boolean = true,
 ) {
     companion object {
         fun getDefault(): NotificationSettings = NotificationSettings()
     }
 }
-
 
 data class LearningSettings(
     val dailyGoalMinutes: Int = 15,
@@ -99,13 +100,15 @@ data class LearningSettings(
     val offlineMode: Boolean = false,
     val darkMode: Boolean = false,
     val languageInterface: String = "English",
-    val fontSize: String = "Medium"
+    val fontSize: String = "Medium",
 ) {
     companion object {
         fun getDefault(): LearningSettings = LearningSettings()
-        
+
         fun getDifficultyOptions(): List<String> = listOf("Beginner", "Intermediate", "Advanced")
+
         fun getFontSizeOptions(): List<String> = listOf("Small", "Medium", "Large", "Extra Large")
+
         fun getLanguageOptions(): List<String> = listOf("English", "Spanish", "French", "German", "Chinese", "Japanese")
     }
 }
@@ -118,11 +121,11 @@ data class AppSettings(
     val analyticsEnabled: Boolean = true,
     val crashReporting: Boolean = true,
     val betaFeatures: Boolean = false,
-    val hapticFeedback: Boolean = true
+    val hapticFeedback: Boolean = true,
 ) {
     companion object {
         fun getDefault(): AppSettings = AppSettings()
-        
+
         fun getCacheSizeOptions(): List<String> = listOf("25 MB", "50 MB", "100 MB", "200 MB", "500 MB")
     }
 }
@@ -133,7 +136,7 @@ data class PrivacySettings(
     val dataCollection: Boolean = true,
     val personalization: Boolean = true,
     val targetedAds: Boolean = false,
-    val thirdPartySharing: Boolean = false
+    val thirdPartySharing: Boolean = false,
 ) {
     companion object {
         fun getDefault(): PrivacySettings = PrivacySettings()
@@ -145,44 +148,43 @@ data class SettingsSection(
     val title: String,
     val description: String?,
     val icon: String,
-    val items: List<SettingItem>
+    val items: List<SettingItem>,
 )
 
 sealed class SettingItem {
     abstract val id: String
     abstract val title: String
     abstract val description: String?
-    
+
     data class Toggle(
         override val id: String,
         override val title: String,
         override val description: String? = null,
         val isEnabled: Boolean,
-        val onToggle: (Boolean) -> Unit
+        val onToggle: (Boolean) -> Unit,
     ) : SettingItem()
-    
+
     data class Selection(
         override val id: String,
         override val title: String,
         override val description: String? = null,
         val currentValue: String,
         val options: List<String>,
-        val onSelection: (String) -> Unit
+        val onSelection: (String) -> Unit,
     ) : SettingItem()
-    
+
     data class Action(
         override val id: String,
         override val title: String,
         override val description: String? = null,
         val actionText: String = "Tap to configure",
-        val onClick: () -> Unit
+        val onClick: () -> Unit,
     ) : SettingItem()
-    
+
     data class Info(
         override val id: String,
         override val title: String,
         override val description: String? = null,
-        val value: String
+        val value: String,
     ) : SettingItem()
 }
-

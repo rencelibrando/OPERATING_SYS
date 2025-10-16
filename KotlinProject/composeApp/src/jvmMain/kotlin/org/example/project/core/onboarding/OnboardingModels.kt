@@ -41,7 +41,7 @@ enum class OnboardingCategory {
     VOICE,
 
     @SerialName("future")
-    FUTURE
+    FUTURE,
 }
 
 @Serializable
@@ -56,7 +56,7 @@ enum class OnboardingInputType {
     MULTI_SELECT,
 
     @SerialName("scale")
-    SCALE
+    SCALE,
 }
 
 @Serializable
@@ -65,7 +65,7 @@ data class OnboardingOption(
     val label: String,
     val value: String,
     val emoji: String? = null,
-    val description: String? = null
+    val description: String? = null,
 )
 
 @Serializable
@@ -81,12 +81,12 @@ data class OnboardingQuestion(
     val allowsVoiceInput: Boolean = false,
     val followUpPrompt: String? = null,
     val minScale: Int = 1,
-    val maxScale: Int = 5
+    val maxScale: Int = 5,
 )
 
 enum class OnboardingMessageSender {
     ASSISTANT,
-    USER
+    USER,
 }
 
 data class OnboardingMessage(
@@ -94,34 +94,33 @@ data class OnboardingMessage(
     val sender: OnboardingMessageSender,
     val text: String,
     val timestampMillis: Long = System.currentTimeMillis(),
-    val isTyping: Boolean = false
+    val isTyping: Boolean = false,
 )
 
 sealed class OnboardingResponse {
-
     data class Text(val value: String) : OnboardingResponse()
 
     data class SingleChoice(
         val optionId: String,
         val label: String,
-        val value: String
+        val value: String,
     ) : OnboardingResponse()
 
     data class MultiChoice(
         val optionIds: List<String>,
         val labels: List<String>,
-        val values: List<String>
+        val values: List<String>,
     ) : OnboardingResponse()
 
     data class Scale(
         val score: Int,
         val min: Int = 1,
-        val max: Int = 5
+        val max: Int = 5,
     ) : OnboardingResponse()
 
     data class BooleanChoice(
         val value: Boolean,
-        val label: String
+        val label: String,
     ) : OnboardingResponse()
 
     object Skipped : OnboardingResponse()
@@ -129,69 +128,81 @@ sealed class OnboardingResponse {
 
 data class OnboardingAnswer(
     val questionId: String,
-    val response: OnboardingResponse
+    val response: OnboardingResponse,
 )
 
-fun OnboardingResponse.toJsonElement(): JsonElement = when (this) {
-    is OnboardingResponse.Text -> buildJsonObject {
-        put("value", JsonPrimitive(value))
+fun OnboardingResponse.toJsonElement(): JsonElement =
+    when (this) {
+        is OnboardingResponse.Text ->
+            buildJsonObject {
+                put("value", JsonPrimitive(value))
+            }
+        is OnboardingResponse.SingleChoice ->
+            buildJsonObject {
+                put("option_id", JsonPrimitive(optionId))
+                put("value", JsonPrimitive(value))
+                put("label", JsonPrimitive(label))
+            }
+        is OnboardingResponse.MultiChoice ->
+            buildJsonObject {
+                put("option_ids", buildJsonArray { optionIds.forEach { add(JsonPrimitive(it)) } })
+                put("values", buildJsonArray { values.forEach { add(JsonPrimitive(it)) } })
+                put("labels", buildJsonArray { labels.forEach { add(JsonPrimitive(it)) } })
+            }
+        is OnboardingResponse.Scale ->
+            buildJsonObject {
+                put("score", JsonPrimitive(score))
+                put("min", JsonPrimitive(min))
+                put("max", JsonPrimitive(max))
+            }
+        is OnboardingResponse.BooleanChoice ->
+            buildJsonObject {
+                put("value", JsonPrimitive(value))
+                put("label", JsonPrimitive(label))
+            }
+        OnboardingResponse.Skipped ->
+            buildJsonObject {
+                put("skipped", JsonPrimitive(true))
+            }
     }
-    is OnboardingResponse.SingleChoice -> buildJsonObject {
-        put("option_id", JsonPrimitive(optionId))
-        put("value", JsonPrimitive(value))
-        put("label", JsonPrimitive(label))
-    }
-    is OnboardingResponse.MultiChoice -> buildJsonObject {
-        put("option_ids", buildJsonArray { optionIds.forEach { add(JsonPrimitive(it)) } })
-        put("values", buildJsonArray { values.forEach { add(JsonPrimitive(it)) } })
-        put("labels", buildJsonArray { labels.forEach { add(JsonPrimitive(it)) } })
-    }
-    is OnboardingResponse.Scale -> buildJsonObject {
-        put("score", JsonPrimitive(score))
-        put("min", JsonPrimitive(min))
-        put("max", JsonPrimitive(max))
-    }
-    is OnboardingResponse.BooleanChoice -> buildJsonObject {
-        put("value", JsonPrimitive(value))
-        put("label", JsonPrimitive(label))
-    }
-    OnboardingResponse.Skipped -> buildJsonObject {
-        put("skipped", JsonPrimitive(true))
-    }
-}
 
-fun OnboardingResponse.summaryText(): String = when (this) {
-    is OnboardingResponse.Text -> value
-    is OnboardingResponse.SingleChoice -> label
-    is OnboardingResponse.MultiChoice -> labels.joinToString(", ")
-    is OnboardingResponse.Scale -> "$score / $max"
-    is OnboardingResponse.BooleanChoice -> label
-    OnboardingResponse.Skipped -> "Skipped for now"
-}
+fun OnboardingResponse.summaryText(): String =
+    when (this) {
+        is OnboardingResponse.Text -> value
+        is OnboardingResponse.SingleChoice -> label
+        is OnboardingResponse.MultiChoice -> labels.joinToString(", ")
+        is OnboardingResponse.Scale -> "$score / $max"
+        is OnboardingResponse.BooleanChoice -> label
+        OnboardingResponse.Skipped -> "Skipped for now"
+    }
 
-fun JsonElement?.asStringList(): List<String> = when (this) {
-    is JsonArray -> mapNotNull { (it as? JsonPrimitive)?.contentOrNull }
-    is JsonPrimitive -> listOfNotNull(contentOrNull)
-    else -> emptyList()
-}
+fun JsonElement?.asStringList(): List<String> =
+    when (this) {
+        is JsonArray -> mapNotNull { (it as? JsonPrimitive)?.contentOrNull }
+        is JsonPrimitive -> listOfNotNull(contentOrNull)
+        else -> emptyList()
+    }
 
-fun JsonElement?.asStringOrNull(): String? = when (this) {
-    is JsonObject -> this["value"].asStringOrNull()
-    is JsonPrimitive -> contentOrNull
-    else -> null
-}
+fun JsonElement?.asStringOrNull(): String? =
+    when (this) {
+        is JsonObject -> this["value"].asStringOrNull()
+        is JsonPrimitive -> contentOrNull
+        else -> null
+    }
 
-fun JsonElement?.asBooleanOrNull(): Boolean? = when (this) {
-    is JsonObject -> this["value"].asBooleanOrNull()
-    is JsonPrimitive -> booleanOrNull
-    else -> null
-}
+fun JsonElement?.asBooleanOrNull(): Boolean? =
+    when (this) {
+        is JsonObject -> this["value"].asBooleanOrNull()
+        is JsonPrimitive -> booleanOrNull
+        else -> null
+    }
 
-fun JsonElement?.asIntOrNull(): Int? = when (this) {
-    is JsonObject -> this["score"].asIntOrNull()
-    is JsonPrimitive -> intOrNull
-    else -> null
-}
+fun JsonElement?.asIntOrNull(): Int? =
+    when (this) {
+        is JsonObject -> this["score"].asIntOrNull()
+        is JsonPrimitive -> intOrNull
+        else -> null
+    }
 
 fun emptyJsonObject() = buildJsonObject { }
 
@@ -199,16 +210,16 @@ val JsonPrimitive.contentOrNull: String?
     get() = if (isString) content else content
 
 val JsonPrimitive.booleanOrNull: Boolean?
-    get() = contentOrNull?.let { value ->
-        when (value.lowercase()) {
-            "true" -> true
-            "false" -> false
-            else -> value.toIntOrNull()?.let { it != 0 }
+    get() =
+        contentOrNull?.let { value ->
+            when (value.lowercase()) {
+                "true" -> true
+                "false" -> false
+                else -> value.toIntOrNull()?.let { it != 0 }
+            }
         }
-    }
 
 val JsonPrimitive.intOrNull: Int?
     get() = contentOrNull?.toIntOrNull()
 
 fun JsonElement?.orEmpty(): JsonElement = this ?: JsonNull
-

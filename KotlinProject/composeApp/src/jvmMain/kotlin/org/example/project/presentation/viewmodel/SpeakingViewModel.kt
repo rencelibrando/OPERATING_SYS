@@ -1,17 +1,15 @@
 package org.example.project.presentation.viewmodel
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import org.example.project.domain.model.SpeakingExercise
-import org.example.project.domain.model.SpeakingSession
-import org.example.project.domain.model.SpeakingStats
 import org.example.project.domain.model.SpeakingFeature
 import org.example.project.domain.model.SpeakingFilter
-
+import org.example.project.domain.model.SpeakingSession
+import org.example.project.domain.model.SpeakingStats
 
 class SpeakingViewModel : ViewModel() {
-
     private val _speakingExercises = mutableStateOf(SpeakingExercise.getSampleExercises())
     private val _speakingSessions = mutableStateOf(SpeakingSession.getSampleSessions())
     private val _speakingStats = mutableStateOf(SpeakingStats.getSampleStats())
@@ -32,11 +30,10 @@ class SpeakingViewModel : ViewModel() {
 
     private val _filteredExercises = mutableStateOf(emptyList<SpeakingExercise>())
     val filteredExercises: State<List<SpeakingExercise>> = _filteredExercises
-    
+
     init {
         updateFilteredExercises()
     }
-    
 
     fun onFilterSelected(filter: SpeakingFilter) {
         _selectedFilter.value = filter
@@ -50,30 +47,31 @@ class SpeakingViewModel : ViewModel() {
 
     fun onStartExerciseClicked(exerciseId: String) {
         _isLoading.value = true
-        
+
         // TODO: Initialize exercise session
-        val newSession = SpeakingSession(
-            id = "session_${System.currentTimeMillis()}",
-            exerciseId = exerciseId,
-            startTime = System.currentTimeMillis(),
-            endTime = null,
-            accuracyScore = null,
-            fluencyScore = null,
-            pronunciationScore = null,
-            overallScore = null,
-            feedback = null,
-            recordingPath = null
-        )
-        
+        val newSession =
+            SpeakingSession(
+                id = "session_${System.currentTimeMillis()}",
+                exerciseId = exerciseId,
+                startTime = System.currentTimeMillis(),
+                endTime = null,
+                accuracyScore = null,
+                fluencyScore = null,
+                pronunciationScore = null,
+                overallScore = null,
+                feedback = null,
+                recordingPath = null,
+            )
+
         _currentSession.value = newSession
         println("Starting exercise: $exerciseId")
-        
+
         _isLoading.value = false
     }
 
     fun onMicrophoneToggle() {
         _isRecording.value = !_isRecording.value
-        
+
         if (_isRecording.value) {
             // TODO: Start audio recording
             println("Starting audio recording...")
@@ -86,25 +84,26 @@ class SpeakingViewModel : ViewModel() {
 
     fun onCompleteSession() {
         val session = _currentSession.value ?: return
-        
+
         _isLoading.value = true
-        
+
         // TODO: Process session results and save
-        val completedSession = session.copy(
-            endTime = System.currentTimeMillis(),
-            accuracyScore = (70..95).random(),
-            fluencyScore = (65..90).random(),
-            pronunciationScore = (75..95).random(),
-            overallScore = (70..90).random(),
-            feedback = "Great job! Keep practicing to improve your fluency."
-        )
-        
+        val completedSession =
+            session.copy(
+                endTime = System.currentTimeMillis(),
+                accuracyScore = (70..95).random(),
+                fluencyScore = (65..90).random(),
+                pronunciationScore = (75..95).random(),
+                overallScore = (70..90).random(),
+                feedback = "Great job! Keep practicing to improve your fluency.",
+            )
+
         _speakingSessions.value = _speakingSessions.value + completedSession
         _currentSession.value = null
         _isRecording.value = false
-        
+
         updateSpeakingStats()
-        
+
         _isLoading.value = false
         println("Session completed: ${completedSession.id}")
     }
@@ -116,21 +115,16 @@ class SpeakingViewModel : ViewModel() {
     }
 
     fun onReviewSessionClicked(sessionId: String) {
-
         println("Review session clicked: $sessionId")
     }
 
     fun onStartFirstPracticeClicked() {
-
         println("Start first practice clicked")
     }
-    
 
     fun onExploreExercisesClicked() {
-
         println("Explore exercises clicked")
     }
-    
 
     fun refreshSpeakingData() {
         _isLoading.value = true
@@ -139,7 +133,7 @@ class SpeakingViewModel : ViewModel() {
         _speakingSessions.value = SpeakingSession.getSampleSessions()
         updateSpeakingStats()
         updateFilteredExercises()
-        
+
         _isLoading.value = false
     }
 
@@ -150,53 +144,55 @@ class SpeakingViewModel : ViewModel() {
     private fun updateFilteredExercises() {
         val exercises = _speakingExercises.value
         val filter = _selectedFilter.value
-        
-        val filtered = exercises.filter { exercise ->
-            when (filter) {
-                SpeakingFilter.ALL -> true
-                SpeakingFilter.PRONUNCIATION -> exercise.type.name == "PRONUNCIATION"
-                SpeakingFilter.CONVERSATION -> exercise.type.name == "CONVERSATION"
-                SpeakingFilter.ACCENT -> exercise.type.name == "ACCENT_TRAINING"
-                SpeakingFilter.FLUENCY -> exercise.category == "Fluency"
+
+        val filtered =
+            exercises.filter { exercise ->
+                when (filter) {
+                    SpeakingFilter.ALL -> true
+                    SpeakingFilter.PRONUNCIATION -> exercise.type.name == "PRONUNCIATION"
+                    SpeakingFilter.CONVERSATION -> exercise.type.name == "CONVERSATION"
+                    SpeakingFilter.ACCENT -> exercise.type.name == "ACCENT_TRAINING"
+                    SpeakingFilter.FLUENCY -> exercise.category == "Fluency"
+                }
             }
-        }
-        
+
         _filteredExercises.value = filtered
     }
 
     private fun updateSpeakingStats() {
         val sessions = _speakingSessions.value.filter { it.endTime != null }
-        
+
         if (sessions.isEmpty()) {
             _speakingStats.value = SpeakingStats.getSampleStats()
             return
         }
-        
-        val totalMinutes = sessions.sumOf { session ->
-            val duration = (session.endTime!! - session.startTime) / 60000 // Convert to minutes
-            duration.toInt()
-        }
-        
+
+        val totalMinutes =
+            sessions.sumOf { session ->
+                val duration = (session.endTime!! - session.startTime) / 60000 // Convert to minutes
+                duration.toInt()
+            }
+
         val averageAccuracy = sessions.mapNotNull { it.accuracyScore }.average().toInt()
         val averageFluency = sessions.mapNotNull { it.fluencyScore }.average().toInt()
         val averagePronunciation = sessions.mapNotNull { it.pronunciationScore }.average().toInt()
-        
-        val stats = SpeakingStats(
-            totalSessions = sessions.size,
-            totalMinutes = totalMinutes,
-            averageAccuracy = averageAccuracy,
-            averageFluency = averageFluency,
-            averagePronunciation = averagePronunciation,
-            currentStreak = calculateCurrentStreak(sessions),
-            longestStreak = calculateLongestStreak(sessions),
-            exercisesCompleted = sessions.map { it.exerciseId }.distinct().size
-        )
-        
+
+        val stats =
+            SpeakingStats(
+                totalSessions = sessions.size,
+                totalMinutes = totalMinutes,
+                averageAccuracy = averageAccuracy,
+                averageFluency = averageFluency,
+                averagePronunciation = averagePronunciation,
+                currentStreak = calculateCurrentStreak(sessions),
+                longestStreak = calculateLongestStreak(sessions),
+                exercisesCompleted = sessions.map { it.exerciseId }.distinct().size,
+            )
+
         _speakingStats.value = stats
     }
 
     private fun calculateCurrentStreak(sessions: List<SpeakingSession>): Int {
-
         return if (sessions.isNotEmpty()) 3 else 0
     }
 

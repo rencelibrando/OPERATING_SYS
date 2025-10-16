@@ -5,8 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4c714452-f320-4f44-9592-c5f316833918" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.editorconfig" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/.editorconfig" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/8.14.3/checksums/checksums.lock" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/.gradle/8.14.3/checksums/checksums.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/8.14.3/checksums/md5-checksums.bin" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/.gradle/8.14.3/checksums/md5-checksums.bin" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/8.14.3/checksums/sha1-checksums.bin" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/.gradle/8.14.3/checksums/sha1-checksums.bin" afterDir="false" />
@@ -17,164 +17,116 @@
       <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/8.14.3/fileHashes/resourceHashesCache.bin" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/.gradle/8.14.3/fileHashes/resourceHashesCache.bin" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/buildOutputCleanup/outputFiles.bin" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/.gradle/buildOutputCleanup/outputFiles.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/1ctjonvi97ok0d3kkyhhq4l3p/candidates.bin" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/1ctjonvi97ok0d3kkyhhq4l3p/candidates.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/4nco3zh3i4pmkz96c91lybvqu/candidates.bin" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/4nco3zh3i4pmkz96c91lybvqu/candidates.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/72bebaef-71c9-4a5a-bf4c-11a2320dac29/.globals.work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/72bebaef-71c9-4a5a-bf4c-11a2320dac29/.strings.work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/72bebaef-71c9-4a5a-bf4c-11a2320dac29/_composeApp.work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/72bebaef-71c9-4a5a-bf4c-11a2320dac29/buildfingerprint.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/72bebaef-71c9-4a5a-bf4c-11a2320dac29/entry.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/72bebaef-71c9-4a5a-bf4c-11a2320dac29/projectfingerprint.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/72bebaef-71c9-4a5a-bf4c-11a2320dac29/work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/81603a68-d777-4075-a1e0-248c833c6fab/.globals.work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/81603a68-d777-4075-a1e0-248c833c6fab/.strings.work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/81603a68-d777-4075-a1e0-248c833c6fab/_composeApp.work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/81603a68-d777-4075-a1e0-248c833c6fab/buildfingerprint.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/81603a68-d777-4075-a1e0-248c833c6fab/entry.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/81603a68-d777-4075-a1e0-248c833c6fab/projectfingerprint.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/81603a68-d777-4075-a1e0-248c833c6fab/work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/bgf48ixavg31hapjpn6oktu6/candidates.bin" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/bgf48ixavg31hapjpn6oktu6/candidates.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/d61d89e1-cdea-491e-938f-00b9af506162/.globals.work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/d61d89e1-cdea-491e-938f-00b9af506162/.strings.work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/d61d89e1-cdea-491e-938f-00b9af506162/_composeApp.work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/d61d89e1-cdea-491e-938f-00b9af506162/buildfingerprint.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/d61d89e1-cdea-491e-938f-00b9af506162/entry.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/d61d89e1-cdea-491e-938f-00b9af506162/projectfingerprint.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/d61d89e1-cdea-491e-938f-00b9af506162/work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/e3v1qsuv580ogvzyabwdzh385/candidates.bin" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/.gradle/configuration-cache/e3v1qsuv580ogvzyabwdzh385/candidates.bin" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/KotlinProject/.gradle/file-system.probe" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/.gradle/file-system.probe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/App.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/App.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/auth/AuthState.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/auth/AuthState.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/auth/EmailVerificationServer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/auth/EmailVerificationServer.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/auth/RealSupabaseAuthService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/auth/RealSupabaseAuthService.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/config/SupabaseConfig.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/config/SupabaseConfig.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/dictionary/DictionaryApiService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/dictionary/DictionaryApiService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/image/DesktopFilePicker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/image/DesktopFilePicker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/image/ImageUploadService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/image/ImageUploadService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/onboarding/OnboardingModels.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/onboarding/OnboardingModels.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/onboarding/OnboardingQuestionBank.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/onboarding/OnboardingQuestionBank.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/onboarding/OnboardingRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/onboarding/OnboardingRepository.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/onboarding/OnboardingService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/onboarding/OnboardingService.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/profile/ProfileService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/profile/ProfileService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/utils/PreferencesManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/utils/PreferencesManager.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/utils/ValidationUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/core/utils/ValidationUtils.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/data/repository/AIChatRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/data/repository/AIChatRepository.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/data/repository/LearningRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/data/repository/LearningRepository.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/data/repository/UserRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/data/repository/UserRepository.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/data/repository/VocabularyRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/data/repository/VocabularyRepository.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/data/repository/VocabularyRepositoryImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/data/repository/VocabularyRepositoryImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/AIChat.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/AIChat.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/LearningActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/LearningActivity.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/Lesson.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/Lesson.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/NavigationItem.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/NavigationItem.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/Profile.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/Profile.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/Progress.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/Progress.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/Settings.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/Settings.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/Speaking.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/Speaking.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/User.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/User.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/Vocabulary.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/domain/model/Vocabulary.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/main.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/main.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/AIChatViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/AIChatViewModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/AuthViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/AuthViewModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/HomeViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/HomeViewModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/LessonsViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/LessonsViewModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/OnboardingViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/OnboardingViewModel.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/ProfileViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/ProfileViewModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/ProgressViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/ProgressViewModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/SettingsViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/SettingsViewModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/SpeakingViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/SpeakingViewModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/VocabularyViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/presentation/viewmodel/VocabularyViewModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/AIChatEmptyState.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/AIChatEmptyState.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/AnimatedNetworkBackground.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/AnimatedNetworkBackground.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/ContinueLearningCard.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/ContinueLearningCard.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/HomeEmptyState.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/HomeEmptyState.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/LearningActivityCard.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/LearningActivityCard.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/LessonCard.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/LessonCard.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/LessonsEmptyState.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/LessonsEmptyState.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/LevelProgressBanner.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/LevelProgressBanner.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/ProgressCard.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/ProgressCard.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/RecentLessonCard.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/RecentLessonCard.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/Sidebar.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/Sidebar.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/SpeakingEmptyState.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/SpeakingEmptyState.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/SpeakingExerciseCard.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/SpeakingExerciseCard.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/SpeakingSessionCard.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/SpeakingSessionCard.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/SpeakingStatsCard.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/SpeakingStatsCard.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/UserAvatar.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/UserAvatar.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/VocabularyEmptyState.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/VocabularyEmptyState.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/VocabularyFeatureCard.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/VocabularyFeatureCard.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/VocabularySearchBar.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/VocabularySearchBar.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/VocabularyStatsCard.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/VocabularyStatsCard.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/onboarding/AvatarAssistant.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/onboarding/AvatarAssistant.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/onboarding/ChatBubble.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/onboarding/ChatBubble.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/onboarding/OnboardingProgressIndicator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/onboarding/OnboardingProgressIndicator.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/onboarding/QuestionInput.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/components/onboarding/QuestionInput.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/AIChatScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/AIChatScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/AuthScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/AuthScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/EmailVerificationScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/EmailVerificationScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/EmailVerificationSuccessScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/EmailVerificationSuccessScreen.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/HomeScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/HomeScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/KotlinProject/gradlew.bat" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/gradlew.bat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/.bin/supabase" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/.bin/supabase" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/.bin/supabase.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/.bin/supabase.ps1" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/.package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/.package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/supabase/LICENSE" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/supabase/LICENSE" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/supabase/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/supabase/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/supabase/bin/supabase.exe" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/supabase/bin/supabase.exe" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/supabase/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/supabase/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/supabase/scripts/postinstall.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/supabase/scripts/postinstall.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/LICENSE" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/LICENSE" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/create.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/create.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/create.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/create.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/cwd-error.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/cwd-error.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/cwd-error.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/cwd-error.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/extract.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/extract.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/extract.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/extract.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/get-write-flag.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/get-write-flag.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/get-write-flag.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/get-write-flag.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/header.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/header.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/header.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/header.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/index.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/index.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/index.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/large-numbers.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/large-numbers.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/large-numbers.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/large-numbers.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/list.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/list.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/list.d.ts.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/list.d.ts.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/list.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/list.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/list.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/list.js.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/make-command.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/make-command.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/make-command.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/make-command.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/mkdir.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/mkdir.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/mkdir.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/mkdir.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/mode-fix.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/mode-fix.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/mode-fix.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/mode-fix.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/normalize-unicode.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/normalize-unicode.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/normalize-unicode.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/normalize-unicode.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/normalize-windows-path.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/normalize-windows-path.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/normalize-windows-path.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/normalize-windows-path.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/options.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/options.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/options.d.ts.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/options.d.ts.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/options.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/options.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/options.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/options.js.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/pack.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/pack.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/pack.d.ts.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/pack.d.ts.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/pack.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/pack.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/pack.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/pack.js.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/parse.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/parse.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/parse.d.ts.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/parse.d.ts.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/parse.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/parse.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/parse.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/parse.js.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/path-reservations.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/path-reservations.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/path-reservations.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/path-reservations.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/pax.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/pax.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/pax.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/pax.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/read-entry.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/read-entry.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/read-entry.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/read-entry.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/replace.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/replace.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/replace.d.ts.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/replace.d.ts.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/replace.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/replace.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/replace.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/replace.js.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/strip-absolute-path.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/strip-absolute-path.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/strip-absolute-path.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/strip-absolute-path.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/strip-trailing-slashes.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/strip-trailing-slashes.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/strip-trailing-slashes.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/strip-trailing-slashes.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/symlink-error.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/symlink-error.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/symlink-error.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/symlink-error.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/types.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/types.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/types.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/types.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/unpack.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/unpack.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/unpack.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/unpack.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/update.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/update.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/update.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/update.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/warn-method.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/warn-method.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/warn-method.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/warn-method.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/winchars.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/winchars.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/winchars.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/winchars.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/write-entry.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/write-entry.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/write-entry.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/commonjs/write-entry.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/create.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/create.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/create.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/create.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/cwd-error.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/cwd-error.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/cwd-error.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/cwd-error.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/extract.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/extract.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/extract.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/extract.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/get-write-flag.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/get-write-flag.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/get-write-flag.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/get-write-flag.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/header.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/header.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/header.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/header.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/index.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/index.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/index.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/large-numbers.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/large-numbers.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/large-numbers.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/large-numbers.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/list.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/list.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/list.d.ts.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/list.d.ts.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/list.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/list.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/list.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/list.js.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/make-command.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/make-command.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/make-command.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/make-command.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/mkdir.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/mkdir.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/mkdir.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/mkdir.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/mode-fix.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/mode-fix.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/mode-fix.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/mode-fix.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/normalize-unicode.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/normalize-unicode.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/normalize-unicode.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/normalize-unicode.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/normalize-windows-path.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/normalize-windows-path.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/normalize-windows-path.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/normalize-windows-path.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/options.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/options.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/options.d.ts.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/options.d.ts.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/options.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/options.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/options.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/options.js.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/pack.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/pack.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/pack.d.ts.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/pack.d.ts.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/pack.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/pack.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/pack.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/pack.js.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/parse.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/parse.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/parse.d.ts.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/parse.d.ts.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/parse.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/parse.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/parse.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/parse.js.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/path-reservations.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/path-reservations.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/path-reservations.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/path-reservations.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/pax.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/pax.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/pax.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/pax.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/read-entry.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/read-entry.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/read-entry.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/read-entry.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/replace.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/replace.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/replace.d.ts.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/replace.d.ts.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/replace.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/replace.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/replace.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/replace.js.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/strip-absolute-path.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/strip-absolute-path.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/strip-absolute-path.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/strip-absolute-path.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/strip-trailing-slashes.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/strip-trailing-slashes.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/strip-trailing-slashes.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/strip-trailing-slashes.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/symlink-error.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/symlink-error.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/symlink-error.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/symlink-error.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/types.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/types.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/types.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/types.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/unpack.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/unpack.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/unpack.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/unpack.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/update.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/update.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/update.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/update.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/warn-method.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/warn-method.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/warn-method.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/warn-method.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/winchars.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/winchars.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/winchars.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/winchars.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/write-entry.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/write-entry.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/dist/esm/write-entry.js" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/dist/esm/write-entry.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node_modules/tar/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/node_modules/tar/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/LessonsScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/LessonsScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/OnboardingScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/OnboardingScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/ProfileScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/ProfileScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/ProgressScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/ProgressScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/SettingsScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/SettingsScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/SignupCompleteScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/SignupCompleteScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/SpeakingScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/SpeakingScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/VocabularyScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/screens/VocabularyScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/theme/Color.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/theme/Color.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/theme/Theme.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/theme/Theme.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/theme/Typography.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmMain/kotlin/org/example/project/ui/theme/Typography.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmTest/kotlin/org/example/project/ComposeAppDesktopTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/KotlinProject/composeApp/src/jvmTest/kotlin/org/example/project/ComposeAppDesktopTest.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -238,22 +190,23 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Gradle.KotlinProject:composeApp [:composeApp:org.example.project.MainKt.main()].executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_directory_selection": "C:/GITHUB REPO'S/OPERATING_SYS/KotlinProject/composeApp/src/jvmMain/kotlin",
-    "last_opened_file_path": "C:/GITHUB REPO'S/OPERATING_SYS",
-    "settings.editor.selected.configurable": "reference.settingsdialog.project.gradle"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.WordBridge.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.KotlinProject:composeApp [:composeApp:org.example.project.MainKt.main()].executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;On-Boarding&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_directory_selection&quot;: &quot;C:/GITHUB REPO'S/OPERATING_SYS/KotlinProject/composeApp/src/jvmMain/kotlin&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/GITHUB REPO'S/OPERATING_SYS&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settingsdialog.project.gradle&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="WordBridge" type="Application" factoryName="Application">
       <option name="ALTERNATIVE_JRE_PATH" value="18" />

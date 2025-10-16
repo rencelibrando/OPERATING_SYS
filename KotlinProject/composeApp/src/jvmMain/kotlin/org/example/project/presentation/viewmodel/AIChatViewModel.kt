@@ -1,17 +1,16 @@
 package org.example.project.presentation.viewmodel
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import org.example.project.domain.model.ChatMessage
-import org.example.project.domain.model.ChatSession
 import org.example.project.domain.model.ChatBot
 import org.example.project.domain.model.ChatFeature
+import org.example.project.domain.model.ChatMessage
+import org.example.project.domain.model.ChatSession
 import org.example.project.domain.model.MessageSender
 import org.example.project.domain.model.MessageType
 
 class AIChatViewModel : ViewModel() {
-    
     private val _chatMessages = mutableStateOf(ChatMessage.getSampleMessages())
     private val _chatSessions = mutableStateOf(ChatSession.getSampleSessions())
     private val _availableBots = mutableStateOf(ChatBot.getAvailableBots())
@@ -21,7 +20,7 @@ class AIChatViewModel : ViewModel() {
     private val _isTyping = mutableStateOf(false)
     private val _isLoading = mutableStateOf(false)
     private val _currentSession = mutableStateOf<ChatSession?>(null)
-    
+
     val chatMessages: State<List<ChatMessage>> = _chatMessages
     val chatSessions: State<List<ChatSession>> = _chatSessions
     val availableBots: State<List<ChatBot>> = _availableBots
@@ -39,26 +38,27 @@ class AIChatViewModel : ViewModel() {
     fun onSendMessage() {
         val messageText = _currentMessage.value.trim()
         if (messageText.isEmpty()) return
-        
-        val userMessage = ChatMessage(
-            id = "msg_${System.currentTimeMillis()}",
-            content = messageText,
-            sender = MessageSender.USER,
-            timestamp = System.currentTimeMillis(),
-            type = MessageType.TEXT
-        )
-        
+
+        val userMessage =
+            ChatMessage(
+                id = "msg_${System.currentTimeMillis()}",
+                content = messageText,
+                sender = MessageSender.USER,
+                timestamp = System.currentTimeMillis(),
+                type = MessageType.TEXT,
+            )
+
         _chatMessages.value = _chatMessages.value + userMessage
         _currentMessage.value = ""
-        
+
         _isTyping.value = true
-        
+
         simulateAIResponse(messageText)
     }
 
     fun onBotSelected(bot: ChatBot) {
         _selectedBot.value = bot
-        
+
         startNewSession(bot)
     }
 
@@ -78,72 +78,70 @@ class AIChatViewModel : ViewModel() {
         // TODO: Load messages from selected session
         println("Session selected: $sessionId")
     }
-    
 
     fun onNewSessionClicked() {
         _chatMessages.value = emptyList()
         _currentSession.value = null
         _selectedBot.value = null
     }
-    
 
     fun onVoiceInputToggle() {
         // TODO: Implement voice input functionality
         println("Voice input toggled")
     }
-    
 
     fun refreshChatData() {
         _isLoading.value = true
-        
+
         // TODO: Implement actual data refresh from repository
-    
+
         _chatSessions.value = ChatSession.getSampleSessions()
         _availableBots.value = ChatBot.getAvailableBots()
-        
+
         _isLoading.value = false
     }
-    
 
     private fun startNewSession(bot: ChatBot) {
-        val newSession = ChatSession(
-            id = "session_${System.currentTimeMillis()}",
-            title = "Chat with ${bot.name}",
-            startTime = System.currentTimeMillis(),
-            endTime = null,
-            messageCount = 0,
-            topic = "General Conversation",
-            difficulty = bot.difficulty
-        )
-        
+        val newSession =
+            ChatSession(
+                id = "session_${System.currentTimeMillis()}",
+                title = "Chat with ${bot.name}",
+                startTime = System.currentTimeMillis(),
+                endTime = null,
+                messageCount = 0,
+                topic = "General Conversation",
+                difficulty = bot.difficulty,
+            )
+
         _currentSession.value = newSession
-        
+
         _chatMessages.value = emptyList()
-        
-        val welcomeMessage = ChatMessage(
-            id = "welcome_${System.currentTimeMillis()}",
-            content = getWelcomeMessage(bot),
-            sender = MessageSender.AI,
-            timestamp = System.currentTimeMillis(),
-            type = MessageType.TEXT
-        )
-        
+
+        val welcomeMessage =
+            ChatMessage(
+                id = "welcome_${System.currentTimeMillis()}",
+                content = getWelcomeMessage(bot),
+                sender = MessageSender.AI,
+                timestamp = System.currentTimeMillis(),
+                type = MessageType.TEXT,
+            )
+
         _chatMessages.value = listOf(welcomeMessage)
     }
-    
 
     private fun simulateAIResponse(userMessage: String) {
         println("Simulating AI response to: $userMessage")
-        
+
         val aiResponse = generateAIResponse(userMessage)
-        val aiMessage = ChatMessage(
-            id = "ai_${System.currentTimeMillis()}",
-            content = aiResponse,
-            sender = MessageSender.AI,
-            timestamp = System.currentTimeMillis(),
-            type = MessageType.TEXT
-        )
-        
+        val aiMessage =
+            ChatMessage(
+                id = "ai_${System.currentTimeMillis()}",
+                content = aiResponse,
+                sender = MessageSender.AI,
+                timestamp = System.currentTimeMillis(),
+                type = MessageType.TEXT,
+            )
+
         _isTyping.value = false
         _chatMessages.value = _chatMessages.value + aiMessage
     }
@@ -158,20 +156,23 @@ class AIChatViewModel : ViewModel() {
         }
     }
 
-    private fun generateAIResponse(@Suppress("UNUSED_PARAMETER") userMessage: String): String {
-        val responses = listOf(
-            "That's interesting! Can you tell me more about that?",
-            "I understand. How do you feel about that situation?",
-            "Great point! What made you think of that?",
-            "That sounds challenging. How did you handle it?",
-            "Excellent! Can you give me an example?",
-            "I see. What would you do differently next time?",
-            "That's a good question. Let me think about that...",
-            "Wonderful! How long have you been interested in that?",
-            "That makes sense. What's your opinion on this topic?",
-            "Very good! Can you explain that in more detail?"
-        )
-        
+    private fun generateAIResponse(
+        @Suppress("UNUSED_PARAMETER") userMessage: String,
+    ): String {
+        val responses =
+            listOf(
+                "That's interesting! Can you tell me more about that?",
+                "I understand. How do you feel about that situation?",
+                "Great point! What made you think of that?",
+                "That sounds challenging. How did you handle it?",
+                "Excellent! Can you give me an example?",
+                "I see. What would you do differently next time?",
+                "That's a good question. Let me think about that...",
+                "Wonderful! How long have you been interested in that?",
+                "That makes sense. What's your opinion on this topic?",
+                "Very good! Can you explain that in more detail?",
+            )
+
         return responses.random()
     }
 }

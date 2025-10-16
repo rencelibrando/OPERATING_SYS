@@ -8,7 +8,6 @@ plugins {
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.ktlint)
 }
-
 kotlin {
     jvm {
         compilations.all {
@@ -17,10 +16,7 @@ kotlin {
             }
         }
     }
-    
-    // Ensure we build with a JDK that supports jpackage and runtime bundling
     jvmToolchain(18)
-    
     sourceSets {
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -32,7 +28,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kamel.image)
-            
+
             // Supabase
             implementation(libs.supabase.postgrest)
             implementation(libs.supabase.gotrue)
@@ -45,7 +41,7 @@ kotlin {
             implementation(libs.ktor.client.cio)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
-            
+
             // Serialization & DateTime
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
@@ -61,15 +57,13 @@ kotlin {
 }
 
 ktlint {
-	android.set(false)
-	ignoreFailures.set(false)
-	disabledRules.set(setOf("standard:argument-list-wrapping"))
-	filter {
-		exclude("**/build/**")
-		exclude("**/generated/**")
-	}
+    android.set(false)
+    ignoreFailures.set(false)
+    filter {
+        exclude("**/build/**")
+        exclude("**/generated/**")
+    }
 }
-
 
 compose.desktop {
     application {

@@ -7,16 +7,18 @@ import java.util.prefs.Preferences
  * Uses Java Preferences API for desktop platform
  */
 object PreferencesManager {
-    
     private val prefs: Preferences = Preferences.userNodeForPackage(PreferencesManager::class.java)
-    
+
     private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed_"
     private const val KEY_LAST_SYNC_TIME = "last_sync_time_"
-    
+
     /**
      * Cache the onboarding completion status for a user
      */
-    fun cacheOnboardingCompletion(userId: String, isCompleted: Boolean) {
+    fun cacheOnboardingCompletion(
+        userId: String,
+        isCompleted: Boolean,
+    ) {
         try {
             prefs.putBoolean(KEY_ONBOARDING_COMPLETED + userId, isCompleted)
             prefs.putLong(KEY_LAST_SYNC_TIME + userId, System.currentTimeMillis())
@@ -26,7 +28,7 @@ object PreferencesManager {
             println("PreferencesManager: Failed to cache onboarding completion: ${e.message}")
         }
     }
-    
+
     /**
      * Get cached onboarding completion status
      * Returns null if not cached or cache is stale (older than 7 days)
@@ -36,13 +38,13 @@ object PreferencesManager {
             val lastSyncTime = prefs.getLong(KEY_LAST_SYNC_TIME + userId, 0L)
             val cacheAge = System.currentTimeMillis() - lastSyncTime
             val maxCacheAge = 7 * 24 * 60 * 60 * 1000L // 7 days in milliseconds
-            
+
             // If cache is too old or doesn't exist, return null
             if (lastSyncTime == 0L || cacheAge > maxCacheAge) {
                 println("ℹPreferencesManager: Cache miss or stale for user $userId")
                 return null
             }
-            
+
             val isCompleted = prefs.getBoolean(KEY_ONBOARDING_COMPLETED + userId, false)
             println("PreferencesManager: Cache hit for user $userId: $isCompleted")
             return isCompleted
@@ -51,7 +53,7 @@ object PreferencesManager {
             return null
         }
     }
-    
+
     /**
      * Clear onboarding cache for a user
      */
@@ -65,7 +67,7 @@ object PreferencesManager {
             println("PreferencesManager: Failed to clear cache: ${e.message}")
         }
     }
-    
+
     /**
      * Clear all cached data
      */
@@ -79,4 +81,3 @@ object PreferencesManager {
         }
     }
 }
-
