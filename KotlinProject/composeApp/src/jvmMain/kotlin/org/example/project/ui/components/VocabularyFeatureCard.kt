@@ -14,64 +14,69 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.VocabularyFeature
 import org.example.project.ui.theme.WordBridgeColors
 
-
 @Composable
 fun VocabularyFeatureCard(
     feature: VocabularyFeature,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val featureColor = try {
-        Color(feature.color.removePrefix("#").toLong(16) or 0xFF000000)
-    } catch (e: Exception) {
-        WordBridgeColors.PrimaryPurple
-    }
-    
+    val featureColor =
+        try {
+            Color(feature.color.removePrefix("#").toLong(16) or 0xFF000000)
+        } catch (e: Exception) {
+            WordBridgeColors.PrimaryPurple
+        }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = WordBridgeColors.BackgroundWhite
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp,
-            hoveredElevation = 4.dp
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = WordBridgeColors.BackgroundWhite,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 2.dp,
+                hoveredElevation = 4.dp,
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
         ) {
             Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(featureColor.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(featureColor.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = feature.icon,
-                    style = MaterialTheme.typography.headlineSmall
+                    style = MaterialTheme.typography.headlineSmall,
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Text(
                 text = feature.title,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.SemiBold
-                ),
-                color = WordBridgeColors.TextPrimary
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                color = WordBridgeColors.TextPrimary,
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
                 text = feature.description,
                 style = MaterialTheme.typography.bodyMedium,
                 color = WordBridgeColors.TextSecondary,
-                lineHeight = MaterialTheme.typography.bodyMedium.lineHeight
+                lineHeight = MaterialTheme.typography.bodyMedium.lineHeight,
             )
         }
     }

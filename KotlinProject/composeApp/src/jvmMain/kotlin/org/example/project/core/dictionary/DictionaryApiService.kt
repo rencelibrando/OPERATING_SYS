@@ -1,50 +1,54 @@
 package org.example.project.core.dictionary
 
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.serialization.kotlinx.json.*
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.get
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 class DictionaryApiService {
-    private val client = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                isLenient = true
-            })
+    private val client =
+        HttpClient(CIO) {
+            install(ContentNegotiation) {
+                json(
+                    Json {
+                        ignoreUnknownKeys = true
+                        isLenient = true
+                    },
+                )
+            }
         }
-    }
 
-    suspend fun lookupWord(word: String): Result<WordDefinition> = runCatching {
-        val response = client.get("https://api.dictionaryapi.dev/api/v2/entries/en/${word.trim()}")
+    suspend fun lookupWord(word: String): Result<WordDefinition> =
+        runCatching {
+            val response = client.get("https://api.dictionaryapi.dev/api/v2/entries/en/${word.trim()}")
 
-        if (response.status.value in 200..299) {
-            val apiResponse = response.body<List<DictionaryApiResponse>>()
+            if (response.status.value in 200..299) {
+                val apiResponse = response.body<List<DictionaryApiResponse>>()
 
-            if (apiResponse.isEmpty()) {
+                if (apiResponse.isEmpty()) {
+                    throw WordNotFoundException("Word not found")
+                }
+
+                val firstEntry = apiResponse.first()
+                val firstMeaning = firstEntry.meanings.firstOrNull()
+                val firstDefinition = firstMeaning?.definitions?.firstOrNull()
+
+                WordDefinition(
+                    word = firstEntry.word,
+                    definition = firstDefinition?.definition ?: "No definition available",
+                    pronunciation = firstEntry.phonetic ?: "",
+                    example = firstDefinition?.example,
+                    partOfSpeech = firstMeaning?.partOfSpeech ?: "Unknown",
+                )
+            } else {
                 throw WordNotFoundException("Word not found")
             }
-
-            val firstEntry = apiResponse.first()
-            val firstMeaning = firstEntry.meanings.firstOrNull()
-            val firstDefinition = firstMeaning?.definitions?.firstOrNull()
-
-            WordDefinition(
-                word = firstEntry.word,
-                definition = firstDefinition?.definition ?: "No definition available",
-                pronunciation = firstEntry.phonetic ?: "",
-                example = firstDefinition?.example,
-                partOfSpeech = firstMeaning?.partOfSpeech ?: "Unknown"
-            )
-        } else {
-            throw WordNotFoundException("Word not found")
         }
-    }
 }
 
 data class WordDefinition(
@@ -52,7 +56,7 @@ data class WordDefinition(
     val definition: String,
     val pronunciation: String,
     val example: String?,
-    val partOfSpeech: String
+    val partOfSpeech: String,
 )
 
 class WordNotFoundException(message: String) : Exception(message)
@@ -61,17 +65,17 @@ class WordNotFoundException(message: String) : Exception(message)
 private data class DictionaryApiResponse(
     val word: String,
     val phonetic: String? = null,
-    val meanings: List<Meaning> = emptyList()
+    val meanings: List<Meaning> = emptyList(),
 )
 
 @Serializable
 private data class Meaning(
     @SerialName("partOfSpeech") val partOfSpeech: String,
-    val definitions: List<Definition> = emptyList()
+    val definitions: List<Definition> = emptyList(),
 )
 
 @Serializable
 private data class Definition(
     val definition: String,
-    val example: String? = null
+    val example: String? = null,
 )

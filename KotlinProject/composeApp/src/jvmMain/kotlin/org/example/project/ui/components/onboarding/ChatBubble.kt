@@ -22,41 +22,43 @@ import org.example.project.ui.theme.WordBridgeColors
 @Composable
 fun ChatMessageBubble(
     message: OnboardingMessage,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val bubbleShape = RoundedCornerShape(20.dp)
     val isAssistant = message.sender == OnboardingMessageSender.ASSISTANT
 
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = if (isAssistant) {
-            androidx.compose.foundation.layout.Arrangement.Start
-        } else {
-            androidx.compose.foundation.layout.Arrangement.End
-        }
+        horizontalArrangement =
+            if (isAssistant) {
+                androidx.compose.foundation.layout.Arrangement.Start
+            } else {
+                androidx.compose.foundation.layout.Arrangement.End
+            },
     ) {
         Card(
-            modifier = Modifier
-                .clip(bubbleShape)
-                .animateContentSize(),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isAssistant) WordBridgeColors.BackgroundWhite else WordBridgeColors.PrimaryPurple,
-                contentColor = if (isAssistant) WordBridgeColors.TextPrimary else Color.White
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+            modifier =
+                Modifier
+                    .clip(bubbleShape)
+                    .animateContentSize(),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = if (isAssistant) WordBridgeColors.BackgroundWhite else WordBridgeColors.PrimaryPurple,
+                    contentColor = if (isAssistant) WordBridgeColors.TextPrimary else Color.White,
+                ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
         ) {
             if (message.isTyping) {
                 TypingIndicator(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                 )
             } else {
                 Text(
                     text = message.text,
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp),
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp)
+                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
                 )
             }
         }
     }
 }
-

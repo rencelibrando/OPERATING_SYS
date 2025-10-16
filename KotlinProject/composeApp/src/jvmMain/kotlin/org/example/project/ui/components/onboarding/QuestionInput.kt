@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
@@ -25,7 +23,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.core.onboarding.OnboardingOption
@@ -37,7 +34,7 @@ import org.example.project.ui.theme.WordBridgeColors
 fun QuestionInputPanel(
     question: OnboardingQuestion,
     onSubmit: (OnboardingResponse) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         when (question.inputType) {
@@ -50,7 +47,10 @@ fun QuestionInputPanel(
 }
 
 @Composable
-private fun TextInput(question: OnboardingQuestion, onSubmit: (OnboardingResponse.Text) -> Unit) {
+private fun TextInput(
+    question: OnboardingQuestion,
+    onSubmit: (OnboardingResponse.Text) -> Unit,
+) {
     val textState = remember { mutableStateOf("") }
 
     OutlinedTextField(
@@ -64,44 +64,48 @@ private fun TextInput(question: OnboardingQuestion, onSubmit: (OnboardingRespons
                     Text("🎤")
                 }
             }
-        }
+        },
     )
 
     Button(
         onClick = { onSubmit(OnboardingResponse.Text(textState.value)) },
-        modifier = Modifier
-            .padding(top = 12.dp)
-            .fillMaxWidth(),
+        modifier =
+            Modifier
+                .padding(top = 12.dp)
+                .fillMaxWidth(),
         enabled = textState.value.isNotBlank(),
-        colors = ButtonDefaults.buttonColors(containerColor = WordBridgeColors.PrimaryPurple)
+        colors = ButtonDefaults.buttonColors(containerColor = WordBridgeColors.PrimaryPurple),
     ) {
         Text("Submit", color = Color.White)
     }
 }
 
 @Composable
-private fun SingleSelect(question: OnboardingQuestion, onSubmit: (OnboardingResponse.SingleChoice) -> Unit) {
+private fun SingleSelect(
+    question: OnboardingQuestion,
+    onSubmit: (OnboardingResponse.SingleChoice) -> Unit,
+) {
     val selected = remember { mutableStateOf<String?>(null) }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // Horizontal scrollable options container
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             items(question.options.size) { index ->
                 val option = question.options[index]
                 QuickChip(
                     label = optionLabel(option),
                     isSelected = selected.value == option.id,
-                    onClick = { 
+                    onClick = {
                         println("??? Selected option: ${option.id} - ${option.label}")
-                        selected.value = option.id 
-                    }
+                        selected.value = option.id
+                    },
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(12.dp))
 
         Button(
@@ -115,8 +119,8 @@ private fun SingleSelect(question: OnboardingQuestion, onSubmit: (OnboardingResp
                         OnboardingResponse.SingleChoice(
                             optionId = option.id,
                             label = option.label,
-                            value = option.value
-                        )
+                            value = option.value,
+                        ),
                     )
                 } else {
                     println("??? ERROR: No option found for ID: $selectedId")
@@ -124,7 +128,7 @@ private fun SingleSelect(question: OnboardingQuestion, onSubmit: (OnboardingResp
             },
             enabled = selected.value != null,
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = WordBridgeColors.PrimaryPurple)
+            colors = ButtonDefaults.buttonColors(containerColor = WordBridgeColors.PrimaryPurple),
         ) {
             Text("Continue", color = Color.White)
         }
@@ -132,7 +136,10 @@ private fun SingleSelect(question: OnboardingQuestion, onSubmit: (OnboardingResp
 }
 
 @Composable
-private fun MultiSelect(question: OnboardingQuestion, onSubmit: (OnboardingResponse.MultiChoice) -> Unit) {
+private fun MultiSelect(
+    question: OnboardingQuestion,
+    onSubmit: (OnboardingResponse.MultiChoice) -> Unit,
+) {
     val selectedIds = remember { mutableStateListOf<String>() }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -149,7 +156,7 @@ private fun MultiSelect(question: OnboardingQuestion, onSubmit: (OnboardingRespo
                         } else {
                             selectedIds.add(option.id)
                         }
-                    }
+                    },
                 )
             }
         }
@@ -161,13 +168,13 @@ private fun MultiSelect(question: OnboardingQuestion, onSubmit: (OnboardingRespo
                     OnboardingResponse.MultiChoice(
                         optionIds = selectedOptions.map { it.id },
                         labels = selectedOptions.map { it.label },
-                        values = selectedOptions.map { it.value }
-                    )
+                        values = selectedOptions.map { it.value },
+                    ),
                 )
             },
             enabled = selectedIds.isNotEmpty(),
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = WordBridgeColors.PrimaryPurple)
+            colors = ButtonDefaults.buttonColors(containerColor = WordBridgeColors.PrimaryPurple),
         ) {
             Text("Confirm", color = Color.White)
         }
@@ -175,7 +182,10 @@ private fun MultiSelect(question: OnboardingQuestion, onSubmit: (OnboardingRespo
 }
 
 @Composable
-private fun ScaleInput(question: OnboardingQuestion, onSubmit: (OnboardingResponse.Scale) -> Unit) {
+private fun ScaleInput(
+    question: OnboardingQuestion,
+    onSubmit: (OnboardingResponse.Scale) -> Unit,
+) {
     val slider = remember { mutableStateOf((question.minScale + question.maxScale) / 2f) }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -190,11 +200,12 @@ private fun ScaleInput(question: OnboardingQuestion, onSubmit: (OnboardingRespon
             onValueChange = { slider.value = it },
             valueRange = question.minScale.toFloat()..question.maxScale.toFloat(),
             steps = question.maxScale - question.minScale - 1,
-            colors = SliderDefaults.colors(
-                thumbColor = WordBridgeColors.PrimaryPurple,
-                activeTrackColor = WordBridgeColors.PrimaryPurple,
-                inactiveTrackColor = WordBridgeColors.PrimaryPurple.copy(alpha = 0.2f)
-            )
+            colors =
+                SliderDefaults.colors(
+                    thumbColor = WordBridgeColors.PrimaryPurple,
+                    activeTrackColor = WordBridgeColors.PrimaryPurple,
+                    inactiveTrackColor = WordBridgeColors.PrimaryPurple.copy(alpha = 0.2f),
+                ),
         )
 
         Button(
@@ -203,12 +214,12 @@ private fun ScaleInput(question: OnboardingQuestion, onSubmit: (OnboardingRespon
                     OnboardingResponse.Scale(
                         score = slider.value.toInt(),
                         min = question.minScale,
-                        max = question.maxScale
-                    )
+                        max = question.maxScale,
+                    ),
                 )
             },
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = WordBridgeColors.PrimaryPurple)
+            colors = ButtonDefaults.buttonColors(containerColor = WordBridgeColors.PrimaryPurple),
         ) {
             Text("Log my confidence", color = Color.White)
         }
@@ -221,4 +232,3 @@ private fun optionLabel(option: OnboardingOption): String {
         append(option.label)
     }
 }
-

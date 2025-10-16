@@ -35,14 +35,13 @@ import org.example.project.ui.components.UserAvatar
 import org.example.project.ui.theme.WordBridgeColors
 import org.example.project.core.auth.User as AuthUser
 
-
 @Composable
 fun HomeScreen(
     authenticatedUser: AuthUser? = null,
     onSignOut: (() -> Unit)? = null,
     onboardingViewModel: OnboardingViewModel = viewModel(),
     viewModel: HomeViewModel = viewModel(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val isOnboardingComplete by onboardingViewModel.isComplete
     val isLoadingOnboarding by onboardingViewModel.isLoading
@@ -59,7 +58,7 @@ fun HomeScreen(
             onComplete = {
                 viewModel.refreshUserData()
             },
-            modifier = modifier
+            modifier = modifier,
         )
         return
     } else {
@@ -72,45 +71,48 @@ fun HomeScreen(
     val isLoading by viewModel.isLoading
     val selectedNavigationItem by viewModel.selectedNavigationItem
     val showProfile by viewModel.showProfile
-    
-    val displayUser = authenticatedUser?.let { authUser ->
-        org.example.project.domain.model.User(
-            id = authUser.id,
-            name = authUser.fullName,
-            level = "Beginner Level", // Default level, could be enhanced later
-            streak = 0, // Default streak, could be enhanced later
-            xpPoints = 0, // Default XP, could be enhanced later
-            wordsLearned = 0, // Default words, could be enhanced later
-            accuracy = 0, // Default accuracy, could be enhanced later
-            avatarInitials = authUser.initials,
-            profileImageUrl = authUser.profileImageUrl
-        )
-    } ?: user
-    
+
+    val displayUser =
+        authenticatedUser?.let { authUser ->
+            org.example.project.domain.model.User(
+                id = authUser.id,
+                name = authUser.fullName,
+                level = "Beginner Level", // Default level, could be enhanced later
+                streak = 0, // Default streak, could be enhanced later
+                xpPoints = 0, // Default XP, could be enhanced later
+                wordsLearned = 0, // Default words, could be enhanced later
+                accuracy = 0, // Default accuracy, could be enhanced later
+                avatarInitials = authUser.initials,
+                profileImageUrl = authUser.profileImageUrl,
+            )
+        } ?: user
+
     Row(
-        modifier = modifier
-            .fillMaxSize()
-            .background(WordBridgeColors.BackgroundLight)
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(WordBridgeColors.BackgroundLight),
     ) {
         Sidebar(
             navigationItems = navigationItems,
-            onNavigationItemClick = viewModel::onNavigationItemSelected
+            onNavigationItemClick = viewModel::onNavigationItemSelected,
         )
-        
+
         when {
             showProfile -> {
                 ProfileScreen(
                     authenticatedUser = authenticatedUser,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
             selectedNavigationItem == "home" || selectedNavigationItem.isEmpty() -> {
                 Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(24.dp)
-                        .verticalScroll(rememberScrollState())
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .padding(24.dp)
+                            .verticalScroll(rememberScrollState()),
                 ) {
                     HomeHeader(
                         userName = displayUser.name,
@@ -119,50 +121,50 @@ fun HomeScreen(
                         userProfileImageUrl = displayUser.profileImageUrl,
                         onUserAvatarClick = viewModel::onUserAvatarClicked,
                         authenticatedUser = authenticatedUser,
-                        onSignOut = onSignOut
+                        onSignOut = onSignOut,
                     )
-                    
+
                     Spacer(modifier = Modifier.height(24.dp))
-                    
+
                     ContinueLearningCard(
                         onButtonClick = viewModel::onContinueLearningClicked,
-                        isLoading = isLoading
+                        isLoading = isLoading,
                     )
-                    
+
                     Spacer(modifier = Modifier.height(24.dp))
-                    
+
                     if (learningActivities.isEmpty()) {
                         HomeEmptyState(
                             onGetStartedClick = {
                                 viewModel.onNavigationItemSelected("lessons")
-                            }
+                            },
                         )
                     } else {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(24.dp)
+                            horizontalArrangement = Arrangement.spacedBy(24.dp),
                         ) {
                             Column(
-                                modifier = Modifier.weight(2f)
+                                modifier = Modifier.weight(2f),
                             ) {
                                 learningActivities.forEach { activity ->
                                     LearningActivityCard(
                                         activity = activity,
-                                        onClick = { viewModel.onLearningActivityClicked(activity.id) }
+                                        onClick = { viewModel.onLearningActivityClicked(activity.id) },
                                     )
-                                    
+
                                     Spacer(modifier = Modifier.height(12.dp))
                                 }
                             }
-                            
+
                             Column(
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
                             ) {
                                 TodaysProgressCard(
                                     streak = user.streak,
                                     xpPoints = user.xpPoints,
                                     wordsLearned = user.wordsLearned,
-                                    accuracy = user.accuracy
+                                    accuracy = user.accuracy,
                                 )
                             }
                         }
@@ -173,64 +175,65 @@ fun HomeScreen(
                 LessonsScreen(
                     authenticatedUser = authenticatedUser,
                     onUserAvatarClick = viewModel::onUserAvatarClicked,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
             selectedNavigationItem == "vocabulary" -> {
                 VocabularyScreen(
                     authenticatedUser = authenticatedUser,
                     onUserAvatarClick = viewModel::onUserAvatarClicked,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
             selectedNavigationItem == "speaking" -> {
                 SpeakingScreen(
                     authenticatedUser = authenticatedUser,
                     onUserAvatarClick = viewModel::onUserAvatarClicked,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
             selectedNavigationItem == "ai_chat" -> {
                 AIChatScreen(
                     authenticatedUser = authenticatedUser,
                     onUserAvatarClick = viewModel::onUserAvatarClicked,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
             selectedNavigationItem == "progress" -> {
                 ProgressScreen(
                     authenticatedUser = authenticatedUser,
                     onUserAvatarClick = viewModel::onUserAvatarClicked,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
             selectedNavigationItem == "settings" -> {
                 SettingsScreen(
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
             else -> {
                 Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(24.dp),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.Center,
                 ) {
                     Text(
                         text = "Page not found",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = WordBridgeColors.TextPrimary
+                        style =
+                            MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
+                        color = WordBridgeColors.TextPrimary,
                     )
                 }
             }
         }
     }
 }
-
 
 @Composable
 private fun HomeHeader(
@@ -241,55 +244,57 @@ private fun HomeHeader(
     onUserAvatarClick: () -> Unit,
     authenticatedUser: AuthUser? = null,
     onSignOut: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Column {
             Text(
                 text = "Welcome Back, $userName!",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = WordBridgeColors.TextPrimary
+                style =
+                    MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
+                color = WordBridgeColors.TextPrimary,
             )
-            
+
             Spacer(modifier = Modifier.height(4.dp))
-            
+
             Text(
                 text = userLevel,
                 style = MaterialTheme.typography.bodyLarge,
-                color = WordBridgeColors.TextSecondary
+                color = WordBridgeColors.TextSecondary,
             )
         }
-        
+
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             if (authenticatedUser != null && onSignOut != null) {
                 TextButton(
                     onClick = onSignOut,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = WordBridgeColors.TextSecondary
-                    )
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = WordBridgeColors.TextSecondary,
+                        ),
                 ) {
                     Text(
                         text = "Sign Out",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.width(12.dp))
             }
-            
+
             UserAvatar(
                 initials = userInitials,
                 profileImageUrl = userProfileImageUrl,
                 size = 48.dp,
-                onClick = onUserAvatarClick
+                onClick = onUserAvatarClick,
             )
         }
     }

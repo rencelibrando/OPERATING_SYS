@@ -20,86 +20,95 @@ fun ContinueLearningCard(
     buttonText: String = "Continue Learning",
     onButtonClick: () -> Unit,
     isLoading: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 8.dp
-        ),
-        shape = RoundedCornerShape(20.dp)
+        colors =
+            CardDefaults.cardColors(
+                containerColor = Color.Transparent,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 8.dp,
+            ),
+        shape = RoundedCornerShape(20.dp),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(
-                            WordBridgeColors.PrimaryPurple,
-                            WordBridgeColors.PrimaryPurpleLight
-                        )
-                    ),
-                    shape = RoundedCornerShape(20.dp)
-                )
-                .padding(24.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(
+                        brush =
+                            Brush.horizontalGradient(
+                                colors =
+                                    listOf(
+                                        WordBridgeColors.PrimaryPurple,
+                                        WordBridgeColors.PrimaryPurpleLight,
+                                    ),
+                            ),
+                        shape = RoundedCornerShape(20.dp),
+                    )
+                    .padding(24.dp),
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = WordBridgeColors.BackgroundWhite
+                    style =
+                        MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    color = WordBridgeColors.BackgroundWhite,
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = WordBridgeColors.BackgroundWhite.copy(alpha = 0.9f)
+                    color = WordBridgeColors.BackgroundWhite.copy(alpha = 0.9f),
                 )
-                
+
                 Spacer(modifier = Modifier.height(20.dp))
-                
+
                 Button(
                     onClick = onButtonClick,
                     enabled = !isLoading,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = WordBridgeColors.BackgroundWhite,
-                        contentColor = WordBridgeColors.PrimaryPurple
-                    ),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = WordBridgeColors.BackgroundWhite,
+                            contentColor = WordBridgeColors.PrimaryPurple,
+                        ),
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.height(48.dp)
+                    modifier = Modifier.height(48.dp),
                 ) {
                     if (isLoading) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
                                 strokeWidth = 2.dp,
-                                color = WordBridgeColors.PrimaryPurple
+                                color = WordBridgeColors.PrimaryPurple,
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Loading...",
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                                style =
+                                    MaterialTheme.typography.labelLarge.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                    ),
                             )
                         }
                     } else {
                         Text(
                             text = buttonText,
-                            style = MaterialTheme.typography.labelLarge.copy(
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            style =
+                                MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                ),
                         )
                     }
                 }
