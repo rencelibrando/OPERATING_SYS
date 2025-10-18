@@ -123,6 +123,7 @@ class VocabularyViewModel(
             }.onFailure {
                 // keep defaults
                 updateFilteredWords()
+                println("Failed.")
             }
             _isLoading.value = false
         }
