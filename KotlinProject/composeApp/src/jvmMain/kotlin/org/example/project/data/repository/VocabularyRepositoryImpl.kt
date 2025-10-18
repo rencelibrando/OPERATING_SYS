@@ -10,164 +10,125 @@ import org.example.project.domain.model.VocabularyStatus
 import org.example.project.domain.model.VocabularyWord
 
 class VocabularyRepositoryImpl : VocabularyRepository {
+
     private val supabase = SupabaseConfig.client
 
     // Get all vocabulary words for a specific user via user_vocabulary join
-    override suspend fun getAllVocabularyWords(): Result<List<VocabularyWord>> =
-        runCatching {
-            // Get current user ID from Supabase auth
-            val userId =
-                supabase.auth.currentUserOrNull()?.id
-                    ?: throw IllegalStateException("User not authenticated")
+    override suspend fun getAllVocabularyWords(): Result<List<VocabularyWord>> = runCatching {
+        // Get current user ID from Supabase auth
+        val userId = supabase.auth.currentUserOrNull()?.id
+            ?: throw IllegalStateException("User not authenticated")
 
-            getUserVocabularyInternal(userId)
-        }
+        getUserVocabularyInternal(userId)
+    }
 
-    override suspend fun searchVocabularyWords(query: String): Result<List<VocabularyWord>> =
-        runCatching {
-            val userId =
-                supabase.auth.currentUserOrNull()?.id
-                    ?: throw IllegalStateException("User not authenticated")
+    override suspend fun searchVocabularyWords(query: String): Result<List<VocabularyWord>> = runCatching {
+        val userId = supabase.auth.currentUserOrNull()?.id
+            ?: throw IllegalStateException("User not authenticated")
 
-            // Search within user's vocabulary only
-            val userVocabRows =
-                supabase.postgrest["user_vocabulary"]
-                    .select(columns = Columns.raw("*, vocabulary_words(*)")) {
-                        filter {
-                            eq("user_id", userId)
-                        }
-                    }
-                    .decodeAs<List<UserVocabularyJoinDTO>>()
+        // Search within user's vocabulary only
+        val userVocabRows = supabase.postgrest["user_vocabulary"]
+            .select(columns = Columns.raw("*, vocabulary_words(*)")) {
+                filter {
+                    eq("user_id", userId)
+                }
+            }
+            .decodeAs<List<UserVocabularyJoinDTO>>()
 
-            // Filter by search query on the word or definition
-            userVocabRows
-                .filter { join ->
-                    join.vocabularyWord?.word?.contains(query, ignoreCase = true) == true ||
+        // Filter by search query on the word or definition
+        userVocabRows
+            .filter { join ->
+                join.vocabularyWord?.word?.contains(query, ignoreCase = true) == true ||
                         join.vocabularyWord?.definition?.contains(query, ignoreCase = true) == true
+            }
+            .mapNotNull { it.toDomain() }
+    }
+
+    override suspend fun addVocabularyWord(word: VocabularyWord): Result<VocabularyWord> = runCatching {
+        val userId = supabase.auth.currentUserOrNull()?.id
+            ?: throw IllegalStateException("User not authenticated")
+
+        // Step 1: Check if word already exists in vocabulary_words
+        val existing = supabase.postgrest["vocabulary_words"]
+            .select {
+                filter {
+                    eq("word", word.word)
                 }
-                .mapNotNull { it.toDomain() }
-        }
+            }
+            .decodeSingleOrNull<VocabularyWordDTO>()
 
-    override suspend fun addVocabularyWord(word: VocabularyWord): Result<VocabularyWord> =
-        runCatching {
-            val userId =
-                supabase.auth.currentUserOrNull()?.id
-                    ?: throw IllegalStateException("User not authenticated")
-
-            // Step 1: Check if word already exists in vocabulary_words
-            val existing =
-                supabase.postgrest["vocabulary_words"]
-                    .select {
-                        filter {
-                            eq("word", word.word)
-                        }
-                    }
-                    .decodeSingleOrNull<VocabularyWordDTO>()
-
-            val wordId: String =
-                if (existing != null) {
-                    // Word exists, use its ID
-                    existing.id!!
-                } else {
-                    // Step 2: Insert new word into vocabulary_words
-                    val inserted =
-                        supabase.postgrest["vocabulary_words"]
-                            .insert(
-                                value = VocabularyWordDTO.fromDomain(word),
-                            ) {
-                                select(Columns.ALL)
-                            }
-                            .decodeSingle<VocabularyWordDTO>()
-                    inserted.id!!
-                }
-
-            // Step 3: Add entry to user_vocabulary (link user to word)
-            val userVocabEntry =
-                UserVocabularyDTO(
-                    userId = userId,
-                    wordId = wordId,
-                    status = "new",
-                    reviewCount = 0,
-                    correctCount = 0,
-                    lastReviewed = null,
-                    nextReview = null,
-                    intervalDays = 1,
-                    easeFactor = 2.50,
-                )
-
-            supabase.postgrest["user_vocabulary"]
-                .insert(userVocabEntry) {
+        val wordId: String = if (existing != null) {
+            // Word exists, use its ID
+            existing.id!!
+        } else {
+            // Step 2: Insert new word into vocabulary_words
+            val inserted = supabase.postgrest["vocabulary_words"]
+                .insert(
+                    value = VocabularyWordDTO.fromDomain(word)
+                ) {
                     select(Columns.ALL)
                 }
-                .decodeSingle<UserVocabularyDTO>()
-
-            // Step 4: Fetch the complete word data to return
-            val finalWord =
-                supabase.postgrest["vocabulary_words"]
-                    .select {
-                        filter {
-                            eq("id", wordId)
-                        }
-                    }
-                    .decodeSingle<VocabularyWordDTO>()
-
-            finalWord.toDomain()
+                .decodeSingle<VocabularyWordDTO>()
+            inserted.id!!
         }
+
+        // Step 3: Add entry to user_vocabulary (link user to word)
+        val userVocabEntry = UserVocabularyDTO(
+            userId = userId,
+            wordId = wordId,
+            status = "new",
+            reviewCount = 0,
+            correctCount = 0,
+            lastReviewed = null,
+            nextReview = null,
+            intervalDays = 1,
+            easeFactor = 2.50
+        )
+
+        supabase.postgrest["user_vocabulary"]
+            .insert(userVocabEntry) {
+                select(Columns.ALL)
+            }
+            .decodeSingle<UserVocabularyDTO>()
+
+        // Step 4: Fetch the complete word data to return
+        val finalWord = supabase.postgrest["vocabulary_words"]
+            .select {
+                filter {
+                    eq("id", wordId)
+                }
+            }
+            .decodeSingle<VocabularyWordDTO>()
+
+        finalWord.toDomain()
+    }
 
     // Helper function to get user's vocabulary
     private suspend fun getUserVocabularyInternal(userId: String): List<VocabularyWord> {
-        val userVocabRows =
-            supabase.postgrest["user_vocabulary"]
-                .select(columns = Columns.raw("*, vocabulary_words(*)")) {
-                    filter {
-                        eq("user_id", userId)
-                    }
+        val userVocabRows = supabase.postgrest["user_vocabulary"]
+            .select(columns = Columns.raw("*, vocabulary_words(*)")) {
+                filter {
+                    eq("user_id", userId)
                 }
-                .decodeAs<List<UserVocabularyJoinDTO>>()
+            }
+            .decodeAs<List<UserVocabularyJoinDTO>>()
 
         return userVocabRows.mapNotNull { it.toDomain() }
     }
 
     // Not yet implemented – return simple defaults to keep UI functional
     override suspend fun getVocabularyWordsByCategory(category: String) = Result.success(emptyList<VocabularyWord>())
-
     override suspend fun getVocabularyWordsByDifficulty(difficulty: String) = Result.success(emptyList<VocabularyWord>())
-
     override suspend fun getVocabularyWord(wordId: String) = Result.success<VocabularyWord?>(null)
-
     override suspend fun updateVocabularyWord(word: VocabularyWord) = Result.success(word)
-
     override suspend fun deleteVocabularyWord(wordId: String) = Result.success(Unit)
-
     override suspend fun getUserVocabulary(userId: String) = Result.success(emptyList<UserVocabularyWord>())
-
-    override suspend fun addWordToUserVocabulary(
-        userId: String,
-        wordId: String,
-    ) = Result.failure<UserVocabularyWord>(NotImplementedError())
-
-    override suspend fun updateUserWordStatus(
-        userId: String,
-        wordId: String,
-        status: VocabularyStatus,
-    ) = Result.success(Unit)
-
-    override suspend fun getUserWordsByStatus(
-        userId: String,
-        status: VocabularyStatus,
-    ) = Result.success(emptyList<UserVocabularyWord>())
-
-    override suspend fun removeWordFromUserVocabulary(
-        userId: String,
-        wordId: String,
-    ) = Result.success(Unit)
-
+    override suspend fun addWordToUserVocabulary(userId: String, wordId: String) = Result.failure<UserVocabularyWord>(NotImplementedError())
+    override suspend fun updateUserWordStatus(userId: String, wordId: String, status: VocabularyStatus) = Result.success(Unit)
+    override suspend fun getUserWordsByStatus(userId: String, status: VocabularyStatus) = Result.success(emptyList<UserVocabularyWord>())
+    override suspend fun removeWordFromUserVocabulary(userId: String, wordId: String) = Result.success(Unit)
     override suspend fun getUserVocabularyStats(userId: String) = Result.success(VocabularyStats(0, 0, 0, 0, 0, 0, 0))
-
-    override suspend fun getWordsForReview(
-        userId: String,
-        limit: Int,
-    ) = Result.success(emptyList<UserVocabularyWord>())
+    override suspend fun getWordsForReview(userId: String, limit: Int) = Result.success(emptyList<UserVocabularyWord>())
 }
 
 // DTO for vocabulary_words table
@@ -180,10 +141,10 @@ private data class VocabularyWordDTO(
     @SerialName("example_sentence") val exampleSentence: String? = null,
     @SerialName("difficulty_level") val difficultyLevel: String,
     val category: String,
-    @SerialName("audio_url") val audioUrl: String? = null,
+    @SerialName("audio_url") val audioUrl: String,
     @SerialName("image_url") val imageUrl: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
-    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null
 ) {
     fun toDomain(): VocabularyWord {
         return VocabularyWord(
@@ -192,11 +153,12 @@ private data class VocabularyWordDTO(
             definition = definition,
             pronunciation = pronunciation ?: "",
             category = category,
+            audioUrl = audioUrl,
             difficulty = difficultyLevel,
             examples = exampleSentence?.let { listOf(it) } ?: emptyList(),
             status = VocabularyStatus.NEW,
             dateAdded = System.currentTimeMillis(),
-            lastReviewed = null,
+            lastReviewed = null
         )
     }
 
@@ -209,8 +171,8 @@ private data class VocabularyWordDTO(
                 exampleSentence = w.examples.firstOrNull(),
                 difficultyLevel = w.difficulty.ifBlank { "Beginner" },
                 category = w.category.ifBlank { "General" },
-                audioUrl = null,
-                imageUrl = null,
+                audioUrl = w.audioUrl,
+                imageUrl = null
             )
         }
     }
@@ -230,7 +192,7 @@ private data class UserVocabularyDTO(
     @SerialName("interval_days") val intervalDays: Int = 1,
     @SerialName("ease_factor") val easeFactor: Double = 2.50,
     @SerialName("created_at") val createdAt: String? = null,
-    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null
 )
 
 // DTO for joined query (user_vocabulary with vocabulary_words)
@@ -243,7 +205,7 @@ private data class UserVocabularyJoinDTO(
     @SerialName("review_count") val reviewCount: Int,
     @SerialName("correct_count") val correctCount: Int,
     @SerialName("last_reviewed") val lastReviewed: String?,
-    @SerialName("vocabulary_words") val vocabularyWord: VocabularyWordDTO?,
+    @SerialName("vocabulary_words") val vocabularyWord: VocabularyWordDTO?
 ) {
     fun toDomain(): VocabularyWord? {
         return vocabularyWord?.let { word ->
@@ -253,17 +215,17 @@ private data class UserVocabularyJoinDTO(
                 definition = word.definition,
                 pronunciation = word.pronunciation ?: "",
                 category = word.category,
+                audioUrl = word.audioUrl,
                 difficulty = word.difficultyLevel,
                 examples = word.exampleSentence?.let { listOf(it) } ?: emptyList(),
-                status =
-                    when (status.lowercase()) {
-                        "learning" -> VocabularyStatus.LEARNING
-                        "reviewing" -> VocabularyStatus.NEED_REVIEW
-                        "mastered" -> VocabularyStatus.MASTERED
-                        else -> VocabularyStatus.NEW
-                    },
+                status = when (status.lowercase()) {
+                    "learning" -> VocabularyStatus.LEARNING
+                    "reviewing" -> VocabularyStatus.NEED_REVIEW
+                    "mastered" -> VocabularyStatus.MASTERED
+                    else -> VocabularyStatus.NEW
+                },
                 dateAdded = System.currentTimeMillis(),
-                lastReviewed = lastReviewed?.let { System.currentTimeMillis() },
+                lastReviewed = lastReviewed?.let { System.currentTimeMillis() }
             )
         }
     }
