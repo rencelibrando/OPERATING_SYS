@@ -1,10 +1,10 @@
-e api*.iml
+*.iml
 .kotlin
 **/build/
 xcuserdata
 !src/**/build/
 local.properties
-.idea
+.idea/
 .DS_Store
 captures
 .externalNativeBuild
@@ -14,16 +14,16 @@ captures
 !*.xcodeproj/xcshareddata/
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
-
+.gradle/
 # Environment files
-composeApp/.env
-.env.local
-.env.development
-.env.production
-.env.staging
+#composeApp/.env
+#env.local
+#.env.development
+#.env.production
+#.env.staging
 
 # Supabase
-#.supabase/
-
+.supabase/
+.md/
 # Secrets
 #secrets/
