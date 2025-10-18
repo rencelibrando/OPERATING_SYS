@@ -20,8 +20,6 @@ object SupabaseConfig {
             supabaseKey = SUPABASE_ANON_KEY,
         ) {
             install(Auth) {
-                // Add better error logging
-                // autoLoadFromStorage = true
             }
             install(Postgrest)
             install(Storage)
