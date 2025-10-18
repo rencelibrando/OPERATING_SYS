@@ -29,18 +29,38 @@ fun AIChatScreen(
     modifier: Modifier = Modifier,
 ) {
     val chatMessages by viewModel.chatMessages
+    val chatSessions by viewModel.chatSessions
     val chatFeatures by viewModel.chatFeatures
     val selectedBot by viewModel.selectedBot
     val currentMessage by viewModel.currentMessage
     val isTyping by viewModel.isTyping
     val isLoading by viewModel.isLoading
+    val currentSession by viewModel.currentSession
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .padding(24.dp),
+    // Load chat sessions when screen opens
+    LaunchedEffect(Unit) {
+        viewModel.refreshChatData()
+    }
+
+    Row(
+        modifier = modifier.fillMaxSize(),
     ) {
+        // Chat History Sidebar
+        ChatHistorySidebar(
+            chatSessions = chatSessions,
+            currentSessionId = currentSession?.id,
+            onSessionClick = viewModel::onSessionSelected,
+            onNewChatClick = viewModel::onNewSessionClicked,
+            onDeleteSession = viewModel::onDeleteSession,
+        )
+
+        // Main Chat Area
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .padding(24.dp),
+        ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -171,7 +191,8 @@ fun AIChatScreen(
                 )
             }
         }
-    }
+        } // End Main Chat Area Column
+    } // End Row
 }
 
 @Composable
