@@ -115,7 +115,7 @@ object AppInitializer {
             println("Initializing cache systems...")
             println("Cache initialized")
         } catch (e: Exception) {
-            println("⚠Cache initialization warning: ${e.message}")
+            println("Cache initialization warning: ${e.message}")
         }
     }
     

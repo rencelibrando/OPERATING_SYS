@@ -4,7 +4,6 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.example.project.core.auth.*
 import org.example.project.core.utils.ValidationUtils
@@ -49,7 +48,6 @@ class AuthViewModel : ViewModel() {
     val isLoginMode: Boolean get() = _isLoginMode.value
 
     init {
-
         checkAuthenticationStatus()
     }
 
@@ -157,7 +155,6 @@ class AuthViewModel : ViewModel() {
     fun signOut() {
         viewModelScope.launch {
             try {
-                authService.stopVerificationServer()
                 authService.signOut()
                 _authState.value = AuthState.Unauthenticated
                 clearAllForms()
@@ -195,7 +192,6 @@ class AuthViewModel : ViewModel() {
     }
 
     fun goBackToLogin() {
-        authService.stopVerificationServer()
         _authState.value = AuthState.Unauthenticated
         _isLoading.value = false
         clearError()
@@ -208,125 +204,6 @@ class AuthViewModel : ViewModel() {
         _successMessage.value = "Account created successfully! Please sign in with your new credentials."
         clearError()
         clearAllForms()
-    }
-
-    private fun startEmailVerificationPolling() {
-        viewModelScope.launch {
-            try {
-                var attempts = 0
-                val maxAttempts = 60 // Total attempts over ~10 minutes
-
-                while (attempts < maxAttempts && _authState.value is AuthState.AwaitingEmailVerification) {
-                    // Progressive delay: 5s for first 10 attempts, then 10s, then 15s
-                    val delayMs: Long =
-                        when {
-                            attempts < 10 -> 5000L // First 50 seconds: every 5s
-                            attempts < 30 -> 10000L // Next 3.5 minutes: every 10s
-                            else -> 15000L // Remaining time: every 15s
-                        }
-                    delay(delayMs)
-
-                    _isLoading.value = true
-
-                    val result = authService.checkEmailVerificationStatus()
-                    if (result.isSuccess) {
-                        val user = result.getOrNull()
-                        if (user != null && user.isEmailVerified) {
-                            _authState.value =
-                                AuthState.EmailVerified(
-                                    user = user,
-                                    message = "Email verified successfully!",
-                                )
-
-                            delay(2000L)
-                            _authState.value =
-                                AuthState.SignupComplete(
-                                    email = user.email,
-                                    message = "Account created successfully! You can now sign in with your credentials.",
-                                )
-                            authService.stopVerificationServer()
-                            return@launch // Stop polling
-                        }
-                    }
-
-                    _isLoading.value = false
-                    attempts++
-                }
-
-                _isLoading.value = false
-
-                if (attempts >= maxAttempts && _authState.value is AuthState.AwaitingEmailVerification) {
-                    val currentState = _authState.value as AuthState.AwaitingEmailVerification
-                    _authState.value =
-                        AuthState.AwaitingEmailVerification(
-                            email = currentState.email,
-                            message = "We've been checking for about 10 minutes. Please check your email (including spam folder) and click the verification link. You can also try resending the email if needed.",
-                        )
-                }
-            } catch (e: Exception) {
-                println("Error during email verification polling: ${e.message}")
-                _isLoading.value = false
-            }
-        }
-    }
-
-    /**
-     * Check authentication status and handle email verification redirects
-     */
-    fun checkEmailVerification() {
-        viewModelScope.launch {
-            try {
-                println("🔍 Manually checking email verification status...")
-                _isLoading.value = true
-
-                // Check email verification status using the new method
-                val result = authService.checkEmailVerificationStatus()
-                if (result.isSuccess) {
-                    val user = result.getOrNull()
-                    if (user != null && user.isEmailVerified) {
-                        // Show verification success message briefly
-                        _authState.value =
-                            AuthState.EmailVerified(
-                                user = user,
-                                message = "Email verified successfully!",
-                            )
-                        println("🎉 Email verified! Redirecting to sign-in.")
-
-                        // After 2 seconds, transition to signup complete state
-                        delay(2000L)
-                        _authState.value =
-                            AuthState.SignupComplete(
-                                email = user.email,
-                                message = "Account created successfully! You can now sign in with your credentials.",
-                            )
-                        // Stop the verification server
-                        authService.stopVerificationServer()
-                    } else if (user != null && !user.isEmailVerified) {
-                        _authState.value =
-                            AuthState.AwaitingEmailVerification(
-                                email = user.email,
-                                message = "Please check your email and click the verification link to complete your registration.",
-                            )
-                        println("⏳ Email not yet verified for user: ${user.email}")
-                    } else {
-                        _authState.value = AuthState.Unauthenticated
-                        println("ℹ️ No user session found")
-                    }
-                } else {
-                    _authState.value = AuthState.Unauthenticated
-                    println("❌ Failed to check verification status")
-                }
-            } catch (e: Exception) {
-                println("❌ Error checking email verification: ${e.message}")
-                _authState.value = AuthState.Unauthenticated
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
-    fun forceCheckEmailVerification() {
-        checkEmailVerification()
     }
 
     fun toggleAuthMode() {
@@ -438,12 +315,4 @@ class AuthViewModel : ViewModel() {
         clearSignUpForm()
     }
 
-    /**
-     * Clean up resources when ViewModel is destroyed
-     */
-    override fun onCleared() {
-        super.onCleared()
-        // Stop any running verification server
-        authService.stopVerificationServer()
-    }
 }

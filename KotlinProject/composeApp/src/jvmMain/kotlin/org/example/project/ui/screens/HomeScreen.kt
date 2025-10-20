@@ -46,13 +46,13 @@ fun HomeScreen(
     val isOnboardingComplete by onboardingViewModel.isComplete
     val isLoadingOnboarding by onboardingViewModel.isLoading
 
-    println("🏠🏠🏠 HomeScreen Check:")
+    println("HomeScreen Check:")
     println("    isOnboardingComplete: $isOnboardingComplete")
     println("    isLoadingOnboarding: $isLoadingOnboarding")
     println("    Should show onboarding: ${!isOnboardingComplete && !isLoadingOnboarding}")
 
     if (!isOnboardingComplete && !isLoadingOnboarding) {
-        println("   ▶ SHOWING OnboardingScreen")
+        println("   SHOWING OnboardingScreen")
         OnboardingScreen(
             viewModel = onboardingViewModel,
             onComplete = {
@@ -62,7 +62,7 @@ fun HomeScreen(
         )
         return
     } else {
-        println("   ⏭ SKIPPING OnboardingScreen - showing HomeScreen")
+        println("   SKIPPING OnboardingScreen - showing HomeScreen")
     }
 
     val user by viewModel.user

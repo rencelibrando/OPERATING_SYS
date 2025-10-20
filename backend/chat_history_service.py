@@ -185,7 +185,7 @@ class ChatHistoryService:
             if not supabase:
                 raise Exception("Supabase not configured")
             
-            logger.info(f"🗑Deleting chat session and history for: {session_id}")
+            logger.info(f"Deleting chat session and history for: {session_id}")
 
             session_result = supabase.table('chat_sessions')\
                 .delete()\
@@ -201,7 +201,7 @@ class ChatHistoryService:
                     .execute()
                 logger.info(f"Explicitly deleted chat history: {session_id}")
             except Exception as e:
-                logger.info(f"ℹChat history already deleted (cascade): {e}")
+                logger.info(f"Chat history already deleted (cascade): {e}")
             
             return True
             

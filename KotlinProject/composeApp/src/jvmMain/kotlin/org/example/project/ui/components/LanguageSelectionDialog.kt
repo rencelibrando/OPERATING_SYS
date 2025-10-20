@@ -20,10 +20,6 @@ import androidx.compose.ui.window.Dialog
 import org.example.project.presentation.viewmodel.PracticeLanguage
 import org.example.project.ui.theme.WordBridgeColors
 
-/**
- * Dialog for selecting practice language
- * Shows available languages with flags and descriptions
- */
 @Composable
 fun LanguageSelectionDialog(
     wordToLearn: String,

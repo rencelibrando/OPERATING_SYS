@@ -55,7 +55,7 @@ data class ChatSessionDTO(
             try {
                 Instant.parse(timestamp).toEpochMilli()
             } catch (e2: Exception) {
-                println("⚠Failed to parse timestamp: $timestamp, using current time")
+                println("Failed to parse timestamp: $timestamp, using current time")
                 System.currentTimeMillis()
             }
         }

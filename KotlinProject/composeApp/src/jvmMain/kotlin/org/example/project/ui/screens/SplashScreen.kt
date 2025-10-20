@@ -39,14 +39,14 @@ fun SplashScreen(
                 delay(800) // Delay to show completion animation
                 onInitializationComplete()
             }.onFailure { e ->
-                println("⚠️ Initialization failed: ${e.message}")
+                println("Initialization failed: ${e.message}")
                 currentStep = "Starting app..."
                 progress = 1f
                 delay(500)
                 onInitializationComplete()
             }
         } catch (e: Exception) {
-            println("⚠️ Initialization error: ${e.message}")
+            println("Initialization error: ${e.message}")
             currentStep = "Starting app..."
             progress = 1f
             delay(500)

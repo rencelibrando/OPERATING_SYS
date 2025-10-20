@@ -56,7 +56,7 @@ class ProfileService {
 
     suspend fun updateLearningProfile(learningProfile: LearningProfile): Result<Unit> {
         return try {
-            println("💾 Updating learning profile in Supabase")
+            println("Updating learning profile in Supabase")
 
             if (!SupabaseConfig.isConfigured()) {
                 throw Exception("Supabase is not configured")

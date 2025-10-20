@@ -143,7 +143,7 @@ class AIChatRepositoryImpl(
     override suspend fun deleteChatSession(sessionId: String): Result<Unit> =
         withContext(Dispatchers.IO) {
             runCatching {
-                println("🗑Deleting chat session: $sessionId")
+                println("Deleting chat session: $sessionId")
                 
                 // Delete from Supabase (will cascade delete chat_session_history)
                 try {
@@ -302,13 +302,13 @@ class AIChatRepositoryImpl(
     ): Result<Unit> =
         runCatching {
             // TODO: Implement real-time subscription (e.g., with Supabase Realtime)
-            println("⚠Chat message subscription not yet implemented")
+            println("Chat message subscription not yet implemented")
         }
 
     override suspend fun unsubscribeFromChatMessages(sessionId: String): Result<Unit> =
         runCatching {
             // TODO: Implement unsubscribe
-            println("⚠Chat message unsubscribe not yet implemented")
+            println("Chat message unsubscribe not yet implemented")
         }
 
     private suspend fun buildUserContext(): AIUserContext {
@@ -510,10 +510,10 @@ class AIChatRepositoryImpl(
                         println("   Compression: ${response.compressionRatio}% saved (${response.originalSize} -> ${response.compressedSize} bytes)")
                     }
                     .onFailure { error ->
-                        println("⚠ Failed to save chat history: ${error.message}")
+                        println("Failed to save chat history: ${error.message}")
                     }
         } catch (e: Exception) {
-            println("⚠ Error saving chat history: ${e.message}")
+            println("Error saving chat history: ${e.message}")
             // Don't throw - chat should continue even if history save fails
         }
     }

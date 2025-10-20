@@ -55,7 +55,7 @@ class AIChatViewModel(
         // Check if we have an active session
         val session = _currentSession.value
         if (session == null) {
-            println("⚠️ No active session, cannot send message")
+            println("No active session, cannot send message")
             _error.value = "Please select a bot to start chatting"
             return
         }
@@ -82,12 +82,12 @@ class AIChatViewModel(
             try {
                 // Quick health check (backend should already be running from app startup)
                 // This is just a safety check and won't block UI
-                println("💬 Sending message to AI: $messageText")
+                println("Sending message to AI: $messageText")
 
                 // Save user message to repository
                 repository.sendMessage(session.id, messageText)
                     .onFailure { e ->
-                        println("⚠️ Failed to save user message: ${e.message}")
+                        println("Failed to save user message: ${e.message}")
                     }
 
                 // Generate AI response
@@ -103,7 +103,7 @@ class AIChatViewModel(
                         context = botContext,
                     ).getOrThrow()
 
-                println("✅ Received AI response")
+                println("Received AI response")
 
                 // Add a small delay to simulate typing
                 delay(500)
@@ -121,7 +121,7 @@ class AIChatViewModel(
                 _isTyping.value = false
                 _chatMessages.value = _chatMessages.value + aiMessage
             } catch (e: Exception) {
-                println("❌ Failed to get AI response: ${e.message}")
+                println("Failed to get AI response: ${e.message}")
                 e.printStackTrace()
 
                 _isTyping.value = false
@@ -161,7 +161,7 @@ class AIChatViewModel(
     fun onSessionSelected(sessionId: String) {
         viewModelScope.launch {
             try {
-                println("📂 Loading session: $sessionId")
+                println("Loading session: $sessionId")
                 
                 val session = repository.getChatSession(sessionId).getOrNull()
                 if (session != null) {
@@ -171,7 +171,7 @@ class AIChatViewModel(
                     val messages = repository.getChatMessages(sessionId).getOrNull() ?: emptyList()
                     _chatMessages.value = messages
                     
-                    println("✅ Loaded session with ${messages.size} messages")
+                    println("Loaded session with ${messages.size} messages")
                     
                     // If no messages, show welcome message based on bot
                     if (messages.isEmpty()) {
@@ -192,7 +192,7 @@ class AIChatViewModel(
                     }
                 }
             } catch (e: Exception) {
-                println("❌ Failed to load session: ${e.message}")
+                println("Failed to load session: ${e.message}")
                 e.printStackTrace()
                 _error.value = "Failed to load session"
             }
@@ -209,11 +209,11 @@ class AIChatViewModel(
     fun onDeleteSession(sessionId: String) {
         viewModelScope.launch {
             try {
-                println("🗑️ Deleting session: $sessionId")
+                println("Deleting session: $sessionId")
                 
                 // Delete from repository
                 repository.deleteChatSession(sessionId).onSuccess {
-                    println("✅ Session deleted successfully")
+                    println("Session deleted successfully")
                     
                     // Remove from local list
                     _chatSessions.value = _chatSessions.value.filter { it.id != sessionId }
@@ -223,11 +223,11 @@ class AIChatViewModel(
                         onNewSessionClicked()
                     }
                 }.onFailure { e ->
-                    println("❌ Failed to delete session: ${e.message}")
+                    println("Failed to delete session: ${e.message}")
                     _error.value = "Failed to delete chat: ${e.message}"
                 }
             } catch (e: Exception) {
-                println("❌ Error deleting session: ${e.message}")
+                println("Error deleting session: ${e.message}")
                 e.printStackTrace()
                 _error.value = "Failed to delete chat"
             }
@@ -255,7 +255,7 @@ class AIChatViewModel(
                 val sessions = repository.getUserChatSessions(userId).getOrNull()
                 if (sessions != null && sessions.isNotEmpty()) {
                     _chatSessions.value = sessions
-                    println("✅ Loaded ${sessions.size} previous chat sessions")
+                    println("Loaded ${sessions.size} previous chat sessions")
                 }
                 
                 // If there's a current session, reload its messages
@@ -263,11 +263,11 @@ class AIChatViewModel(
                     val messages = repository.getChatMessages(session.id).getOrNull()
                     if (messages != null) {
                         _chatMessages.value = messages
-                        println("✅ Reloaded ${messages.size} messages for current session")
+                        println("Reloaded ${messages.size} messages for current session")
                     }
                 }
             } catch (e: Exception) {
-                println("❌ Failed to refresh chat data: ${e.message}")
+                println("Failed to refresh chat data: ${e.message}")
             } finally {
                 _isLoading.value = false
             }
@@ -277,7 +277,7 @@ class AIChatViewModel(
     private fun startNewSession(bot: ChatBot) {
         viewModelScope.launch {
             try {
-                println("🎯 Starting new session with bot: ${bot.name}")
+                println("Starting new session with bot: ${bot.name}")
 
                 // Get actual user ID (will be fetched inside repository)
                 val session =
@@ -289,14 +289,14 @@ class AIChatViewModel(
                 _currentSession.value = session
                 _error.value = null
 
-                println("✅ Session created: ${session.id}")
+                println("Session created: ${session.id}")
 
                 // Try to load existing messages from Supabase
                 val existingMessages = repository.getChatMessages(session.id).getOrNull() ?: emptyList()
                 
                 if (existingMessages.isNotEmpty()) {
                     // Load existing conversation history
-                    println("📖 Loaded ${existingMessages.size} messages from history")
+                    println("Loaded ${existingMessages.size} messages from history")
                     _chatMessages.value = existingMessages
                 } else {
                     // No history - show welcome message
@@ -312,7 +312,7 @@ class AIChatViewModel(
                     _chatMessages.value = listOf(welcomeMessage)
                 }
             } catch (e: Exception) {
-                println("❌ Failed to create session: ${e.message}")
+                println("Failed to create session: ${e.message}")
                 _error.value = "Failed to start session: ${e.message}"
             }
         }
