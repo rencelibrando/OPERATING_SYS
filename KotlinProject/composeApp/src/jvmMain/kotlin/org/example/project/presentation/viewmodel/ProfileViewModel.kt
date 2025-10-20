@@ -356,7 +356,7 @@ class ProfileViewModel : ViewModel() {
                     return@launch
                 }
 
-                println("📸 Uploading image (${imageBytes.size} bytes)...")
+                println("Uploading image (${imageBytes.size} bytes)...")
 
                 // Upload to Supabase Storage
                 val uploadResult = imageUploadService.uploadProfilePicture(imageBytes)
@@ -445,7 +445,7 @@ class ProfileViewModel : ViewModel() {
                 val currentProfile = _userProfile.value
                 val oldImageUrl = currentProfile.personalInfo.profileImageUrl
                 if (!oldImageUrl.isNullOrEmpty()) {
-                    println("🗑Deleting old profile picture: $oldImageUrl")
+                    println("Deleting old profile picture: $oldImageUrl")
                     imageUploadService.deleteProfilePicture(oldImageUrl)
                 }
 
@@ -453,7 +453,7 @@ class ProfileViewModel : ViewModel() {
                 val uploadResult = imageUploadService.uploadProfilePicture(imageBytes)
                 uploadResult.fold(
                     onSuccess = { imageUrl ->
-                        println("🔗 Received image URL: $imageUrl")
+                        println("Received image URL: $imageUrl")
 
                         // Update profile with new image URL
                         val updatedPersonalInfo =

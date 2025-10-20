@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your WordBridge Account</title>
+    <style>
+        /* Reset and base styles */
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.4;
+            color: #2d3748;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+        }
+        
+        .email-container {
+            max-width: 700px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            padding: 16px 24px;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.875rem;
+            margin-right: 8px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+        
+        .header-subtitle {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+        
+        .content {
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .welcome-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        
+        .message {
+            font-size: 0.9rem;
+            color: #4a5568;
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.5;
+            max-width: 450px;
+        }
+        
+        .verify-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-align: center;
+            box-shadow: 0 3px 12px rgba(79, 70, 229, 0.25);
+            transition: all 0.2s ease;
+            margin-bottom: 16px;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .verify-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(79, 70, 229, 0.35);
+        }
+        
+        .security-notice {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 9px 9px;
+            margin: 12px 0;
+            max-width: 450px;
+            width: 100%;
+        }
+        
+        .security-notice p {
+            font-size: 0.8rem;
+            color: #92400e;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .security-icon {
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+        
+        .footer {
+            background: #f8fafc;
+            padding: 16px 24px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .footer-text {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+        
+        .social-links {
+            margin-top: 8px;
+        }
+        
+        .social-links a {
+            display: inline-block;
+            margin: 0 4px;
+            color: #4f46e5;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+        
+        .social-links a:hover {
+            color: #7c3aed;
+        }
+        
+        /* Landscape optimization */
+        @media (min-width: 768px) {
+            .email-container {
+                max-width: 750px;
+            }
+            
+            .content {
+                padding: 24px 32px;
+            }
+            
+            .header {
+                padding: 20px 32px;
+            }
+            
+            .footer {
+                padding: 20px 32px;
+            }
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 767px) {
+            body {
+                padding: 4px;
+            }
+            
+            .email-container {
+                border-radius: 8px;
+            }
+            
+            .header, .content, .footer {
+                padding: 16px;
+            }
+            
+            .logo {
+                flex-direction: column;
+                align-items: center;
+                gap: 6px;
+            }
+            
+            .logo-icon {
+                margin-right: 0;
+                margin-bottom: 0;
+            }
+            
+            .verify-button {
+                width: 100%;
+                justify-content: center;
+                padding: 14px 20px;
+            }
+            
+            .welcome-title {
+                font-size: 1.25rem;
+            }
+            
+            .message {
+                font-size: 0.85rem;
+            }
+        }
+        
+        /* Accessibility improvements */
+        @media (prefers-reduced-motion: reduce) {
+            .verify-button {
+                transition: none;
+            }
+            
+            .verify-button:hover {
+                transform: none;
+            }
+        }
+        
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .email-container {
+                border: 2px solid #000;
+            }
+            
+            .verify-button {
+                background: #000;
+                color: #fff;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">WB</div>
+                <div>
+                    <div class="logo-text">WordBridge</div>
+                    <div class="header-subtitle">Language Learning Platform</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="content">
+            <h1 class="welcome-title">Welcome to WordBridge!</h1>
+            <p class="message">
+                Thanks for signing up! To complete your registration and start your language learning journey, 
+                please verify your email address by clicking the button below.
+            </p>
+            
+            <!-- Verification Button -->
+            <a href="{{ .ConfirmationURL }}&redirect_to=https://rencelibrando.github.io/OPERATING_SYS/auth/callback.html" 
+               class="verify-button">
+                <span>Verify My Email Address</span>
+            </a>
+            
+            <!-- Security Notice -->
+            <div class="security-notice">
+                <p>
+                    <span class="security-icon">🔒</span>
+                    <span><strong>Security Note:</strong> This verification link will expire in 24 hours. 
+                    If you didn't create an account with WordBridge, you can safely ignore this email.</span>
+                </p>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p class="footer-text">
+                <strong>WordBridge</strong> - AI-powered language learning for everyone
+            </p>
+            <p class="footer-text">
+                This email was sent to you because you signed up for a WordBridge account.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

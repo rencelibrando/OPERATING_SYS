@@ -1,5 +1,6 @@
 package org.example.project.core.auth
 
+
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
 import kotlinx.coroutines.delay
@@ -7,20 +8,17 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.example.project.core.config.SupabaseConfig
 
+
 class RealSupabaseAuthService {
     private val supabase = SupabaseConfig.client
-    private val verificationServer = EmailVerificationServer()
-
-    @Volatile
-    private var verifiedUserFromCallback: User? = null
 
     suspend fun signUp(request: SignUpRequest): Result<AuthResponse> {
         return try {
-            println("🔐 Creating account with Supabase: ${request.email}")
+            println("Creating account with Supabase: ${request.email}")
 
             if (!SupabaseConfig.isConfigured()) {
                 val configStatus = SupabaseConfig.getConfigStatus()
-                println("❌ Supabase Configuration Error:")
+                println("Supabase Configuration Error:")
                 configStatus.forEach { (key, value) ->
                     println("   $key: $value")
                 }
@@ -39,12 +37,12 @@ class RealSupabaseAuthService {
                     }
             }
 
-            println("✅ User created successfully")
-            println("📧 Confirmation email sent to: ${request.email}")
-            println("⚠️ User must confirm email before signing in")
-            println("💡 After email verification, return to app and sign in with your credentials")
+            println("User created successfully")
+            println("Confirmation email sent to: ${request.email}")
+            println("User must confirm email before signing in")
+            println("After email verification, return to app and sign in with your credentials")
 
-            println("🔧 Email verification will be handled via GitHub Pages callback")
+            println("Email verification will be handled via GitHub Pages callback")
 
             val session = supabase.auth.currentSessionOrNull()
             val supabaseUser = session?.user
@@ -77,7 +75,7 @@ class RealSupabaseAuthService {
                     )
                 }
 
-            println("📧 User created with email verification required: ${appUser.isEmailVerified}")
+            println("User created with email verification required: ${appUser.isEmailVerified}")
 
             val response =
                 AuthResponse(
@@ -89,7 +87,7 @@ class RealSupabaseAuthService {
 
             Result.success(response)
         } catch (e: Exception) {
-            println("❌ Sign up failed: ${e.message}")
+            println("Sign up failed: ${e.message}")
             val errorMessage =
                 when {
                     e.message?.contains("User already registered") == true -> "An account with this email already exists"
@@ -106,11 +104,11 @@ class RealSupabaseAuthService {
 
     suspend fun signIn(request: LoginRequest): Result<AuthResponse> {
         return try {
-            println("🔐 Signing in with Supabase: ${request.email}")
+            println("Signing in with Supabase: ${request.email}")
 
             if (!SupabaseConfig.isConfigured()) {
                 val configStatus = SupabaseConfig.getConfigStatus()
-                println("❌ Supabase Configuration Error:")
+                println("Supabase Configuration Error:")
                 configStatus.forEach { (key, value) ->
                     println("   $key: $value")
                 }
@@ -133,7 +131,7 @@ class RealSupabaseAuthService {
                     throw Exception("Please verify your email before signing in. Check your inbox for a confirmation email.")
                 }
 
-                println("✅ User signed in successfully")
+                println("User signed in successfully")
 
                 val firstName = user.userMetadata?.get("first_name")?.toString()?.removeSurrounding("\"") ?: ""
                 val lastName = user.userMetadata?.get("last_name")?.toString()?.removeSurrounding("\"") ?: ""
@@ -163,10 +161,10 @@ class RealSupabaseAuthService {
                 throw Exception("Sign in failed - no user session found")
             }
         } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
-            println("❌ Sign in timed out: ${e.message}")
+            println("Sign in timed out: ${e.message}")
             Result.failure(Exception("Sign in timed out. Please check your internet connection and try again."))
         } catch (e: Exception) {
-            println("❌ Sign in failed: ${e.message}")
+            println("Sign in failed: ${e.message}")
             val errorMessage =
                 when {
                     e.message?.contains("Invalid login credentials") == true -> "Invalid email or password"
@@ -181,21 +179,21 @@ class RealSupabaseAuthService {
         }
     }
 
-    suspend fun resendVerificationEmail(email: String): Result<Unit> {
+    fun resendVerificationEmail(email: String): Result<Unit> {
         return try {
-            println("📧 Resending confirmation email to: $email")
+            println("Resending confirmation email to: $email")
 
             if (!SupabaseConfig.isConfigured()) {
                 val configStatus = SupabaseConfig.getConfigStatus()
-                println("❌ Supabase Configuration Error:")
+                println("Supabase Configuration Error:")
                 configStatus.forEach { (key, value) ->
                     println("   $key: $value")
                 }
                 throw Exception("Supabase is not configured. Please check your Supabase credentials in SupabaseConfig.kt.")
             }
 
-            println("⚠️ Resend not directly supported in this API version")
-            println("💡 Recommendation: Try signing up again to receive a new verification email")
+            println("Resend not directly supported in this API version")
+            println("Recommendation: Try signing up again to receive a new verification email")
 
             Result.failure(
                 Exception(
@@ -204,7 +202,7 @@ class RealSupabaseAuthService {
                 ),
             )
         } catch (e: Exception) {
-            println("❌ Failed to resend confirmation email: ${e.message}")
+            println("Failed to resend confirmation email: ${e.message}")
             val errorMessage =
                 when {
                     e.message?.contains("network") == true -> "Network error. Please check your connection"
@@ -218,21 +216,21 @@ class RealSupabaseAuthService {
 
     suspend fun signOut(): Result<Unit> {
         return try {
-            println("🔐 Signing out from Supabase")
+            println("Signing out from Supabase")
 
             supabase.auth.signOut()
 
-            println("✅ User signed out successfully")
+            println("User signed out successfully")
             Result.success(Unit)
         } catch (e: Exception) {
-            println("❌ Sign out failed: ${e.message}")
+            println("Sign out failed: ${e.message}")
             Result.failure(Exception("Failed to sign out: ${e.message}"))
         }
     }
 
     suspend fun getCurrentUser(): Result<User?> {
         return try {
-            println("🔐 Getting current user from Supabase")
+            println("Getting current user from Supabase")
 
             delay(100)
 
@@ -255,77 +253,21 @@ class RealSupabaseAuthService {
                         lastLoginAt = user.lastSignInAt?.toString(),
                     )
 
-                println("✅ Current user found: ${appUser.email} (verified: ${appUser.isEmailVerified})")
+                println("Current user found: ${appUser.email} (verified: ${appUser.isEmailVerified})")
                 Result.success(appUser)
             } else {
-                println("ℹ️ No authenticated user")
+                println("No authenticated user")
                 Result.success(null)
             }
         } catch (e: Exception) {
-            println("❌ Get current user failed: ${e.message}")
+            println("Get current user failed: ${e.message}")
             Result.failure(Exception("Failed to get current user: ${e.message}"))
-        }
-    }
-
-    fun isAuthenticated(): Boolean {
-        return supabase.auth.currentSessionOrNull() != null
-    }
-
-    fun stopVerificationServer() {
-        verificationServer.stopServer()
-    }
-
-    suspend fun checkEmailVerificationStatus(): Result<User?> {
-        return try {
-            println("🔍 Checking email verification status...")
-
-            verifiedUserFromCallback?.let { cached ->
-                println("✅ Using verified user from callback cache: ${cached.email}")
-                return Result.success(cached)
-            }
-
-            val session = supabase.auth.currentSessionOrNull()
-            val user = session?.user
-
-            if (user != null) {
-                val isEmailVerified = user.emailConfirmedAt != null
-
-                val firstName = user.userMetadata?.get("first_name")?.toString()?.removeSurrounding("\"") ?: ""
-                val lastName = user.userMetadata?.get("last_name")?.toString()?.removeSurrounding("\"") ?: ""
-
-                val appUser =
-                    User(
-                        id = user.id,
-                        email = user.email ?: "",
-                        firstName = firstName,
-                        lastName = lastName,
-                        profileImageUrl = user.userMetadata?.get("avatar_url")?.toString()?.removeSurrounding("\""),
-                        isEmailVerified = isEmailVerified,
-                        createdAt = user.createdAt.toString(),
-                        lastLoginAt = user.lastSignInAt?.toString(),
-                    )
-
-                if (isEmailVerified) {
-                    println("✅ Email has been verified and user is signed in!")
-                    return Result.success(appUser)
-                } else {
-                    println("User is signed in but email not yet verified")
-                    return Result.success(appUser)
-                }
-            } else {
-                println("ℹNo current user session - user needs to sign in after email verification")
-                println("💡 After verifying email, user should sign in with their credentials")
-                return Result.success(null)
-            }
-        } catch (e: Exception) {
-            println("Error checking email verification: ${e.message}")
-            Result.failure(Exception("Failed to check email verification: ${e.message}"))
         }
     }
 
     suspend fun updateUserMetadata(profileImageUrl: String?): Result<Unit> {
         return try {
-            println("🔐 Updating user metadata with profile image URL: $profileImageUrl")
+            println("Updating user metadata with profile image URL: $profileImageUrl")
 
             val session = supabase.auth.currentSessionOrNull()
             if (session == null) {
@@ -355,25 +297,12 @@ class RealSupabaseAuthService {
                     }
             }
 
-            println("✅ User metadata updated successfully")
+            println("User metadata updated successfully")
             Result.success(Unit)
         } catch (e: Exception) {
-            println("❌ Failed to update user metadata: ${e.message}")
+            println("Failed to update user metadata: ${e.message}")
             Result.failure(e)
         }
     }
 
-    fun getDebugInfo(): Map<String, Any> {
-        val session = supabase.auth.currentSessionOrNull()
-        val user = session?.user
-
-        return mapOf(
-            "current_user" to (user?.email ?: "none"),
-            "is_authenticated" to isAuthenticated(),
-            "email_verified" to (user?.emailConfirmedAt != null),
-            "session_exists" to (session != null),
-            "supabase_configured" to SupabaseConfig.isConfigured(),
-            "supabase_config" to SupabaseConfig.getConfigStatus(),
-        )
-    }
 }

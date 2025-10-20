@@ -104,7 +104,7 @@ class SpeakingViewModel : ViewModel() {
             }
         }
 
-        println("🎤 Started recording...")
+        println("Started recording...")
     }
 
     /**
@@ -114,7 +114,7 @@ class SpeakingViewModel : ViewModel() {
         _isRecording.value = false
         _hasRecording.value = true
 
-        println("🎤 Stopped recording. Duration: ${_recordingDuration.value}s")
+        println("Stopped recording. Duration: ${_recordingDuration.value}s")
 
         // Automatically analyze after recording
         analyzeRecording()
@@ -129,11 +129,11 @@ class SpeakingViewModel : ViewModel() {
         _isPlayingRecording.value = true
 
         viewModelScope.launch {
-            println("▶️ Playing back recording...")
+            println("Playing back recording...")
             // Mock: Simulate playback duration
             delay((_recordingDuration.value * 1000).toLong())
             _isPlayingRecording.value = false
-            println("⏸️ Playback finished")
+            println("Playback finished")
         }
     }
 
@@ -158,7 +158,7 @@ class SpeakingViewModel : ViewModel() {
             _feedback.value = mockFeedback
             _isAnalyzing.value = false
 
-            println("✅ Analysis complete: ${mockFeedback.overallScore}%")
+            println("Analysis complete: ${mockFeedback.overallScore}%")
         }
     }
 

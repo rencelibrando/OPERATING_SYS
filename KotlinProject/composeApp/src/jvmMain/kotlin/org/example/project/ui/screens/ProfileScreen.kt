@@ -46,14 +46,14 @@ fun ProfileScreen(
 
     LaunchedEffect(authenticatedUser) {
         authenticatedUser?.let { authUser ->
-            println("🔄 ProfileScreen - Initializing profile for user: ${authUser.email}")
+            println("ProfileScreen - Initializing profile for user: ${authUser.email}")
             viewModel.initializeWithAuthenticatedUser(authUser)
         }
     }
 
     LaunchedEffect(userProfile, isLoading) {
         if (userProfile.personalInfo.firstName.isNotEmpty()) {
-            println("✅ ProfileScreen - Profile loaded successfully: ${userProfile.personalInfo.fullName}")
+            println("ProfileScreen - Profile loaded successfully: ${userProfile.personalInfo.fullName}")
         }
     }
 
@@ -329,7 +329,7 @@ private fun ProfileHeader(
                             .clickable {
                                 if (!isEditingPicture) {
                                     onStartEditPhoto()
-                                    println("🖱️ Avatar clicked - starting photo edit")
+                                    println("Avatar clicked - starting photo edit")
                                 }
                             },
                 )
@@ -342,7 +342,7 @@ private fun ProfileHeader(
                             .clickable {
                                 if (!isEditingPicture) {
                                     onStartEditPhoto()
-                                    println("🖱️ Avatar clicked - starting photo edit")
+                                    println("Avatar clicked - starting photo edit")
                                 }
                             },
                     colors = CardDefaults.cardColors(containerColor = WordBridgeColors.PrimaryPurple),
@@ -378,7 +378,7 @@ private fun ProfileHeader(
                                 .background(WordBridgeColors.PrimaryPurple, CircleShape)
                                 .clickable {
                                     onStartEditPhoto()
-                                    println("🖱️ Camera icon clicked - starting photo edit")
+                                    println("Camera icon clicked - starting photo edit")
                                 },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -1214,7 +1214,7 @@ private fun AvatarContent(
                                 try {
                                     Desktop.getDesktop().browse(URI(profile.personalInfo.profileImageUrl))
                                 } catch (e: Exception) {
-                                    println("❌ Failed to open image in browser: ${e.message}")
+                                    println("Failed to open image in browser: ${e.message}")
                                 }
                             },
                     contentAlignment = Alignment.Center,

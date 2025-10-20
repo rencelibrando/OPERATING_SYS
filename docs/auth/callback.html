@@ -13,55 +13,57 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            line-height: 1.4;
+            color: #2d3748;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 8px;
         }
 
         .container {
-            background: white;
-            padding: 3rem;
-            border-radius: 1rem;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            background: #ffffff;
+            padding: 20px 24px;
+            border-radius: 12px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
             text-align: center;
-            max-width: 500px;
+            max-width: 700px;
             width: 100%;
-            margin: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .app-header {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 2rem;
+            margin-bottom: 16px;
         }
 
         .app-icon {
-            width: 48px;
-            height: 48px;
-            background: #667eea;
-            border-radius: 12px;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: bold;
-            font-size: 1.2rem;
-            margin-right: 12px;
+            font-weight: 700;
+            font-size: 0.875rem;
+            margin-right: 8px;
         }
 
         .app-name {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #333;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1a202c;
         }
 
         .success-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
+            font-size: 3rem;
+            margin-bottom: 12px;
             animation: bounce 1s ease-in-out;
         }
 
@@ -70,116 +72,168 @@
                 transform: translateY(0);
             }
             40% {
-                transform: translateY(-10px);
+                transform: translateY(-8px);
             }
             80% {
-                transform: translateY(-5px);
+                transform: translateY(-4px);
             }
         }
 
         h1 {
-            color: #22c55e;
-            margin: 0 0 1rem 0;
-            font-size: 2rem;
+            color: #059669;
+            margin: 0 0 12px 0;
+            font-size: 1.5rem;
+            font-weight: 600;
         }
 
         .message {
-            color: #6b7280;
-            margin-bottom: 2rem;
-            font-size: 1.1rem;
-            line-height: 1.6;
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            line-height: 1.5;
         }
 
         .instructions {
-            background: #f3f4f6;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin: 1.5rem 0;
-            border-left: 4px solid #667eea;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            border-left: 3px solid #4f46e5;
         }
 
         .instructions h3 {
-            color: #374151;
-            margin-bottom: 0.5rem;
-            font-size: 1.1rem;
+            color: #1a202c;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
         }
 
         .instructions p {
-            color: #6b7280;
-            font-size: 0.95rem;
+            color: #4a5568;
+            font-size: 0.8rem;
+            line-height: 1.4;
         }
 
         .close-btn {
-            background: #667eea;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
             color: white;
-            padding: 0.75rem 1.5rem;
+            padding: 12px 24px;
             border: none;
-            border-radius: 0.5rem;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 1rem;
-            margin-top: 1rem;
-            transition: background 0.2s;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 12px;
+            transition: all 0.2s ease;
+            box-shadow: 0 3px 12px rgba(79, 70, 229, 0.25);
         }
 
         .close-btn:hover {
-            background: #5a67d8;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
         }
 
         .footer {
-            margin-top: 2rem;
-            padding-top: 1rem;
-            border-top: 1px solid #e5e7eb;
-            color: #9ca3af;
-            font-size: 0.875rem;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 0.8rem;
         }
 
-        @media (max-width: 640px) {
+        
+        @media (min-width: 768px) {
             .container {
-                padding: 2rem;
-                margin: 1rem;
+                max-width: 750px;
+                padding: 24px 32px;
+            }
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 767px) {
+            body {
+                padding: 4px;
+            }
+            
+            .container {
+                padding: 16px;
+                border-radius: 8px;
             }
             
             .app-header {
                 flex-direction: column;
                 text-align: center;
+                gap: 6px;
             }
             
             .app-icon {
                 margin-right: 0;
-                margin-bottom: 0.5rem;
+                margin-bottom: 0;
+            }
+            
+            .success-icon {
+                font-size: 2.5rem;
+            }
+            
+            h1 {
+                font-size: 1.25rem;
+            }
+            
+            .message {
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .success-icon {
+                animation: none;
+            }
+            
+            .close-btn {
+                transition: none;
+            }
+            
+            .close-btn:hover {
+                transform: none;
+            }
+        }
+
+        @media (prefers-contrast: high) {
+            .container {
+                border: 2px solid #000;
+            }
+            
+            .close-btn {
+                background: #000;
+                color: #fff;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- App Header -->
+        
         <div class="app-header">
             <div class="app-icon">WB</div>
             <div class="app-name">WordBridge</div>
         </div>
 
-        <!-- Success Message -->
-        <div class="success-icon">✅</div>
         <h1>Email Verified!</h1>
         <p class="message">
             Your email address has been successfully verified. 
             Your WordBridge account is now active and ready to use.
         </p>
 
-        <!-- Instructions -->
         <div class="instructions">
-            <h3>📱 Next Steps:</h3>
+            <h3>Next Steps:</h3>
             <p>
                 Return to the WordBridge desktop application and you'll automatically be signed in. 
                 The app is checking for your verification in the background.
             </p>
         </div>
 
-        <!-- Close Button -->
         <button class="close-btn" onclick="closeTab()">Close This Tab</button>
 
-        <!-- Footer -->
         <div class="footer">
             <p>If you continue to have issues, please contact support.</p>
         </div>
@@ -187,10 +241,8 @@
 
     <script>
         function closeTab() {
-            // Try to close the tab/window
             window.close();
             
-            // If that doesn't work (some browsers block it), show a message
             setTimeout(() => {
                 if (!window.closed) {
                     document.querySelector('.close-btn').textContent = 'You can close this tab manually';
@@ -200,36 +252,13 @@
             }, 100);
         }
 
-        // Auto-close after 5 seconds (optional)
-        setTimeout(() => {
-            const autoCloseMsg = document.createElement('p');
-            autoCloseMsg.textContent = 'This tab will close automatically in a few seconds...';
-            autoCloseMsg.style.color = '#9ca3af';
-            autoCloseMsg.style.fontSize = '0.875rem';
-            autoCloseMsg.style.marginTop = '1rem';
-            document.querySelector('.container').appendChild(autoCloseMsg);
-            
-            setTimeout(() => {
-                window.close();
-            }, 3000);
-        }, 5000);
-
-        // Handle URL parameters (in case Supabase adds any)
         const urlParams = new URLSearchParams(window.location.search);
         const fragment = new URLSearchParams(window.location.hash.slice(1));
         
-        // Log for debugging (you can remove this in production)
-        if (urlParams.size > 0 || fragment.size > 0) {
-            console.log('URL parameters:', Object.fromEntries(urlParams));
-            console.log('Fragment parameters:', Object.fromEntries(fragment));
-        }
-        
-        // Check for error parameters
         const error = urlParams.get('error') || fragment.get('error');
         if (error) {
             document.querySelector('h1').textContent = 'Verification Error';
             document.querySelector('h1').style.color = '#ef4444';
-            document.querySelector('.success-icon').textContent = '❌';
             document.querySelector('.message').textContent = 'There was an error verifying your email. Please try again or contact support.';
             document.querySelector('.instructions h3').textContent = '⚠️ What to do:';
             document.querySelector('.instructions p').textContent = 'Return to the WordBridge app and try resending the verification email, or contact support if the problem persists.';

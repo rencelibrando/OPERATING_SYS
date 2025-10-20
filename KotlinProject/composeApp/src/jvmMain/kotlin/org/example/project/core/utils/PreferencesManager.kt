@@ -31,7 +31,7 @@ object PreferencesManager {
 
 
             if (lastSyncTime == 0L || cacheAge > maxCacheAge) {
-                println("ℹPreferencesManager: Cache miss or stale for user $userId")
+                println("PreferencesManager: Cache miss or stale for user $userId")
                 return null
             }
 

@@ -52,11 +52,11 @@ fun OnboardingScreen(
             isLoading -> LoadingState()
             error != null -> ErrorState(message = error ?: "Unknown error", onRetry = viewModel::retry)
             isSaving -> {
-                println("🎨 UI: Showing SAVING state")
+                println("UI: Showing SAVING state")
                 SavingState()
             }
             isComplete -> {
-                println("🎨 UI: Showing COMPLETION state")
+                println("UI: Showing COMPLETION state")
                 CompletionState(
                     onContinue = onComplete,
                     successMessage = successMessage,
@@ -90,7 +90,7 @@ fun OnboardingScreen(
                     // Auto-scroll to show the latest message
                     LaunchedEffect(messages.size) {
                         if (messages.isNotEmpty()) {
-                            println("??? Auto-scrolling to item ${messages.size - 1}")
+                            println("Auto-scrolling to item ${messages.size - 1}")
                             listState.scrollToItem(messages.size - 1)
                         }
                     }
@@ -104,10 +104,10 @@ fun OnboardingScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         reverseLayout = false,
                     ) {
-                        println("??? UI: Rendering ${messages.size} messages")
+                        println("UI: Rendering ${messages.size} messages")
                         items(messages.size) { index ->
                             val message = messages[index]
-                            println("??? UI: Rendering message $index: ${message.sender} - ${message.text.take(30)}")
+                            println("UI: Rendering message $index: ${message.sender} - ${message.text.take(30)}")
                             ChatMessageBubble(message = message)
                         }
                     }
@@ -124,15 +124,15 @@ fun OnboardingScreen(
     }
 
     if (isComplete) {
-        println("??? UI: isComplete = true, triggering completion flow")
+        println("UI: isComplete = true, triggering completion flow")
         LaunchedEffect(Unit) {
-            println("??? UI: Calling viewModel.completeOnboarding")
+            println("UI: Calling viewModel.completeOnboarding")
             viewModel.completeOnboarding { result ->
                 if (result.isSuccess) {
-                    println("??? UI: Completion successful, calling onComplete callback")
+                    println("UI: Completion successful, calling onComplete callback")
                     onComplete()
                 } else {
-                    println("??? UI: Completion failed: ${result.exceptionOrNull()?.message}")
+                    println("UI: Completion failed: ${result.exceptionOrNull()?.message}")
                 }
             }
         }

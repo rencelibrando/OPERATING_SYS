@@ -16,7 +16,7 @@ class ImageUploadService {
 
     suspend fun uploadProfilePicture(imageBytes: ByteArray): Result<String> {
         return try {
-            println("📸 Uploading profile picture to Supabase Storage")
+            println("Uploading profile picture to Supabase Storage")
 
             if (!SupabaseConfig.isConfigured()) {
                 throw Exception("Supabase is not configured")
@@ -30,7 +30,7 @@ class ImageUploadService {
             val fileExtension = getImageExtension(imageBytes)
             val fileName = "profile_${user.id}_${System.currentTimeMillis()}$fileExtension"
 
-            println("📁 Uploading file: $fileName (${imageBytes.size} bytes)")
+            println("Uploading file: $fileName (${imageBytes.size} bytes)")
 
             // Use Supabase Storage SDK
             val storage = supabase.storage.from(bucketName)
@@ -38,9 +38,9 @@ class ImageUploadService {
             // Try to create bucket if it doesn't exist (this will fail silently if it already exists)
             try {
                 supabase.storage.createBucket(bucketName)
-                println("📦 Created storage bucket: $bucketName")
+                println("Created storage bucket: $bucketName")
             } catch (e: Exception) {
-                println("📦 Bucket $bucketName already exists or creation failed: ${e.message}")
+                println("Bucket $bucketName already exists or creation failed: ${e.message}")
             }
 
             // Replace existing file with same name
@@ -51,7 +51,7 @@ class ImageUploadService {
                     upsert = true,
                 )
 
-            println("📡 Upload result: $uploadResult")
+            println("Upload result: $uploadResult")
 
             // Get public URL (1 year expiry)
             val publicUrl =
@@ -60,35 +60,35 @@ class ImageUploadService {
                     expiresIn = 365.days,
                 )
 
-            println("✅ Profile picture uploaded successfully: $publicUrl")
+            println("Profile picture uploaded successfully: $publicUrl")
             Result.success(publicUrl)
         } catch (e: Exception) {
-            println("❌ Failed to upload profile picture: ${e.message}")
+            println("Failed to upload profile picture: ${e.message}")
             Result.failure(e)
         }
     }
 
     suspend fun deleteProfilePicture(imageUrl: String): Result<Unit> {
         return try {
-            println("🗑️ Deleting profile picture from Supabase Storage")
+            println("Deleting profile picture from Supabase Storage")
 
             val fileName = extractFileNameFromUrl(imageUrl)
             if (fileName == null) {
                 throw Exception("Invalid image URL")
             }
 
-            println("📁 Deleting file: $fileName")
+            println("Deleting file: $fileName")
 
             // Use Supabase Storage SDK
             val storage = supabase.storage.from(bucketName)
 
             val deleteResult = storage.delete(listOf(fileName))
 
-            println("📡 Delete result: $deleteResult")
-            println("✅ Profile picture deleted successfully")
+            println("Delete result: $deleteResult")
+            println("Profile picture deleted successfully")
             Result.success(Unit)
         } catch (e: Exception) {
-            println("❌ Failed to delete profile picture: ${e.message}")
+            println("Failed to delete profile picture: ${e.message}")
             Result.failure(e)
         }
     }

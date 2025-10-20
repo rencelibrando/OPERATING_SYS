@@ -21,7 +21,7 @@ captures
 #.env.development
 #.env.production
 #.env.staging
-
+.venv/
 # Supabase
 .supabase/
 .md/

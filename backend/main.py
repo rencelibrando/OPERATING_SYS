@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
         providers[AIProvider.GEMINI] = GeminiProvider()
         logger.info("Gemini provider initialized")
     else:
-        logger.warning("⚠Gemini API key not configured")
+        logger.warning("Gemini API key not configured")
     
     # Initialize Supabase connection
     if SupabaseManager.is_configured():
@@ -257,7 +257,7 @@ async def load_chat_history(request: LoadHistoryRequest):
 @app.delete("/chat/history/{session_id}", tags=["Chat History"])
 async def delete_chat_history(session_id: str):
     try:
-        logger.info(f"🗑Deleting chat history for session: {session_id}")
+        logger.info(f"Deleting chat history for session: {session_id}")
         
         if not SupabaseManager.is_configured():
             raise HTTPException(

@@ -138,7 +138,7 @@ class AIBackendService {
     suspend fun deleteChatHistory(sessionId: String): Result<Boolean> =
         runCatching {
             val url = AIBackendConfig.getEndpointUrl("${AIBackendConfig.DELETE_HISTORY_ENDPOINT}/$sessionId")
-            println("🗑Deleting chat history for session: $sessionId")
+            println("Deleting chat history for session: $sessionId")
 
             val response =
                 client.request(url) {

@@ -40,40 +40,40 @@ class OnboardingService(
             val userResult = authService.getCurrentUser()
             val user = userResult.getOrNull() ?: return@runCatching null
 
-            println("🔍 Initializing onboarding for user: ${user.id}")
-            println("📧 User email: ${user.email}")
+            println("Initializing onboarding for user: ${user.id}")
+            println("User email: ${user.email}")
 
             // ALWAYS fetch from database - this is the source of truth
-            println("📊 Fetching onboarding profile from database...")
+            println("Fetching onboarding profile from database...")
 
             try {
                 val profile = repository.fetchOnboardingProfile(user.id).getOrNull()
 
                 if (profile != null) {
-                    println("✅✅✅ PROFILE FOUND IN DATABASE:")
-                    println("   📌 User ID: ${profile.userId}")
-                    println("   📌 User Email: ${user.email}")
-                    println("   📌 Is Onboarded: ${profile.isOnboarded}")
-                    println("   📌 Current Step: ${profile.currentStep}")
-                    println("   📌 Has AI Profile: ${profile.aiProfile != null}")
+                    println("PROFILE FOUND IN DATABASE:")
+                    println("   User ID: ${profile.userId}")
+                    println("   User Email: ${user.email}")
+                    println("   Is Onboarded: ${profile.isOnboarded}")
+                    println("   Current Step: ${profile.currentStep}")
+                    println("   Has AI Profile: ${profile.aiProfile != null}")
 
                     _currentProfile.value = profile
 
                     // Load saved answers if not completed yet
                     if (!profile.isOnboarded && profile.stateSnapshot != null) {
                         _answers.value = deserializeState(profile.stateSnapshot)
-                        println("   📌 Loaded ${_answers.value.size} saved answers")
+                        println("   Loaded ${_answers.value.size} saved answers")
                     }
 
                     // Update cache for this specific user
                     PreferencesManager.cacheOnboardingCompletion(user.id, profile.isOnboarded)
 
-                    println("   ➡️ Onboarding will ${if (profile.isOnboarded) "BE SKIPPED" else "BE SHOWN"}")
+                    println("   Onboarding will ${if (profile.isOnboarded) "BE SKIPPED" else "BE SHOWN"}")
                 } else {
-                    println("ℹ️ℹ️ℹ️ NO PROFILE FOUND IN DATABASE")
-                    println("   📌 User ID: ${user.id}")
-                    println("   📌 User Email: ${user.email}")
-                    println("   ➡️ This is a NEW USER - ONBOARDING WILL BE SHOWN")
+                    println("NO PROFILE FOUND IN DATABASE")
+                    println("   User ID: ${user.id}")
+                    println("   User Email: ${user.email}")
+                    println("   This is a NEW USER - ONBOARDING WILL BE SHOWN")
 
                     // New user - create empty profile in memory
                     _currentProfile.value =
@@ -89,7 +89,7 @@ class OnboardingService(
                     PreferencesManager.cacheOnboardingCompletion(user.id, false)
                 }
             } catch (e: Exception) {
-                println("❌❌❌ ERROR fetching profile from database: ${e.message}")
+                println("ERROR fetching profile from database: ${e.message}")
                 e.printStackTrace()
                 throw e
             }
@@ -101,17 +101,17 @@ class OnboardingService(
         val profile = _currentProfile.value
 
         if (profile == null) {
-            println("❓❓❓ shouldShowOnboarding: profile is NULL -> SHOW onboarding")
+            println("shouldShowOnboarding: profile is NULL -> SHOW onboarding")
             return true
         }
 
         val isOnboarded = profile.isOnboarded
         val shouldShow = !isOnboarded
 
-        println("❓❓❓ shouldShowOnboarding:")
-        println("   📌 Profile exists: YES")
-        println("   📌 is_onboarded: $isOnboarded")
-        println("   📌 Decision: ${if (shouldShow) "SHOW ONBOARDING" else "SKIP ONBOARDING"}")
+        println("shouldShowOnboarding:")
+        println("   Profile exists: YES")
+        println("   is_onboarded: $isOnboarded")
+        println("   Decision: ${if (shouldShow) "SHOW ONBOARDING" else "SKIP ONBOARDING"}")
 
         return shouldShow
     }
@@ -125,7 +125,7 @@ class OnboardingService(
     fun getNextQuestion(): OnboardingQuestion? {
         val nextIndex = getCurrentStep()
         val question = OnboardingQuestionBank.questions.getOrNull(nextIndex)
-        println("??? getNextQuestion: nextIndex=$nextIndex, questionId=${question?.id ?: "NONE"}, totalAnswers=${_answers.value.size}")
+        println("getNextQuestion: nextIndex=$nextIndex, questionId=${question?.id ?: "NONE"}, totalAnswers=${_answers.value.size}")
         return question
     }
 
@@ -139,8 +139,8 @@ class OnboardingService(
     ) {
         val updated = _answers.value.toMutableMap()
         updated[question.id] = OnboardingAnswer(question.id, response)
-        println("??? OnboardingService.recordAnswer: ${question.id} = ${response.summaryText()}")
-        println("??? Total answers: ${updated.size}")
+        println("OnboardingService.recordAnswer: ${question.id} = ${response.summaryText()}")
+        println("Total answers: ${updated.size}")
         _answers.value = updated
     }
 
@@ -175,9 +175,9 @@ class OnboardingService(
 
     suspend fun completeOnboarding(): Result<JsonObject> =
         runCatching {
-            println("??? OnboardingService.completeOnboarding: Starting...")
+            println("OnboardingService.completeOnboarding: Starting...")
             val answersSnapshot = _answers.value
-            println("??? Total answers collected: ${answersSnapshot.size}")
+            println("Total answers collected: ${answersSnapshot.size}")
 
             if (answersSnapshot.size < OnboardingQuestionBank.questions.size) {
                 throw IllegalStateException("Not all onboarding questions have been answered")
@@ -188,26 +188,26 @@ class OnboardingService(
                 userResult.getOrThrow()?.takeIf { it.isEmailVerified }
                     ?: throw IllegalStateException("User must be signed in and verified")
 
-            println("??? Building profile data for user: ${user.email}")
+            println("Building profile data for user: ${user.email}")
 
             // Build PersonalInfo and LearningProfile from onboarding answers
             val personalInfo = buildPersonalInfo(answersSnapshot, user)
             val learningProfile = buildLearningProfile(answersSnapshot)
 
             println(
-                "??? PersonalInfo: ${personalInfo.fullName}, Native: ${personalInfo.nativeLanguage}, " +
+                "PersonalInfo: ${personalInfo.fullName}, Native: ${personalInfo.nativeLanguage}, " +
                     "Target: ${personalInfo.targetLanguages}",
             )
             println(
-                "??? LearningProfile: Level: ${learningProfile.currentLevel}, Goal: ${learningProfile.primaryGoal}",
+                "LearningProfile: Level: ${learningProfile.currentLevel}, Goal: ${learningProfile.primaryGoal}",
             )
 
             // Build AI persona JSON for the profiles table
             val persona = buildPersonaJson(answersSnapshot, user)
-            println("??? AI Persona JSON created")
+            println("AI Persona JSON created")
 
             // Save to profiles table
-            println("??? Saving to profiles table...")
+            println("Saving to profiles table...")
             repository.markOnboardingComplete(
                 userId = user.id,
                 aiProfile = persona,
@@ -216,30 +216,30 @@ class OnboardingService(
             ).getOrThrow()
 
             // Save PersonalInfo to user metadata
-            println("??? Updating personal info in user metadata...")
+            println("Updating personal info in user metadata...")
             profileService.updatePersonalInfo(personalInfo).getOrThrow()
 
             // Save LearningProfile to user metadata
-            println("??? Updating learning profile in user metadata...")
+            println("Updating learning profile in user metadata...")
             profileService.updateLearningProfile(learningProfile).getOrThrow()
 
             // Verify data was saved correctly
-            println("??? Verifying data persistence...")
+            println("Verifying data persistence...")
             val savedPersonalInfo = profileService.loadPersonalInfo().getOrNull()
             val savedLearningProfile = profileService.loadLearningProfile().getOrNull()
 
             // Personal info and learning profile verification
             if (savedPersonalInfo == null || savedLearningProfile == null) {
-                println("?????? Warning: Could not load back profile data, but save operations succeeded")
+                println("Warning: Could not load back profile data, but save operations succeeded")
                 // Don't throw error - the saves succeeded, this might be a timing/caching issue
             } else {
-                println("??? Data verification successful!")
+                println("Data verification successful!")
                 println("   - PersonalInfo: ${savedPersonalInfo.fullName}")
                 println("   - LearningProfile: ${savedLearningProfile.currentLevel}")
             }
 
-            println("??? Note: profiles table saves succeeded (PATCH returned 200 OK)")
-            println("??? Onboarding completion recorded!")
+            println("Note: profiles table saves succeeded (PATCH returned 200 OK)")
+            println("Onboarding completion recorded!")
 
             _currentProfile.value =
                 OnboardingProfile(
@@ -253,7 +253,7 @@ class OnboardingService(
             // Cache the completion status
             PreferencesManager.cacheOnboardingCompletion(user.id, true)
 
-            println("??? Onboarding completed and verified successfully!")
+            println("Onboarding completed and verified successfully!")
             persona
         }
 

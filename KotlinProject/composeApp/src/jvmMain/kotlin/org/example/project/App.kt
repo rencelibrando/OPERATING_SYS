@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -34,7 +33,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.example.project.core.ai.BackendManager
 import org.example.project.core.auth.AuthState
-import org.example.project.core.initialization.AppInitializer
 import org.example.project.presentation.viewmodel.AuthViewModel
 import org.example.project.ui.screens.AuthScreen
 import org.example.project.ui.screens.EmailVerificationScreen
@@ -98,11 +96,8 @@ private fun MainApp() {
                     BackendSetupErrorScreen(
                         errorMessage = backendError!!,
                         onRetry = {
-                            backendError = null
-                            isInitializingBackend = true
                         },
                         onContinueAnyway = {
-                            backendError = null
                         }
                     )
                 }
@@ -154,9 +149,7 @@ private fun MainApp() {
     }
 }
 
-/**
- * Loading screen displayed while checking authentication state
- */
+
 @Composable
 private fun LoadingScreen() {
     Box(
@@ -180,9 +173,6 @@ private fun LoadingScreen() {
     }
 }
 
-/**
- * Error screen displayed when authentication check fails
- */
 @Composable
 private fun ErrorScreen(
     message: String,
@@ -249,9 +239,7 @@ private fun ErrorScreen(
     }
 }
 
-/**
- * Main authenticated app content
- */
+
 @Composable
 private fun AuthenticatedApp(
     user: org.example.project.core.auth.User,
@@ -264,87 +252,7 @@ private fun AuthenticatedApp(
     )
 }
 
-/**
- * User header with profile info and sign out option
- */
-@Composable
-private fun UserHeader(
-    user: org.example.project.core.auth.User,
-    onSignOut: () -> Unit,
-) {
-    Card(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-            ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-    ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Card(
-                    modifier = Modifier.size(48.dp),
-                    shape = MaterialTheme.shapes.large,
-                    colors =
-                        CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                        ),
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = user.initials,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                }
 
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column {
-                    Text(
-                        text = "Welcome back,",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
-                    )
-                    Text(
-                        text = user.fullName,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            }
-
-            TextButton(onClick = onSignOut) {
-                Text(
-                    text = "Sign Out",
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            }
-        }
-    }
-}
-
-/**
- * Screen shown while backend is initializing
- */
 @Composable
 private fun BackendInitializingScreen() {
     Box(
@@ -389,9 +297,7 @@ private fun BackendInitializingScreen() {
     }
 }
 
-/**
- * Screen shown when backend setup fails (e.g., Python not installed)
- */
+
 @Composable
 private fun BackendSetupErrorScreen(
     errorMessage: String,
@@ -457,7 +363,6 @@ private fun BackendSetupErrorScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Show helpful instructions based on error type
             if (errorMessage.contains("Python not found", ignoreCase = true)) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
