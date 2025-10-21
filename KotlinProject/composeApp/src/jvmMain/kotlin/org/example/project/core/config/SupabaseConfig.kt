@@ -7,17 +7,25 @@ import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.storage.Storage
 
 object SupabaseConfig {
-    private val dotenv = dotenv {
-        ignoreIfMissing = true
-        directory = "composeApp" // Look for .env in composeApp directory
+    private val dotenv = try {
+        dotenv {
+            ignoreIfMissing = true
+            directory = "composeApp" // Look for .env in composeApp directory
+        }
+    } catch (e: Exception) {
+        println("Debug: Failed to load .env from composeApp directory, trying current directory")
+        dotenv {
+            ignoreIfMissing = true
+        }
     }
     
     private val SUPABASE_URL = dotenv["SUPABASE_URL"] ?: ""
     private val SUPABASE_ANON_KEY = dotenv["SUPABASE_ANON_KEY"] ?: ""
     
     init {
-        println("Debug: SUPABASE_URL = ${if (SUPABASE_URL.isNotEmpty()) "LOADED" else "EMPTY"}")
-        println("Debug: SUPABASE_ANON_KEY = ${if (SUPABASE_ANON_KEY.isNotEmpty()) "LOADED" else "EMPTY"}")
+        println("Debug: SUPABASE_URL = ${if (SUPABASE_URL.isNotEmpty()) "LOADED: ${SUPABASE_URL.take(20)}..." else "EMPTY"}")
+        println("Debug: SUPABASE_ANON_KEY = ${if (SUPABASE_ANON_KEY.isNotEmpty()) "LOADED: ${SUPABASE_ANON_KEY.take(20)}..." else "EMPTY"}")
+        println("Debug: Current working directory: ${System.getProperty("user.dir")}")
     }
     
     const val EMAIL_REDIRECT_URL: String =
