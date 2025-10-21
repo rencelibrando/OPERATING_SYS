@@ -9,10 +9,16 @@ import io.github.jan.supabase.storage.Storage
 object SupabaseConfig {
     private val dotenv = dotenv {
         ignoreIfMissing = true
+        directory = "composeApp" // Look for .env in composeApp directory
     }
     
     private val SUPABASE_URL = dotenv["SUPABASE_URL"] ?: ""
     private val SUPABASE_ANON_KEY = dotenv["SUPABASE_ANON_KEY"] ?: ""
+    
+    init {
+        println("Debug: SUPABASE_URL = ${if (SUPABASE_URL.isNotEmpty()) "LOADED" else "EMPTY"}")
+        println("Debug: SUPABASE_ANON_KEY = ${if (SUPABASE_ANON_KEY.isNotEmpty()) "LOADED" else "EMPTY"}")
+    }
     
     const val EMAIL_REDIRECT_URL: String =
         "https://rencelibrando.github.io/OPERATING_SYS/auth/callback.html"
