@@ -1,13 +1,18 @@
 package org.example.project.core.config
 
+import io.github.cdimascio.dotenv.dotenv
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.storage.Storage
 
 object SupabaseConfig {
-    private val SUPABASE_URL = System.getenv("SUPABASE_URL") ?: ""
-    private val SUPABASE_ANON_KEY = System.getenv("SUPABASE_ANON_KEY") ?: ""
+    private val dotenv = dotenv {
+        ignoreIfMissing = true
+    }
+    
+    private val SUPABASE_URL = dotenv["SUPABASE_URL"] ?: ""
+    private val SUPABASE_ANON_KEY = dotenv["SUPABASE_ANON_KEY"] ?: ""
     
     const val EMAIL_REDIRECT_URL: String =
         "https://rencelibrando.github.io/OPERATING_SYS/auth/callback.html"
