@@ -5,20 +5,13 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 
-/**
- * Manages the Python AI backend lifecycle.
- * Automatically checks for Python installation, creates virtual environment,
- * installs dependencies, and starts the backend server.
- */
+
 object BackendManager {
     private var backendProcess: Process? = null
     private var isBackendRunning = false
     private var lastSetupError: String? = null
 
-    /**
-     * Start the Python backend server if it's not already running.
-     * This will automatically set up the environment if needed.
-     */
+
     fun startBackend(): Boolean {
         return try {
             println("[Backend] Checking if backend is already running...")
