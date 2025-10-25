@@ -45,6 +45,9 @@ kotlin {
             // Serialization & DateTime
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
+
+            implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
