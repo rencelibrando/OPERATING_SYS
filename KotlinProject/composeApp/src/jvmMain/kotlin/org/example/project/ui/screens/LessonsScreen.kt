@@ -1,6 +1,10 @@
 package org.example.project.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -9,8 +13,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -18,6 +24,7 @@ import org.example.project.presentation.viewmodel.LessonsViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
 import org.example.project.core.auth.User as AuthUser
+import org.example.project.domain.model.LessonDifficulty
 
 @Composable
 fun LessonsScreen(
@@ -26,78 +33,227 @@ fun LessonsScreen(
     viewModel: LessonsViewModel = viewModel(),
     modifier: Modifier = Modifier,
 ) {
-    val lessons by viewModel.lessons
-    val levelProgress by viewModel.levelProgress
-    val recentLessons by viewModel.recentLessons
-    val isLoading by viewModel.isLoading
-
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "Lessons",
-                style =
-                    MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                    ),
-                color = WordBridgeColors.TextPrimary,
-            )
-
-            UserAvatar(
-                initials = authenticatedUser?.initials ?: "U",
-                profileImageUrl = authenticatedUser?.profileImageUrl,
-                size = 48.dp,
-                onClick = onUserAvatarClick,
-            )
+    LaunchedEffect(authenticatedUser) {
+        if (authenticatedUser != null) {
+            viewModel.initializeWithAuthenticatedUser(authenticatedUser)
         }
+    }
 
-        Spacer(modifier = Modifier.height(24.dp))
+    val lessonCategories by viewModel.lessonCategories
+    val selectedCategory by viewModel.selectedCategory
+    val categoryLessons by viewModel.categoryLessons
+    val lessonTopics by viewModel.lessonTopics
+    val recentLessons by viewModel.recentLessons
 
-        if (lessons.isEmpty()) {
-            LessonsEmptyState(
-                onCreateFirstLessonClick = {
-                    viewModel.onLessonClicked("create_first")
-                },
-                onExploreCurriculumClick = {
-                    viewModel.onLessonClicked("explore_curriculum")
-                },
-            )
-        } else {
-            LevelProgressBanner(
-                levelProgress = levelProgress,
-            )
+    // Use LazyColumn when showing topics to avoid nested scroll issues
+    if (selectedCategory != null && lessonTopics.isNotEmpty()) {
+        val listState = rememberLazyListState()
+        
+        // Smooth scroll progress calculation - slower and more gradual
+        val density = LocalDensity.current
+        val scrollProgress = remember(density) { derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val visibleItems = layoutInfo.visibleItemsInfo
+            
+            if (visibleItems.isEmpty() || layoutInfo.totalItemsCount == 0 || lessonTopics.isEmpty()) {
+                return@derivedStateOf 0f
+            }
+            
+            // Find the timeline item (should be at index 4 after header, spacer, intro, spacer)
+            val timelineItem = visibleItems.find { it.index == 4 }
+            
+            if (timelineItem != null) {
+                // Calculate how much of the timeline has been scrolled (offset is already in pixels)
+                val timelineOffset = -timelineItem.offset.toFloat()
+                
+                // Each lesson is ~280dp tall (bigger cards) - convert to pixels for accurate calculation
+                val lessonHeightPx = with(density) { 280.dp.toPx() }
+                
+                // Make progress more responsive - use 0.9x multiplier for faster color response
+                // This makes the line color slightly ahead, making it feel more responsive
+                val totalTimelineHeight = lessonHeightPx * lessonTopics.size * 0.9f
+                
+                // Calculate raw progress (0 to 1) - immediate response, no easing delay
+                // Add small buffer to start coloring earlier for better responsiveness
+                val rawProgress = ((timelineOffset + 50f) / totalTimelineHeight).coerceIn(0f, 1f)
+                
+                // Use linear progress for immediate visual feedback - no easing delay
+                rawProgress
+            } else {
+                // Not yet scrolled to timeline
+                0f
+            }
+        } }
+        
+        // Track which lesson item is currently visible for pop-up animation
+        val visibleItemIndex = remember { derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val visibleItems = layoutInfo.visibleItemsInfo
+            
+            if (visibleItems.isEmpty()) {
+                return@derivedStateOf 0
+            }
+            
+            val timelineItem = visibleItems.find { it.index == 4 }
+            
+            if (timelineItem != null) {
+                val timelineOffset = -timelineItem.offset.toFloat()
+                val lessonHeightPx = with(density) { 280.dp.toPx() }
+                val currentLessonIndex = (timelineOffset / lessonHeightPx).toInt().coerceIn(0, lessonTopics.size - 1)
+                currentLessonIndex
+            } else {
+                0
+            }
+        } }
+        
+        LazyColumn(
+            state = listState,
+            modifier =
+                modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            // Header
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = "←",
+                            style =
+                                MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                            color = WordBridgeColors.TextPrimary,
+                            modifier =
+                                Modifier
+                                    .clickable { viewModel.onBackFromCategory() }
+                                    .padding(8.dp),
+                        )
 
-            Spacer(modifier = Modifier.height(32.dp))
+                        Text(
+                            text = "${selectedCategory!!.displayName} Lessons",
+                            style =
+                                MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                            color = WordBridgeColors.TextPrimary,
+                        )
+                    }
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.height(400.dp), // Fixed height to prevent scroll conflicts
-            ) {
-                items(lessons) { lesson ->
-                    LessonCard(
-                        lesson = lesson,
-                        onContinueClick = viewModel::onContinueLessonClicked,
-                        onStartClick = viewModel::onStartLessonClicked,
+                    UserAvatar(
+                        initials = authenticatedUser?.initials ?: "U",
+                        profileImageUrl = authenticatedUser?.profileImageUrl,
+                        size = 48.dp,
+                        onClick = onUserAvatarClick,
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
-            if (recentLessons.isNotEmpty()) {
+            // Introduction text
+            item {
                 Text(
-                    text = "Continue Recent Lessons",
+                    text = "Mandarin learning journey. We've also included valuable learning tips. Enjoy!",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = WordBridgeColors.TextSecondary,
+                )
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
+            // Lesson topics - Use timeline view for beginner, regular cards for others
+            if (selectedCategory == LessonDifficulty.BEGINNER) {
+                item {
+                    LessonTimelineView(
+                        lessonTopics = lessonTopics,
+                        onLessonClick = { lessonId -> viewModel.onLessonTopicClicked(lessonId) },
+                        scrollProgress = scrollProgress.value,
+                        visibleItemIndex = visibleItemIndex.value
+                    )
+                }
+            } else {
+                items(lessonTopics) { topic ->
+                    LessonTopicCard(
+                        topic = topic,
+                        onClick = { viewModel.onLessonTopicClicked(topic.id) },
+                    )
+                }
+            }
+        }
+    } else {
+        // Use Column with verticalScroll for category selection view
+        Column(
+            modifier =
+                modifier
+                    .fillMaxSize()
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (selectedCategory != null) {
+                        Text(
+                            text = "←",
+                            style =
+                                MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                            color = WordBridgeColors.TextPrimary,
+                            modifier =
+                                Modifier
+                                    .clickable { viewModel.onBackFromCategory() }
+                                    .padding(8.dp),
+                        )
+                    }
+
+                    Text(
+                        text =
+                            if (selectedCategory != null) {
+                                "${selectedCategory!!.displayName} Lessons"
+                            } else {
+                                "Lessons"
+                            },
+                        style =
+                            MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
+                        color = WordBridgeColors.TextPrimary,
+                    )
+                }
+
+                UserAvatar(
+                    initials = authenticatedUser?.initials ?: "U",
+                    profileImageUrl = authenticatedUser?.profileImageUrl,
+                    size = 48.dp,
+                    onClick = onUserAvatarClick,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            if (selectedCategory == null) {
+                Text(
+                    text = "Choose Your Learning Path",
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold,
@@ -105,17 +261,72 @@ fun LessonsScreen(
                     color = WordBridgeColors.TextPrimary,
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Select a difficulty level to begin your personalized language learning journey",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = WordBridgeColors.TextSecondary,
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
 
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    recentLessons.forEach { recentLesson ->
-                        RecentLessonCard(
-                            recentLesson = recentLesson,
-                            onClick = viewModel::onRecentLessonClicked,
+                    lessonCategories.forEach { category ->
+                        LessonCategoryCard(
+                            categoryInfo = category,
+                            onClick = {
+                                if (!category.isLocked) {
+                                    viewModel.onCategoryClicked(category.difficulty)
+                                }
+                            },
                         )
                     }
+                }
+            } else {
+                // Show introduction text for the category (empty state)
+                Text(
+                    text = "Mandarin learning journey. We've also included valuable learning tips. Enjoy!",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = WordBridgeColors.TextSecondary,
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Show empty state when no topics
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = "📚",
+                        style = MaterialTheme.typography.displayMedium,
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "No lesson topics available yet",
+                        style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                        color = WordBridgeColors.TextPrimary,
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text =
+                            "Lesson topics for this category will be available soon. Check back later!",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = WordBridgeColors.TextSecondary,
+                    )
                 }
             }
         }

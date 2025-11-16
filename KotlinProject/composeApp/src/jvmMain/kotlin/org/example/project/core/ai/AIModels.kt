@@ -34,12 +34,12 @@ data class AIChatMessage(
 data class AIUserContext(
     @SerialName("user_id")
     val userId: String,
-    // Personal information
+    
     @SerialName("first_name")
     val firstName: String? = null,
     @SerialName("last_name")
     val lastName: String? = null,
-    // Basic profile data
+    
     @SerialName("native_language")
     val nativeLanguage: String? = null,
     @SerialName("target_languages")
@@ -58,7 +58,7 @@ data class AIUserContext(
     val interests: List<String> = emptyList(),
     @SerialName("ai_profile")
     val aiProfile: JsonObject? = null,
-    // Comprehensive user data
+    
     @SerialName("learning_progress")
     val learningProgress: AILearningProgress? = null,
     @SerialName("skill_progress")
@@ -212,7 +212,7 @@ data class AIHealthResponse(
     val providers: Map<String, Boolean>,
 )
 
-// Chat History Models
+
 @Serializable
 data class SaveHistoryRequest(
     @SerialName("session_id")

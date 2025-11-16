@@ -24,8 +24,6 @@ data class LessonFeature(
 
 @Composable
 fun LessonsEmptyState(
-    onCreateFirstLessonClick: () -> Unit,
-    onExploreCurriculumClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val lessonFeatures =
@@ -89,56 +87,12 @@ fun LessonsEmptyState(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Start building your personalized learning path! Our AI will create lessons tailored to your goals and learning style. Choose from grammar, vocabulary, conversation, and pronunciation modules.",
+            text = "Browse through our structured lesson categories to find the perfect learning path for your level. Start with Beginner lessons and unlock more advanced content as you progress.",
             style = MaterialTheme.typography.bodyLarge,
             color = WordBridgeColors.TextSecondary,
             textAlign = TextAlign.Center,
             lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
         )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Button(
-            onClick = onCreateFirstLessonClick,
-            modifier = Modifier.fillMaxWidth(0.6f),
-            colors =
-                ButtonDefaults.buttonColors(
-                    containerColor = WordBridgeColors.PrimaryPurple,
-                ),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-        ) {
-            Text(
-                text = "Create Your First Lesson",
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Medium,
-                    ),
-                color = androidx.compose.ui.graphics.Color.White,
-                modifier = Modifier.padding(vertical = 4.dp),
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "or ",
-                style = MaterialTheme.typography.bodyMedium,
-                color = WordBridgeColors.TextSecondary,
-            )
-
-            TextButton(
-                onClick = onExploreCurriculumClick,
-            ) {
-                Text(
-                    text = "explore our curriculum templates",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = WordBridgeColors.PrimaryPurple,
-                )
-            }
-        }
 
         Spacer(modifier = Modifier.height(48.dp))
 
@@ -146,7 +100,7 @@ fun LessonsEmptyState(
             columns = GridCells.Fixed(2),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.height(300.dp), // Fixed height to prevent scroll conflicts
+            modifier = Modifier.height(300.dp), 
         ) {
             items(lessonFeatures) { feature ->
                 LessonFeatureCard(feature = feature)

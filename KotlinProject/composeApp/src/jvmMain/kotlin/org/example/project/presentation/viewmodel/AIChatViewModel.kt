@@ -167,27 +167,36 @@ class AIChatViewModel(
                 if (session != null) {
                     _currentSession.value = session
 
+                    // Try to find and set the bot for this session
+                    // First try to get bot from repository by looking up the session's bot info
+                    // For now, we'll use the first available bot or try to match by session title
+                    val bot = _availableBots.value.firstOrNull()
+                    if (bot != null) {
+                        _selectedBot.value = bot
+                        println("Set selected bot: ${bot.name}")
+                    }
+
                     // Load messages for this session (will load from Supabase if not in memory)
                     val messages = repository.getChatMessages(sessionId).getOrNull() ?: emptyList()
-                    _chatMessages.value = messages
                     
-                    println("Loaded session with ${messages.size} messages")
-                    
-                    // If no messages, show welcome message based on bot
-                    if (messages.isEmpty()) {
-                        // Try to get bot info
-                        val bot = _availableBots.value.find { it.id == session.title } 
-                            ?: _availableBots.value.firstOrNull()
-                        
-                        if (bot != null) {
+                    if (messages.isNotEmpty()) {
+                        _chatMessages.value = messages
+                        println("Loaded session with ${messages.size} messages")
+                    } else {
+                        // No messages, show welcome message based on bot
+                        val selectedBot = _selectedBot.value ?: _availableBots.value.firstOrNull()
+                        if (selectedBot != null) {
                             val welcomeMessage = ChatMessage(
                                 id = "welcome_${System.currentTimeMillis()}",
-                                content = getWelcomeMessage(bot),
+                                content = getWelcomeMessage(selectedBot),
                                 sender = MessageSender.AI,
                                 timestamp = System.currentTimeMillis(),
                                 type = MessageType.TEXT,
                             )
                             _chatMessages.value = listOf(welcomeMessage)
+                            println("Showing welcome message for bot: ${selectedBot.name}")
+                        } else {
+                            _chatMessages.value = emptyList()
                         }
                     }
                 }
@@ -200,10 +209,18 @@ class AIChatViewModel(
     }
 
     fun onNewSessionClicked() {
-        _chatMessages.value = emptyList()
-        _currentSession.value = null
-        _selectedBot.value = null
-        _error.value = null
+        // "New Chat" button - always create a new session
+        // Start a new session with default bot (same as "Start First Conversation")
+        val defaultBot = _availableBots.value.firstOrNull()
+        if (defaultBot != null) {
+            onBotSelected(defaultBot)
+        } else {
+            // Fallback: just clear current session
+            _chatMessages.value = emptyList()
+            _currentSession.value = null
+            _selectedBot.value = null
+            _error.value = null
+        }
     }
 
     fun onDeleteSession(sessionId: String) {
@@ -244,30 +261,45 @@ class AIChatViewModel(
 
         viewModelScope.launch {
             try {
-                // Load available bots
+                // Load available bots first (needed before selecting session)
                 val bots = repository.getAvailableBots().getOrNull()
-                if (bots != null) {
+                if (bots != null && bots.isNotEmpty()) {
                     _availableBots.value = bots
+                    // Set default bot if none selected
+                    if (_selectedBot.value == null) {
+                        _selectedBot.value = bots.first()
+                    }
+                    println("Loaded ${bots.size} available bots")
                 }
 
                 // Load user's chat sessions from repository
                 val userId = "user" // Placeholder - actual ID fetched in repository
                 val sessions = repository.getUserChatSessions(userId).getOrNull()
-                if (sessions != null && sessions.isNotEmpty()) {
+                if (sessions != null) {
                     _chatSessions.value = sessions
                     println("Loaded ${sessions.size} previous chat sessions")
+                    
+                    // Only auto-load a session if:
+                    // 1. We have existing sessions
+                    // 2. No current session is set
+                    // 3. User has chat history (sessions.isNotEmpty())
+                    if (sessions.isNotEmpty() && _currentSession.value == null) {
+                        val mostRecentSession = sessions.sortedByDescending { it.startTime }.first()
+                        onSessionSelected(mostRecentSession.id)
+                    }
                 }
                 
                 // If there's a current session, reload its messages
                 _currentSession.value?.let { session ->
                     val messages = repository.getChatMessages(session.id).getOrNull()
-                    if (messages != null) {
+                    if (messages != null && messages.isNotEmpty()) {
                         _chatMessages.value = messages
                         println("Reloaded ${messages.size} messages for current session")
                     }
                 }
             } catch (e: Exception) {
                 println("Failed to refresh chat data: ${e.message}")
+                e.printStackTrace()
             } finally {
                 _isLoading.value = false
             }

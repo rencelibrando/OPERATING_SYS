@@ -23,21 +23,19 @@ fun LessonCard(
     modifier: Modifier = Modifier,
 ) {
     val cardBackgroundColor =
-        when (lesson.category.displayName) {
-            "Grammar" -> Color(0xFFFEF2F2) // Light red
-            "Vocabulary" -> Color(0xFFECFDF5) // Light green
-            "Conversation" -> Color(0xFFFEF3E2) // Light orange
-            "Pronunciation" -> Color(0xFFEBF8FF) // Light blue
-            else -> WordBridgeColors.BackgroundLight
+        when (lesson.category) {
+            org.example.project.domain.model.LessonCategory.GRAMMAR -> Color(0xFFFEF2F2)
+            org.example.project.domain.model.LessonCategory.VOCABULARY -> Color(0xFFECFDF5)
+            org.example.project.domain.model.LessonCategory.CONVERSATION -> Color(0xFFFEF3E2)
+            org.example.project.domain.model.LessonCategory.PRONUNCIATION -> Color(0xFFEBF8FF)
         }
 
     val iconBackgroundColor =
-        when (lesson.category.displayName) {
-            "Grammar" -> Color(0xFFEF4444) // Red
-            "Vocabulary" -> Color(0xFF10B981) // Green
-            "Conversation" -> Color(0xFFF59E0B) // Orange
-            "Pronunciation" -> Color(0xFF3B82F6) // Blue
-            else -> WordBridgeColors.PrimaryPurple
+        when (lesson.category) {
+            org.example.project.domain.model.LessonCategory.GRAMMAR -> Color(0xFFEF4444)
+            org.example.project.domain.model.LessonCategory.VOCABULARY -> Color(0xFF10B981)
+            org.example.project.domain.model.LessonCategory.CONVERSATION -> Color(0xFFF59E0B)
+            org.example.project.domain.model.LessonCategory.PRONUNCIATION -> Color(0xFF3B82F6)
         }
 
     Card(

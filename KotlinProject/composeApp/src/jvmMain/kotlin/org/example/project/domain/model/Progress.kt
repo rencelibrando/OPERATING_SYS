@@ -8,8 +8,8 @@ data class LearningProgress(
     val monthlyXP: Int,
     val streakDays: Int,
     val longestStreak: Int,
-    val totalStudyTime: Int, // in minutes
-    val weeklyStudyTime: Int, // in minutes
+    val totalStudyTime: Int, 
+    val weeklyStudyTime: Int, 
     val skillLevels: Map<SkillArea, SkillProgress>,
     val lastUpdated: Long,
 ) {
@@ -41,8 +41,8 @@ data class LearningProgress(
                 monthlyXP = 1650,
                 streakDays = 12,
                 longestStreak = 28,
-                totalStudyTime = 1680, // 28 hours
-                weeklyStudyTime = 280, // 4.67 hours
+                totalStudyTime = 1680, 
+                weeklyStudyTime = 280, 
                 skillLevels =
                     mapOf(
                         SkillArea.VOCABULARY to SkillProgress(level = 18, xp = 750, maxXP = 1000),
@@ -101,7 +101,7 @@ data class Achievement(
                     icon = "🎯",
                     category = AchievementCategory.MILESTONE,
                     xpReward = 50,
-                    unlockedAt = System.currentTimeMillis() - 2592000000, // 30 days ago
+                    unlockedAt = System.currentTimeMillis() - 2592000000, 
                     requirements = "Complete 1 lesson",
                 ),
                 Achievement(
@@ -111,7 +111,7 @@ data class Achievement(
                     icon = "🔥",
                     category = AchievementCategory.STREAK,
                     xpReward = 200,
-                    unlockedAt = System.currentTimeMillis() - 604800000, // 7 days ago
+                    unlockedAt = System.currentTimeMillis() - 604800000, 
                     requirements = "Practice 7 days in a row",
                 ),
                 Achievement(
@@ -121,7 +121,7 @@ data class Achievement(
                     icon = "📚",
                     category = AchievementCategory.SKILL,
                     xpReward = 300,
-                    unlockedAt = System.currentTimeMillis() - 86400000, // 1 day ago
+                    unlockedAt = System.currentTimeMillis() - 86400000, 
                     requirements = "Learn 100 vocabulary words",
                 ),
                 Achievement(
@@ -131,7 +131,7 @@ data class Achievement(
                     icon = "🎤",
                     category = AchievementCategory.SKILL,
                     xpReward = 400,
-                    unlockedAt = null, // Not unlocked yet
+                    unlockedAt = null, 
                     requirements = "Complete 50 speaking exercises",
                 ),
                 Achievement(
@@ -141,7 +141,7 @@ data class Achievement(
                     icon = "🦉",
                     category = AchievementCategory.SPECIAL,
                     xpReward = 75,
-                    unlockedAt = System.currentTimeMillis() - 172800000, // 2 days ago
+                    unlockedAt = System.currentTimeMillis() - 172800000, 
                     isRare = true,
                     requirements = "Study after 10 PM",
                 ),
@@ -189,8 +189,8 @@ data class LearningGoal(
                     target = 30,
                     current = 22,
                     unit = "minutes",
-                    deadline = System.currentTimeMillis() + 86400000, // Tomorrow
-                    createdAt = System.currentTimeMillis() - 86400000, // Yesterday
+                    deadline = System.currentTimeMillis() + 86400000, 
+                    createdAt = System.currentTimeMillis() - 86400000, 
                     completedAt = null,
                 ),
                 LearningGoal(
@@ -201,8 +201,8 @@ data class LearningGoal(
                     target = 25,
                     current = 18,
                     unit = "words",
-                    deadline = System.currentTimeMillis() + 432000000, // 5 days from now
-                    createdAt = System.currentTimeMillis() - 172800000, // 2 days ago
+                    deadline = System.currentTimeMillis() + 432000000, 
+                    createdAt = System.currentTimeMillis() - 172800000, 
                     completedAt = null,
                 ),
                 LearningGoal(
@@ -213,8 +213,8 @@ data class LearningGoal(
                     target = 10,
                     current = 7,
                     unit = "sessions",
-                    deadline = System.currentTimeMillis() + 1728000000, // 20 days from now
-                    createdAt = System.currentTimeMillis() - 864000000, // 10 days ago
+                    deadline = System.currentTimeMillis() + 1728000000, 
+                    createdAt = System.currentTimeMillis() - 864000000, 
                     completedAt = null,
                 ),
             )
@@ -230,15 +230,15 @@ enum class GoalType(val displayName: String) {
 
 data class WeeklyProgressData(
     val weekStartDate: Long,
-    val dailyXP: List<Int>, // 7 values for each day
-    val dailyMinutes: List<Int>, // 7 values for each day
+    val dailyXP: List<Int>, 
+    val dailyMinutes: List<Int>, 
     val totalXP: Int,
     val totalMinutes: Int,
 ) {
     companion object {
         fun getSampleWeeklyData(): WeeklyProgressData =
             WeeklyProgressData(
-                weekStartDate = System.currentTimeMillis() - 518400000, // 6 days ago (start of week)
+                weekStartDate = System.currentTimeMillis() - 518400000, 
                 dailyXP = listOf(0, 0, 0, 0, 0, 0, 0),
                 dailyMinutes = listOf(0, 0, 0, 0, 0, 0, 0),
                 totalXP = 0,
@@ -247,8 +247,8 @@ data class WeeklyProgressData(
 
         fun getDemoWeeklyData(): WeeklyProgressData =
             WeeklyProgressData(
-                weekStartDate = System.currentTimeMillis() - 518400000, // 6 days ago
-                dailyXP = listOf(45, 60, 0, 80, 95, 70, 85), // Monday to Sunday
+                weekStartDate = System.currentTimeMillis() - 518400000, 
+                dailyXP = listOf(45, 60, 0, 80, 95, 70, 85), 
                 dailyMinutes = listOf(25, 35, 0, 45, 50, 30, 40),
                 totalXP = 435,
                 totalMinutes = 225,

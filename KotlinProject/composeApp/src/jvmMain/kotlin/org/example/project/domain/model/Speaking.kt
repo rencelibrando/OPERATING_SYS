@@ -6,11 +6,11 @@ data class SpeakingExercise(
     val description: String,
     val type: SpeakingExerciseType,
     val difficulty: String,
-    val duration: Int, // in minutes
+    val duration: Int, 
     val category: String,
     val icon: String,
     val isAvailable: Boolean = true,
-    val completionRate: Int = 0, // 0-100 percentage
+    val completionRate: Int = 0, 
     val lastAttempt: Long? = null,
 ) {
     companion object {
@@ -28,7 +28,7 @@ data class SpeakingExercise(
                     category = "Fundamentals",
                     icon = "🔤",
                     completionRate = 75,
-                    lastAttempt = System.currentTimeMillis() - 86400000, // 1 day ago
+                    lastAttempt = System.currentTimeMillis() - 86400000, 
                 ),
                 SpeakingExercise(
                     id = "conversation_starters",
@@ -40,7 +40,7 @@ data class SpeakingExercise(
                     category = "Social Skills",
                     icon = "💬",
                     completionRate = 45,
-                    lastAttempt = System.currentTimeMillis() - 172800000, // 2 days ago
+                    lastAttempt = System.currentTimeMillis() - 172800000, 
                 ),
                 SpeakingExercise(
                     id = "accent_training",
@@ -98,7 +98,7 @@ data class SpeakingSession(
                     id = "session_1",
                     exerciseId = "pronunciation_basics",
                     startTime = System.currentTimeMillis() - 86400000,
-                    endTime = System.currentTimeMillis() - 86400000 + 900000, // 15 minutes later
+                    endTime = System.currentTimeMillis() - 86400000 + 900000, 
                     accuracyScore = 85,
                     fluencyScore = 78,
                     pronunciationScore = 82,
@@ -110,7 +110,7 @@ data class SpeakingSession(
                     id = "session_2",
                     exerciseId = "conversation_starters",
                     startTime = System.currentTimeMillis() - 172800000,
-                    endTime = System.currentTimeMillis() - 172800000 + 1200000, // 20 minutes later
+                    endTime = System.currentTimeMillis() - 172800000 + 1200000, 
                     accuracyScore = 75,
                     fluencyScore = 70,
                     pronunciationScore = 73,
