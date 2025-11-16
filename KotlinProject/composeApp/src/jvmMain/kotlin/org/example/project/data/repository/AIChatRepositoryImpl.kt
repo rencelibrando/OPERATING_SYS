@@ -58,10 +58,10 @@ class AIChatRepositoryImpl(
                 } catch (e: Exception) {
                     println("Failed to save session to Supabase: ${e.message}")
                     e.printStackTrace()
-                    // Continue anyway - session is in memory
+                    
                 }
 
-                // Cache in memory
+                
                 sessions[session.id] = session
                 messages[session.id] = mutableListOf()
 
@@ -72,10 +72,10 @@ class AIChatRepositoryImpl(
     override suspend fun getChatSession(sessionId: String): Result<ChatSession?> =
         withContext(Dispatchers.IO) {
             runCatching {
-                // Check memory cache first
+                
                 sessions[sessionId]?.let { return@runCatching it }
 
-                // Try loading from Supabase
+                
                 try {
                     val sessionDTO =
                         supabase.postgrest["chat_sessions"]
@@ -88,7 +88,7 @@ class AIChatRepositoryImpl(
 
                     sessionDTO?.let {
                         val session = it.toDomain()
-                        sessions[sessionId] = session // Cache it
+                        sessions[sessionId] = session 
                         session
                     }
                 } catch (e: Exception) {
@@ -101,10 +101,10 @@ class AIChatRepositoryImpl(
     override suspend fun getUserChatSessions(userId: String): Result<List<ChatSession>> =
         withContext(Dispatchers.IO) {
             runCatching {
-                // Get the actual user ID from auth service
+                
                 val actualUserId = authService.getCurrentUser().getOrNull()?.id ?: userId
                 
-                // Try loading from Supabase
+                
                 try {
                     val sessionDTOs =
                         supabase.postgrest["chat_sessions"]
@@ -118,7 +118,7 @@ class AIChatRepositoryImpl(
 
                     val loadedSessions = sessionDTOs.map { it.toDomain() }
                     
-                    // Cache all sessions
+                    
                     loadedSessions.forEach { session ->
                         sessions[session.id] = session
                     }
@@ -128,7 +128,7 @@ class AIChatRepositoryImpl(
                 } catch (e: Exception) {
                     println("Failed to load sessions from Supabase: ${e.message}")
                     e.printStackTrace()
-                    // Fallback to memory
+                    
                     sessions.values.toList()
                 }
             }
@@ -145,7 +145,7 @@ class AIChatRepositoryImpl(
             runCatching {
                 println("Deleting chat session: $sessionId")
                 
-                // Delete from Supabase (will cascade delete chat_session_history)
+                
                 try {
                     supabase.postgrest["chat_sessions"]
                         .delete {
@@ -166,7 +166,7 @@ class AIChatRepositoryImpl(
                         println("Chat history deleted from backend: $sessionId")
                     }.onFailure { e ->
                         println("Failed to delete chat history from backend: ${e.message}")
-                        // Don't throw - backend deletion is optional
+                        
                     }
                 } catch (e: Exception) {
                     println("Backend deletion error (non-critical): ${e.message}")
@@ -230,10 +230,10 @@ class AIChatRepositoryImpl(
             runCatching {
                 println("Generating AI response for session: $sessionId")
 
-                // Get user context
+                
                 val userContext = buildUserContext()
 
-                // Get conversation history
+                
                 val history =
                     messages[sessionId]?.map { msg ->
                         AIChatMessage(
@@ -256,14 +256,14 @@ class AIChatRepositoryImpl(
                         maxTokens = 1000,
                     )
 
-                // Send to AI backend
+                
                 val response =
                     aiService.sendChatMessage(request)
                         .getOrElse { error ->
                             throw Exception("AI backend request failed: ${error.message}")
                         }
 
-                // Store AI message
+                
                 val aiMessage =
                     ChatMessage(
                         id = "msg_${System.currentTimeMillis()}",
@@ -279,7 +279,7 @@ class AIChatRepositoryImpl(
 
                 messages.getOrPut(sessionId) { mutableListOf() }.add(aiMessage)
 
-                // Save chat history to Supabase with compression
+                
                 saveChatHistoryToSupabase(sessionId)
 
                 response.message
@@ -301,13 +301,13 @@ class AIChatRepositoryImpl(
         onMessage: (ChatMessage) -> Unit,
     ): Result<Unit> =
         runCatching {
-            // TODO: Implement real-time subscription (e.g., with Supabase Realtime)
+            
             println("Chat message subscription not yet implemented")
         }
 
     override suspend fun unsubscribeFromChatMessages(sessionId: String): Result<Unit> =
         runCatching {
-            // TODO: Implement unsubscribe
+            
             println("Chat message unsubscribe not yet implemented")
         }
 
@@ -320,21 +320,21 @@ class AIChatRepositoryImpl(
 
             println("Building comprehensive context for user: ${user.id}")
 
-            // Get onboarding profile
+            
             val profile =
                 onboardingRepository.fetchOnboardingProfile(user.id)
                     .getOrNull()
 
             println("Onboarding profile loaded: ${profile != null}")
 
-            // Fetch comprehensive user data from all tables
+            
             val comprehensiveData =
                 userDataService.fetchCompleteUserData(user.id)
                     .getOrNull()
 
             println("Comprehensive data loaded: ${comprehensiveData != null}")
 
-            // Extract basic profile data
+            
             val nativeLanguage =
                 user.firstName.takeIf { it.isNotBlank() }
                     ?: profile?.aiProfile?.get("native_language")?.toString()?.removeSurrounding("\"")
@@ -380,7 +380,7 @@ class AIChatRepositoryImpl(
                     ?.filter { it.isNotBlank() }
                     ?: emptyList()
 
-            // Build comprehensive context with ALL user data
+            
             AIUserContext(
                 userId = user.id,
                 firstName = comprehensiveData?.firstName,
@@ -394,7 +394,7 @@ class AIChatRepositoryImpl(
                 motivations = motivations,
                 interests = interests,
                 aiProfile = profile?.aiProfile,
-                // Add comprehensive learning data
+                
                 learningProgress =
                     comprehensiveData?.learningProgress?.let {
                         AILearningProgress(
@@ -514,7 +514,7 @@ class AIChatRepositoryImpl(
                     }
         } catch (e: Exception) {
             println("Error saving chat history: ${e.message}")
-            // Don't throw - chat should continue even if history save fails
+            
         }
     }
     private suspend fun loadChatHistoryFromSupabase(sessionId: String): List<ChatMessage> {
@@ -528,7 +528,7 @@ class AIChatRepositoryImpl(
             if (result != null && result.success) {
                 println(" Loaded ${result.messageCount} messages from Supabase")
 
-                // Convert to ChatMessage format
+                
                 val chatMessages =
                     result.messages.map { aiMsg ->
                         ChatMessage(
@@ -539,7 +539,7 @@ class AIChatRepositoryImpl(
                         )
                     }
 
-                // Store in memory
+                
                 messages[sessionId] = chatMessages.toMutableList()
 
                 chatMessages

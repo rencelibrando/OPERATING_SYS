@@ -1,0 +1,3 @@
+MSI BUILD COMMANDS
+use the "./gradlew clean" first before using the msi build commands
+./gradlew.bat composeApp:packageReleaseMsi

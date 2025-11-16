@@ -3,19 +3,33 @@ package org.example.project.core.profile
 import io.github.jan.supabase.gotrue.auth
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.example.project.core.api.SupabaseApiHelper
 import org.example.project.core.config.SupabaseConfig
 import org.example.project.domain.model.LearningProfile
 import org.example.project.domain.model.PersonalInfo
 
 class ProfileService {
     private val supabase = SupabaseConfig.client
+    
+    
+    private var personalInfoCache: Pair<PersonalInfo?, Long>? = null
+    private var learningProfileCache: Pair<LearningProfile?, Long>? = null
+    private val cacheDuration = 30_000L
 
     suspend fun updatePersonalInfo(personalInfo: PersonalInfo): Result<Unit> {
         return try {
-            println("Updating personal info in Supabase")
+            println("[ProfileService] Updating personal info in Supabase")
+
+            
+            personalInfoCache = null
 
             if (!SupabaseConfig.isConfigured()) {
                 throw Exception("Supabase is not configured")
+            }
+
+            
+            if (!SupabaseApiHelper.ensureValidSession()) {
+                throw Exception("No valid session. Please sign in again.")
             }
 
             val user = supabase.auth.currentUserOrNull()
@@ -37,29 +51,32 @@ class ProfileService {
                     put("avatar_url", personalInfo.profileImageUrl ?: "")
                 }
 
-            println("ProfileService - Saving metadata:")
-            metadata.forEach { (key, value) ->
-                println("   $key: $value")
-            }
-
             supabase.auth.updateUser {
                 data = metadata
             }
 
-            println("Personal info updated successfully")
+            println("[ProfileService] Personal info updated successfully")
             Result.success(Unit)
         } catch (e: Exception) {
-            println("Failed to update personal info: ${e.message}")
+            println("[ProfileService] Failed to update personal info: ${e.message}")
             Result.failure(e)
         }
     }
 
     suspend fun updateLearningProfile(learningProfile: LearningProfile): Result<Unit> {
         return try {
-            println("Updating learning profile in Supabase")
+            println("[ProfileService] Updating learning profile in Supabase")
+
+            
+            learningProfileCache = null
 
             if (!SupabaseConfig.isConfigured()) {
                 throw Exception("Supabase is not configured")
+            }
+
+            
+            if (!SupabaseApiHelper.ensureValidSession()) {
+                throw Exception("No valid session. Please sign in again.")
             }
 
             val user = supabase.auth.currentUserOrNull()
@@ -82,17 +99,30 @@ class ProfileService {
                 data = metadata
             }
 
-            println("Learning profile updated successfully")
+            println("[ProfileService] Learning profile updated successfully")
             Result.success(Unit)
         } catch (e: Exception) {
-            println("Failed to update learning profile: ${e.message}")
+            println("[ProfileService] Failed to update learning profile: ${e.message}")
             Result.failure(e)
         }
     }
 
     suspend fun loadPersonalInfo(): Result<PersonalInfo?> {
         return try {
-            println("Loading personal info from Supabase")
+            
+            val cached = personalInfoCache
+            if (cached != null && System.currentTimeMillis() - cached.second < cacheDuration) {
+                println("[ProfileService] Returning cached personal info")
+                return Result.success(cached.first)
+            }
+
+            println("[ProfileService] Loading personal info from Supabase")
+
+            
+            if (!SupabaseApiHelper.ensureValidSession()) {
+                println("[ProfileService] No valid session")
+                return Result.success(null)
+            }
 
             val user = supabase.auth.currentUserOrNull()
             if (user == null) {
@@ -100,11 +130,6 @@ class ProfileService {
             }
 
             val metadata = user.userMetadata
-
-            println("ProfileService - Loading metadata:")
-            metadata?.forEach { (key, value) ->
-                println("   $key: $value")
-            }
 
             val personalInfo =
                 PersonalInfo(
@@ -122,17 +147,32 @@ class ProfileService {
                     bio = metadata?.get("bio")?.toString()?.removeSurrounding("\"")?.takeIf { it.isNotEmpty() },
                 )
 
-            println("Personal info loaded successfully")
+            
+            personalInfoCache = Pair(personalInfo, System.currentTimeMillis())
+            println("[ProfileService] Personal info loaded and cached successfully")
             Result.success(personalInfo)
         } catch (e: Exception) {
-            println("Failed to load personal info: ${e.message}")
+            println("[ProfileService] Failed to load personal info: ${e.message}")
             Result.failure(e)
         }
     }
 
     suspend fun loadLearningProfile(): Result<LearningProfile?> {
         return try {
-            println("Loading learning profile from Supabase")
+            
+            val cached = learningProfileCache
+            if (cached != null && System.currentTimeMillis() - cached.second < cacheDuration) {
+                println("[ProfileService] Returning cached learning profile")
+                return Result.success(cached.first)
+            }
+
+            println("[ProfileService] Loading learning profile from Supabase")
+
+            
+            if (!SupabaseApiHelper.ensureValidSession()) {
+                println("[ProfileService] No valid session")
+                return Result.success(null)
+            }
 
             val user = supabase.auth.currentUserOrNull()
             if (user == null) {
@@ -157,10 +197,12 @@ class ProfileService {
                             ?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList(),
                 )
 
-            println("Learning profile loaded successfully")
+            
+            learningProfileCache = Pair(learningProfile, System.currentTimeMillis())
+            println("[ProfileService] Learning profile loaded and cached successfully")
             Result.success(learningProfile)
         } catch (e: Exception) {
-            println("Failed to load learning profile: ${e.message}")
+            println("[ProfileService] Failed to load learning profile: ${e.message}")
             Result.failure(e)
         }
     }

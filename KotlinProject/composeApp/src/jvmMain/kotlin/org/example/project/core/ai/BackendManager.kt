@@ -15,8 +15,6 @@ object BackendManager {
     fun startBackend(): Boolean {
         return try {
             println("[Backend] Checking if backend is already running...")
-
-            // Check if backend is already running
             if (isBackendHealthy()) {
                 println("[Backend] Backend is already running")
                 isBackendRunning = true
@@ -24,19 +22,16 @@ object BackendManager {
             }
 
             println("[Backend] Starting Python backend...")
+            val backendDir = findBackendDirectory()
 
-            // Find the backend directory
-            val projectRoot = File(System.getProperty("user.dir"))
-
-            val backendDir = when {
-                File(projectRoot, "backend").exists() -> File(projectRoot, "backend")
-                File(projectRoot.parentFile, "backend").exists() -> File(projectRoot.parentFile, "backend")
-                else -> File(projectRoot, "backend")
-            }
-
-            if (!backendDir.exists()) {
-                lastSetupError = "Backend directory not found at: ${backendDir.absolutePath}"
+            if (backendDir == null || !backendDir.exists()) {
+                lastSetupError = "Backend directory not found. Please ensure the backend folder is in the installation directory."
                 println("[Backend] ERROR: $lastSetupError")
+                println("[Backend] Searched locations:")
+                println("[Backend]   - ${File(System.getProperty("user.dir"), "backend").absolutePath}")
+                println("[Backend]   - ${File(System.getProperty("user.dir")).parentFile?.resolve("backend")?.absolutePath ?: "N/A"}")
+                println("[Backend]   - ${File("C:\\Program Files\\WordBridge\\backend").absolutePath}")
+                println("[Backend]   - ${File("C:\\Program Files (x86)\\WordBridge\\backend").absolutePath}")
                 return false
             }
             println("[Backend] Backend directory: ${backendDir.absolutePath}")
@@ -48,19 +43,15 @@ object BackendManager {
                 return false
             }
 
-            // Check if requirements.txt exists
             val requirementsTxt = File(backendDir, "requirements.txt")
             if (!requirementsTxt.exists()) {
                 println("[Backend] WARNING: requirements.txt not found")
             }
 
-            // Check if .env exists
             val envFile = File(backendDir, ".env")
             if (!envFile.exists()) {
                 println("[Backend] WARNING: .env file not found. Backend may not start correctly.")
             }
-
-            // Step 1: Check Python installation, install if not found
             var pythonCmd = findPythonCommand()
             if (pythonCmd == null) {
                 println("[Backend] Python not found. Attempting to install Python automatically...")
@@ -81,14 +72,12 @@ object BackendManager {
 
             println("[Backend] Using Python: $pythonCmd")
 
-            // Step 2: Check Python version
             if (!checkPythonVersion(pythonCmd)) {
                 lastSetupError = "Python 3.9+ is required. Please upgrade your Python installation."
                 println("[Backend] ERROR: $lastSetupError")
                 return false
             }
 
-            // Step 3: Set up virtual environment
             val venvDir = File(backendDir, "venv")
             if (!venvDir.exists()) {
                 println("[Backend] Creating virtual environment...")
@@ -101,8 +90,6 @@ object BackendManager {
             } else {
                 println("[Backend] Virtual environment already exists")
             }
-
-            // Step 4: Get the Python executable from venv
             val venvPython = getVenvPythonPath(venvDir)
             if (!venvPython.exists()) {
                 lastSetupError = "Virtual environment Python executable not found"
@@ -110,7 +97,6 @@ object BackendManager {
                 return false
             }
 
-            // Step 5: Install/update dependencies
             if (requirementsTxt.exists()) {
                 println("[Backend] Checking dependencies...")
                 if (!installDependencies(venvPython.absolutePath, backendDir)) {
@@ -121,7 +107,6 @@ object BackendManager {
                 println("[Backend] Dependencies are up to date")
             }
 
-            // Step 6: Start the backend server
             println("[Backend] Starting backend server...")
             val processBuilder =
                 ProcessBuilder(venvPython.absolutePath, "main.py")
@@ -178,7 +163,46 @@ object BackendManager {
         }
     }
 
+    private fun findBackendDirectory(): File? {
+        val currentDir = File(System.getProperty("user.dir"))
+        
 
+        val possibleLocations = mutableListOf<File>()
+        
+        // 1. Development location: current directory or parent
+        possibleLocations.add(File(currentDir, "backend"))
+        possibleLocations.add(currentDir.parentFile?.resolve("backend") ?: File(currentDir, "backend"))
+        
+        // 2. Installed application locations (Windows)
+        val programFiles = System.getenv("ProgramFiles") ?: "C:\\Program Files"
+        possibleLocations.add(File(programFiles, "WordBridge\\backend"))
+        
+        val programFiles86 = System.getenv("ProgramFiles(x86)") ?: "C:\\Program Files (x86)"
+        possibleLocations.add(File(programFiles86, "WordBridge\\backend"))
+        
+        // 3. User installation location (if per-user install)
+        val userHome = System.getProperty("user.home")
+        possibleLocations.add(File(userHome, "AppData\\Local\\WordBridge\\backend"))
+        possibleLocations.add(File(userHome, ".wordbridge\\backend"))
+        
+        // 4. Check location relative to executable (for installed apps)
+        try {
+            val codeSource = BackendManager::class.java.protectionDomain.codeSource?.location
+            if (codeSource != null) {
+                val jarFile = File(codeSource.toURI())
+                val executableDir = if (jarFile.isDirectory) jarFile else jarFile.parentFile
+                possibleLocations.add(executableDir.resolve("backend"))
+                // Also check parent directory (installation root)
+                executableDir.parentFile?.let { possibleLocations.add(it.resolve("backend")) }
+            }
+        } catch (e: Exception) {
+            
+        }
+        
+        
+        return possibleLocations.firstOrNull { it.exists() && File(it, "main.py").exists() }
+    }
+    
     private fun isBackendHealthy(): Boolean {
         return try {
             val url = java.net.URL("http://localhost:8000/health")
@@ -210,7 +234,7 @@ object BackendManager {
                     return cmd
                 }
             } catch (e: Exception) {
-                // Command not found, try next
+                
             }
         }
 
@@ -540,11 +564,7 @@ object BackendManager {
         return startBackend()
     }
     
-    /**
-     * Check if Python is installed and install if needed.
-     * This can be called during app initialization to prepare the environment.
-     * Returns true if Python is available, false otherwise.
-     */
+    /*check python installation and download all required and if python is not installed install it automatically */
     @Suppress("UNREACHABLE_CODE")
     suspend fun ensurePythonIsInstalled(
         onProgress: (String, Float) -> Unit = { _, _ -> }
@@ -552,12 +572,12 @@ object BackendManager {
         try {
             onProgress("Checking Python installation...", 0.1f)
             
-            // Check if Python is already installed
+            
             var pythonCmd = findPythonCommand()
             if (pythonCmd != null) {
                 onProgress("Python found", 0.3f)
                 
-                // Check version
+                
                 if (checkPythonVersion(pythonCmd)) {
                     onProgress("Python version OK", 0.5f)
                     println("[Backend] Python is already installed and ready")
@@ -569,7 +589,7 @@ object BackendManager {
                 }
             }
             
-            // Python not found, install it
+            
             println("[Backend] Python not found, installing...")
             onProgress("Installing Python...", 0.2f)
             
@@ -578,7 +598,7 @@ object BackendManager {
             if (installSuccess) {
                 onProgress("Python installed successfully", 0.8f)
                 
-                // Verify installation
+                
                 pythonCmd = findPythonCommand()
                 if (pythonCmd != null && checkPythonVersion(pythonCmd)) {
                     onProgress("Python ready", 1.0f)
@@ -600,6 +620,116 @@ object BackendManager {
             e.printStackTrace()
             onProgress("Error checking Python", 0.0f)
             return false
+        }
+    }
+    
+    
+    fun verifyBackendSetup(): Boolean {
+        try {
+            
+            val backendDir = findBackendDirectory()
+            
+            if (backendDir == null || !backendDir.exists()) {
+                println("[Backend] Backend directory not found")
+                return false
+            }
+            
+            val venvDir = File(backendDir, "venv")
+            if (!venvDir.exists()) {
+                println("[Backend] Virtual environment not found")
+                return false
+            }
+            
+            val venvPython = getVenvPythonPath(venvDir)
+            if (!venvPython.exists()) {
+                println("[Backend] Virtual environment Python executable not found")
+                return false
+            }
+            
+            val mainPy = File(backendDir, "main.py")
+            if (!mainPy.exists()) {
+                println("[Backend] main.py not found")
+                return false
+            }
+            
+            println("[Backend] Backend setup verification passed")
+            return true
+        } catch (e: Exception) {
+            println("[Backend] Error verifying backend setup: ${e.message}")
+            return false
+        }
+    }
+    
+    /*Set up backend environment (Python, venv, dependencies) without starting the server.*/
+    suspend fun setupBackendEnvironment(
+        onProgress: (String, Float) -> Unit = { _, _ -> }
+    ): Boolean {
+        return try {
+            onProgress("Checking Python installation...", 0.1f)
+            
+            val pythonCmd = findPythonCommand()
+            if (pythonCmd == null || !checkPythonVersion(pythonCmd)) {
+                onProgress("Installing Python...", 0.2f)
+                if (!ensurePythonIsInstalled { step, progress ->
+                    val mappedProgress = 0.1f + (progress * 0.2f)
+                    onProgress(step, mappedProgress)
+                }) {
+                    lastSetupError = "Failed to install Python"
+                    return false
+                }
+            }
+            
+            val finalPythonCmd = findPythonCommand()
+            if (finalPythonCmd == null) {
+                lastSetupError = "Python not found after installation"
+                return false
+            }
+            
+            onProgress("Python ready", 0.3f)
+            
+            val backendDir = findBackendDirectory()
+            
+            if (backendDir == null || !backendDir.exists()) {
+                lastSetupError = "Backend directory not found. Please ensure the backend folder is in the installation directory."
+                return false
+            }
+            
+            onProgress("Setting up virtual environment...", 0.4f)
+            
+            val venvDir = File(backendDir, "venv")
+            if (!venvDir.exists()) {
+                if (!createVirtualEnvironment(finalPythonCmd, backendDir)) {
+                    lastSetupError = "Failed to create virtual environment"
+                    return false
+                }
+            }
+            
+            onProgress("Virtual environment ready", 0.5f)
+            val venvPython = getVenvPythonPath(venvDir)
+            if (!venvPython.exists()) {
+                lastSetupError = "Virtual environment Python executable not found"
+                return false
+            }
+            
+            onProgress("Installing dependencies...", 0.6f)
+            
+            val requirementsTxt = File(backendDir, "requirements.txt")
+            if (requirementsTxt.exists()) {
+                if (!installDependencies(venvPython.absolutePath, backendDir)) {
+                    lastSetupError = "Failed to install dependencies"
+                    return false
+                }
+            }
+            
+            onProgress("Backend environment ready", 0.8f)
+            
+            println("[Backend] Backend environment setup completed successfully")
+            true
+        } catch (e: Exception) {
+            println("[Backend] Error setting up backend environment: ${e.message}")
+            e.printStackTrace()
+            lastSetupError = "Error setting up backend: ${e.message}"
+            false
         }
     }
 }

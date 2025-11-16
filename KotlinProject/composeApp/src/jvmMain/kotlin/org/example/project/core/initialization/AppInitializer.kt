@@ -6,6 +6,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.example.project.core.ai.BackendManager
 import org.example.project.core.config.SupabaseConfig
+import org.example.project.core.utils.PreferencesManager
 
 
 object AppInitializer {
@@ -22,37 +23,27 @@ object AppInitializer {
             
             println("[Init] Starting app initialization...")
             
-            // Step 1: Initialize Supabase
-            onProgress("Connecting to Supabase...", 0.15f)
+            
+            onProgress("Connecting to Supabase...", 0.1f)
             initializeSupabase()
-            delay(800)
+            delay(500)
             
-            // Step 2: Check Python installation (this may take time if installing)
-            onProgress("Checking Python installation...", 0.25f)
-            val pythonInstallTime = preWarmBackend(onProgress)
             
-            // Adjust timing based on whether Python was installed
-            if (pythonInstallTime > 5000) {
-                // Python was installed, skip extra delays
-                delay(500)
-            } else {
-                // Normal flow
-                delay(1000)
-            }
+            val backendSetupProgress = setupAIBackend(onProgress)
             
-            // Step 3: Initialize cache systems
-            onProgress("Initializing cache...", 0.75f)
+            
+            onProgress("Initializing cache...", 0.85f)
             initializeCache()
-            delay(800)
+            delay(500)
             
-            // Step 4: Pre-load static resources
-            onProgress("Loading resources...", 0.85f)
+            
+            onProgress("Loading resources...", 0.90f)
             preLoadResources()
-            delay(800)
+            delay(500)
             
-            // Step 5: Finalize
+            
             onProgress("Preparing interface...", 0.95f)
-            delay(800)
+            delay(500)
             
             isInitialized = true
             onProgress("Ready!", 1f)
@@ -64,50 +55,79 @@ object AppInitializer {
     private fun initializeSupabase() {
         try {
             println(" Initializing Supabase connection...")
-            // Supabase client is already initialized in SupabaseConfig
+            
             val isConfigured = SupabaseConfig.isConfigured()
             println(" Supabase ${if (isConfigured) "connected" else "not configured"}")
         } catch (e: Exception) {
             println(" Supabase initialization warning: ${e.message}")
-            // Non-critical - continue anyway
+            
         }
     }
     
-    /**
-     * Pre-warm backend and return time taken in milliseconds.
-     */
-    private suspend fun preWarmBackend(
-        onProgress: (String, Float) -> Unit
-    ): Long {
-        val startTime = System.currentTimeMillis()
-        
-        try {
-            println("[Backend] Pre-warming backend...")
 
-            if (BackendManager.isRunning()) {
-                println("[Backend] Backend already running")
-                return System.currentTimeMillis() - startTime
-            } else {
-                println("[Backend] Checking Python installation...")
+    private suspend fun setupAIBackend(
+        onProgress: (String, Float) -> Unit
+    ): Boolean {
+        return try {
+            
+            val cachedSetup = PreferencesManager.getCachedBackendSetupCompleted()
+            val isSetupValid = BackendManager.verifyBackendSetup()
+            
+            if (cachedSetup && isSetupValid) {
+                println("[Init] Backend setup found in cache and verified")
                 
-                // Check if Python is installed and install if needed
-                val result = BackendManager.ensurePythonIsInstalled { step, progress ->
-                    // Map backend progress (0-1) to our progress range (0.25-0.65)
-                    val mappedProgress = 0.25f + (progress * 0.4f)
-                    onProgress(step, mappedProgress)
-                }
                 
-                if (result) {
-                    println("[Backend] Python is ready")
+                if (BackendManager.isRunning()) {
+                    println("[Init] Backend is already running")
+                    onProgress("Backend ready", 0.7f)
+                    return true
                 } else {
-                    println("[Backend] Python check completed with issues")
+                    onProgress("Starting backend server...", 0.6f)
+                    val started = BackendManager.startBackend()
+                    if (started) {
+                        onProgress("Backend ready", 0.7f)
+                        return true
+                    } else {
+                        println("[Init] Failed to start backend, will re-setup")
+                        PreferencesManager.clearBackendSetupCache()
+                    }
                 }
             }
+            
+            
+            println("[Init] Performing full backend setup...")
+            
+            
+            var backendSetupSuccess = BackendManager.setupBackendEnvironment { step, progress ->
+                val mappedProgress = 0.15f + (progress * 0.6f)
+                onProgress(step, mappedProgress)
+            }
+            
+            if (!backendSetupSuccess) {
+                println("[Init] Backend environment setup failed")
+                return false
+            }
+            
+            
+            onProgress("Starting backend server...", 0.7f)
+            backendSetupSuccess = BackendManager.startBackend()
+            
+            if (backendSetupSuccess) {
+                
+                PreferencesManager.cacheBackendSetupCompleted(true)
+                println("[Init] Backend setup completed and cached")
+            } else {
+                println("[Init] Backend server failed to start")
+                PreferencesManager.clearBackendSetupCache()
+            }
+            
+            backendSetupSuccess
         } catch (e: Exception) {
-            println("[Backend] Pre-warm warning: ${e.message}")
+            println("[Init] Backend setup error: ${e.message}")
+            e.printStackTrace()
+            PreferencesManager.clearBackendSetupCache()
+            false
         }
-        
-        return System.currentTimeMillis() - startTime
     }
     
     private fun initializeCache() {

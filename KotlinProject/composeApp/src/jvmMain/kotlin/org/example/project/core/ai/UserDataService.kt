@@ -17,7 +17,6 @@ class UserDataService {
 
                 val userProfile = fetchUserProfile(userId)
                 
-                // Extract name from personal_info JSONB
                 val firstName = userProfile?.personalInfo?.get("firstName")?.toString()?.trim('"')
                 val lastName = userProfile?.personalInfo?.get("lastName")?.toString()?.trim('"')
 
@@ -280,7 +279,6 @@ class UserDataService {
     }
 }
 
-// Data classes for comprehensive user data
 data class ComprehensiveUserData(
     val userId: String,
     val firstName: String?,

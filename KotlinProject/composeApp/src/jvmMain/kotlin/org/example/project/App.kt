@@ -77,17 +77,22 @@ private fun MainApp() {
             )
         }
         is AuthState.Authenticated -> {
+            // Backend is already set up during initial startup, just verify it's running
             var backendError by remember { mutableStateOf<String?>(null) }
-            var isInitializingBackend by remember { mutableStateOf(true) }
+            var isCheckingBackend by remember { mutableStateOf(true) }
             
-            // Start backend when user is authenticated
             LaunchedEffect(Unit) {
                 withContext(Dispatchers.IO) {
-                    val success = BackendManager.ensureBackendIsRunning()
-                    if (!success) {
-                        backendError = BackendManager.getLastSetupError()
+                    // Backend should already be running from startup, but verify
+                    if (!BackendManager.isRunning()) {
+                        println("[App] Backend not running, attempting to start...")
+                        val success = BackendManager.ensureBackendIsRunning()
+                        if (!success) {
+                            backendError = BackendManager.getLastSetupError() 
+                                ?: "Backend server is not responding"
+                        }
                     }
-                    isInitializingBackend = false
+                    isCheckingBackend = false
                 }
             }
             
@@ -96,13 +101,17 @@ private fun MainApp() {
                     BackendSetupErrorScreen(
                         errorMessage = backendError!!,
                         onRetry = {
+                            backendError = null
+                            isCheckingBackend = true
                         },
                         onContinueAnyway = {
+                            backendError = null
+                            isCheckingBackend = false
                         }
                     )
                 }
-                isInitializingBackend -> {
-                    BackendInitializingScreen()
+                isCheckingBackend -> {
+                    LoadingScreen()
                 }
                 else -> {
                     AuthenticatedApp(

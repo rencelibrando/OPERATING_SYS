@@ -2,11 +2,10 @@ package org.example.project.ui.components
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.hoverable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,16 +16,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import org.jetbrains.compose.resources.painterResource
-import kotlinproject.composeapp.generated.resources.Res
-import kotlinproject.composeapp.generated.resources.delete_icon
 import org.example.project.domain.model.ChatSession
 import org.example.project.ui.theme.WordBridgeColors
+import org.jetbrains.skia.Image as SkiaImage
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -39,211 +38,113 @@ fun ChatHistorySidebar(
     onDeleteSession: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    var isExpanded by remember { mutableStateOf(true) }
-    var showDeleteDialog by remember { mutableStateOf<String?>(null) }
-    
-    // Animated width
-    val sidebarWidth by animateDpAsState(
-        targetValue = if (isExpanded) 280.dp else 60.dp,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        )
-    )
-
-    // Delete confirmation dialog
-    showDeleteDialog?.let { sessionId ->
-        DeleteConfirmationDialog(
-            onConfirm = {
-                onDeleteSession(sessionId)
-                showDeleteDialog = null
-            },
-            onDismiss = { showDeleteDialog = null }
-        )
-    }
-
-    Card(
+    Column(
         modifier = modifier
-            .width(sidebarWidth)
-            .fillMaxHeight(),
-        shape = RoundedCornerShape(0.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF8F9FA),
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            .fillMaxHeight()
+            .width(280.dp)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF1E293B), // slate-800
+                        Color(0xFF0F172A)  // slate-900
+                    )
+                )
+            )
+            .padding(16.dp),
     ) {
-        Column(
+        // History Label
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(if (isExpanded) 16.dp else 8.dp),
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Toggle button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = if (isExpanded) Arrangement.End else Arrangement.Center,
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFC084FC)) // purple-400
+            )
+            
+            Text(
+                text = "History",
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontWeight = FontWeight.SemiBold
+                ),
+                color = Color(0xFFC084FC), // purple-300
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // New Chat Button
+        Button(
+            onClick = onNewChatClick,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Transparent
+            ),
+            contentPadding = PaddingValues(0.dp),
+            shape = RoundedCornerShape(12.dp),
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 8.dp,
+                hoveredElevation = 12.dp
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                Color(0xFFA855F7), // purple-500
+                                Color(0xFF3B82F6)  // blue-500
+                            )
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .clickable { isExpanded = !isExpanded }
-                        .background(Color.Transparent),
-                    contentAlignment = Alignment.Center,
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (isExpanded) "◀" else "▶",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF6B7280),
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            AnimatedVisibility(
-                visible = isExpanded,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically(),
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    // Header
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "●",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = Color(0xFF7C3AED),
-                            modifier = Modifier.padding(end = 8.dp),
-                        )
-                        Text(
-                            text = "History",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                            ),
-                            color = WordBridgeColors.TextPrimary,
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // New Chat Button
-                    Button(
-                        onClick = onNewChatClick,
-                        modifier = Modifier.fillMaxWidth().height(44.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF7C3AED),
-                            contentColor = Color.White,
+                        text = "+",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold
                         ),
-                        shape = RoundedCornerShape(10.dp),
-                    ) {
-                        Text(
-                            text = "+",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.White,
-                            modifier = Modifier.padding(end = 6.dp),
-                        )
-                        Text(
-                            text = "New Chat",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White,
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Divider
-                    HorizontalDivider(
-                        thickness = 1.dp,
-                        color = Color.LightGray.copy(alpha = 0.3f),
+                        color = Color.White,
                     )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Sessions List
-                    if (chatSessions.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 24.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                Text(
-                                    text = "○",
-                                    style = MaterialTheme.typography.displayLarge,
-                                    color = Color(0xFFD1D5DB),
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "No history yet",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.Gray,
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Start chatting!",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color.Gray,
-                                )
-                            }
-                        }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            items(chatSessions) { session ->
-                                ChatSessionItem(
-                                    session = session,
-                                    isSelected = session.id == currentSessionId,
-                                    onClick = { onSessionClick(session.id) },
-                                    onDelete = { showDeleteDialog = session.id },
-                                )
-                            }
-                        }
-                    }
+                    Text(
+                        text = "New Chat",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Medium
+                        ),
+                        color = Color.White,
+                    )
                 }
             }
-            
-            // Collapsed state - just show dots
-            if (!isExpanded && chatSessions.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    items(chatSessions.take(10)) { session ->
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(CircleShape)
-                                .clickable { onSessionClick(session.id) }
-                                .background(
-                                    if (session.id == currentSessionId) 
-                                        Color(0xFF7C3AED).copy(alpha = 0.2f)
-                                    else 
-                                        Color(0xFFF3F4F6)
-                                ),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = "●",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = if (session.id == currentSessionId)
-                                    Color(0xFF7C3AED)
-                                else
-                                    Color(0xFF9CA3AF),
-                            )
-                        }
-                    }
-                }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Chat Sessions List
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(chatSessions) { session ->
+                ChatSessionItem(
+                    session = session,
+                    isSelected = session.id == currentSessionId,
+                    onClick = { onSessionClick(session.id) },
+                    onDelete = { onDeleteSession(session.id) }
+                )
             }
         }
     }
@@ -254,222 +155,238 @@ private fun ChatSessionItem(
     session: ChatSession,
     isSelected: Boolean,
     onClick: () -> Unit,
-    onDelete: () -> Unit = {},
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val primaryColor = Color(0xFF7C3AED)
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
+    val dateFormat = remember { SimpleDateFormat("MMM dd", Locale.getDefault()) }
+    val formattedDate = remember(session.startTime) {
+        dateFormat.format(Date(session.startTime))
+    }
     
-    val backgroundColor by animateColorAsState(
-        targetValue = when {
-            isSelected -> primaryColor.copy(alpha = 0.15f)
-            isHovered -> Color(0xFFF3F4F6)
-            else -> Color.White
-        },
-        animationSpec = tween(200)
-    )
-
-    val elevation by animateDpAsState(
-        targetValue = if (isHovered) 4.dp else 0.dp,
-        animationSpec = tween(200)
-    )
+    // Create tags from session data
+    val tags = remember(session.topic, session.difficulty) {
+        listOf(session.topic, session.difficulty)
+    }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .hoverable(interactionSource)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(10.dp),
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = backgroundColor,
+            containerColor = if (isSelected) {
+                Color.Transparent // Will use gradient
+            } else {
+                Color(0xFF334155).copy(alpha = 0.5f) // slate-700/50
+            }
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = elevation),
         border = if (isSelected) {
-            androidx.compose.foundation.BorderStroke(2.dp, primaryColor)
-        } else {
-            null
-        },
+            androidx.compose.foundation.BorderStroke(
+                2.dp,
+                Color(0xFFA855F7).copy(alpha = 0.5f) // purple-500/50
+            )
+        } else null,
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        )
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(10.dp),
+        Box(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // Title with delete button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = session.title,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                    ),
-                    color = if (isSelected) primaryColor else WordBridgeColors.TextPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                
-                // Delete button (shows on hover)
-                AnimatedVisibility(
-                    visible = isHovered || isSelected,
-                    enter = fadeIn() + scaleIn(),
-                    exit = fadeOut() + scaleOut(),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clickable(onClick = onDelete)
-                            .background(
-                                color = Color(0xFFEF4444).copy(alpha = 0.1f),
-                                shape = CircleShape
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(
+                                    Color(0xFFA855F7).copy(alpha = 0.2f), // purple-500/20
+                                    Color(0xFF3B82F6).copy(alpha = 0.2f)  // blue-500/20
+                                )
                             ),
-                        contentAlignment = Alignment.Center,
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                )
+            }
+            
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { onClick() }
+                ) {
+                    Text(
+                        text = session.title,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Medium
+                        ),
+                        color = if (isSelected) Color(0xFFE9D5FF) else Color.White, // purple-200 : white
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            painter = painterResource(Res.drawable.delete_icon),
-                            contentDescription = "Delete chat",
-                            modifier = Modifier.size(16.dp),
-                            tint = Color(0xFFEF4444),
+                        Text(
+                            text = "${session.messageCount} msgs",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF94A3B8), // slate-400
+                        )
+                        
+                        Text(
+                            text = "•",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF94A3B8),
+                        )
+                        
+                        Text(
+                            text = formattedDate,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF94A3B8),
                         )
                     }
-                }
-            }
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Metadata
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "${session.messageCount} msgs",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF9CA3AF),
-                )
-                
-                Text(
-                    text = "•",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF9CA3AF),
-                )
-                
-                Text(
-                    text = formatTimestamp(session.startTime),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF9CA3AF),
-                )
-            }
-
-            // Topic/Difficulty badges (compact)
-            if (session.topic.isNotEmpty() || session.difficulty.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    if (session.topic.isNotEmpty()) {
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = primaryColor.copy(alpha = 0.15f),
+                    if (tags.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Text(
-                                text = session.topic,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = primaryColor,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-
-                    if (session.difficulty.isNotEmpty()) {
-                        val difficultyColor = getDifficultyColor(session.difficulty)
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = difficultyColor.copy(alpha = 0.15f),
-                        ) {
-                            Text(
-                                text = session.difficulty.take(3), // Show only first 3 chars
-                                style = MaterialTheme.typography.labelSmall,
-                                color = difficultyColor,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            )
+                            tags.take(2).forEachIndexed { index, tag ->
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = if (index == 0) {
+                                        Color(0xFFA855F7).copy(alpha = 0.2f) // purple-500/20
+                                    } else {
+                                        Color(0xFFF59E0B).copy(alpha = 0.2f) // amber-500/20
+                                    }
+                                ) {
+                                    Box(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = tag,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = if (index == 0) {
+                                                Color(0xFFC084FC) // purple-300
+                                            } else {
+                                                Color(0xFFFBBF24) // amber-300
+                                            }
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
+                
+                // Delete Button
+                DeleteIconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(32.dp)
+                )
             }
         }
     }
 }
 
 @Composable
-private fun DeleteConfirmationDialog(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
+private fun DeleteIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "Delete Chat?",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                ),
+    // Try to load delete icon PNG
+    val deleteIconBitmap = remember {
+        // Method 1: Try classpath resources (for production builds - JAR or file system)
+        val classpathResource = runCatching {
+            val classLoader = Thread.currentThread().contextClassLoader
+                ?: ClassLoader.getSystemClassLoader()
+            
+            // Try different resource path formats
+            val paths = listOf(
+                "drawable/delete_icon.png",
+                "composeResources/drawable/delete_icon.png",
+                "jvmMain/composeResources/drawable/delete_icon.png"
             )
-        },
-        text = {
+            
+            paths.firstNotNullOfOrNull { path ->
+                val resource = classLoader.getResource(path)
+                if (resource != null) {
+                    println("[ChatHistorySidebar] Found classpath resource: $path -> ${resource.toString()}")
+                    // Load image bytes from resource (works for both file:// and jar:file://)
+                    runCatching {
+                        resource.openStream().use { stream ->
+                            stream.readBytes()
+                        }
+                    }.getOrNull()
+                } else {
+                    null
+                }
+            }
+        }.getOrNull()
+        
+        if (classpathResource != null) {
+            return@remember runCatching {
+                SkiaImage.makeFromEncoded(classpathResource).asImageBitmap()
+            }.getOrNull()
+        }
+        
+        // Method 2: Try file system paths (for development)
+        val userDir = System.getProperty("user.dir") ?: ""
+        val possiblePaths = listOf(
+            // Relative to current working directory
+            java.io.File(userDir, "composeApp/src/jvmMain/composeResources/drawable/delete_icon.png"),
+            // Relative to project root
+            java.io.File(userDir, "KotlinProject/composeApp/src/jvmMain/composeResources/drawable/delete_icon.png"),
+            // Absolute path from workspace
+            java.io.File("KotlinProject/composeApp/src/jvmMain/composeResources/drawable/delete_icon.png"),
+            // Try from composeApp directory
+            java.io.File("src/jvmMain/composeResources/drawable/delete_icon.png"),
+            // Try from jvmMain directory
+            java.io.File("jvmMain/composeResources/drawable/delete_icon.png")
+        )
+        
+        val foundFile = possiblePaths.firstOrNull { it.exists() && it.isFile }
+        
+        if (foundFile != null) {
+            println("[ChatHistorySidebar] Found file system resource: ${foundFile.absolutePath}")
+            return@remember runCatching {
+                val imageBytes = foundFile.readBytes()
+                SkiaImage.makeFromEncoded(imageBytes).asImageBitmap()
+            }.getOrNull()
+        }
+        
+        null
+    }
+    
+    IconButton(
+        onClick = onClick,
+        modifier = modifier
+    ) {
+        if (deleteIconBitmap != null) {
+            Image(
+                bitmap = deleteIconBitmap,
+                contentDescription = "Delete chat",
+                modifier = Modifier.size(18.dp),
+                colorFilter = ColorFilter.tint(Color(0xFF94A3B8)) // slate-400
+            )
+        } else {
+            // Fallback to emoji if PNG not found
             Text(
-                text = "This will permanently delete this chat session and all its messages. This action cannot be undone.",
+                text = "🗑️",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF6B7280),
             )
-        },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFEF4444),
-                ),
-            ) {
-                Text("Delete")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color(0xFF6B7280))
-            }
-        },
-        shape = RoundedCornerShape(16.dp),
-    )
-}
-
-private fun formatTimestamp(timestamp: Long): String {
-    val now = System.currentTimeMillis()
-    val diff = now - timestamp
-
-    return when {
-        diff < 60_000 -> "Just now"
-        diff < 3600_000 -> "${diff / 60_000}m ago"
-        diff < 86400_000 -> "${diff / 3600_000}h ago"
-        diff < 604800_000 -> "${diff / 86400_000}d ago"
-        else -> {
-            val sdf = SimpleDateFormat("MMM d", Locale.getDefault())
-            sdf.format(Date(timestamp))
         }
     }
 }
-
-private fun getDifficultyColor(difficulty: String): Color {
-    return when (difficulty.lowercase()) {
-        "beginner" -> Color(0xFF4CAF50)
-        "intermediate" -> Color(0xFFFF9800)
-        "advanced" -> Color(0xFFF44336)
-        else -> Color.Gray
-    }
-}
-

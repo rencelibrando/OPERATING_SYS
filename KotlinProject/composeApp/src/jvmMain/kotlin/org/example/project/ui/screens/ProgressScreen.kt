@@ -86,7 +86,7 @@ fun ProgressScreen(
                     title = "Overall Level",
                     value = learningProgress.overallLevel.toString(),
                     icon = "🎯",
-                    backgroundColor = Color(0xFF8B5CF6), // Purple
+                    backgroundColor = Color(0xFF8B5CF6), 
                     modifier = Modifier.weight(1f),
                 )
 
@@ -94,7 +94,7 @@ fun ProgressScreen(
                     title = "Total XP",
                     value = learningProgress.xpPoints.toString(),
                     icon = "⭐",
-                    backgroundColor = Color(0xFF10B981), // Green
+                    backgroundColor = Color(0xFF10B981), 
                     modifier = Modifier.weight(1f),
                 )
 
@@ -103,7 +103,7 @@ fun ProgressScreen(
                     value = learningProgress.streakDays.toString(),
                     unit = "days",
                     icon = "🔥",
-                    backgroundColor = Color(0xFFF59E0B), // Orange
+                    backgroundColor = Color(0xFFF59E0B), 
                     modifier = Modifier.weight(1f),
                 )
 
@@ -112,7 +112,7 @@ fun ProgressScreen(
                     value = "${learningProgress.totalStudyTime / 60}",
                     unit = "hrs",
                     icon = "⏱️",
-                    backgroundColor = Color(0xFFEF4444), // Red
+                    backgroundColor = Color(0xFFEF4444), 
                     modifier = Modifier.weight(1f),
                 )
             }

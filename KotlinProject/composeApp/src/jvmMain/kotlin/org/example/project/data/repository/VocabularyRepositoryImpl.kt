@@ -13,9 +13,9 @@ class VocabularyRepositoryImpl : VocabularyRepository {
 
     private val supabase = SupabaseConfig.client
 
-    // Get all vocabulary words for a specific user via user_vocabulary join
+    
     override suspend fun getAllVocabularyWords(): Result<List<VocabularyWord>> = runCatching {
-        // Get current user ID from Supabase auth
+        
         val userId = supabase.auth.currentUserOrNull()?.id
             ?: throw IllegalStateException("User not authenticated")
 
@@ -26,7 +26,7 @@ class VocabularyRepositoryImpl : VocabularyRepository {
         val userId = supabase.auth.currentUserOrNull()?.id
             ?: throw IllegalStateException("User not authenticated")
 
-        // Search within user's vocabulary only
+        
         val userVocabRows = supabase.postgrest["user_vocabulary"]
             .select(columns = Columns.raw("*, vocabulary_words(*)")) {
                 filter {
@@ -35,7 +35,7 @@ class VocabularyRepositoryImpl : VocabularyRepository {
             }
             .decodeAs<List<UserVocabularyJoinDTO>>()
 
-        // Filter by search query on the word or definition
+        
         userVocabRows
             .filter { join ->
                 join.vocabularyWord?.word?.contains(query, ignoreCase = true) == true ||
@@ -48,7 +48,7 @@ class VocabularyRepositoryImpl : VocabularyRepository {
         val userId = supabase.auth.currentUserOrNull()?.id
             ?: throw IllegalStateException("User not authenticated")
 
-        // Step 1: Check if word already exists in vocabulary_words
+        
         val existing = supabase.postgrest["vocabulary_words"]
             .select {
                 filter {
@@ -58,10 +58,10 @@ class VocabularyRepositoryImpl : VocabularyRepository {
             .decodeSingleOrNull<VocabularyWordDTO>()
 
         val wordId: String = if (existing != null) {
-            // Word exists, use its ID
+            
             existing.id!!
         } else {
-            // Step 2: Insert new word into vocabulary_words
+            
             val inserted = supabase.postgrest["vocabulary_words"]
                 .insert(
                     value = VocabularyWordDTO.fromDomain(word)
@@ -72,7 +72,7 @@ class VocabularyRepositoryImpl : VocabularyRepository {
             inserted.id!!
         }
 
-        // Step 3: Add entry to user_vocabulary (link user to word)
+        
         val userVocabEntry = UserVocabularyDTO(
             userId = userId,
             wordId = wordId,
@@ -91,7 +91,7 @@ class VocabularyRepositoryImpl : VocabularyRepository {
             }
             .decodeSingle<UserVocabularyDTO>()
 
-        // Step 4: Fetch the complete word data to return
+        
         val finalWord = supabase.postgrest["vocabulary_words"]
             .select {
                 filter {
@@ -103,7 +103,7 @@ class VocabularyRepositoryImpl : VocabularyRepository {
         finalWord.toDomain()
     }
 
-    // Helper function to get user's vocabulary
+    
     private suspend fun getUserVocabularyInternal(userId: String): List<VocabularyWord> {
         val userVocabRows = supabase.postgrest["user_vocabulary"]
             .select(columns = Columns.raw("*, vocabulary_words(*)")) {
@@ -116,7 +116,7 @@ class VocabularyRepositoryImpl : VocabularyRepository {
         return userVocabRows.mapNotNull { it.toDomain() }
     }
 
-    // Not yet implemented – return simple defaults to keep UI functional
+    
     override suspend fun getVocabularyWordsByCategory(category: String) = Result.success(emptyList<VocabularyWord>())
     override suspend fun getVocabularyWordsByDifficulty(difficulty: String) = Result.success(emptyList<VocabularyWord>())
     override suspend fun getVocabularyWord(wordId: String) = Result.success<VocabularyWord?>(null)
@@ -131,7 +131,7 @@ class VocabularyRepositoryImpl : VocabularyRepository {
     override suspend fun getWordsForReview(userId: String, limit: Int) = Result.success(emptyList<UserVocabularyWord>())
 }
 
-// DTO for vocabulary_words table
+
 @Serializable
 private data class VocabularyWordDTO(
     val id: String? = null,
@@ -178,7 +178,7 @@ private data class VocabularyWordDTO(
     }
 }
 
-// DTO for user_vocabulary table
+
 @Serializable
 private data class UserVocabularyDTO(
     val id: String? = null,
@@ -195,7 +195,7 @@ private data class UserVocabularyDTO(
     @SerialName("updated_at") val updatedAt: String? = null
 )
 
-// DTO for joined query (user_vocabulary with vocabulary_words)
+
 @Serializable
 private data class UserVocabularyJoinDTO(
     val id: String,

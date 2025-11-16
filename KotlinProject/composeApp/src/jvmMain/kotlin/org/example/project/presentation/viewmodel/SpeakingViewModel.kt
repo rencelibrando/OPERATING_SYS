@@ -8,13 +8,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.example.project.domain.model.VocabularyWord
 
-/**
- * ViewModel for the Speaking Practice feature
- * Manages word practice state, language selection, recording, and feedback
- */
+
 class SpeakingViewModel : ViewModel() {
 
-    // UI State
+    
     private val _currentWord = mutableStateOf<VocabularyWord?>(null)
     val currentWord: State<VocabularyWord?> = _currentWord
 
@@ -39,46 +36,32 @@ class SpeakingViewModel : ViewModel() {
     private val _showLanguageDialog = mutableStateOf(false)
     val showLanguageDialog: State<Boolean> = _showLanguageDialog
 
-    private val _recordingDuration = mutableStateOf(0f) // in seconds
+    private val _recordingDuration = mutableStateOf(0f) 
     val recordingDuration: State<Float> = _recordingDuration
 
     private val _speakingFeatures = mutableStateOf(getSpeakingFeatures())
     val speakingFeatures: State<List<SpeakingFeature>> = _speakingFeatures
 
-    /**
-     * Initialize practice session with a vocabulary word
-     */
+
     fun startPracticeSession(word: VocabularyWord) {
         _currentWord.value = word
         _showLanguageDialog.value = true
         resetSession()
     }
 
-    /**
-     * User selected a language for practice
-     */
     fun onLanguageSelected(language: PracticeLanguage) {
         _selectedLanguage.value = language
         _showLanguageDialog.value = false
     }
 
-    /**
-     * Show language selection dialog
-     */
     fun showLanguageSelection() {
         _showLanguageDialog.value = true
     }
 
-    /**
-     * Hide language selection dialog
-     */
     fun hideLanguageDialog() {
         _showLanguageDialog.value = false
     }
 
-    /**
-     * Toggle recording state (start/stop)
-     */
     fun toggleRecording() {
         if (_isRecording.value) {
             stopRecording()
@@ -87,16 +70,13 @@ class SpeakingViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Start recording audio (mock implementation)
-     */
     private fun startRecording() {
         _isRecording.value = true
         _hasRecording.value = false
         _feedback.value = null
         _recordingDuration.value = 0f
 
-        // Mock: Simulate recording duration counter
+        
         viewModelScope.launch {
             while (_isRecording.value) {
                 delay(100)
@@ -107,22 +87,16 @@ class SpeakingViewModel : ViewModel() {
         println("Started recording...")
     }
 
-    /**
-     * Stop recording and analyze (mock)
-     */
     private fun stopRecording() {
         _isRecording.value = false
         _hasRecording.value = true
 
         println("Stopped recording. Duration: ${_recordingDuration.value}s")
 
-        // Automatically analyze after recording
+        
         analyzeRecording()
     }
 
-    /**
-     * Play back the recorded audio (mock implementation)
-     */
     fun playRecording() {
         if (!_hasRecording.value || _isPlayingRecording.value) return
 
@@ -130,25 +104,21 @@ class SpeakingViewModel : ViewModel() {
 
         viewModelScope.launch {
             println("Playing back recording...")
-            // Mock: Simulate playback duration
+            
             delay((_recordingDuration.value * 1000).toLong())
             _isPlayingRecording.value = false
             println("Playback finished")
         }
     }
 
-    /**
-     * Analyze the recording and generate feedback (mock AI analysis)
-     * In production, this would call an AI pronunciation assessment API
-     */
     private fun analyzeRecording() {
         _isAnalyzing.value = true
 
         viewModelScope.launch {
-            // Mock: Simulate AI processing delay
+            
             delay(2000)
 
-            // Generate mock feedback based on selected language and word
+            
             val mockFeedback = generateMockFeedback(
                 word = _currentWord.value?.word ?: "",
                 language = _selectedLanguage.value ?: PracticeLanguage.FRENCH,
@@ -171,13 +141,13 @@ class SpeakingViewModel : ViewModel() {
         language: PracticeLanguage,
         recordingDuration: Float
     ): PracticeFeedback {
-        // Mock scoring (randomized for demo purposes)
+        
         val pronunciationScore = (75..95).random()
         val clarityScore = (70..95).random()
         val fluencyScore = (65..90).random()
         val overallScore = (pronunciationScore + clarityScore + fluencyScore) / 3
 
-        // Generate contextual feedback messages
+        
         val feedbackMessages = mutableListOf<String>()
 
         when {
@@ -195,7 +165,7 @@ class SpeakingViewModel : ViewModel() {
             }
         }
 
-        // Add language-specific tips
+        
         when (language) {
             PracticeLanguage.FRENCH -> {
                 feedbackMessages.add("Remember: French vowels are more rounded than English.")
@@ -228,16 +198,10 @@ class SpeakingViewModel : ViewModel() {
         )
     }
 
-    /**
-     * Try again with the same word
-     */
     fun tryAgain() {
         resetSession()
     }
 
-    /**
-     * Reset the practice session state
-     */
     private fun resetSession() {
         _isRecording.value = false
         _hasRecording.value = false
@@ -247,36 +211,23 @@ class SpeakingViewModel : ViewModel() {
         _recordingDuration.value = 0f
     }
 
-    /**
-     * Complete practice and return to vocabulary
-     */
     fun completePractice() {
-        // TODO: Save practice session results to database
-        // TODO: Update word progress/mastery
+        
+        
         resetSession()
         _currentWord.value = null
         _selectedLanguage.value = null
     }
 
-    /**
-     * Handle start first practice click from empty state
-     */
     fun onStartFirstPracticeClicked() {
-        // TODO: Show word selection or start with a sample word
+        
         println("Start first practice clicked")
     }
 
-    /**
-     * Handle explore exercises click from empty state
-     */
     fun onExploreExercisesClicked() {
-        // TODO: Navigate to exercises list or show exercise selection
+        
         println("Explore exercises clicked")
     }
-
-    /**
-     * Get speaking features for empty state display
-     */
     private fun getSpeakingFeatures(): List<SpeakingFeature> {
         return listOf(
             SpeakingFeature(
@@ -325,9 +276,6 @@ class SpeakingViewModel : ViewModel() {
     }
 }
 
-/**
- * Available languages for practice
- */
 enum class PracticeLanguage(
     val displayName: String,
     val flag: String,
@@ -360,21 +308,15 @@ enum class PracticeLanguage(
     )
 }
 
-/**
- * Feedback data from pronunciation analysis
- */
 data class PracticeFeedback(
-    val overallScore: Int, // 0-100
-    val pronunciationScore: Int, // 0-100
-    val clarityScore: Int, // 0-100
-    val fluencyScore: Int, // 0-100
+    val overallScore: Int, 
+    val pronunciationScore: Int, 
+    val clarityScore: Int, 
+    val fluencyScore: Int, 
     val messages: List<String>,
     val suggestions: List<String>
 )
 
-/**
- * Speaking feature for empty state display
- */
 data class SpeakingFeature(
     val id: String,
     val title: String,

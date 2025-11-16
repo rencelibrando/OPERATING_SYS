@@ -41,12 +41,12 @@ fun VocabularyScreen(
 
     var showAddDialog by remember { mutableStateOf(false) }
 
-    // Track if we're in speaking practice mode
+    
     val currentWord by speakingViewModel.currentWord
     val selectedLanguage by speakingViewModel.selectedLanguage
     val showLanguageDialog by speakingViewModel.showLanguageDialog
 
-    // Show language selection dialog
+    
     if (showLanguageDialog && currentWord != null) {
         LanguageSelectionDialog(
             wordToLearn = currentWord!!.word,
@@ -55,12 +55,12 @@ fun VocabularyScreen(
             },
             onDismiss = {
                 speakingViewModel.hideLanguageDialog()
-                speakingViewModel.completePractice() // Reset if user cancels
+                speakingViewModel.completePractice() 
             }
         )
     }
 
-    // Show speaking practice screen when word and language are selected
+    
     if (currentWord != null && selectedLanguage != null && !showLanguageDialog) {
         SpeakingScreen(
             authenticatedUser = authenticatedUser,
@@ -70,7 +70,7 @@ fun VocabularyScreen(
             viewModel = speakingViewModel
         )
     } else {
-        // Show vocabulary list
+        
         Column(
             modifier = modifier
                 .fillMaxSize()
@@ -181,7 +181,7 @@ fun VocabularyScreen(
                             VocabularyWordItem(
                                 word = word,
                                 onPracticeClick = { vocabularyWord ->
-                                    // Start the practice flow
+                                    
                                     speakingViewModel.startPracticeSession(vocabularyWord)
                                 },
                                 onClick = vocabularyViewModel::onVocabularyWordClicked

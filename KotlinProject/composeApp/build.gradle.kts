@@ -1,4 +1,7 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.gradle.api.tasks.Copy
+import java.io.File
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -8,11 +11,18 @@ plugins {
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.ktlint)
 }
+
+// Configure Java compatibility
+java {
+    sourceCompatibility = JavaVersion.VERSION_18
+    targetCompatibility = JavaVersion.VERSION_18
+}
+
 kotlin {
     jvm {
         compilations.all {
             compilerOptions.configure {
-                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_18)
+                jvmTarget.set(JvmTarget.JVM_18)
             }
         }
     }
@@ -59,6 +69,39 @@ kotlin {
     }
 }
 
+// Task to copy .env file to JAR resources before packaging
+tasks.named("jvmProcessResources", Copy::class) {
+    val envFile = layout.projectDirectory.file(".env").asFile
+    val rootEnvFile = rootProject.layout.projectDirectory.file(".env").asFile
+    val projectRootEnvFile = File(rootProject.layout.projectDirectory.asFile.parentFile, ".env")
+    
+    val envFileToInclude = when {
+        envFile.exists() -> envFile
+        rootEnvFile.exists() -> rootEnvFile
+        projectRootEnvFile.exists() -> projectRootEnvFile
+        else -> null
+    }
+    
+    if (envFileToInclude != null) {
+        from(envFileToInclude) {
+            into(".")
+            rename { ".env" }
+        }
+        // Also copy as env.config
+        from(envFileToInclude) {
+            into(".")
+            rename { "env.config" }
+        }
+        doFirst {
+            println("Copying .env file to JAR resources: ${envFileToInclude.absolutePath}")
+        }
+    } else {
+        doFirst {
+            println("WARNING: No .env file found to include in JAR resources")
+        }
+    }
+}
+
 ktlint {
     android.set(false)
     ignoreFailures.set(false)
@@ -68,32 +111,107 @@ ktlint {
     }
 }
 
+// Task to copy icons from composeResources to the app resources directory
+val copyIconsToResources by tasks.registering(Copy::class) {
+    group = "distribution"
+    description = "Copies icons from composeResources to app resources"
+    
+    val iconsDir = project.layout.projectDirectory.dir("src/jvmMain/composeResources/drawable")
+    val resourcesDirProvider = layout.buildDirectory.dir("compose/resources")
+    
+    from(iconsDir) {
+        include("*.png")
+        include("*.ico")
+        into("drawable")
+    }
+    into(resourcesDirProvider)
+}
+
+// Task to copy the Python backend into the resources used by the installer
+val copyBackendToResources by tasks.registering(Copy::class) {
+    group = "distribution"
+    description = "Copies the backend Python directory into the installer resources"
+
+    // Backend lives at the repo root: ../backend relative to this module
+    val backendDir = rootProject.layout.projectDirectory.asFile.parentFile.resolve("backend")
+
+    // Only run if backend exists
+    onlyIf { backendDir.exists() }
+
+    // Destination: compose resources directory used by nativeDistributions.appResourcesRootDir
+    val resourcesDirProvider = layout.buildDirectory.dir("compose/resources")
+    into(resourcesDirProvider)
+
+    // Copy backend (excluding venv / caches) into resources/backend
+    from(backendDir) {
+        exclude("venv/**")
+        exclude("__pycache__/**")
+        exclude("*.pyc")
+        exclude("**/__pycache__/**")
+        into("backend")
+    }
+}
+
+// Ensure backend and icons are copied before packaging installers (MSI/DMG/DEB)
+tasks.matching { task ->
+    task.name.startsWith("packageRelease") &&
+        (task.name.contains("Msi", ignoreCase = true) ||
+            task.name.contains("Dmg", ignoreCase = true) ||
+            task.name.contains("Deb", ignoreCase = true))
+}.configureEach {
+    dependsOn(copyIconsToResources, copyBackendToResources)
+}
+
 compose.desktop {
     application {
         mainClass = "org.example.project.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "org.example.project"
+            packageName = "WordBridge"
             packageVersion = "1.0.0"
+            description = "Language Learning Assistant with AI-powered conversations"
+            
             // Bundle a minimal JRE so the app runs on machines without Java installed
             includeAllModules = true
+            
             // Optional: set vendor for Windows installer metadata
-            vendor = "ExampleOrg"
+            vendor = "WordBridge"
+            
             // Add modules commonly required for TLS and other functionality
             modules("jdk.unsupported", "jdk.crypto.ec")
+            
+            // Include extra resources (backend + icons) from build/compose/resources
+            val resourcesDir = layout.buildDirectory.dir("compose/resources")
+            appResourcesRootDir.set(resourcesDir)
+            
+            // Add license file if you have one (optional)
+            // licenseFile.set(project.file("LICENSE.txt"))
+            
             windows {
-                // Hide console window for release builds
+                // Show console window for debugging (set to false for release builds)
                 console = false
+                
                 // Create Start Menu entry and Desktop shortcut
                 menu = true
                 shortcut = true
+                
                 // Set the application icon used for shortcuts and installer UI
-                // Points to your existing icon location
                 iconFile.set(project.file("src/jvmMain/composeResources/drawable/app.ico"))
+                
                 // Keep this GUID constant across releases to enable in-place upgrades
+                // This is important for Windows Update to recognize upgrades
                 upgradeUuid = "5a3e6f7e-4a2c-4c87-9c9a-9b2d1c1f4c55"
+                
+                // Windows installer metadata
+                menuGroup = "WordBridge"
+                dirChooser = true
+                perUserInstall = false // Install for all users (requires admin)
+                
+                // Optional: Add Windows registry entries
+                // See: https://github.com/JetBrains/compose-multiplatform/blob/master/components/tooling/native-distributions/src/commonMain/kotlin/org/jetbrains/compose/desktop/application/dsl/NativeDistribution.kt
             }
+            
         }
         buildTypes {
             release {

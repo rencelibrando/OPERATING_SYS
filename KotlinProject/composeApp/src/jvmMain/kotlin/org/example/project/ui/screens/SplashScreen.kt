@@ -26,7 +26,7 @@ fun SplashScreen(
     var progress by remember { mutableStateOf(0f) }
     var isComplete by remember { mutableStateOf(false) }
 
-    // Initialize app services using AppInitializer
+    
     LaunchedEffect(Unit) {
         try {
             AppInitializer.initialize(
@@ -36,7 +36,7 @@ fun SplashScreen(
                 }
             ).onSuccess {
                 isComplete = true
-                delay(800) // Delay to show completion animation
+                delay(800) 
                 onInitializationComplete()
             }.onFailure { e ->
                 println("Initialization failed: ${e.message}")
@@ -54,7 +54,7 @@ fun SplashScreen(
         }
     }
 
-    // Animated progress
+    
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
         animationSpec = spring(
@@ -63,7 +63,7 @@ fun SplashScreen(
         )
     )
 
-    // Pulsing animation for the logo
+    
     val infiniteTransition = rememberInfiniteTransition()
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.6f,
@@ -92,7 +92,7 @@ fun SplashScreen(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth().padding(32.dp),
         ) {
-            // App Logo/Name
+            
             Text(
                 text = "WordBridge",
                 style = MaterialTheme.typography.displayLarge.copy(
@@ -112,12 +112,12 @@ fun SplashScreen(
 
             Spacer(modifier = Modifier.height(64.dp))
 
-            // Progress indicator
+            
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.width(300.dp),
             ) {
-                // Progress bar
+                
                 LinearProgressIndicator(
                     progress = { animatedProgress },
                     modifier = Modifier
@@ -129,7 +129,7 @@ fun SplashScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Status text with fade animation
+                
                 AnimatedContent(
                     targetState = currentStep,
                     transitionSpec = {
@@ -146,7 +146,7 @@ fun SplashScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Percentage
+                
                 Text(
                     text = "${(animatedProgress * 100).toInt()}%",
                     style = MaterialTheme.typography.bodySmall,
@@ -156,7 +156,7 @@ fun SplashScreen(
 
             Spacer(modifier = Modifier.height(64.dp))
 
-            // Success checkmark animation
+            
             AnimatedVisibility(
                 visible = isComplete,
                 enter = scaleIn() + fadeIn(),

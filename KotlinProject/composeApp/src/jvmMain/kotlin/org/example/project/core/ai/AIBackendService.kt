@@ -28,7 +28,7 @@ class AIBackendService {
                 )
             }
 
-            // Configure timeouts
+            
             install(io.ktor.client.plugins.HttpTimeout) {
                 requestTimeoutMillis = AIBackendConfig.REQUEST_TIMEOUT_MS
                 connectTimeoutMillis = AIBackendConfig.CONNECTION_TIMEOUT_MS

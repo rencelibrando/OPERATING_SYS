@@ -8,7 +8,7 @@ import org.example.project.domain.model.NavigationItem
 import org.example.project.domain.model.User
 
 class HomeViewModel : ViewModel() {
-    // Private mutable state
+    
     private val _user = mutableStateOf(User.sampleUser())
     private val _navigationItems = mutableStateOf(NavigationItem.getDefaultNavigationItems())
     private val _learningActivities = mutableStateOf(LearningActivity.getDefaultActivities())
@@ -16,7 +16,7 @@ class HomeViewModel : ViewModel() {
     private val _isLoading = mutableStateOf(false)
     private val _showProfile = mutableStateOf(false)
 
-    // Public read-only state
+    
     val user: State<User> = _user
     val navigationItems: State<List<NavigationItem>> = _navigationItems
     val learningActivities: State<List<LearningActivity>> = _learningActivities
@@ -25,12 +25,12 @@ class HomeViewModel : ViewModel() {
     val showProfile: State<Boolean> = _showProfile
 
     fun onNavigationItemSelected(itemId: String) {
-        // Close profile if it was open
+        
         _showProfile.value = false
 
         _selectedNavigationItem.value = itemId
 
-        // Update navigation items to reflect selection
+        
         _navigationItems.value =
             _navigationItems.value.map { item ->
                 item.copy(isSelected = item.id == itemId)
@@ -40,7 +40,7 @@ class HomeViewModel : ViewModel() {
     fun onUserAvatarClicked() {
         _showProfile.value = true
 
-        // Reset navigation selection when viewing profile
+        
         _navigationItems.value =
             _navigationItems.value.map { item ->
                 item.copy(isSelected = false)
@@ -53,7 +53,7 @@ class HomeViewModel : ViewModel() {
     fun onCloseProfile() {
         _showProfile.value = false
 
-        // Return to home
+        
         _selectedNavigationItem.value = "home"
         _navigationItems.value =
             _navigationItems.value.map { item ->
@@ -64,27 +64,27 @@ class HomeViewModel : ViewModel() {
     }
 
     fun onLearningActivityClicked(activityId: String) {
-        // TODO: Implement navigation to specific activity
-        // For now, we'll just print the action (in real app, use navigation)
+        
+        
         println("Navigating to activity: $activityId")
     }
 
     fun onContinueLearningClicked() {
         _isLoading.value = true
 
-        // Simulate loading (in real app, this would start a lesson)
-        // TODO: Implement actual lesson continuation logic
+        
+        
         println("Continuing learning journey...")
 
-        // Reset loading state after simulation
+        
         _isLoading.value = false
     }
 
     fun refreshUserData() {
         _isLoading.value = true
 
-        // TODO: Implement actual data fetching from repository
-        // For now, we'll simulate a refresh
+        
+        
 
         _isLoading.value = false
     }
