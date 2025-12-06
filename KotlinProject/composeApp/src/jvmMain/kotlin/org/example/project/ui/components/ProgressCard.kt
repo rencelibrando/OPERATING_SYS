@@ -15,68 +15,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.ui.theme.WordBridgeColors
 
 @Composable
-fun ProgressCard(
-    title: String,
-    value: String,
-    valueColor: Color = WordBridgeColors.TextPrimary,
-    icon: String? = null,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier =
-            modifier
-                .fillMaxWidth(),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = WordBridgeColors.BackgroundWhite,
-            ),
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = 2.dp,
-            ),
-        shape = RoundedCornerShape(12.dp),
-    ) {
-        Column(
-            modifier =
-                Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-            horizontalAlignment = Alignment.End,
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodySmall,
-                color = WordBridgeColors.TextSecondary,
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End,
-            ) {
-                if (title == "Streak" && value.contains("days")) {
-                    Text(
-                        text = "🔥",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(end = 4.dp),
-                    )
-                }
-
-                Text(
-                    text = value,
-                    style =
-                        MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    color = valueColor,
-                )
-            }
-        }
-    }
-}
-
-@Composable
 fun TodaysProgressCard(
     streak: Int,
     xpPoints: Int,

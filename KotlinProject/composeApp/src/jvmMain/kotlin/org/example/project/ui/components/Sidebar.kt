@@ -31,14 +31,13 @@ import org.jetbrains.skia.Image as SkiaImage
 fun Sidebar(
     navigationItems: List<NavigationItem>,
     onNavigationItemClick: (String) -> Unit,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
-
     // Smooth animated width with custom spring parameters
     val sidebarWidth by animateDpAsState(
-        targetValue = if (isHovered) 256.dp else 72.dp,
+        targetValue = if (isExpanded) 256.dp else 72.dp,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMediumLow
@@ -47,7 +46,7 @@ fun Sidebar(
     )
 
     val sidebarPadding by animateDpAsState(
-        targetValue = if (isHovered) 24.dp else 16.dp,
+        targetValue = if (isExpanded) 24.dp else 16.dp,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioNoBouncy,
             stiffness = Spring.StiffnessMedium
@@ -57,9 +56,9 @@ fun Sidebar(
     
     // Fade animation for text elements
     val textAlpha by animateFloatAsState(
-        targetValue = if (isHovered) 1f else 0f,
+        targetValue = if (isExpanded) 1f else 0f,
         animationSpec = tween(
-            durationMillis = if (isHovered) 300 else 150,
+            durationMillis = if (isExpanded) 300 else 150,
             easing = FastOutSlowInEasing
         ),
         label = "text_alpha"
@@ -78,13 +77,32 @@ fun Sidebar(
                         )
                     )
                 )
-                .hoverable(interactionSource)
                 .padding(sidebarPadding),
-        horizontalAlignment = if (isHovered) Alignment.Start else Alignment.CenterHorizontally,
+        horizontalAlignment = if (isExpanded) Alignment.Start else Alignment.CenterHorizontally,
     ) {
+        // Manual expand / collapse toggle
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = if (isExpanded) Arrangement.End else Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = if (isExpanded) "«" else "»",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                ),
+                color = Color(0xFF9CA3AF),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .clickable { onToggleExpand() }
+                    .padding(4.dp),
+            )
+        }
+
         // Header with logo - crossfade animation
         Crossfade(
-            targetState = isHovered,
+            targetState = isExpanded,
             animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
             label = "header_crossfade"
         ) { expanded ->
@@ -95,7 +113,7 @@ fun Sidebar(
             }
         }
         
-        Spacer(modifier = Modifier.height(if (isHovered) 32.dp else 24.dp))
+        Spacer(modifier = Modifier.height(if (isExpanded) 32.dp else 24.dp))
 
         // Navigation items
         Column(
@@ -105,7 +123,7 @@ fun Sidebar(
             navigationItems.forEach { item ->
                 NavigationItemRow(
                     item = item,
-                    isExpanded = isHovered,
+                    isExpanded = isExpanded,
                     textAlpha = textAlpha,
                     onClick = { onNavigationItemClick(item.id) },
                 )
@@ -114,7 +132,7 @@ fun Sidebar(
 
         // Version footer - fade in/out
         AnimatedVisibility(
-            visible = isHovered,
+            visible = isExpanded,
             enter = fadeIn(animationSpec = tween(300, delayMillis = 100)) + 
                     expandVertically(animationSpec = tween(300)),
             exit = fadeOut(animationSpec = tween(150)) + 

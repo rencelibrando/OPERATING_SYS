@@ -10,11 +10,13 @@ import kotlinx.serialization.json.put
 import org.example.project.core.api.SupabaseApiHelper
 import org.example.project.core.config.SupabaseConfig
 import org.example.project.domain.model.LessonDifficulty
+import org.example.project.domain.model.LessonLanguage
 import org.example.project.domain.model.LessonTopic
 
 interface LessonTopicsRepository {
     suspend fun getTopicsByDifficulty(
         difficulty: LessonDifficulty,
+        language: org.example.project.domain.model.LessonLanguage? = null,
     ): Result<List<LessonTopic>>
 
     suspend fun getTopic(topicId: String): Result<LessonTopic?>
@@ -30,6 +32,11 @@ interface LessonTopicsRepository {
         isCompleted: Boolean,
         timeSpent: Int? = null,
     ): Result<Unit>
+    
+    // Admin operations
+    suspend fun updateTopic(topic: LessonTopic, difficulty: LessonDifficulty, language: org.example.project.domain.model.LessonLanguage): Result<Unit>
+    suspend fun deleteTopic(topicId: String): Result<Unit>
+    suspend fun createTopic(topic: LessonTopic, difficulty: LessonDifficulty, language: org.example.project.domain.model.LessonLanguage, sortOrder: Int): Result<Unit>
 }
 
 @Serializable
@@ -38,6 +45,8 @@ data class LessonTopicDTO(
     val id: String,
     @SerialName("difficulty_level")
     val difficultyLevel: String,
+    @SerialName("language")
+    val language: String? = null,
     @SerialName("title")
     val title: String,
     @SerialName("description")
@@ -53,8 +62,9 @@ data class LessonTopicDTO(
     @SerialName("is_published")
     val isPublished: Boolean = true,
 ) {
-    fun toDomain(isCompleted: Boolean = false): LessonTopic =
-        LessonTopic(
+    fun toDomain(isCompleted: Boolean = false): LessonTopic {
+        val lang = mapDatabaseLanguage(language)
+        return LessonTopic(
             id = id,
             title = title,
             description = description ?: "",
@@ -62,7 +72,29 @@ data class LessonTopicDTO(
             isCompleted = isCompleted,
             isLocked = isLocked,
             durationMinutes = durationMinutes,
+            language = lang,
         )
+    }
+}
+
+private fun mapDatabaseLanguage(rawLanguage: String?): LessonLanguage? {
+    if (rawLanguage.isNullOrBlank()) {
+        return null
+    }
+
+    val normalized = rawLanguage.trim()
+
+    return LessonLanguage.entries.firstOrNull { lessonLanguage ->
+        lessonLanguage.displayName.equals(normalized, ignoreCase = true) ||
+            lessonLanguage.code.equals(normalized, ignoreCase = true)
+    } ?: when (normalized.lowercase()) {
+        "mandarin", "mandarin chinese", "zh-cn", "zh-hans", "zh-hant" -> LessonLanguage.CHINESE
+        "ko-kr", "hangul" -> LessonLanguage.KOREAN
+        "es-es", "es-mx" -> LessonLanguage.SPANISH
+        "fr-fr" -> LessonLanguage.FRENCH
+        "de-de" -> LessonLanguage.GERMAN
+        else -> null
+    }
 }
 
 @Serializable
@@ -89,6 +121,7 @@ class LessonTopicsRepositoryImpl : LessonTopicsRepository {
 
     override suspend fun getTopicsByDifficulty(
         difficulty: LessonDifficulty,
+        language: org.example.project.domain.model.LessonLanguage?,
     ): Result<List<LessonTopic>> =
         runCatching {
             if (!SupabaseApiHelper.isReady()) {
@@ -103,13 +136,15 @@ class LessonTopicsRepositoryImpl : LessonTopicsRepository {
                     }
 
                     val difficultyString = difficulty.displayName
+                    val languageString = language?.displayName
 
-                    println("[LessonTopics] Fetching topics for difficulty: $difficultyString")
+                    println("[LessonTopics] Fetching topics for difficulty: $difficultyString, language: ${languageString ?: "all"}")
 
                     val response =
                         supabase.postgrest["lesson_topics"].select {
                             filter {
                                 eq("difficulty_level", difficultyString)
+                                languageString?.let { eq("language", it) }
                                 eq("is_published", true)
                             }
                         }
@@ -248,6 +283,95 @@ class LessonTopicsRepositoryImpl : LessonTopicsRepository {
             }
         }
 
+    override suspend fun updateTopic(topic: LessonTopic, difficulty: LessonDifficulty, language: org.example.project.domain.model.LessonLanguage): Result<Unit> =
+        SupabaseApiHelper.executeWithRetry {
+            withContext(Dispatchers.IO) {
+                try {
+                    val payload = buildJsonObject {
+                        put("id", topic.id)
+                        put("difficulty_level", difficulty.displayName)
+                        put("language", language.displayName)
+                        put("title", topic.title)
+                        put("description", topic.description)
+                        topic.lessonNumber?.let { put("lesson_number", it) }
+                        topic.durationMinutes?.let { put("duration_minutes", it) }
+                        put("is_locked", topic.isLocked)
+                        put("is_published", true)
+                    }
+
+                    supabase.postgrest["lesson_topics"].update(payload) {
+                        filter {
+                            eq("id", topic.id)
+                        }
+                    }
+
+                    println("[LessonTopics] Updated topic: ${topic.id}")
+                } catch (e: Exception) {
+                    println("[LessonTopics] Error updating topic: ${e.message}")
+                    throw e
+                }
+            }
+        }
+
+    override suspend fun deleteTopic(topicId: String): Result<Unit> =
+        SupabaseApiHelper.executeWithRetry {
+            withContext(Dispatchers.IO) {
+                try {
+                    // First, delete all related progress records
+                    try {
+                        supabase.postgrest["lesson_topic_progress"].delete {
+                            filter {
+                                eq("topic_id", topicId)
+                            }
+                        }
+                        println("[LessonTopics] Deleted progress records for topic: $topicId")
+                    } catch (e: Exception) {
+                        println("[LessonTopics] Warning: Could not delete progress records: ${e.message}")
+                        // Continue with topic deletion even if progress deletion fails
+                    }
+
+                    // Then delete the topic itself
+                    supabase.postgrest["lesson_topics"].delete {
+                        filter {
+                            eq("id", topicId)
+                        }
+                    }
+
+                    println("[LessonTopics] Deleted topic: $topicId")
+                } catch (e: Exception) {
+                    println("[LessonTopics] Error deleting topic: ${e.message}")
+                    throw e
+                }
+            }
+        }
+
+    override suspend fun createTopic(topic: LessonTopic, difficulty: LessonDifficulty, language: org.example.project.domain.model.LessonLanguage, sortOrder: Int): Result<Unit> =
+        SupabaseApiHelper.executeWithRetry {
+            withContext(Dispatchers.IO) {
+                try {
+                    val payload = buildJsonObject {
+                        put("id", topic.id)
+                        put("difficulty_level", difficulty.displayName)
+                        put("language", language.displayName)
+                        put("title", topic.title)
+                        put("description", topic.description)
+                        topic.lessonNumber?.let { put("lesson_number", it) }
+                        topic.durationMinutes?.let { put("duration_minutes", it) }
+                        put("sort_order", sortOrder)
+                        put("is_locked", topic.isLocked)
+                        put("is_published", true)
+                    }
+
+                    supabase.postgrest["lesson_topics"].insert(payload)
+
+                    println("[LessonTopics] Created topic: ${topic.id}")
+                } catch (e: Exception) {
+                    println("[LessonTopics] Error creating topic: ${e.message}")
+                    throw e
+                }
+            }
+        }
+
     private suspend fun getUserProgressMap(
         userId: String,
         topicIds: List<String>,
@@ -275,7 +399,14 @@ class LessonTopicsRepositoryImpl : LessonTopicsRepository {
                     )
             }
         } catch (e: Exception) {
-            println("[LessonTopics] Error fetching progress map: ${e.message}")
+            // Check if it's a "table not found" error - this is expected if migration hasn't been run
+            val errorMessage = e.message ?: ""
+            if (errorMessage.contains("Could not find the table", ignoreCase = true) ||
+                errorMessage.contains("does not exist", ignoreCase = true)) {
+                println("[LessonTopics] Progress table not found - progress tracking will be unavailable until migration 004_lesson_topics.sql is run")
+            } else {
+                println("[LessonTopics] Error fetching progress map: ${e.message}")
+            }
             emptyMap()
         }
     }
