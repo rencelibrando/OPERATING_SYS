@@ -4,7 +4,7 @@ from supabase_client import get_supabase
 async def apply_migration():
     migration_sql = """
 ALTER TABLE public.chat_session_history 
-    ALTER COLUMN compressed_messages TYPE TEXT
+    ALTER COLUMN compressed_messages TYPE TEXT  
     USING encode(compressed_messages, 'base64');
 """
     
