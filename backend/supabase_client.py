@@ -15,9 +15,6 @@ class SupabaseManager:
     def get_client(cls) -> Optional[Client]:
         if cls._client is not None:
             return cls._client
-        
-        # Prefer service role key for backend operations (bypasses RLS)
-        # Fall back to anon key if service role key not available
         supabase_key = settings.supabase_service_role_key or settings.supabase_key
         
         if not settings.supabase_url or not supabase_key:

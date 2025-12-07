@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -25,6 +26,7 @@ import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
 import org.example.project.core.auth.User as AuthUser
 import org.example.project.domain.model.LessonDifficulty
+import org.example.project.domain.model.LessonLanguage
 
 @Composable
 fun LessonsScreen(
@@ -44,6 +46,9 @@ fun LessonsScreen(
     val categoryLessons by viewModel.categoryLessons
     val lessonTopics by viewModel.lessonTopics
     val recentLessons by viewModel.recentLessons
+    val selectedLanguage by viewModel.selectedLanguage
+    val availableLanguages by viewModel.availableLanguages
+    val isLanguageChanging by viewModel.isLanguageChanging
 
     // Use LazyColumn when showing topics to avoid nested scroll issues
     if (selectedCategory != null && lessonTopics.isNotEmpty()) {
@@ -139,7 +144,7 @@ fun LessonsScreen(
                         )
 
                         Text(
-                            text = "${selectedCategory!!.displayName} Lessons",
+                            text = "${selectedLanguage.displayName} ${selectedCategory!!.displayName} Lessons",
                             style =
                                 MaterialTheme.typography.headlineMedium.copy(
                                     fontWeight = FontWeight.Bold,
@@ -148,12 +153,27 @@ fun LessonsScreen(
                         )
                     }
 
-                    UserAvatar(
-                        initials = authenticatedUser?.initials ?: "U",
-                        profileImageUrl = authenticatedUser?.profileImageUrl,
-                        size = 48.dp,
-                        onClick = onUserAvatarClick,
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        // Language Switcher
+                        LessonLanguageSwitcher(
+                            selectedLanguage = selectedLanguage,
+                            availableLanguages = availableLanguages,
+                            onLanguageSelected = { language ->
+                                viewModel.changeLanguage(language)
+                            },
+                            enabled = !isLanguageChanging,
+                        )
+                        
+                        UserAvatar(
+                            initials = authenticatedUser?.initials ?: "U",
+                            profileImageUrl = authenticatedUser?.profileImageUrl,
+                            size = 48.dp,
+                            onClick = onUserAvatarClick,
+                        )
+                    }
                 }
             }
 
@@ -161,13 +181,36 @@ fun LessonsScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // Introduction text
+            // Introduction text - dynamic based on selected language
             item {
                 Text(
-                    text = "Mandarin learning journey. We've also included valuable learning tips. Enjoy!",
+                    text = "Your ${selectedLanguage.displayName} learning journey. We've also included valuable learning tips. Enjoy!",
                     style = MaterialTheme.typography.bodyLarge,
                     color = WordBridgeColors.TextSecondary,
                 )
+            }
+            
+            // Show loading indicator when changing language
+            if (isLanguageChanging) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = WordBridgeColors.PrimaryPurple,
+                            strokeWidth = 2.dp,
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Switching to ${selectedLanguage.displayName}...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = WordBridgeColors.TextSecondary,
+                        )
+                    }
+                }
             }
 
             item {
@@ -229,9 +272,9 @@ fun LessonsScreen(
                     Text(
                         text =
                             if (selectedCategory != null) {
-                                "${selectedCategory!!.displayName} Lessons"
+                                "${selectedLanguage.displayName} ${selectedCategory!!.displayName} Lessons"
                             } else {
-                                "Lessons"
+                                "Lessons - Learning Paths"
                             },
                         style =
                             MaterialTheme.typography.headlineMedium.copy(
@@ -241,19 +284,34 @@ fun LessonsScreen(
                     )
                 }
 
-                UserAvatar(
-                    initials = authenticatedUser?.initials ?: "U",
-                    profileImageUrl = authenticatedUser?.profileImageUrl,
-                    size = 48.dp,
-                    onClick = onUserAvatarClick,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    // Language Switcher - Main Feature
+                    LessonLanguageSwitcher(
+                        selectedLanguage = selectedLanguage,
+                        availableLanguages = availableLanguages,
+                        onLanguageSelected = { language ->
+                            viewModel.changeLanguage(language)
+                        },
+                        enabled = !isLanguageChanging,
+                    )
+                    
+                    UserAvatar(
+                        initials = authenticatedUser?.initials ?: "U",
+                        profileImageUrl = authenticatedUser?.profileImageUrl,
+                        size = 48.dp,
+                        onClick = onUserAvatarClick,
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             if (selectedCategory == null) {
                 Text(
-                    text = "Choose Your Learning Path",
+                    text = "Select a path to continue your personalized language learning journey.",
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold,
@@ -261,18 +319,11 @@ fun LessonsScreen(
                     color = WordBridgeColors.TextPrimary,
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Select a difficulty level to begin your personalized language learning journey",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = WordBridgeColors.TextSecondary,
-                )
-
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     lessonCategories.forEach { category ->
                         LessonCategoryCard(
@@ -282,13 +333,14 @@ fun LessonsScreen(
                                     viewModel.onCategoryClicked(category.difficulty)
                                 }
                             },
+                            modifier = Modifier.weight(1f),
                         )
                     }
                 }
             } else {
-                // Show introduction text for the category (empty state)
+                // Show introduction text for the category (empty state) - dynamic based on language
                 Text(
-                    text = "Mandarin learning journey. We've also included valuable learning tips. Enjoy!",
+                    text = "Your ${selectedLanguage.displayName} learning journey. We've also included valuable learning tips. Enjoy!",
                     style = MaterialTheme.typography.bodyLarge,
                     color = WordBridgeColors.TextSecondary,
                 )

@@ -32,6 +32,7 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
+            implementation(compose.materialIconsExtended)
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
@@ -222,4 +223,26 @@ compose.desktop {
             }
         }
     }
+}
+
+// Custom task to run admin app
+tasks.register<JavaExec>("runAdmin") {
+    group = "application"
+    description = "Runs the WordBridge Admin application"
+    mainClass.set("org.example.project.admin.AdminMainKt")
+    
+    val jvmMain = kotlin.jvm().compilations.getByName("main")
+    val runtimeClasspath = configurations.getByName(jvmMain.runtimeDependencyConfigurationName)
+    
+    classpath(
+        jvmMain.output.classesDirs,
+        runtimeClasspath
+    )
+    
+    dependsOn("jvmProcessResources", "jvmMainClasses")
+    
+    // Use same JVM toolchain as main app
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(18))
+    })
 }
