@@ -5,13 +5,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
-import org.example.project.core.lessons.LessonTopicsService
 import org.example.project.core.profile.ProfileService
 import org.example.project.data.repository.LessonTopicsRepository
 import org.example.project.data.repository.LessonTopicsRepositoryImpl
 import org.example.project.domain.model.Lesson
 import org.example.project.domain.model.LessonCategoryInfo
 import org.example.project.domain.model.LessonDifficulty
+import org.example.project.domain.model.LessonLanguage
 import org.example.project.domain.model.LevelProgress
 import org.example.project.domain.model.RecentLesson
 import org.example.project.core.auth.User as AuthUser
@@ -19,7 +19,6 @@ import org.example.project.core.auth.User as AuthUser
 class LessonsViewModel : ViewModel() {
     private val profileService = ProfileService()
     private val lessonTopicsRepository: LessonTopicsRepository = LessonTopicsRepositoryImpl()
-    private val lessonTopicsService = LessonTopicsService()
     
     private val _lessons = mutableStateOf(Lesson.getSampleLessons())
     private val _levelProgress = mutableStateOf(LevelProgress.getSampleProgress())
@@ -28,8 +27,13 @@ class LessonsViewModel : ViewModel() {
     private val _userLevel = mutableStateOf(LessonDifficulty.BEGINNER)
     private val _lessonCategories = mutableStateOf<List<LessonCategoryInfo>>(emptyList())
     private val _selectedCategory = mutableStateOf<LessonDifficulty?>(null)
+    private val _selectedLanguage = mutableStateOf<LessonLanguage>(LessonLanguage.CHINESE) // Default to Chinese
     private val _categoryLessons = mutableStateOf<List<Lesson>>(emptyList())
     private val _lessonTopics = mutableStateOf<List<org.example.project.domain.model.LessonTopic>>(emptyList())
+    private val _isLanguageChanging = mutableStateOf(false)
+    
+    // Available languages for the switcher
+    private val _availableLanguages = mutableStateOf(LessonLanguage.entries.toList())
 
     val lessons: State<List<Lesson>> = _lessons
     val levelProgress: State<LevelProgress> = _levelProgress
@@ -38,8 +42,11 @@ class LessonsViewModel : ViewModel() {
     val userLevel: State<LessonDifficulty> = _userLevel
     val lessonCategories: State<List<LessonCategoryInfo>> = _lessonCategories
     val selectedCategory: State<LessonDifficulty?> = _selectedCategory
+    val selectedLanguage: State<LessonLanguage> = _selectedLanguage
     val categoryLessons: State<List<Lesson>> = _categoryLessons
     val lessonTopics: State<List<org.example.project.domain.model.LessonTopic>> = _lessonTopics
+    val isLanguageChanging: State<Boolean> = _isLanguageChanging
+    val availableLanguages: State<List<LessonLanguage>> = _availableLanguages
 
     init {
         refreshCategories()
@@ -60,6 +67,20 @@ class LessonsViewModel : ViewModel() {
                 } else {
                     println("No learning profile found, defaulting to Beginner")
                     setUserLevel("Beginner")
+                }
+                
+                // Load personal info to get target languages
+                val personalInfoResult = profileService.loadPersonalInfo()
+                val personalInfo = personalInfoResult.getOrNull()
+                
+                if (personalInfo != null && personalInfo.targetLanguages.isNotEmpty()) {
+                    val targetLang = personalInfo.targetLanguages.first()
+                    val language = LessonLanguage.entries.find { 
+                        it.displayName.equals(targetLang, ignoreCase = true) || 
+                        it.code.equals(targetLang, ignoreCase = true)
+                    } ?: LessonLanguage.CHINESE
+                    _selectedLanguage.value = language
+                    println("User target language: ${language.displayName}")
                 }
 
                 _isLoading.value = false
@@ -102,38 +123,72 @@ class LessonsViewModel : ViewModel() {
     private suspend fun loadLessonTopics(difficulty: LessonDifficulty) {
         _isLoading.value = true
         try {
-            println("[LessonsViewModel] Loading topics for ${difficulty.displayName} from Supabase...")
+            val language = _selectedLanguage.value
+            println("[LessonsViewModel] ========================================")
+            println("[LessonsViewModel] 🔍 Loading topics for ${language.displayName} - ${difficulty.displayName} from Supabase...")
             
-            val result = lessonTopicsRepository.getTopicsByDifficulty(difficulty)
+            val result = lessonTopicsRepository.getTopicsByDifficulty(difficulty, language)
             
-            
-            val topicsFromDb = result.getOrNull() ?: emptyList()
-            
-            _lessonTopics.value = if (topicsFromDb.isEmpty()) {
-                println("[LessonsViewModel] No topics found in database, falling back to local data...")
-                
-                
-                when (difficulty) {
-                    LessonDifficulty.BEGINNER -> org.example.project.domain.model.LessonTopic.getBeginnerTopics()
-                    LessonDifficulty.INTERMEDIATE -> org.example.project.domain.model.LessonTopic.getIntermediateTopics()
-                    LessonDifficulty.ADVANCED -> org.example.project.domain.model.LessonTopic.getAdvancedTopics()
+            result.fold(
+                onSuccess = { topicsFromDb ->
+                    println("[LessonsViewModel] ✅ Successfully loaded ${topicsFromDb.size} topics from Supabase")
+                    
+                    // Debug: Print each topic's language to verify filtering
+                    if (topicsFromDb.isNotEmpty()) {
+                        println("[LessonsViewModel] Topics loaded:")
+                        topicsFromDb.take(5).forEach { topic ->
+                            println("[LessonsViewModel]   - ${topic.id}: ${topic.title} (language: ${topic.language?.displayName ?: "NULL"})")
+                        }
+                        if (topicsFromDb.size > 5) {
+                            println("[LessonsViewModel]   ... and ${topicsFromDb.size - 5} more")
+                        }
+                        
+                        // Warn if any topics don't match the selected language
+                        val mismatchedTopics = topicsFromDb.filter { it.language != language }
+                        if (mismatchedTopics.isNotEmpty()) {
+                            println("[LessonsViewModel] ⚠️ WARNING: ${mismatchedTopics.size} topics don't match selected language!")
+                            mismatchedTopics.take(3).forEach { topic ->
+                                println("[LessonsViewModel]   ⚠️ ${topic.id}: language=${topic.language?.displayName ?: "NULL"} (expected: ${language.displayName})")
+                            }
+                            println("[LessonsViewModel] 💡 Fix: Run migration 009_fix_chinese_lesson_language.sql to update lesson language tags")
+                        }
+                    } else {
+                        println("[LessonsViewModel] 📭 No topics found for ${language.displayName} - ${difficulty.displayName}")
+                        println("[LessonsViewModel] 💡 Use Admin Panel to create lessons for this language")
+                    }
+                    
+                    val filteredTopics =
+                        topicsFromDb.filter { topic ->
+                            topic.language == null || topic.language == language
+                        }
+
+                    val removedCount = topicsFromDb.size - filteredTopics.size
+                    if (removedCount > 0) {
+                        println("[LessonsViewModel] ⚠️ Removed $removedCount topic(s) that were tagged with a different language than ${language.displayName}")
+                    }
+
+                    val unknownLanguageCount = filteredTopics.count { it.language == null }
+                    if (unknownLanguageCount > 0) {
+                        println("[LessonsViewModel] ⚠️ $unknownLanguageCount topic(s) are missing a language tag. They will default to ${language.displayName}.")
+                    }
+
+                    _lessonTopics.value = filteredTopics
+                },
+                onFailure = { e ->
+                    println("[LessonsViewModel] ❌ Error loading lesson topics: ${e.message}")
+                    e.printStackTrace()
+                    // Show empty list instead of hardcoded data
+                    _lessonTopics.value = emptyList()
                 }
-            } else {
-                println("[LessonsViewModel] Successfully loaded ${topicsFromDb.size} topics from Supabase")
-                topicsFromDb
-            }
+            )
             
-            println("[LessonsViewModel] Loaded ${_lessonTopics.value.size} topics for ${difficulty.displayName}")
+            println("[LessonsViewModel] Final count: ${_lessonTopics.value.size} topics for ${language.displayName} - ${difficulty.displayName}")
+            println("[LessonsViewModel] ========================================")
         } catch (e: Exception) {
-            println("[LessonsViewModel] Error loading lesson topics: ${e.message}")
+            println("[LessonsViewModel] ❌ Exception loading lesson topics: ${e.message}")
             e.printStackTrace()
-            
-            
-            _lessonTopics.value = when (difficulty) {
-                LessonDifficulty.BEGINNER -> org.example.project.domain.model.LessonTopic.getBeginnerTopics()
-                LessonDifficulty.INTERMEDIATE -> org.example.project.domain.model.LessonTopic.getIntermediateTopics()
-                LessonDifficulty.ADVANCED -> org.example.project.domain.model.LessonTopic.getAdvancedTopics()
-            }
+            // Show empty list instead of hardcoded data
+            _lessonTopics.value = emptyList()
         } finally {
             _isLoading.value = false
         }
@@ -141,44 +196,109 @@ class LessonsViewModel : ViewModel() {
     
     fun onLessonTopicClicked(topicId: String) {
         println("Lesson topic clicked: $topicId")
-        
-    }
-    
-
-    fun seedBeginnerTopicsToSupabase() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                println("[LessonsViewModel] Starting to seed beginner topics to Supabase...")
-                val result = lessonTopicsService.seedBeginnerTopics()
-                
-                result.fold(
-                    onSuccess = {
-                        println("[LessonsViewModel] ✓ Successfully seeded all beginner topics to Supabase!")
-                        
-                        val currentCategory = _selectedCategory.value
-                        if (currentCategory == LessonDifficulty.BEGINNER) {
-                            loadLessonTopics(LessonDifficulty.BEGINNER)
-                        }
-                    },
-                    onFailure = { e ->
-                        println("[LessonsViewModel] ✗ Failed to seed topics: ${e.message}")
-                        e.printStackTrace()
-                    }
-                )
-            } catch (e: Exception) {
-                println("[LessonsViewModel] Error seeding topics: ${e.message}")
-                e.printStackTrace()
-            } finally {
-                _isLoading.value = false
-            }
-        }
+        // TODO: Navigate to lesson detail screen or start lesson
     }
 
     fun onBackFromCategory() {
         _selectedCategory.value = null
         _categoryLessons.value = emptyList()
         _lessonTopics.value = emptyList()
+    }
+    
+    /**
+     * Change the active learning language.
+     * This will:
+     * 1. Update the selected language state
+     * 2. Clear current lesson topics
+     * 3. Optionally persist to user profile (for next session)
+     * 4. Reload lessons for the new language if a category is selected
+     * 
+     * @param language The new language to switch to
+     * @param persistToProfile Whether to save this preference to the user's profile (default: true)
+     */
+    fun changeLanguage(language: LessonLanguage, persistToProfile: Boolean = true) {
+        if (language == _selectedLanguage.value) {
+            println("[LessonsViewModel] Language already set to ${language.displayName}, skipping")
+            return
+        }
+        
+        viewModelScope.launch {
+            _isLanguageChanging.value = true
+            println("[LessonsViewModel] Changing language from ${_selectedLanguage.value.displayName} to ${language.displayName}")
+            
+            try {
+                // Update the selected language
+                _selectedLanguage.value = language
+                
+                // Clear current topics to show loading state
+                _lessonTopics.value = emptyList()
+                
+                // Persist to profile if requested
+                if (persistToProfile) {
+                    persistLanguagePreference(language)
+                }
+                
+                // Reload lessons if a category is currently selected
+                val currentCategory = _selectedCategory.value
+                if (currentCategory != null) {
+                    println("[LessonsViewModel] Reloading ${currentCategory.displayName} lessons for ${language.displayName}")
+                    loadLessonTopics(currentCategory)
+                }
+                
+                println("[LessonsViewModel] Successfully changed language to ${language.displayName}")
+            } catch (e: Exception) {
+                println("[LessonsViewModel] Error changing language: ${e.message}")
+                e.printStackTrace()
+            } finally {
+                _isLanguageChanging.value = false
+            }
+        }
+    }
+    
+    /**
+     * Persist the language preference to the user's profile.
+     * Updates the targetLanguages in PersonalInfo to put the new language first.
+     */
+    private suspend fun persistLanguagePreference(language: LessonLanguage) {
+        try {
+            // Load current personal info
+            val currentInfoResult = profileService.loadPersonalInfo()
+            val currentInfo = currentInfoResult.getOrNull()
+            
+            if (currentInfo != null) {
+                // Update target languages: put selected language first, keep others
+                val existingLanguages = currentInfo.targetLanguages.toMutableList()
+                existingLanguages.remove(language.displayName)
+                val updatedLanguages = listOf(language.displayName) + existingLanguages
+                
+                // Create updated personal info
+                val updatedInfo = currentInfo.copy(targetLanguages = updatedLanguages)
+                
+                // Save to profile
+                val saveResult = profileService.updatePersonalInfo(updatedInfo)
+                if (saveResult.isSuccess) {
+                    println("[LessonsViewModel] Language preference saved to profile: ${language.displayName}")
+                } else {
+                    println("[LessonsViewModel] Failed to save language preference: ${saveResult.exceptionOrNull()?.message}")
+                }
+            }
+        } catch (e: Exception) {
+            println("[LessonsViewModel] Error persisting language preference: ${e.message}")
+            // Don't fail the language change if persistence fails - it's just a preference
+        }
+    }
+    
+    /**
+     * Get the flag emoji for the current language
+     */
+    fun getLanguageFlag(language: LessonLanguage = _selectedLanguage.value): String {
+        return when (language) {
+            LessonLanguage.KOREAN -> "🇰🇷"
+            LessonLanguage.CHINESE -> "🇨🇳"
+            LessonLanguage.FRENCH -> "🇫🇷"
+            LessonLanguage.GERMAN -> "🇩🇪"
+            LessonLanguage.SPANISH -> "🇪🇸"
+        }
     }
 
     fun onLessonClicked(lessonId: String) {
