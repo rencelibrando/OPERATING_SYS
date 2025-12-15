@@ -13,6 +13,9 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.example.project.core.config.AIBackendConfig
+import org.example.project.core.utils.ErrorLogger
+
+private const val LOG_TAG = "AIBackendService.kt"
 
 class AIBackendService {
     private val client =
@@ -50,7 +53,7 @@ class AIBackendService {
                 throw Exception("Health check failed with status: ${response.status}")
             }
         }.onFailure { error ->
-            println("AI backend health check failed: ${error.message}")
+            ErrorLogger.logException(LOG_TAG, error, "AI backend health check failed")
         }
 
     suspend fun sendChatMessage(request: AIChatRequest): Result<AIChatResponse> =
@@ -77,8 +80,7 @@ class AIBackendService {
                 throw Exception("Chat request failed with status: ${response.status}, body: $errorBody")
             }
         }.onFailure { error ->
-            println("AI chat request failed: ${error.message}")
-            error.printStackTrace()
+            ErrorLogger.logException(LOG_TAG, error, "AI chat request failed")
         }
 
     suspend fun saveChatHistory(request: SaveHistoryRequest): Result<SaveHistoryResponse> =
@@ -105,8 +107,7 @@ class AIBackendService {
                 throw Exception("Save history failed with status: ${response.status}, body: $errorBody")
             }
         }.onFailure { error ->
-            println("Failed to save chat history: ${error.message}")
-            error.printStackTrace()
+            ErrorLogger.logException(LOG_TAG, error, "Failed to save chat history")
         }
 
     suspend fun loadChatHistory(request: LoadHistoryRequest): Result<LoadHistoryResponse> =

@@ -1,5 +1,6 @@
 [versions]
 androidx-lifecycle = "2.9.3"
+androidx-collection = "1.5.0"
 composeHotReload = "1.0.0-beta06"
 composeMultiplatform = "1.8.2"
 junit = "4.13.2"
@@ -19,6 +20,7 @@ kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.
 junit = { module = "junit:junit", version.ref = "junit" }
 androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
+androidx-collection = { module = "androidx.collection:collection", version.ref = "androidx-collection" }
 kotlinx-coroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 
 # Supabase

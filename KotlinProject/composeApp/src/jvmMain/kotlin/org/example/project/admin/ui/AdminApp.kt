@@ -2,12 +2,7 @@ package org.example.project.admin.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -36,6 +31,7 @@ import org.example.project.admin.presentation.UserManagementViewModel
 import org.example.project.admin.ui.UserManagementTab
 import org.example.project.domain.model.LessonDifficulty
 import org.example.project.domain.model.LessonLanguage
+import org.example.project.domain.model.LessonTopic
 import org.example.project.ui.theme.WordBridgeTheme
 
 @Composable
@@ -101,6 +97,7 @@ private fun LessonTopicsTab() {
     
     var topicToDelete by remember { mutableStateOf<String?>(null) }
     var showCreateDialog by remember { mutableStateOf(false) }
+    var selectedTopicForLessons by remember { mutableStateOf<LessonTopic?>(null) }
 
     // Clear messages after 3 seconds
     LaunchedEffect(errorMessage, successMessage) {
@@ -132,6 +129,16 @@ private fun LessonTopicsTab() {
                 showCreateDialog = false
             }
         )
+    }
+    
+    // Show lesson management screen if a topic is selected
+    if (selectedTopicForLessons != null) {
+        AdminLessonContentScreen(
+            topicId = selectedTopicForLessons!!.id,
+            topicTitle = selectedTopicForLessons!!.title,
+            onBack = { selectedTopicForLessons = null }
+        )
+        return
     }
     
     // Show delete confirmation dialog
@@ -516,7 +523,8 @@ private fun LessonTopicsTab() {
                     onClearSelection = { viewModel.clearSelection() },
                     onEdit = { topic -> viewModel.startEditing(topic) },
                     onDelete = { topicId -> topicToDelete = topicId },
-                    onDuplicate = { topicId -> viewModel.duplicateTopic(topicId) }
+                    onDuplicate = { topicId -> viewModel.duplicateTopic(topicId) },
+                    onManageLessons = { topic -> selectedTopicForLessons = topic }
                 )
             }
         } else {

@@ -4,34 +4,73 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
+import org.example.project.core.utils.ErrorLogger
 
+private const val LOG_TAG = "BackendManager.kt"
 
 object BackendManager {
     private var backendProcess: Process? = null
     private var isBackendRunning = false
     private var lastSetupError: String? = null
+    private var retryAttempts = 0
+    private val maxRetryAttempts = 3
 
 
+    /**
+     * Main entry point with automatic retry and self-healing.
+     * Attempts to start backend with automatic error recovery.
+     */
     fun startBackend(): Boolean {
+        return startBackendWithRetry(0)
+    }
+    
+    /**
+     * Start backend with automatic retry and self-healing capabilities.
+     * Handles common errors automatically and retries with exponential backoff.
+     */
+    private fun startBackendWithRetry(attempt: Int): Boolean {
         return try {
-            println("[Backend] Checking if backend is already running...")
+            ErrorLogger.logInfo(LOG_TAG, "Checking if backend is already running")
             if (isBackendHealthy()) {
-                println("[Backend] Backend is already running")
+                ErrorLogger.logInfo(LOG_TAG, "Backend is already running")
                 isBackendRunning = true
+                retryAttempts = 0
                 return true
             }
 
-            println("[Backend] Starting Python backend...")
+            ErrorLogger.logInfo(LOG_TAG, "Starting Python backend (attempt ${attempt + 1}/$maxRetryAttempts)")
+            
+            // ============================================
+            // EARLY VALIDATION: Check Python FIRST with aggressive installation
+            // ============================================
+            println("[Backend] Validating Python installation...")
+            var pythonCmd = validatePythonInstallationWithRetry()
+            if (pythonCmd == null) {
+                // If we've tried multiple times and still no Python, give up
+                if (attempt >= maxRetryAttempts - 1) {
+                    lastSetupError = """
+                        |Unable to install Python after multiple attempts.
+                        |Please install Python 3.9+ manually from https://www.python.org/downloads/
+                        |Make sure to check "Add Python to PATH" during installation.
+                    """.trimMargin()
+                    return false
+                }
+                // Wait before retrying (exponential backoff)
+                val waitTime = (attempt + 1) * 2000L
+                println("[Backend] Waiting ${waitTime / 1000}s before retrying Python installation...")
+                Thread.sleep(waitTime)
+                return startBackendWithRetry(attempt + 1)
+            }
+            
+            println("[Backend] Python validation passed: $pythonCmd")
+
+            // Now check backend directory
             val backendDir = findBackendDirectory()
 
             if (backendDir == null || !backendDir.exists()) {
                 lastSetupError = "Backend directory not found. Please ensure the backend folder is in the installation directory."
-                println("[Backend] ERROR: $lastSetupError")
-                println("[Backend] Searched locations:")
-                println("[Backend]   - ${File(System.getProperty("user.dir"), "backend").absolutePath}")
-                println("[Backend]   - ${File(System.getProperty("user.dir")).parentFile?.resolve("backend")?.absolutePath ?: "N/A"}")
-                println("[Backend]   - ${File("C:\\Program Files\\WordBridge\\backend").absolutePath}")
-                println("[Backend]   - ${File("C:\\Program Files (x86)\\WordBridge\\backend").absolutePath}")
+                ErrorLogger.log(LOG_TAG, lastSetupError!!)
+                ErrorLogger.logDebug(LOG_TAG, "Searched locations: ${File(System.getProperty("user.dir"), "backend").absolutePath}")
                 return false
             }
             println("[Backend] Backend directory: ${backendDir.absolutePath}")
@@ -39,95 +78,142 @@ object BackendManager {
             val mainPy = File(backendDir, "main.py")
             if (!mainPy.exists()) {
                 lastSetupError = "main.py not found in backend directory"
-                println("[Backend] ERROR: $lastSetupError")
+                ErrorLogger.log(LOG_TAG, lastSetupError!!)
                 return false
             }
 
             val requirementsTxt = File(backendDir, "requirements.txt")
             if (!requirementsTxt.exists()) {
-                println("[Backend] WARNING: requirements.txt not found")
+                ErrorLogger.logWarning(LOG_TAG, "requirements.txt not found")
             }
 
             val envFile = File(backendDir, ".env")
             if (!envFile.exists()) {
-                println("[Backend] WARNING: .env file not found. Backend may not start correctly.")
-            }
-            var pythonCmd = findPythonCommand()
-            if (pythonCmd == null) {
-                println("[Backend] Python not found. Attempting to install Python automatically...")
-                
-                if (!installPythonAutomatically()) {
-                    lastSetupError = "Failed to install Python automatically. Please install Python 3.9 or higher manually from https://www.python.org/downloads/"
-                    println("[Backend] ERROR: $lastSetupError")
-                    return false
-                }
-
-                pythonCmd = findPythonCommand()
-                if (pythonCmd == null) {
-                    lastSetupError = "Python was installed but cannot be found. Please restart the application."
-                    println("[Backend] ERROR: $lastSetupError")
-                    return false
-                }
+                ErrorLogger.logWarning(LOG_TAG, ".env file not found - Backend may not start correctly")
             }
 
-            println("[Backend] Using Python: $pythonCmd")
-
-            if (!checkPythonVersion(pythonCmd)) {
-                lastSetupError = "Python 3.9+ is required. Please upgrade your Python installation."
-                println("[Backend] ERROR: $lastSetupError")
-                return false
-            }
-
+            // Enhanced venv handling with automatic recovery
             val venvDir = File(backendDir, "venv")
-            if (!venvDir.exists()) {
+            val venvNeedsRecreation = !venvDir.exists() || !isVenvValid(venvDir, pythonCmd)
+            
+            if (venvNeedsRecreation) {
+                if (venvDir.exists()) {
+                    println("[Backend] Virtual environment appears corrupted, recreating...")
+                    if (!deleteDirectory(venvDir)) {
+                        println("[Backend] WARNING: Could not fully delete corrupted venv, but continuing...")
+                    }
+                }
+                
                 println("[Backend] Creating virtual environment...")
                 if (!createVirtualEnvironment(pythonCmd, backendDir)) {
-                    lastSetupError = "Failed to create virtual environment"
+                    if (attempt < maxRetryAttempts - 1) {
+                        println("[Backend] Failed to create venv, will retry...")
+                        Thread.sleep(2000)
+                        return startBackendWithRetry(attempt + 1)
+                    }
+                    lastSetupError = "Failed to create virtual environment after multiple attempts"
                     println("[Backend] ERROR: $lastSetupError")
                     return false
                 }
-                println("[Backend] Virtual environment created")
+                println("[Backend] Virtual environment created successfully")
             } else {
-                println("[Backend] Virtual environment already exists")
+                println("[Backend] Virtual environment exists and is valid")
             }
+            
             val venvPython = getVenvPythonPath(venvDir)
             if (!venvPython.exists()) {
+                if (attempt < maxRetryAttempts - 1) {
+                    println("[Backend] venv Python not found, recreating venv...")
+                    return startBackendWithRetry(attempt + 1)
+                }
                 lastSetupError = "Virtual environment Python executable not found"
                 println("[Backend] ERROR: $lastSetupError")
                 return false
             }
 
+            // Install/update dependencies with retry
             if (requirementsTxt.exists()) {
-                println("[Backend] Checking dependencies...")
-                if (!installDependencies(venvPython.absolutePath, backendDir)) {
-                    lastSetupError = "Failed to install dependencies. Check your internet connection."
+                println("[Backend] Ensuring dependencies are installed...")
+                if (!installDependenciesWithRetry(venvPython.absolutePath, backendDir, attempt)) {
+                    if (attempt < maxRetryAttempts - 1) {
+                        println("[Backend] Dependency installation failed, will retry...")
+                        Thread.sleep(3000)
+                        return startBackendWithRetry(attempt + 1)
+                    }
+                    lastSetupError = "Failed to install dependencies after multiple attempts. Please check your internet connection."
                     println("[Backend] ERROR: $lastSetupError")
                     return false
                 }
-                println("[Backend] Dependencies are up to date")
+                println("[Backend] Dependencies verified")
             }
 
+            // Try to start the server
             println("[Backend] Starting backend server...")
-            val processBuilder =
-                ProcessBuilder(venvPython.absolutePath, "main.py")
-                    .directory(backendDir)
-                    .redirectErrorStream(true)
+            val serverStarted = startServerProcess(venvPython.absolutePath, backendDir, attempt)
+            
+            if (serverStarted) {
+                retryAttempts = 0
+                return true
+            } else {
+                // Server failed to start - try recovery
+                if (attempt < maxRetryAttempts - 1) {
+                    println("[Backend] Server failed to start, attempting recovery...")
+                    performErrorRecovery(backendDir, pythonCmd, venvDir)
+                    Thread.sleep((attempt + 1) * 2000L)
+                    return startBackendWithRetry(attempt + 1)
+                }
+                return false
+            }
+        } catch (e: Exception) {
+            lastSetupError = "Error starting backend: ${e.message}"
+            ErrorLogger.logException(LOG_TAG, e, "Error starting backend")
+            
+            if (attempt < maxRetryAttempts - 1) {
+                ErrorLogger.logInfo(LOG_TAG, "Exception occurred, will retry")
+                Thread.sleep((attempt + 1) * 2000L)
+                return startBackendWithRetry(attempt + 1)
+            }
+            false
+        }
+    }
+    
+    /**
+     * Start the actual server process and wait for it to become healthy.
+     */
+    private fun startServerProcess(venvPython: String, backendDir: File, attempt: Int): Boolean {
+        return try {
+            stopBackend() // Make sure no old process is running
+            
+            val processBuilder = ProcessBuilder(venvPython, "main.py")
+                .directory(backendDir)
+                .redirectErrorStream(true)
 
             backendProcess = processBuilder.start()
 
+            // Capture output for error detection
+            val outputLines = mutableListOf<String>()
             Thread {
                 try {
                     val reader = BufferedReader(InputStreamReader(backendProcess!!.inputStream))
                     var line: String?
                     while (reader.readLine().also { line = it } != null) {
-                        println("[Backend] $line")
+                        val lineStr = line!!
+                        outputLines.add(lineStr)
+                        println("[Backend] $lineStr")
+                        
+                        // Check for common errors in output
+                        if (lineStr.contains("ModuleNotFoundError", ignoreCase = true) ||
+                            lineStr.contains("ImportError", ignoreCase = true) ||
+                            lineStr.contains("python-multipart", ignoreCase = true)) {
+                            println("[Backend] Detected missing dependency error in output")
+                        }
                     }
                 } catch (e: Exception) {
+                    // Process ended
                 }
             }.start()
 
             println("[Backend] Waiting for backend to start...")
-
             var attempts = 0
             val maxAttempts = 30
 
@@ -147,18 +233,103 @@ object BackendManager {
 
                     return true
                 }
+                
+                // Check if process died
+                if (backendProcess != null && !backendProcess!!.isAlive) {
+                    val exitCode = backendProcess!!.exitValue()
+                    println("[Backend] Process exited with code: $exitCode")
+                    
+                    // Check output for specific errors
+                    val errorOutput = outputLines.joinToString("\n")
+                    if (errorOutput.contains("python-multipart", ignoreCase = true)) {
+                        println("[Backend] Detected missing python-multipart, will reinstall dependencies")
+                        lastSetupError = "Missing dependency detected, will retry..."
+                        return false
+                    }
+                    
+                    if (exitCode != 0) {
+                        println("[Backend] Server process failed, exit code: $exitCode")
+                        lastSetupError = "Backend process exited with code $exitCode. Check logs above."
+                        return false
+                    }
+                }
 
                 print(".")
             }
 
-            println("\n[Backend] ERROR: Backend failed to start within $maxAttempts seconds")
-            lastSetupError = "Backend server did not respond. Check the console output above for errors."
+            println("\n[Backend] Backend failed to respond within $maxAttempts seconds")
             stopBackend()
+            lastSetupError = "Backend server did not respond. Attempting recovery..."
             false
         } catch (e: Exception) {
-            lastSetupError = "Error starting backend: ${e.message}"
-            println("[Backend] ERROR: $lastSetupError")
+            println("[Backend] Exception starting server: ${e.message}")
             e.printStackTrace()
+            stopBackend()
+            false
+        }
+    }
+    
+    /**
+     * Perform error recovery actions (recreate venv, reinstall deps, etc.)
+     */
+    private fun performErrorRecovery(backendDir: File, pythonCmd: String, venvDir: File) {
+        println("[Backend] Performing automatic error recovery...")
+        try {
+            // Try to reinstall dependencies first (less destructive)
+            val venvPython = getVenvPythonPath(venvDir)
+            if (venvPython.exists()) {
+                println("[Backend] Reinstalling dependencies...")
+                installDependencies(venvPython.absolutePath, backendDir, forceReinstall = true)
+            } else {
+                // venv is broken, recreate it
+                println("[Backend] Recreating virtual environment...")
+                if (venvDir.exists()) {
+                    deleteDirectory(venvDir)
+                }
+                createVirtualEnvironment(pythonCmd, backendDir)
+            }
+        } catch (e: Exception) {
+            println("[Backend] Recovery attempt failed: ${e.message}")
+        }
+    }
+    
+    /**
+     * Check if virtual environment is valid
+     */
+    private fun isVenvValid(venvDir: File, pythonCmd: String): Boolean {
+        if (!venvDir.exists() || !venvDir.isDirectory) return false
+        
+        val venvPython = getVenvPythonPath(venvDir)
+        if (!venvPython.exists()) return false
+        
+        // Try to run python from venv
+        return try {
+            val process = ProcessBuilder(venvPython.absolutePath, "--version").start()
+            val exitCode = process.waitFor()
+            exitCode == 0
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    /**
+     * Delete a directory recursively
+     */
+    private fun deleteDirectory(directory: File): Boolean {
+        return try {
+            if (!directory.exists()) return true
+            
+            if (directory.isDirectory) {
+                val children = directory.listFiles()
+                if (children != null) {
+                    for (child in children) {
+                        deleteDirectory(child)
+                    }
+                }
+            }
+            directory.delete()
+        } catch (e: Exception) {
+            println("[Backend] Error deleting directory: ${e.message}")
             false
         }
     }
@@ -220,6 +391,141 @@ object BackendManager {
         }
     }
 
+    /**
+     * Comprehensive Python validation with aggressive installation attempts.
+     * Tries multiple installation methods until Python is available.
+     */
+    private fun validatePythonInstallationWithRetry(): String? {
+        // First, try to find existing Python
+        var pythonCmd = findPythonCommand()
+        
+        if (pythonCmd != null) {
+            println("[Backend] Python found: $pythonCmd")
+            if (checkPythonVersion(pythonCmd) && validatePythonModules(pythonCmd)) {
+                return pythonCmd
+            } else {
+                println("[Backend] Existing Python is invalid, will try to install fresh version")
+            }
+        }
+        
+        // Python not found or invalid - try to install with multiple methods
+        println("[Backend] Python not found or invalid. Attempting installation...")
+        
+        val installMethods = listOf(
+            ::installPythonMethod1,  // winget (Windows) or brew (Mac)
+            ::installPythonMethod2,  // direct download (Windows) or apt/yum (Linux)
+            ::installPythonMethod3   // alternative methods
+        )
+        
+        for ((index, method) in installMethods.withIndex()) {
+            println("[Backend] Trying installation method ${index + 1}...")
+            if (method()) {
+                // Wait for installation to complete
+                Thread.sleep(3000)
+                
+                // Try to find Python again
+                pythonCmd = findPythonCommand()
+                if (pythonCmd != null && checkPythonVersion(pythonCmd) && validatePythonModules(pythonCmd)) {
+                    println("[Backend] Python installed successfully via method ${index + 1}")
+                    return pythonCmd
+                }
+                
+                // Python might be installed but not in PATH yet
+                println("[Backend] Python may need a restart to be available. Waiting a bit longer...")
+                Thread.sleep(5000)
+                pythonCmd = findPythonCommand()
+                if (pythonCmd != null && checkPythonVersion(pythonCmd) && validatePythonModules(pythonCmd)) {
+                    println("[Backend] Python is now available after installation")
+                    return pythonCmd
+                }
+            }
+        }
+        
+        // All methods failed
+        println("[Backend] All Python installation methods failed")
+        return null
+    }
+    
+    /**
+     * Comprehensive Python validation for first-time users.
+     * Checks for Python installation, version, and required modules.
+     * Returns the Python command if valid, null otherwise.
+     */
+    private fun validatePythonInstallation(): String? {
+        println("[Backend] Step 1: Looking for Python installation...")
+        
+        // First, try to find Python
+        var pythonCmd = findPythonCommand()
+        
+        if (pythonCmd == null) {
+            println("[Backend] Python is not installed on your system.")
+            println("[Backend] This is required for the backend to run.")
+            println("[Backend] Attempting automatic installation...")
+            
+            if (!installPythonAutomatically()) {
+                lastSetupError = """
+                    |Python is not installed and automatic installation failed.
+                    |
+                    |Please install Python 3.9 or higher manually:
+                    |1. Visit: https://www.python.org/downloads/
+                    |2. Download Python 3.9 or newer
+                    |3. During installation, check "Add Python to PATH"
+                    |4. Restart this application after installation
+                    |
+                    |If Python is already installed, make sure it's added to your system PATH.
+                """.trimMargin()
+                println("[Backend] ERROR: $lastSetupError")
+                return null
+            }
+
+            // Try to find Python again after installation
+            pythonCmd = findPythonCommand()
+            if (pythonCmd == null) {
+                lastSetupError = """
+                    |Python was installed but cannot be found.
+                    |
+                    |This usually means Python needs to be added to your PATH, or
+                    |you need to restart the application.
+                    |
+                    |Please:
+                    |1. Close this application completely
+                    |2. Restart the application
+                    |3. If the issue persists, manually add Python to your system PATH
+                """.trimMargin()
+                println("[Backend] ERROR: $lastSetupError")
+                return null
+            }
+        }
+        
+        println("[Backend] Step 2: Checking Python version...")
+        if (!checkPythonVersion(pythonCmd)) {
+            lastSetupError = """
+                |Python version is too old.
+                |
+                |Required: Python 3.9 or higher
+                |Please upgrade Python from: https://www.python.org/downloads/
+            """.trimMargin()
+            println("[Backend] ERROR: $lastSetupError")
+            return null
+        }
+        
+        println("[Backend] Step 3: Checking required Python modules...")
+        if (!validatePythonModules(pythonCmd)) {
+            lastSetupError = """
+                |Python is missing required modules (pip or venv).
+                |
+                |This usually happens with a minimal Python installation.
+                |Please reinstall Python from https://www.python.org/downloads/
+                |and make sure "pip" and "venv" are included.
+            """.trimMargin()
+            println("[Backend] ERROR: $lastSetupError")
+            return null
+        }
+        
+        println("[Backend] Python validation complete - all checks passed!")
+        return pythonCmd
+    }
+
     private fun findPythonCommand(): String? {
         val commands = listOf("python", "python3", "py")
 
@@ -230,15 +536,48 @@ object BackendManager {
 
                 if (exitCode == 0) {
                     val version = process.inputStream.bufferedReader().readText().trim()
-                    println("   Found: $cmd - $version")
+                    println("[Backend]   Found: $cmd - $version")
                     return cmd
                 }
             } catch (e: Exception) {
-                
+                // Command not found, try next
             }
         }
 
         return null
+    }
+    
+    /**
+     * Validates that Python has required modules (pip and venv).
+     */
+    private fun validatePythonModules(pythonCmd: String): Boolean {
+        return try {
+            // Check for pip
+            val pipProcess = ProcessBuilder(pythonCmd, "-m", "pip", "--version").start()
+            val pipExitCode = pipProcess.waitFor()
+            
+            if (pipExitCode != 0) {
+                println("[Backend]   ERROR: pip module not found")
+                return false
+            }
+            val pipVersion = pipProcess.inputStream.bufferedReader().readText().trim()
+            println("[Backend]   ✓ pip found: $pipVersion")
+            
+            // Check for venv
+            val venvProcess = ProcessBuilder(pythonCmd, "-m", "venv", "--help").start()
+            val venvExitCode = venvProcess.waitFor()
+            
+            if (venvExitCode != 0) {
+                println("[Backend]   ERROR: venv module not found")
+                return false
+            }
+            println("[Backend]   ✓ venv module available")
+            
+            true
+        } catch (e: Exception) {
+            println("[Backend]   ERROR: Failed to validate Python modules: ${e.message}")
+            false
+        }
     }
 
     private fun checkPythonVersion(pythonCmd: String): Boolean {
@@ -252,55 +591,90 @@ object BackendManager {
                 val major = versionMatch.groupValues[1].toInt()
                 val minor = versionMatch.groupValues[2].toInt()
                 
-                println("[Backend] Python version: $major.$minor")
+                println("[Backend]   Detected Python version: $major.$minor")
                 
                 // Check if version is 3.9 or higher
                 if (major == 3 && minor >= 9) {
+                    println("[Backend]   ✓ Python version is compatible")
                     return true
                 } else if (major > 3) {
+                    println("[Backend]   ✓ Python version is compatible")
                     return true
                 }
                 
-                println("[Backend] WARNING: Python 3.9+ required, found $major.$minor")
+                println("[Backend]   ✗ Python 3.9+ required, found $major.$minor")
                 return false
             }
             
+            println("[Backend]   ✗ Could not determine Python version")
             false
         } catch (e: Exception) {
-            println("[Backend] WARNING: Failed to check Python version: ${e.message}")
+            println("[Backend]   ✗ Failed to check Python version: ${e.message}")
             false
         }
     }
 
-    private fun installPythonAutomatically(): Boolean {
-        return try {
-            val isWindows = System.getProperty("os.name").lowercase().contains("windows")
-            val isMac = System.getProperty("os.name").lowercase().contains("mac")
-            val isLinux = System.getProperty("os.name").lowercase().contains("linux")
-
-            println("[Backend] Detected OS: ${System.getProperty("os.name")}")
-            
-            when {
-                isWindows -> installPythonWindows()
-                isMac -> installPythonMac()
-                isLinux -> installPythonLinux()
-                else -> {
-                    println("[Backend] ERROR: Unsupported operating system")
-                    false
-                }
-            }
-        } catch (e: Exception) {
-            println("[Backend] ERROR: Failed to install Python: ${e.message}")
-            e.printStackTrace()
-            false
+    /**
+     * Installation method 1: Try platform-specific package managers (fastest)
+     */
+    private fun installPythonMethod1(): Boolean {
+        val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+        val isMac = System.getProperty("os.name").lowercase().contains("mac")
+        val isLinux = System.getProperty("os.name").lowercase().contains("linux")
+        
+        return when {
+            isWindows -> installPythonWindows()
+            isMac -> installPythonMac()
+            isLinux -> installPythonLinux()
+            else -> false
         }
+    }
+    
+    /**
+     * Installation method 2: Try alternative methods
+     */
+    private fun installPythonMethod2(): Boolean {
+        val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+        val isMac = System.getProperty("os.name").lowercase().contains("mac")
+        val isLinux = System.getProperty("os.name").lowercase().contains("linux")
+        
+        return when {
+            isWindows -> {
+                // Try direct download if winget failed
+                downloadAndInstallPythonWindows()
+            }
+            isMac -> {
+                // Try alternative Mac methods
+                installPythonMacAlternative()
+            }
+            isLinux -> {
+                // Try alternative Linux package managers
+                installPythonLinuxAlternative()
+            }
+            else -> false
+        }
+    }
+    
+    /**
+     * Installation method 3: Last resort methods
+     */
+    private fun installPythonMethod3(): Boolean {
+        // Try downloading portable Python or other fallback methods
+        println("[Backend] Trying alternative Python installation methods...")
+        // For now, return false - can be enhanced later
+        return false
+    }
+    
+    private fun installPythonAutomatically(): Boolean {
+        return installPythonMethod1() || installPythonMethod2() || installPythonMethod3()
     }
 
     private fun installPythonWindows(): Boolean {
-        println("[Backend] Attempting to install Python on Windows...")
+        println("[Backend] Detected Windows - attempting to install Python...")
+        println("[Backend] This may take a few minutes. Please wait...")
 
         try {
-            println("[Backend] Trying winget package manager...")
+            println("[Backend] Trying winget package manager (Windows Package Manager)...")
             val wingetProcess = ProcessBuilder(
                 "winget", "install", "Python.Python.3.11", 
                 "--silent", "--accept-package-agreements", "--accept-source-agreements"
@@ -308,15 +682,20 @@ object BackendManager {
             
             val exitCode = wingetProcess.waitFor()
             if (exitCode == 0) {
-                println("[Backend] Python installed successfully via winget")
+                println("[Backend] ✓ Python installed successfully via winget")
+                Thread.sleep(2000) // Give system time to register the installation
                 addPythonToPath()
                 return true
+            } else {
+                println("[Backend] winget installation failed (exit code: $exitCode)")
             }
         } catch (e: Exception) {
             println("[Backend] winget not available or failed: ${e.message}")
+            println("[Backend] Falling back to direct download method...")
         }
 
-        println("[Backend] Downloading Python installer...")
+        println("[Backend] Downloading Python installer from python.org...")
+        println("[Backend] This may take a few minutes depending on your internet speed...")
         return downloadAndInstallPythonWindows()
     }
 
@@ -328,9 +707,10 @@ object BackendManager {
             val tempDir = System.getProperty("java.io.tmpdir")
             val installerPath = File(tempDir, "python-installer.exe")
             
-            println("[Backend] Downloading from: $installerUrl")
+            println("[Backend] Downloading Python $pythonVersion...")
+            println("[Backend] Source: $installerUrl")
             
-            // Download installer
+            // Download installer with progress indication
             val url = java.net.URL(installerUrl)
             url.openStream().use { input ->
                 installerPath.outputStream().use { output ->
@@ -338,32 +718,49 @@ object BackendManager {
                 }
             }
             
-            println("[Backend] Running Python installer...")
+            println("[Backend] Download complete. File size: ${installerPath.length() / 1024 / 1024} MB")
+            println("[Backend] Running Python installer (this may take 2-5 minutes)...")
+            println("[Backend] The installer is running silently - please wait...")
             
-            // Run installer silently with PATH addition
+            // Run installer silently with PATH addition and pip/venv included
             val installProcess = ProcessBuilder(
                 installerPath.absolutePath,
                 "/quiet",
                 "InstallAllUsers=1",
                 "PrependPath=1",
-                "Include_test=0"
+                "Include_test=0",
+                "Include_pip=1",
+                "Include_launcher=1"
             ).start()
             
             val exitCode = installProcess.waitFor()
+            
+            // Wait a bit for system to register the installation
+            Thread.sleep(3000)
 
             installerPath.delete()
             
             if (exitCode == 0) {
-                println("[Backend] Python installed successfully")
+                println("[Backend] ✓ Python installer completed successfully")
+                println("[Backend] Verifying installation...")
                 addPythonToPath()
+                Thread.sleep(2000) // Additional wait for PATH propagation
                 return true
             } else {
-                println("[Backend] ERROR: Python installer exited with code $exitCode")
+                println("[Backend] ✗ Python installer exited with code $exitCode")
+                println("[Backend] This may indicate an installation error.")
+                println("[Backend] Please try installing Python manually from https://www.python.org/downloads/")
                 return false
             }
+        } catch (e: java.net.UnknownHostException) {
+            println("[Backend] ✗ ERROR: Cannot connect to download server")
+            println("[Backend] Please check your internet connection and try again.")
+            lastSetupError = "Failed to download Python installer: No internet connection"
+            return false
         } catch (e: Exception) {
-            println("[Backend] ERROR: Failed to download/install Python: ${e.message}")
+            println("[Backend] ✗ ERROR: Failed to download/install Python: ${e.message}")
             e.printStackTrace()
+            lastSetupError = "Failed to install Python: ${e.message}"
             return false
         }
     }
@@ -374,25 +771,49 @@ object BackendManager {
         try {
             val brewCheck = ProcessBuilder("which", "brew").start()
             if (brewCheck.waitFor() != 0) {
-                println("[Backend] ERROR: Homebrew is not installed. Please install Homebrew first: https://brew.sh")
+                println("[Backend] Homebrew is not installed. Trying alternative methods...")
                 return false
             }
             
             println("[Backend] Installing Python via Homebrew...")
-            val brewProcess = ProcessBuilder("brew", "install", "python@3.11").start()
+            val brewProcess = ProcessBuilder("brew", "install", "python@3.11", "--quiet").start()
             
             val exitCode = brewProcess.waitFor()
             if (exitCode == 0) {
-                println("[Backend] Python installed successfully via Homebrew")
+                println("[Backend] ✓ Python installed successfully via Homebrew")
                 return true
             } else {
-                println("[Backend] ERROR: Homebrew installation failed with exit code $exitCode")
+                println("[Backend] Homebrew installation failed with exit code $exitCode")
                 return false
             }
         } catch (e: Exception) {
-            println("[Backend] ERROR: Failed to install Python via Homebrew: ${e.message}")
+            println("[Backend] Failed to install Python via Homebrew: ${e.message}")
             return false
         }
+    }
+    
+    private fun installPythonMacAlternative(): Boolean {
+        println("[Backend] Trying alternative Python installation for macOS...")
+        
+        // Try installing via MacPorts if available
+        try {
+            val portCheck = ProcessBuilder("which", "port").start()
+            if (portCheck.waitFor() == 0) {
+                println("[Backend] Trying MacPorts...")
+                val portProcess = ProcessBuilder("sudo", "port", "install", "python311").start()
+                val exitCode = portProcess.waitFor()
+                if (exitCode == 0) {
+                    println("[Backend] ✓ Python installed via MacPorts")
+                    return true
+                }
+            }
+        } catch (e: Exception) {
+            // MacPorts not available
+        }
+        
+        // Last resort: Download installer (would require user interaction, so skip for now)
+        println("[Backend] Alternative Mac installation methods not available")
+        return false
     }
 
     private fun installPythonLinux(): Boolean {
@@ -403,10 +824,10 @@ object BackendManager {
             val aptCheck = ProcessBuilder("which", "apt").start()
             if (aptCheck.waitFor() == 0) {
                 println("[Backend] Installing Python via apt...")
-                val aptProcess = ProcessBuilder(
-                    "sudo", "apt", "update"
+                val updateProcess = ProcessBuilder(
+                    "sudo", "apt", "update", "-qq"
                 ).start()
-                aptProcess.waitFor()
+                updateProcess.waitFor()
                 
                 val installProcess = ProcessBuilder(
                     "sudo", "apt", "install", "-y", "python3.11", "python3.11-venv", "python3-pip"
@@ -414,7 +835,7 @@ object BackendManager {
                 
                 val exitCode = installProcess.waitFor()
                 if (exitCode == 0) {
-                    println("[Backend] Python installed successfully via apt")
+                    println("[Backend] ✓ Python installed successfully via apt")
                     return true
                 }
             }
@@ -424,20 +845,77 @@ object BackendManager {
             if (yumCheck.waitFor() == 0) {
                 println("[Backend] Installing Python via yum...")
                 val yumProcess = ProcessBuilder(
-                    "sudo", "yum", "install", "-y", "python311"
+                    "sudo", "yum", "install", "-y", "python311", "python311-pip"
                 ).start()
                 
                 val exitCode = yumProcess.waitFor()
                 if (exitCode == 0) {
-                    println("[Backend] Python installed successfully via yum")
+                    println("[Backend] ✓ Python installed successfully via yum")
                     return true
                 }
             }
             
-            println("[Backend] ERROR: Could not find a compatible package manager")
+            println("[Backend] Primary package managers not available")
             return false
         } catch (e: Exception) {
-            println("[Backend] ERROR: Failed to install Python: ${e.message}")
+            println("[Backend] Failed to install Python: ${e.message}")
+            return false
+        }
+    }
+    
+    private fun installPythonLinuxAlternative(): Boolean {
+        println("[Backend] Trying alternative Python installation for Linux...")
+        
+        try {
+            // Try dnf (newer Fedora)
+            val dnfCheck = ProcessBuilder("which", "dnf").start()
+            if (dnfCheck.waitFor() == 0) {
+                println("[Backend] Trying dnf...")
+                val dnfProcess = ProcessBuilder(
+                    "sudo", "dnf", "install", "-y", "python3.11", "python3-pip"
+                ).start()
+                
+                val exitCode = dnfProcess.waitFor()
+                if (exitCode == 0) {
+                    println("[Backend] ✓ Python installed via dnf")
+                    return true
+                }
+            }
+            
+            // Try pacman (Arch)
+            val pacmanCheck = ProcessBuilder("which", "pacman").start()
+            if (pacmanCheck.waitFor() == 0) {
+                println("[Backend] Trying pacman...")
+                val pacmanProcess = ProcessBuilder(
+                    "sudo", "pacman", "-S", "--noconfirm", "python", "python-pip"
+                ).start()
+                
+                val exitCode = pacmanProcess.waitFor()
+                if (exitCode == 0) {
+                    println("[Backend] ✓ Python installed via pacman")
+                    return true
+                }
+            }
+            
+            // Try zypper (openSUSE)
+            val zypperCheck = ProcessBuilder("which", "zypper").start()
+            if (zypperCheck.waitFor() == 0) {
+                println("[Backend] Trying zypper...")
+                val zypperProcess = ProcessBuilder(
+                    "sudo", "zypper", "-n", "install", "python311", "python311-pip"
+                ).start()
+                
+                val exitCode = zypperProcess.waitFor()
+                if (exitCode == 0) {
+                    println("[Backend] ✓ Python installed via zypper")
+                    return true
+                }
+            }
+            
+            println("[Backend] Alternative Linux package managers not available")
+            return false
+        } catch (e: Exception) {
+            println("[Backend] Alternative installation failed: ${e.message}")
             return false
         }
     }
@@ -489,30 +967,73 @@ object BackendManager {
         }
     }
 
-    private fun installDependencies(venvPython: String, backendDir: File): Boolean {
+    /**
+     * Install dependencies with retry capability
+     */
+    private fun installDependenciesWithRetry(venvPython: String, backendDir: File, attempt: Int): Boolean {
+        var currentAttempt = 0
+        val maxDependencyAttempts = 2
+        
+        while (currentAttempt < maxDependencyAttempts) {
+            if (currentAttempt > 0) {
+                println("[Backend] Retrying dependency installation (attempt ${currentAttempt + 1}/$maxDependencyAttempts)...")
+                Thread.sleep(2000)
+            }
+            
+            if (installDependencies(venvPython, backendDir, forceReinstall = currentAttempt > 0)) {
+                return true
+            }
+            
+            currentAttempt++
+        }
+        
+        return false
+    }
+    
+    private fun installDependencies(venvPython: String, backendDir: File, forceReinstall: Boolean = false): Boolean {
         return try {
-            println("[Backend] Installing/updating dependencies (this may take a moment)...")
+            if (forceReinstall) {
+                println("[Backend] Force reinstalling dependencies...")
+            } else {
+                println("[Backend] Installing/updating dependencies (this may take a moment)...")
+            }
 
-            val upgradePipProcess = ProcessBuilder(venvPython, "-m", "pip", "install", "--upgrade", "pip")
+            // Upgrade pip first
+            val upgradePipProcess = ProcessBuilder(venvPython, "-m", "pip", "install", "--upgrade", "pip", "--quiet")
                 .directory(backendDir)
                 .redirectErrorStream(true)
                 .start()
             
             upgradePipProcess.waitFor()
-            val processBuilder = ProcessBuilder(
-                venvPython, "-m", "pip", "install", "-r", "requirements.txt", "--quiet"
+            
+            // Build install command
+            val installArgs = mutableListOf(
+                venvPython, "-m", "pip", "install", "-r", "requirements.txt"
             )
+            
+            if (forceReinstall) {
+                installArgs.add("--force-reinstall")
+                installArgs.add("--no-cache-dir")
+            } else {
+                installArgs.add("--quiet")
+            }
+            
+            val processBuilder = ProcessBuilder(installArgs)
                 .directory(backendDir)
                 .redirectErrorStream(true)
             
             val process = processBuilder.start()
 
             val reader = BufferedReader(InputStreamReader(process.inputStream))
+            val errorLines = mutableListOf<String>()
             var line: String?
             while (reader.readLine().also { line = it } != null) {
-                if (line!!.contains("error", ignoreCase = true) || 
-                    line!!.contains("failed", ignoreCase = true)) {
-                    println("[Backend] [pip] $line")
+                val lineStr = line!!
+                if (lineStr.contains("error", ignoreCase = true) || 
+                    lineStr.contains("failed", ignoreCase = true) ||
+                    lineStr.contains("warning", ignoreCase = true)) {
+                    println("[Backend] [pip] $lineStr")
+                    errorLines.add(lineStr)
                 }
             }
             
@@ -522,10 +1043,15 @@ object BackendManager {
                 true
             } else {
                 println("[Backend] ERROR: Failed to install dependencies (exit code: $exitCode)")
+                if (errorLines.isNotEmpty()) {
+                    println("[Backend] Error details:")
+                    errorLines.take(5).forEach { println("[Backend]   $it") }
+                }
                 false
             }
         } catch (e: Exception) {
             println("[Backend] ERROR: Error installing dependencies: ${e.message}")
+            e.printStackTrace()
             false
         }
     }
@@ -560,7 +1086,9 @@ object BackendManager {
             return true
         }
 
-        println("[Backend] Backend not running, attempting to start...")
+        println("[Backend] Backend not running, attempting to start with automatic recovery...")
+        // Reset retry attempts for fresh start
+        retryAttempts = 0
         return startBackend()
     }
     
@@ -665,23 +1193,12 @@ object BackendManager {
         onProgress: (String, Float) -> Unit = { _, _ -> }
     ): Boolean {
         return try {
-            onProgress("Checking Python installation...", 0.1f)
+            onProgress("Validating Python installation...", 0.1f)
             
-            val pythonCmd = findPythonCommand()
-            if (pythonCmd == null || !checkPythonVersion(pythonCmd)) {
-                onProgress("Installing Python...", 0.2f)
-                if (!ensurePythonIsInstalled { step, progress ->
-                    val mappedProgress = 0.1f + (progress * 0.2f)
-                    onProgress(step, mappedProgress)
-                }) {
-                    lastSetupError = "Failed to install Python"
-                    return false
-                }
-            }
-            
-            val finalPythonCmd = findPythonCommand()
-            if (finalPythonCmd == null) {
-                lastSetupError = "Python not found after installation"
+            // Use comprehensive validation that handles installation if needed
+            val pythonCmd = validatePythonInstallation()
+            if (pythonCmd == null) {
+                // Error message already set by validatePythonInstallation()
                 return false
             }
             
@@ -698,7 +1215,7 @@ object BackendManager {
             
             val venvDir = File(backendDir, "venv")
             if (!venvDir.exists()) {
-                if (!createVirtualEnvironment(finalPythonCmd, backendDir)) {
+                if (!createVirtualEnvironment(pythonCmd, backendDir)) {
                     lastSetupError = "Failed to create virtual environment"
                     return false
                 }

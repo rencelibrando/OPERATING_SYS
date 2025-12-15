@@ -1,29 +1,92 @@
+# Kotlin/Android Build Artifacts
 *.iml
-.kotlin
-**/build/
-xcuserdata
-!src/**/build/
-local.properties
+.gradle/
+build/
+out/
 .idea/
-.DS_Store
-captures
+local.properties
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Kotlin
+.kotlin/
+*.kotlin_module
+*.kt.swp
+*.kt.swo
+
+# Android Studio
+captures/
 .externalNativeBuild
 .cxx
+local.properties
+*.iml
+
+# iOS/macOS (if using Kotlin Multiplatform)
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
 !*.xcodeproj/xcshareddata/
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
+xcuserdata/
+
+# Gradle
 .gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+.gradletasknamecache
+
 # Environment files
-composeApp/.env
-env.local
+.env
+.env.local
 .env.development
 .env.production
 .env.staging
+backend/.env
+composeApp/.env
+env.local
+
+# Python (if any in project)
+__pycache__/
+*.pyc
+venv/
 .venv/
+
 # Supabase
 .supabase/
+
+# Secrets and sensitive data
+secrets/
+*.pem
+*.key
+*.cert
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# Documentation (auto-generated)
 .md/
-# Secrets
-#secrets/
+
+# IDE
+*.iml
+.idea/
+.vscode/

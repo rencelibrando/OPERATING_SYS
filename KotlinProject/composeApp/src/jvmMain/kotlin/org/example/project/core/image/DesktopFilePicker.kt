@@ -9,6 +9,49 @@ import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
 
 class DesktopFilePicker {
+    companion object {
+        /**
+         * Pick a file with specific extensions
+         * @param title Dialog title
+         * @param allowedExtensions List of allowed file extensions (without dots)
+         * @return Full path to selected file, or null if cancelled
+         */
+        fun pickFile(
+            title: String = "Select File",
+            allowedExtensions: List<String> = listOf("*")
+        ): String? {
+            return try {
+                val fileChooser = JFileChooser()
+                fileChooser.dialogTitle = title
+                
+                // Set up file filter if specific extensions are provided
+                if (allowedExtensions.isNotEmpty() && !allowedExtensions.contains("*")) {
+                    val filter = FileNameExtensionFilter(
+                        "Allowed Files (${allowedExtensions.joinToString(", ")})",
+                        *allowedExtensions.toTypedArray()
+                    )
+                    fileChooser.fileFilter = filter
+                }
+                
+                val result = fileChooser.showOpenDialog(null)
+                
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    val selectedFile = fileChooser.selectedFile
+                    if (selectedFile.exists() && selectedFile.isFile) {
+                        selectedFile.absolutePath
+                    } else {
+                        null
+                    }
+                } else {
+                    null
+                }
+            } catch (e: Exception) {
+                println("❌ Error selecting file: ${e.message}")
+                null
+            }
+        }
+    }
+    
     fun selectImage(): ByteArray? {
         return try {
             val fileChooser = JFileChooser()

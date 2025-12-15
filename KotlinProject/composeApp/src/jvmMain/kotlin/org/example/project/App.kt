@@ -41,6 +41,7 @@ import org.example.project.ui.screens.HomeScreen
 import org.example.project.ui.screens.SignupCompleteScreen
 import org.example.project.ui.screens.SplashScreen
 import org.example.project.ui.theme.WordBridgeTheme
+import org.example.project.core.utils.ErrorLogger
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
@@ -85,11 +86,13 @@ private fun MainApp() {
                 withContext(Dispatchers.IO) {
                     // Backend should already be running from startup, but verify
                     if (!BackendManager.isRunning()) {
-                        println("[App] Backend not running, attempting to start...")
+                        ErrorLogger.logInfo("App.kt", "Backend not running, attempting to start")
                         val success = BackendManager.ensureBackendIsRunning()
                         if (!success) {
-                            backendError = BackendManager.getLastSetupError() 
+                            val error = BackendManager.getLastSetupError() 
                                 ?: "Backend server is not responding"
+                            ErrorLogger.log("App.kt", error)
+                            backendError = error
                         }
                     }
                     isCheckingBackend = false
@@ -259,51 +262,6 @@ private fun AuthenticatedApp(
         onSignOut = onSignOut,
         modifier = Modifier.fillMaxSize(),
     )
-}
-
-
-@Composable
-private fun BackendInitializingScreen() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(32.dp),
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(64.dp),
-                color = MaterialTheme.colorScheme.primary,
-                strokeWidth = 6.dp,
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Text(
-                text = "Setting Up AI Backend",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold,
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = "This may take a moment on first launch...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                text = "• Checking Python installation\n• Creating virtual environment\n• Installing dependencies",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-            )
-        }
-    }
 }
 
 
