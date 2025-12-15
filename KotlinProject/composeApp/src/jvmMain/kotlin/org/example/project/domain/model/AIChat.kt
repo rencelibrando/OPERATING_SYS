@@ -10,29 +10,8 @@ data class ChatMessage(
     val metadata: Map<String, String> = emptyMap(),
 ) {
     companion object {
+        /** Returns an empty list for initial state. */
         fun getSampleMessages(): List<ChatMessage> = emptyList()
-
-        fun getDemoMessages(): List<ChatMessage> =
-            listOf(
-                ChatMessage(
-                    id = "msg_1",
-                    content = "Hello! I'm your AI language tutor. How can I help you today?",
-                    sender = MessageSender.AI,
-                    timestamp = System.currentTimeMillis() - 300000,
-                ),
-                ChatMessage(
-                    id = "msg_2",
-                    content = "Hi! I'd like to practice my conversation skills.",
-                    sender = MessageSender.USER,
-                    timestamp = System.currentTimeMillis() - 240000,
-                ),
-                ChatMessage(
-                    id = "msg_3",
-                    content = "Perfect! Let's start with a casual conversation. What did you do this weekend?",
-                    sender = MessageSender.AI,
-                    timestamp = System.currentTimeMillis() - 180000,
-                ),
-            )
     }
 }
 
@@ -58,29 +37,8 @@ data class ChatSession(
     val difficulty: String = "Intermediate",
 ) {
     companion object {
+        /** Returns an empty list for initial state. */
         fun getSampleSessions(): List<ChatSession> = emptyList()
-
-        fun getDemoSessions(): List<ChatSession> =
-            listOf(
-                ChatSession(
-                    id = "session_1",
-                    title = "Weekend Activities",
-                    startTime = System.currentTimeMillis() - 86400000,
-                    endTime = System.currentTimeMillis() - 86400000 + 1800000,
-                    messageCount = 15,
-                    topic = "Daily Life",
-                    difficulty = "Beginner",
-                ),
-                ChatSession(
-                    id = "session_2",
-                    title = "Travel Planning",
-                    startTime = System.currentTimeMillis() - 172800000,
-                    endTime = System.currentTimeMillis() - 172800000 + 2700000,
-                    messageCount = 23,
-                    topic = "Travel",
-                    difficulty = "Intermediate",
-                ),
-            )
     }
 }
 

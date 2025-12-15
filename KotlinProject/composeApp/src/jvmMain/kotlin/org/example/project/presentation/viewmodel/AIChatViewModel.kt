@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.example.project.core.ai.BackendManager
+import org.example.project.core.utils.ErrorLogger
 import org.example.project.data.repository.AIChatRepository
 import org.example.project.data.repository.AIChatRepositoryImpl
 import org.example.project.domain.model.ChatBot
@@ -15,6 +16,8 @@ import org.example.project.domain.model.ChatMessage
 import org.example.project.domain.model.ChatSession
 import org.example.project.domain.model.MessageSender
 import org.example.project.domain.model.MessageType
+
+private const val LOG_TAG = "AIChatViewModel.kt"
 
 class AIChatViewModel(
     private val repository: AIChatRepository = AIChatRepositoryImpl(),
@@ -55,7 +58,7 @@ class AIChatViewModel(
         // Check if we have an active session
         val session = _currentSession.value
         if (session == null) {
-            println("No active session, cannot send message")
+            ErrorLogger.log(LOG_TAG, "No active session, cannot send message")
             _error.value = "Please select a bot to start chatting"
             return
         }
@@ -121,8 +124,7 @@ class AIChatViewModel(
                 _isTyping.value = false
                 _chatMessages.value = _chatMessages.value + aiMessage
             } catch (e: Exception) {
-                println("Failed to get AI response: ${e.message}")
-                e.printStackTrace()
+                ErrorLogger.logException(LOG_TAG, e, "Failed to get AI response")
 
                 _isTyping.value = false
                 _error.value = "Failed to get response: ${e.message}"
@@ -201,8 +203,7 @@ class AIChatViewModel(
                     }
                 }
             } catch (e: Exception) {
-                println("Failed to load session: ${e.message}")
-                e.printStackTrace()
+                ErrorLogger.logException(LOG_TAG, e, "Failed to load session")
                 _error.value = "Failed to load session"
             }
         }

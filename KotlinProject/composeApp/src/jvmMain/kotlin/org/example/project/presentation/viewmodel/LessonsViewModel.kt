@@ -8,10 +8,13 @@ import kotlinx.coroutines.launch
 import org.example.project.core.profile.ProfileService
 import org.example.project.data.repository.LessonTopicsRepository
 import org.example.project.data.repository.LessonTopicsRepositoryImpl
+import org.example.project.data.repository.LessonContentRepository
+import org.example.project.data.repository.LessonContentRepositoryImpl
 import org.example.project.domain.model.Lesson
 import org.example.project.domain.model.LessonCategoryInfo
 import org.example.project.domain.model.LessonDifficulty
 import org.example.project.domain.model.LessonLanguage
+import org.example.project.domain.model.LessonSummary
 import org.example.project.domain.model.LevelProgress
 import org.example.project.domain.model.RecentLesson
 import org.example.project.core.auth.User as AuthUser
@@ -19,6 +22,7 @@ import org.example.project.core.auth.User as AuthUser
 class LessonsViewModel : ViewModel() {
     private val profileService = ProfileService()
     private val lessonTopicsRepository: LessonTopicsRepository = LessonTopicsRepositoryImpl()
+    private val lessonContentRepository: LessonContentRepository = LessonContentRepositoryImpl()
     
     private val _lessons = mutableStateOf(Lesson.getSampleLessons())
     private val _levelProgress = mutableStateOf(LevelProgress.getSampleProgress())
@@ -31,6 +35,11 @@ class LessonsViewModel : ViewModel() {
     private val _categoryLessons = mutableStateOf<List<Lesson>>(emptyList())
     private val _lessonTopics = mutableStateOf<List<org.example.project.domain.model.LessonTopic>>(emptyList())
     private val _isLanguageChanging = mutableStateOf(false)
+    
+    // Lesson list view state
+    private val _selectedTopicForLessons = mutableStateOf<org.example.project.domain.model.LessonTopic?>(null)
+    private val _topicLessons = mutableStateOf<List<LessonSummary>>(emptyList())
+    private val _isLoadingLessons = mutableStateOf(false)
     
     // Available languages for the switcher
     private val _availableLanguages = mutableStateOf(LessonLanguage.entries.toList())
@@ -47,6 +56,9 @@ class LessonsViewModel : ViewModel() {
     val lessonTopics: State<List<org.example.project.domain.model.LessonTopic>> = _lessonTopics
     val isLanguageChanging: State<Boolean> = _isLanguageChanging
     val availableLanguages: State<List<LessonLanguage>> = _availableLanguages
+    val selectedTopicForLessons: State<org.example.project.domain.model.LessonTopic?> = _selectedTopicForLessons
+    val topicLessons: State<List<LessonSummary>> = _topicLessons
+    val isLoadingLessons: State<Boolean> = _isLoadingLessons
 
     init {
         refreshCategories()
@@ -195,14 +207,65 @@ class LessonsViewModel : ViewModel() {
     }
     
     fun onLessonTopicClicked(topicId: String) {
-        println("Lesson topic clicked: $topicId")
-        // TODO: Navigate to lesson detail screen or start lesson
+        println("[LessonsViewModel] Lesson topic clicked: $topicId")
+        
+        // Find the topic in the list
+        val topic = _lessonTopics.value.find { it.id == topicId }
+        if (topic != null) {
+            _selectedTopicForLessons.value = topic
+            loadLessonsForTopic(topicId)
+        } else {
+            println("[LessonsViewModel] ⚠️ Topic not found: $topicId")
+        }
     }
+    
+    private fun loadLessonsForTopic(topicId: String) {
+        viewModelScope.launch {
+            _isLoadingLessons.value = true
+            try {
+                println("[LessonsViewModel] 🔍 Loading lessons for topic: $topicId")
+                
+                val result = lessonContentRepository.getLessonsByTopic(topicId, publishedOnly = true)
+                
+                result.fold(
+                    onSuccess = { lessons ->
+                        println("[LessonsViewModel] ✅ Successfully loaded ${lessons.size} lessons")
+                        _topicLessons.value = lessons
+                    },
+                    onFailure = { error ->
+                        println("[LessonsViewModel] ❌ Error loading lessons: ${error.message}")
+                        error.printStackTrace()
+                        _topicLessons.value = emptyList()
+                    }
+                )
+            } catch (e: Exception) {
+                println("[LessonsViewModel] ❌ Exception loading lessons: ${e.message}")
+                e.printStackTrace()
+                _topicLessons.value = emptyList()
+            } finally {
+                _isLoadingLessons.value = false
+            }
+        }
+    }
+    
+    fun onBackFromLessonList() {
+        _selectedTopicForLessons.value = null
+        _topicLessons.value = emptyList()
+    }
+    
+    // Note: Lesson navigation is handled via callback passed from HomeScreen
+    // The onLessonSelected callback is passed to LessonListView which calls it when a lesson is clicked
 
     fun onBackFromCategory() {
-        _selectedCategory.value = null
-        _categoryLessons.value = emptyList()
-        _lessonTopics.value = emptyList()
+        // If we're in lesson list view, go back to topic list
+        if (_selectedTopicForLessons.value != null) {
+            onBackFromLessonList()
+        } else {
+            // Otherwise, go back to category selection
+            _selectedCategory.value = null
+            _categoryLessons.value = emptyList()
+            _lessonTopics.value = emptyList()
+        }
     }
     
     /**
@@ -299,10 +362,6 @@ class LessonsViewModel : ViewModel() {
             LessonLanguage.GERMAN -> "🇩🇪"
             LessonLanguage.SPANISH -> "🇪🇸"
         }
-    }
-
-    fun onLessonClicked(lessonId: String) {
-        println("Lesson clicked: $lessonId")
     }
 
     fun onContinueLessonClicked(lessonId: String) {

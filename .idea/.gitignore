@@ -1,3 +1,37 @@
-# Default ignored files
-/shelf/
-/workspace.xml
+# JetBrains IDEs - IntelliJ IDEA
+# Most IDE files should be ignored, but keep essential project structure
+
+# User-specific files
+workspace.xml
+tasks.xml
+dictionaries/
+shelf/
+
+# Sensitive or high-churn IDE files
+caches/
+inspectionProfiles/
+artifacts/
+dataSources/
+dataSources.local.xml
+dataSources.xml
+dataSources.ids
+sqlDataSources.xml
+dynamic.xml
+uiDesigner.xml
+deploymentTargetDropDown.xml
+gradle.xml
+jarRepositories.xml
+libraries/
+misc.xml
+modules.xml
+runConfigurations.xml
+vcs.xml
+compiler.xml
+encodings.xml
+markdown-navigator/
+scopes/
+.name
+IntelliLang.xml
+
+# Keep only essential files that define project structure
+!.gitignore

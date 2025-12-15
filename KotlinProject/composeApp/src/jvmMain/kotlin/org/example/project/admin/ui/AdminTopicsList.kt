@@ -42,6 +42,7 @@ fun AdminTopicsList(
     onEdit: (LessonTopic) -> Unit,
     onDelete: (String) -> Unit,
     onDuplicate: (String) -> Unit,
+    onManageLessons: (LessonTopic) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     if (isLoading && topics.isEmpty()) {
@@ -121,7 +122,7 @@ fun AdminTopicsList(
                         )
                     }
                     
-                    Box(modifier = Modifier.width(120.dp)) {
+                    Box(modifier = Modifier.width(160.dp)) {
                         Text(
                             text = "ACTIONS",
                             style = MaterialTheme.typography.labelSmall,
@@ -145,7 +146,8 @@ fun AdminTopicsList(
                         onSelect = { onTopicSelect(topic.id) },
                         onEdit = { onEdit(topic) },
                         onDelete = { onDelete(topic.id) },
-                        onDuplicate = { onDuplicate(topic.id) }
+                        onDuplicate = { onDuplicate(topic.id) },
+                        onManageLessons = { onManageLessons(topic) }
                     )
                 }
             }
@@ -161,6 +163,7 @@ private fun AdminTopicRow(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onDuplicate: () -> Unit,
+    onManageLessons: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -255,10 +258,21 @@ private fun AdminTopicRow(
                 
                 // Actions column
                 Row(
-                    modifier = Modifier.width(120.dp),
+                    modifier = Modifier.width(160.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    IconButton(
+                        onClick = onManageLessons,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.MenuBook,
+                            contentDescription = "Manage Lessons",
+                            modifier = Modifier.size(18.dp),
+                            tint = Color(0xFF10B981)
+                        )
+                    }
                     IconButton(
                         onClick = onDuplicate,
                         modifier = Modifier.size(36.dp)
