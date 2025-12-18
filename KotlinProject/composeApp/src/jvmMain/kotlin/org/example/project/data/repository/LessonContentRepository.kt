@@ -1,5 +1,6 @@
 package org.example.project.data.repository
 
+import io.github.jan.supabase.postgrest.from
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -11,6 +12,10 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import io.github.jan.supabase.postgrest.postgrest
+import org.example.project.core.config.SupabaseConfig
 import org.example.project.core.utils.ErrorLogger
 import org.example.project.domain.model.*
 import java.io.File
@@ -59,6 +64,8 @@ class LessonContentRepositoryImpl(
             })
         }
     }
+    
+    private val supabase = SupabaseConfig.client
     
     // ============================================
     // LESSON OPERATIONS
@@ -247,13 +254,87 @@ class LessonContentRepositoryImpl(
         request: SubmitLessonAnswersRequest
     ): Result<SubmitLessonAnswersResponse> = withContext(Dispatchers.IO) {
         try {
-            val response: SubmitLessonAnswersResponse = client.post("$baseUrl/api/lessons/submit-answers") {
-                contentType(ContentType.Application.Json)
-                setBody(request)
-            }.body()
+            println("[LessonContentRepo] ===== LOCAL QUIZ SUBMISSION =====")
+            println("[LessonContentRepo] User ID: ${request.userId}")
+            println("[LessonContentRepo] Lesson ID: ${request.lessonId}")
+            println("[LessonContentRepo] Answers count: ${request.answers.size}")
+            
+            // Step 1: Save all answers to database
+            println("[LessonContentRepo] Saving answers to database...")
+            for ((index, answer) in request.answers.withIndex()) {
+                println("[LessonContentRepo] Saving answer ${index + 1}: questionId=${answer.questionId}, isCorrect=${answer.isCorrect}")
+                
+                val answerData = buildJsonObject {
+                    put("user_id", request.userId)
+                    put("lesson_id", request.lessonId)
+                    put("question_id", answer.questionId)
+                    put("selected_choice_id", answer.selectedChoiceId)
+                    put("answer_text", answer.answerText)
+                    put("voice_recording_url", answer.voiceRecordingUrl)
+                    put("is_correct", answer.isCorrect)
+                }
+                
+                supabase.from("user_question_answers")
+                    .update(answerData) {
+                        filter {
+                            eq("user_id", request.userId)
+                            eq("question_id", answer.questionId)
+                        }
+                    }
+            }
+            println("[LessonContentRepo] All answers saved successfully")
+            
+            // Step 2: Calculate score locally
+            val correctCount = request.answers.count { it.isCorrect == true }
+            val totalQuestions = request.answers.size
+            val score = if (totalQuestions > 0) {
+                (correctCount.toFloat() / totalQuestions.toFloat()) * 100f
+            } else {
+                0f
+            }
+            val isPassed = score >= 70f // 70% passing threshold
+            
+            println("[LessonContentRepo] Score calculated: $correctCount/$totalQuestions = $score%")
+            println("[LessonContentRepo] Passed: $isPassed")
+            
+            // Step 3: Update lesson progress
+            println("[LessonContentRepo] Updating lesson progress...")
+            val progressData = buildJsonObject {
+                put("user_id", request.userId)
+                put("lesson_id", request.lessonId)
+                put("is_completed", true)
+                put("score", score)
+                put("time_spent_seconds", 0) // Could be calculated from actual time
+            }
+            
+            supabase.from("user_lesson_progress")
+                .update(progressData) {
+                    filter {
+                        eq("user_id", request.userId)
+                        eq("lesson_id", request.lessonId)
+                    }
+                }
+            
+            println("[LessonContentRepo] Lesson progress updated successfully")
+            
+            // Step 4: Create response
+            val now = kotlinx.datetime.Clock.System.now().toString()
+            val response = SubmitLessonAnswersResponse(
+                score = score,
+                totalQuestions = totalQuestions,
+                correctAnswers = correctCount,
+                isPassed = isPassed,
+                completedAt = now
+            )
+            
+            println("[LessonContentRepo] ===== SUBMISSION COMPLETED =====")
+            println("[LessonContentRepo] Response: score=$score, total=$totalQuestions, correct=$correctCount, passed=$isPassed")
+            
             Result.success(response)
         } catch (e: Exception) {
-            println("[LessonContentRepo] Error submitting answers: ${e.message}")
+            println("[LessonContentRepo] ===== SUBMISSION FAILED =====")
+            println("[LessonContentRepo] Error: ${e.message}")
+            e.printStackTrace()
             Result.failure(e)
         }
     }

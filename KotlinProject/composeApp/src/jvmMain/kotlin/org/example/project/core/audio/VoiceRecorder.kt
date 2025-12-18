@@ -160,9 +160,10 @@ enum class RecordingState {
 }
 
 /**
- * Audio player for playback of recorded or narration audio.
+ * Audio player for playback of recorded audio files.
+ * Separate from AudioPlayer (which handles URL-based TTS narration).
  */
-class AudioPlayer {
+class RecordedAudioPlayer {
     
     private var clip: Clip? = null
     private var isPlaying = false
@@ -177,7 +178,7 @@ class AudioPlayer {
             clip?.open(audioInputStream)
             Result.success(Unit)
         } catch (e: Exception) {
-            println("[AudioPlayer] Error loading audio: ${e.message}")
+            println("[RecordedAudioPlayer] Error loading audio: ${e.message}")
             Result.failure(e)
         }
     }

@@ -5,6 +5,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.example.project.core.ai.BackendManager
+import org.example.project.core.config.AIBackendConfig
 import org.example.project.core.config.SupabaseConfig
 import org.example.project.core.utils.PreferencesManager
 
@@ -29,7 +30,15 @@ object AppInitializer {
             delay(500)
             
             
-            val backendSetupProgress = setupAIBackend(onProgress)
+            if (AIBackendConfig.AUTO_START_ON_LAUNCH) {
+                val backendReady = setupAIBackend(onProgress)
+                if (!backendReady) {
+                    println("[Init] Warning: AI backend failed to start automatically")
+                }
+            } else {
+                println("[Init] Skipping AI backend auto-start (AUTO_START_ON_LAUNCH=false)")
+                onProgress("AI tutor will start when first used", 0.6f)
+            }
             
             
             onProgress("Initializing cache...", 0.85f)

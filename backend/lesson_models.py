@@ -8,9 +8,9 @@ from datetime import datetime
 from enum import Enum
 
 
-# ============================================
+
 # ENUMS
-# ============================================
+
 
 class QuestionType(str, Enum):
     MULTIPLE_CHOICE = "multiple_choice"
@@ -20,9 +20,9 @@ class QuestionType(str, Enum):
     ERROR_CORRECTION = "error_correction"
 
 
-# ============================================
+
 # CHOICE MODELS
-# ============================================
+
 
 class QuestionChoiceBase(BaseModel):
     choice_text: str = Field(..., min_length=1, max_length=500)
@@ -56,10 +56,8 @@ class QuestionChoice(QuestionChoiceBase):
         from_attributes = True
 
 
-# ============================================
-# QUESTION MODELS
-# ============================================
 
+# QUESTION MODELS
 class QuestionBase(BaseModel):
     question_type: QuestionType
     question_text: str = Field(..., min_length=1)
@@ -73,6 +71,11 @@ class QuestionBase(BaseModel):
     explanation: Optional[str] = None
     # Custom wrong answer feedback message
     wrong_answer_feedback: Optional[str] = None
+    # Narration settings
+    enable_question_narration: bool = True
+    enable_answer_narration: bool = True
+    narration_language: Optional[str] = None
+    narration_voice: Optional[str] = None
 
 
 class QuestionCreate(QuestionBase):
@@ -89,6 +92,10 @@ class QuestionUpdate(BaseModel):
     error_text: Optional[str] = None
     explanation: Optional[str] = None
     wrong_answer_feedback: Optional[str] = None
+    enable_question_narration: Optional[bool] = None
+    enable_answer_narration: Optional[bool] = None
+    narration_language: Optional[str] = None
+    narration_voice: Optional[str] = None
 
 
 class Question(QuestionBase):
@@ -102,15 +109,16 @@ class Question(QuestionBase):
         from_attributes = True
 
 
-# ============================================
-# LESSON MODELS
-# ============================================
 
+# LESSON MODELS
 class LessonBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
     lesson_order: int = Field(default=0, ge=0)
     is_published: bool = False
+    enable_lesson_narration: bool = True
+    narration_language: Optional[str] = None
+    narration_voice: Optional[str] = None
 
 
 class LessonCreate(LessonBase):
@@ -123,6 +131,9 @@ class LessonUpdate(BaseModel):
     description: Optional[str] = None
     lesson_order: Optional[int] = None
     is_published: Optional[bool] = None
+    enable_lesson_narration: Optional[bool] = None
+    narration_language: Optional[str] = None
+    narration_voice: Optional[str] = None
 
 
 class Lesson(LessonBase):
@@ -149,10 +160,8 @@ class LessonSummary(BaseModel):
     updated_at: datetime
 
 
-# ============================================
-# USER PROGRESS MODELS
-# ============================================
 
+# USER PROGRESS MODELS
 class UserLessonProgressBase(BaseModel):
     is_completed: bool = False
     score: Optional[float] = Field(None, ge=0, le=100)
@@ -169,7 +178,6 @@ class UserLessonProgressUpdate(BaseModel):
     score: Optional[float] = Field(None, ge=0, le=100)
     time_spent_seconds: Optional[int] = None
 
-
 class UserLessonProgress(UserLessonProgressBase):
     id: str
     user_id: str
@@ -182,10 +190,8 @@ class UserLessonProgress(UserLessonProgressBase):
         from_attributes = True
 
 
-# ============================================
-# USER ANSWER MODELS
-# ============================================
 
+# USER ANSWER MODELS
 class UserQuestionAnswerBase(BaseModel):
     selected_choice_id: Optional[str] = None  # For multiple choice
     answer_text: Optional[str] = None  # For identification
@@ -217,10 +223,8 @@ class UserQuestionAnswer(UserQuestionAnswerBase):
         from_attributes = True
 
 
-# ============================================
-# REQUEST/RESPONSE MODELS
-# ============================================
 
+# REQUEST/RESPONSE MODELS
 class LessonListResponse(BaseModel):
     lessons: List[LessonSummary]
     total: int
@@ -235,8 +239,6 @@ class MediaUploadResponse(BaseModel):
     file_name: str
     file_size: int
     media_type: str  # "image", "audio", "video"
-
-
 class BulkQuestionCreate(BaseModel):
     lesson_id: str
     questions: List[QuestionCreate]
@@ -246,7 +248,6 @@ class SubmitLessonAnswersRequest(BaseModel):
     user_id: str
     lesson_id: str
     answers: List[UserQuestionAnswerCreate]
-
 
 class SubmitLessonAnswersResponse(BaseModel):
     score: float

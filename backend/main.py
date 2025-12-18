@@ -16,9 +16,11 @@ from models import (
 )
 from prompts import build_system_prompt, format_conversation_history
 from providers.gemini import GeminiProvider
+from providers.exceptions import ProviderQuotaExceededError
 from chat_history_service import ChatHistoryService
 from supabase_client import SupabaseManager
 from lesson_routes import router as lesson_router
+from narration_routes import router as narration_router
 from error_logger import get_logger
 
 
@@ -84,6 +86,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(lesson_router)
+app.include_router(narration_router)
 
 
 @app.get("/", tags=["General"])
@@ -163,6 +166,19 @@ async def chat_completion(request: ChatRequest):
         
         return response
         
+    except ProviderQuotaExceededError as e:
+        logger.warning(
+            "Gemini quota exceeded (retry_after=%s)", 
+            e.retry_after_seconds,
+        )
+        headers = {}
+        if e.retry_after_seconds:
+            headers["Retry-After"] = str(e.retry_after_seconds)
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=e.args[0],
+            headers=headers or None,
+        )
     except HTTPException:
         raise
     except Exception as e:

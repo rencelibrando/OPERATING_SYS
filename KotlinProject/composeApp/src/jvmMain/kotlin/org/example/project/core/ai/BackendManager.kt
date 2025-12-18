@@ -50,7 +50,7 @@ object BackendManager {
                 if (attempt >= maxRetryAttempts - 1) {
                     lastSetupError = """
                         |Unable to install Python after multiple attempts.
-                        |Please install Python 3.9+ manually from https://www.python.org/downloads/
+                        |Please install Python 3.12 manually from https://www.python.org/downloads/
                         |Make sure to check "Add Python to PATH" during installation.
                     """.trimMargin()
                     return false
@@ -466,9 +466,9 @@ object BackendManager {
                 lastSetupError = """
                     |Python is not installed and automatic installation failed.
                     |
-                    |Please install Python 3.9 or higher manually:
+                    |Please install Python 3.12 manually:
                     |1. Visit: https://www.python.org/downloads/
-                    |2. Download Python 3.9 or newer
+                    |2. Download Python 3.12.x
                     |3. During installation, check "Add Python to PATH"
                     |4. Restart this application after installation
                     |
@@ -502,7 +502,7 @@ object BackendManager {
             lastSetupError = """
                 |Python version is too old.
                 |
-                |Required: Python 3.9 or higher
+                |Required: Python 3.12 (recommended for compatibility with fasttext-wheel)
                 |Please upgrade Python from: https://www.python.org/downloads/
             """.trimMargin()
             println("[Backend] ERROR: $lastSetupError")
@@ -602,7 +602,7 @@ object BackendManager {
                     return true
                 }
                 
-                println("[Backend]   ✗ Python 3.9+ required, found $major.$minor")
+                println("[Backend]   ✗ Python 3.12+ recommended, found $major.$minor")
                 return false
             }
             
@@ -676,7 +676,7 @@ object BackendManager {
         try {
             println("[Backend] Trying winget package manager (Windows Package Manager)...")
             val wingetProcess = ProcessBuilder(
-                "winget", "install", "Python.Python.3.11", 
+                "winget", "install", "Python.Python.3.12", 
                 "--silent", "--accept-package-agreements", "--accept-source-agreements"
             ).start()
             
@@ -702,7 +702,7 @@ object BackendManager {
 
     private fun downloadAndInstallPythonWindows(): Boolean {
         try {
-            val pythonVersion = "3.11.8"
+            val pythonVersion = "3.12.7"
             val installerUrl = "https://www.python.org/ftp/python/$pythonVersion/python-$pythonVersion-amd64.exe"
             val tempDir = System.getProperty("java.io.tmpdir")
             val installerPath = File(tempDir, "python-installer.exe")
@@ -776,7 +776,7 @@ object BackendManager {
             }
             
             println("[Backend] Installing Python via Homebrew...")
-            val brewProcess = ProcessBuilder("brew", "install", "python@3.11", "--quiet").start()
+            val brewProcess = ProcessBuilder("brew", "install", "python@3.12", "--quiet").start()
             
             val exitCode = brewProcess.waitFor()
             if (exitCode == 0) {
@@ -800,7 +800,7 @@ object BackendManager {
             val portCheck = ProcessBuilder("which", "port").start()
             if (portCheck.waitFor() == 0) {
                 println("[Backend] Trying MacPorts...")
-                val portProcess = ProcessBuilder("sudo", "port", "install", "python311").start()
+                val portProcess = ProcessBuilder("sudo", "port", "install", "python312").start()
                 val exitCode = portProcess.waitFor()
                 if (exitCode == 0) {
                     println("[Backend] ✓ Python installed via MacPorts")
@@ -830,7 +830,7 @@ object BackendManager {
                 updateProcess.waitFor()
                 
                 val installProcess = ProcessBuilder(
-                    "sudo", "apt", "install", "-y", "python3.11", "python3.11-venv", "python3-pip"
+                    "sudo", "apt", "install", "-y", "python3.12", "python3.12-venv", "python3-pip"
                 ).start()
                 
                 val exitCode = installProcess.waitFor()
@@ -845,7 +845,7 @@ object BackendManager {
             if (yumCheck.waitFor() == 0) {
                 println("[Backend] Installing Python via yum...")
                 val yumProcess = ProcessBuilder(
-                    "sudo", "yum", "install", "-y", "python311", "python311-pip"
+                    "sudo", "yum", "install", "-y", "python312", "python312-pip"
                 ).start()
                 
                 val exitCode = yumProcess.waitFor()
@@ -872,7 +872,7 @@ object BackendManager {
             if (dnfCheck.waitFor() == 0) {
                 println("[Backend] Trying dnf...")
                 val dnfProcess = ProcessBuilder(
-                    "sudo", "dnf", "install", "-y", "python3.11", "python3-pip"
+                    "sudo", "dnf", "install", "-y", "python3.12", "python3-pip"
                 ).start()
                 
                 val exitCode = dnfProcess.waitFor()
@@ -1140,7 +1140,7 @@ object BackendManager {
                 }
             } else {
                 onProgress("Python installation failed", 0.5f)
-                lastSetupError = "Failed to install Python automatically. Please install Python 3.9+ manually."
+                lastSetupError = "Failed to install Python automatically. Please install Python 3.12 manually."
                 return false
             }
         } catch (e: Exception) {

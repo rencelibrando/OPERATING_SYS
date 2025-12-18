@@ -28,10 +28,8 @@ class LessonService:
         if not self.supabase:
             logger.warning("Supabase client not available")
 
-    # ============================================
     # LESSON CRUD OPERATIONS
-    # ============================================
-    
+
     async def get_lessons_by_topic(
         self, 
         topic_id: str, 
@@ -124,9 +122,9 @@ class LessonService:
                         answer_text=q.get("answer_text"),
                         question_audio_url=q.get("question_audio_url"),
                         answer_audio_url=q.get("answer_audio_url"),
-                        error_text=q.get("error_text"),  # ✅ Added
-                        explanation=q.get("explanation"),  # ✅ Added
-                        wrong_answer_feedback=q.get("wrong_answer_feedback"),  # ✅ Added
+                        error_text=q.get("error_text"),  
+                        explanation=q.get("explanation"),  
+                        wrong_answer_feedback=q.get("wrong_answer_feedback"),  
                         choices=choices,
                         created_at=q["created_at"],
                         updated_at=q["updated_at"]
@@ -206,9 +204,9 @@ class LessonService:
             logger.error(f"Error deleting lesson {lesson_id}: {e}")
             raise
 
-    # ============================================
+   
     # QUESTION CRUD OPERATIONS
-    # ============================================
+   
     
     async def create_question(
         self, 
@@ -324,9 +322,9 @@ class LessonService:
             logger.error(f"Error deleting question {question_id}: {e}")
             raise
 
-    # ============================================
+   
     # CHOICE OPERATIONS
-    # ============================================
+   
     
     async def create_choice(
         self,
@@ -361,9 +359,9 @@ class LessonService:
             logger.error(f"Error deleting choice {choice_id}: {e}")
             raise
 
-    # ============================================
+   
     # USER PROGRESS OPERATIONS
-    # ============================================
+   
     
     async def get_user_lesson_progress(
         self, 
@@ -413,17 +411,28 @@ class LessonService:
     ) -> Dict[str, Any]:
         """Submit user answers for a lesson and calculate score"""
         try:
+            logger.info(f"[SUBMIT_SERVICE] ===== STARTING ANSWER SUBMISSION =====")
+            logger.info(f"[SUBMIT_SERVICE] User ID: {user_id}")
+            logger.info(f"[SUBMIT_SERVICE] Lesson ID: {lesson_id}")
+            logger.info(f"[SUBMIT_SERVICE] Number of answers: {len(answers)}")
+            
             # Insert all answers
-            for answer in answers:
+            logger.info(f"[SUBMIT_SERVICE] Inserting answers...")
+            for i, answer in enumerate(answers):
+                logger.info(f"[SUBMIT_SERVICE] Answer {i+1}: {answer.model_dump()}")
                 answer_dict = answer.model_dump()
                 self.supabase.table("user_question_answers").upsert(answer_dict).execute()
+            logger.info(f"[SUBMIT_SERVICE] All answers inserted successfully")
             
             # Calculate score
+            logger.info(f"[SUBMIT_SERVICE] Calculating score...")
             correct_count = sum(1 for a in answers if a.is_correct)
             total_questions = len(answers)
             score = (correct_count / total_questions * 100) if total_questions > 0 else 0
+            logger.info(f"[SUBMIT_SERVICE] Score calculation: {correct_count}/{total_questions} = {score}%")
             
             # Update lesson progress
+            logger.info(f"[SUBMIT_SERVICE] Updating lesson progress...")
             progress_data = UserLessonProgressCreate(
                 user_id=user_id,
                 lesson_id=lesson_id,
@@ -431,16 +440,25 @@ class LessonService:
                 score=score,
                 time_spent_seconds=0  # Should be calculated from actual time
             )
+            logger.info(f"[SUBMIT_SERVICE] Progress data: {progress_data.model_dump()}")
             
             await self.upsert_user_lesson_progress(progress_data)
+            logger.info(f"[SUBMIT_SERVICE] Lesson progress updated successfully")
             
-            return {
+            result = {
                 "score": score,
                 "total_questions": total_questions,
                 "correct_answers": correct_count,
                 "is_passed": score >= 70,  # 70% passing threshold
                 "completed_at": datetime.utcnow().isoformat()
             }
+            logger.info(f"[SUBMIT_SERVICE] ===== SUBMISSION COMPLETED =====")
+            logger.info(f"[SUBMIT_SERVICE] Result: {result}")
+            return result
         except Exception as e:
-            logger.error(f"Error submitting answers: {e}")
+            logger.error(f"[SUBMIT_SERVICE] ===== SUBMISSION FAILED =====")
+            logger.error(f"[SUBMIT_SERVICE] Error type: {type(e).__name__}")
+            logger.error(f"[SUBMIT_SERVICE] Error message: {str(e)}")
+            import traceback
+            logger.error(f"[SUBMIT_SERVICE] Full traceback:\n{traceback.format_exc()}")
             raise

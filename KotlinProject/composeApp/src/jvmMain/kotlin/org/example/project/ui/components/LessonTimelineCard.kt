@@ -57,6 +57,9 @@ fun LessonTimelineView(
                 onClick = { onLessonClick(topic.id) }
             )
         }
+        
+        // Add extra spacing at the end to ensure the last node is reachable
+        Spacer(modifier = Modifier.height(200.dp))
     }
 }
 
@@ -117,15 +120,13 @@ private fun LessonTimelineItem(
     
     val targetLineProgress = remember(scrollProgress, itemProgress, nextItemProgress) {
         
-        val responsiveItemProgress = itemProgress - 0.02f  
+        val responsiveItemProgress = itemProgress - 0.01f  
         val responsiveNextProgress = nextItemProgress
         
         when {
             scrollProgress <= responsiveItemProgress -> 0f 
             scrollProgress >= responsiveNextProgress -> 1f 
             else -> {
-                
-                
                 ((scrollProgress - responsiveItemProgress) / (responsiveNextProgress - responsiveItemProgress)).coerceIn(0f, 1f)
             }
         }
@@ -191,7 +192,7 @@ private fun LessonTimelineItem(
                 val size = coordinates.size
                 
                 
-                val nodeY = position.y + with(density) { 20.dp.toPx() }
+                val nodeY = position.y + with(density) { 120.dp.toPx() }
                 isInViewport = nodeY > 200 && nodeY < 800 
             }
     ) {
@@ -202,7 +203,7 @@ private fun LessonTimelineItem(
             
             
             
-            val nodeTopOffset = 20.dp  
+            val nodeTopOffset = 120.dp  
             val nodeRadius = 12.dp  
             val lineStartOffset = nodeTopOffset + nodeRadius  
             val nextNodeTopOffset = 280.dp + nodeTopOffset - nodeRadius  
@@ -250,7 +251,7 @@ private fun LessonTimelineItem(
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)  
-                .padding(top = 20.dp),
+                .padding(top = 120.dp),
             contentAlignment = Alignment.Center
         ) {
             
@@ -386,7 +387,7 @@ private fun LessonNumberLabel(
     Surface(
         modifier = modifier
             .scale(labelScale)
-            .padding(top = 20.dp),
+            .padding(top = 120.dp),
         shape = RoundedCornerShape(10.dp),
         color = if (isHovered && !isLocked) {
             freshGreen.copy(alpha = 0.15f)

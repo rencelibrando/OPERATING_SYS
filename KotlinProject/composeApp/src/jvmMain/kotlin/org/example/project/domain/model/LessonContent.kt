@@ -125,9 +125,25 @@ data class LessonQuestion(
     @SerialName("explanation")
     val explanation: String? = null,
     
+    @SerialName("explanation_audio_url")
+    val explanationAudioUrl: String? = null,
+    
     // Customizable wrong answer feedback
     @SerialName("wrong_answer_feedback")
     val wrongAnswerFeedback: String? = null,
+    
+    // Narration settings
+    @SerialName("enable_question_narration")
+    val enableQuestionNarration: Boolean = true,
+    
+    @SerialName("enable_answer_narration")
+    val enableAnswerNarration: Boolean = true,
+    
+    @SerialName("narration_language")
+    val narrationLanguage: String? = null,
+    
+    @SerialName("narration_voice")
+    val narrationVoice: String? = null,
     
     // Choices for multiple choice/matching questions
     @SerialName("choices")
@@ -171,8 +187,23 @@ data class QuestionCreate(
     @SerialName("explanation")
     val explanation: String? = null,
     
+    @SerialName("explanation_audio_url")
+    val explanationAudioUrl: String? = null,
+    
     @SerialName("wrong_answer_feedback")
     val wrongAnswerFeedback: String? = null,
+    
+    @SerialName("enable_question_narration")
+    val enableQuestionNarration: Boolean = true,
+    
+    @SerialName("enable_answer_narration")
+    val enableAnswerNarration: Boolean = true,
+    
+    @SerialName("narration_language")
+    val narrationLanguage: String? = null,
+    
+    @SerialName("narration_voice")
+    val narrationVoice: String? = null,
     
     @SerialName("choices")
     val choices: List<QuestionChoiceCreate> = emptyList()
@@ -201,6 +232,15 @@ data class LessonContent(
     
     @SerialName("is_published")
     val isPublished: Boolean = false,
+    
+    @SerialName("enable_lesson_narration")
+    val enableLessonNarration: Boolean = true,
+    
+    @SerialName("narration_language")
+    val narrationLanguage: String? = null,
+    
+    @SerialName("narration_voice")
+    val narrationVoice: String? = null,
     
     @SerialName("questions")
     val questions: List<LessonQuestion> = emptyList(),
@@ -266,6 +306,15 @@ data class LessonCreate(
     @SerialName("is_published")
     val isPublished: Boolean = false,
     
+    @SerialName("enable_lesson_narration")
+    val enableLessonNarration: Boolean = true,
+    
+    @SerialName("narration_language")
+    val narrationLanguage: String? = null,
+    
+    @SerialName("narration_voice")
+    val narrationVoice: String? = null,
+    
     @SerialName("questions")
     val questions: List<QuestionCreate> = emptyList()
 )
@@ -279,7 +328,16 @@ data class LessonUpdate(
     val description: String? = null,
     
     @SerialName("is_published")
-    val isPublished: Boolean? = null
+    val isPublished: Boolean? = null,
+    
+    @SerialName("enable_lesson_narration")
+    val enableLessonNarration: Boolean? = null,
+    
+    @SerialName("narration_language")
+    val narrationLanguage: String? = null,
+    
+    @SerialName("narration_voice")
+    val narrationVoice: String? = null
 )
 
 // ============================================

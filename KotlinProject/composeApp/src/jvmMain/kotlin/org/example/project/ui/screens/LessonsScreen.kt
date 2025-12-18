@@ -99,13 +99,18 @@ fun LessonsScreen(
                 // Each lesson is ~280dp tall (bigger cards) - convert to pixels for accurate calculation
                 val lessonHeightPx = with(density) { 280.dp.toPx() }
                 
-                // Make progress more responsive - use 0.9x multiplier for faster color response
-                // This makes the line color slightly ahead, making it feel more responsive
-                val totalTimelineHeight = lessonHeightPx * lessonTopics.size * 0.9f
+                // Account for centered node positioning (120dp from top)
+                val nodeCenterOffsetPx = with(density) { 120.dp.toPx() }
+                
+                // Calculate the total height needed to reach the last node's center
+                // Last node is at position: (lessonTopics.size - 1) * 280dp + 120dp
+                val lastNodePositionPx = (lessonTopics.size - 1) * lessonHeightPx + nodeCenterOffsetPx
+                // Add buffer to ensure line reaches the last node
+                val totalTimelineHeight = lastNodePositionPx + with(density) { 200.dp.toPx() }
                 
                 // Calculate raw progress (0 to 1) - immediate response, no easing delay
-                // Add small buffer to start coloring earlier for better responsiveness
-                val rawProgress = ((timelineOffset + 50f) / totalTimelineHeight).coerceIn(0f, 1f)
+                // Adjust buffer to account for centered node positioning
+                val rawProgress = ((timelineOffset + nodeCenterOffsetPx) / totalTimelineHeight).coerceIn(0f, 1f)
                 
                 // Use linear progress for immediate visual feedback - no easing delay
                 rawProgress
@@ -242,23 +247,14 @@ fun LessonsScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // Lesson topics - Use timeline view for beginner, regular cards for others
-            if (selectedCategory == LessonDifficulty.BEGINNER) {
-                item {
-                    LessonTimelineView(
-                        lessonTopics = lessonTopics,
-                        onLessonClick = { lessonId -> viewModel.onLessonTopicClicked(lessonId) },
-                        scrollProgress = scrollProgress.value,
-                        visibleItemIndex = visibleItemIndex.value
-                    )
-                }
-            } else {
-                items(lessonTopics) { topic ->
-                    LessonTopicCard(
-                        topic = topic,
-                        onClick = { viewModel.onLessonTopicClicked(topic.id) },
-                    )
-                }
+            // Lesson topics - Use timeline view for all learning paths
+            item {
+                LessonTimelineView(
+                    lessonTopics = lessonTopics,
+                    onLessonClick = { lessonId -> viewModel.onLessonTopicClicked(lessonId) },
+                    scrollProgress = scrollProgress.value,
+                    visibleItemIndex = visibleItemIndex.value
+                )
             }
         }
     } else {
