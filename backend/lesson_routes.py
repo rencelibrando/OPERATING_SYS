@@ -28,10 +28,8 @@ router = APIRouter(prefix="/api/lessons", tags=["Lessons"])
 lesson_service = LessonService()
 
 
-# ============================================
-# LESSON ENDPOINTS
-# ============================================
 
+# LESSON ENDPOINTS
 @router.get("/topic/{topic_id}", response_model=LessonListResponse)
 async def get_lessons_by_topic(
     topic_id: str,
@@ -136,10 +134,8 @@ async def delete_lesson(lesson_id: str):
         )
 
 
-# ============================================
-# QUESTION ENDPOINTS
-# ============================================
 
+# QUESTION ENDPOINTS
 @router.post("/{lesson_id}/questions", response_model=Question, status_code=status.HTTP_201_CREATED)
 async def create_question(lesson_id: str, question_data: QuestionCreate):
     """
@@ -228,10 +224,8 @@ async def delete_question(question_id: str):
         )
 
 
-# ============================================
-# CHOICE ENDPOINTS
-# ============================================
 
+# CHOICE ENDPOINTS
 @router.post("/questions/{question_id}/choices", response_model=QuestionChoice, status_code=status.HTTP_201_CREATED)
 async def create_choice(question_id: str, choice_data: QuestionChoiceCreate):
     """Create a new choice for a multiple choice question"""
@@ -259,10 +253,8 @@ async def delete_choice(choice_id: str):
         )
 
 
-# ============================================
-# USER PROGRESS ENDPOINTS
-# ============================================
 
+# USER PROGRESS ENDPOINTS
 @router.get("/progress/{user_id}/{lesson_id}", response_model=UserLessonProgress)
 async def get_user_progress(user_id: str, lesson_id: str):
     """Get user's progress for a specific lesson"""
@@ -315,19 +307,24 @@ async def submit_lesson_answers(request: SubmitLessonAnswersRequest):
             request.lesson_id,
             request.answers
         )
-        return SubmitLessonAnswersResponse(**result)
+        logger.info(f"[SUBMIT_ANSWERS] Result from service: {result}")
+        response = SubmitLessonAnswersResponse(**result)
+        logger.info(f"[SUBMIT_ANSWERS] Response created: {response}")
+        return response
     except Exception as e:
-        logger.error(f"Error submitting answers: {e}")
+        logger.error(f"[SUBMIT_ANSWERS] ===== ERROR SUBMITTING ANSWERS =====")
+        logger.error(f"[SUBMIT_ANSWERS] Error type: {type(e).__name__}")
+        logger.error(f"[SUBMIT_ANSWERS] Error message: {str(e)}")
+        import traceback
+        logger.error(f"[SUBMIT_ANSWERS] Full traceback:\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to submit answers: {str(e)}"
         )
 
 
-# ============================================
-# MEDIA UPLOAD ENDPOINTS
-# ============================================
 
+# MEDIA UPLOAD ENDPOINTS
 @router.post("/media/upload", response_model=MediaUploadResponse)
 async def upload_media(
     file: UploadFile = File(...),

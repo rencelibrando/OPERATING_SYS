@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import org.example.project.core.utils.ErrorLogger
+import org.example.project.core.narration.NarrationService
 import org.example.project.data.repository.LessonContentRepository
 import org.example.project.data.repository.LessonContentRepositoryImpl
 import org.example.project.domain.model.*
@@ -20,6 +21,7 @@ private const val LOG_TAG = "AdminLessonContentViewModel.kt"
 class AdminLessonContentViewModel : ViewModel() {
     
     private val repository: LessonContentRepository = LessonContentRepositoryImpl()
+    private val narrationService: NarrationService = NarrationService()
     
     // State
     private val _lessons = mutableStateOf<List<LessonSummary>>(emptyList())
@@ -52,6 +54,23 @@ class AdminLessonContentViewModel : ViewModel() {
     
     private val _isPublished = mutableStateOf(false)
     val isPublished: State<Boolean> = _isPublished
+    
+    // Narration settings (lesson-level)
+    private val _enableLessonNarration = mutableStateOf(true)
+    val enableLessonNarration: State<Boolean> = _enableLessonNarration
+    
+    private val _narrationLanguage = mutableStateOf<String?>(null)
+    val narrationLanguage: State<String?> = _narrationLanguage
+    
+    private val _narrationVoice = mutableStateOf<String?>(null)
+    val narrationVoice: State<String?> = _narrationVoice
+    
+    // Narration generation state
+    private val _narrationStatus = mutableStateOf<Map<String, NarrationStatus>>(emptyMap())
+    val narrationStatus: State<Map<String, NarrationStatus>> = _narrationStatus
+    
+    private val _isGeneratingNarration = mutableStateOf(false)
+    val isGeneratingNarration: State<Boolean> = _isGeneratingNarration
     
     // ============================================
     // LESSON OPERATIONS
@@ -125,6 +144,9 @@ class AdminLessonContentViewModel : ViewModel() {
         _lessonTitle.value = lesson.title
         _lessonDescription.value = lesson.description ?: ""
         _isPublished.value = lesson.isPublished
+        _enableLessonNarration.value = lesson.enableLessonNarration
+        _narrationLanguage.value = lesson.narrationLanguage
+        _narrationVoice.value = lesson.narrationVoice
         
         println("[AdminLesson] Loading ${lesson.questions.size} questions for editing...")
         
@@ -143,7 +165,12 @@ class AdminLessonContentViewModel : ViewModel() {
                 answerAudioUrl = question.answerAudioUrl,
                 errorText = question.errorText ?: "",
                 explanation = question.explanation ?: "",
+                explanationAudioUrl = question.explanationAudioUrl,
                 wrongAnswerFeedback = question.wrongAnswerFeedback ?: "",
+                enableQuestionNarration = question.enableQuestionNarration,
+                enableAnswerNarration = question.enableAnswerNarration,
+                narrationLanguage = question.narrationLanguage,
+                narrationVoice = question.narrationVoice,
                 choices = question.choices.map { choice ->
                     ChoiceBuilder(
                         id = choice.id,
@@ -192,6 +219,9 @@ class AdminLessonContentViewModel : ViewModel() {
                     description = _lessonDescription.value.takeIf { it.isNotBlank() },
                     lessonOrder = _lessons.value.size,
                     isPublished = _isPublished.value,
+                    enableLessonNarration = _enableLessonNarration.value,
+                    narrationLanguage = _narrationLanguage.value,
+                    narrationVoice = _narrationVoice.value,
                     questions = _questions.value.mapIndexed { index, question -> 
                         question.toQuestionCreate(index) 
                     }
@@ -474,13 +504,19 @@ class AdminLessonContentViewModel : ViewModel() {
             type = type,
             text = "",
             answerText = "",
+            questionAudioUrl = null,
+            answerAudioUrl = null,
             errorText = "",
             explanation = "",
             wrongAnswerFeedback = "",
+            enableQuestionNarration = true,
+            enableAnswerNarration = true,
+            narrationLanguage = null,
+            narrationVoice = null,
             choices = when (type) {
                 QuestionType.MULTIPLE_CHOICE -> listOf(
-                    ChoiceBuilder(text = "", isCorrect = false),
-                    ChoiceBuilder(text = "", isCorrect = false)
+                    ChoiceBuilder(text = "", isCorrect = true, imageUrl = null, audioUrl = null, matchPairId = null),
+                    ChoiceBuilder(text = "", isCorrect = false, imageUrl = null, audioUrl = null, matchPairId = null)
                 )
                 QuestionType.MATCHING -> listOf(
                     ChoiceBuilder(text = "Item 1", isCorrect = false, matchPairId = "pair1"),
@@ -533,6 +569,12 @@ class AdminLessonContentViewModel : ViewModel() {
     fun updateQuestionExplanation(index: Int, text: String) {
         _questions.value = _questions.value.mapIndexed { i, q ->
             if (i == index) q.copy(explanation = text) else q
+        }
+    }
+    
+    fun updateExplanationAudioUrl(index: Int, url: String?) {
+        _questions.value = _questions.value.mapIndexed { i, q ->
+            if (i == index) q.copy(explanationAudioUrl = url) else q
         }
     }
     
@@ -750,11 +792,26 @@ class AdminLessonContentViewModel : ViewModel() {
         _isPublished.value = published
     }
     
+    fun setEnableLessonNarration(enabled: Boolean) {
+        _enableLessonNarration.value = enabled
+    }
+    
+    fun setNarrationLanguage(language: String?) {
+        _narrationLanguage.value = language
+    }
+    
+    fun setNarrationVoice(voice: String?) {
+        _narrationVoice.value = voice
+    }
+    
     fun clearForm() {
         _lessonTitle.value = ""
         _lessonDescription.value = ""
         _questions.value = emptyList()
         _isPublished.value = false
+        _enableLessonNarration.value = true
+        _narrationLanguage.value = null
+        _narrationVoice.value = null
         _currentLesson.value = null
     }
     
@@ -762,6 +819,231 @@ class AdminLessonContentViewModel : ViewModel() {
         _errorMessage.value = null
         _successMessage.value = null
     }
+    
+    // ============================================
+    // NARRATION GENERATION
+    // ============================================
+    
+    fun generateQuestionNarration(questionIndex: Int) {
+        val question = _questions.value.getOrNull(questionIndex) ?: return
+        
+        viewModelScope.launch {
+            val questionKey = "question_$questionIndex"
+            
+            _narrationStatus.value = _narrationStatus.value + (questionKey to NarrationStatus.Generating)
+            _isGeneratingNarration.value = true
+            
+            try {
+                narrationService.generateNarration(
+                    text = question.text,
+                    languageOverride = _narrationLanguage.value,
+                    voiceOverride = _narrationVoice.value
+                ).onSuccess { response ->
+                    response.audioUrl?.let { url ->
+                        updateQuestionAudioUrl(questionIndex, url)
+                        _narrationStatus.value = _narrationStatus.value + (questionKey to NarrationStatus.Ready(url))
+                    }
+                }.onFailure { error ->
+                    _narrationStatus.value = _narrationStatus.value + (questionKey to NarrationStatus.Failed(error.message ?: "Unknown error"))
+                }
+            } catch (e: Exception) {
+                _narrationStatus.value = _narrationStatus.value + (questionKey to NarrationStatus.Failed(e.message ?: "Unknown error"))
+            }
+            
+            _isGeneratingNarration.value = false
+        }
+    }
+    
+    fun generateAnswerNarration(questionIndex: Int) {
+        val question = _questions.value.getOrNull(questionIndex) ?: return
+        if (question.answerText.isBlank()) return
+        
+        viewModelScope.launch {
+            val answerKey = "answer_$questionIndex"
+            
+            _narrationStatus.value = _narrationStatus.value + (answerKey to NarrationStatus.Generating)
+            _isGeneratingNarration.value = true
+            
+            try {
+                narrationService.generateNarration(
+                    text = question.answerText,
+                    languageOverride = _narrationLanguage.value,
+                    voiceOverride = _narrationVoice.value
+                ).onSuccess { response ->
+                    response.audioUrl?.let { url ->
+                        updateAnswerAudioUrl(questionIndex, url)
+                        _narrationStatus.value = _narrationStatus.value + (answerKey to NarrationStatus.Ready(url))
+                    }
+                }.onFailure { error ->
+                    _narrationStatus.value = _narrationStatus.value + (answerKey to NarrationStatus.Failed(error.message ?: "Unknown error"))
+                }
+            } catch (e: Exception) {
+                _narrationStatus.value = _narrationStatus.value + (answerKey to NarrationStatus.Failed(e.message ?: "Unknown error"))
+            }
+            
+            _isGeneratingNarration.value = false
+        }
+    }
+    
+    fun generateChoiceNarration(questionIndex: Int, choiceIndex: Int) {
+        val question = _questions.value.getOrNull(questionIndex) ?: return
+        val choice = question.choices.getOrNull(choiceIndex) ?: return
+        if (choice.text.isBlank()) return
+        
+        viewModelScope.launch {
+            val choiceKey = "choice_${questionIndex}_${choiceIndex}"
+            
+            _narrationStatus.value = _narrationStatus.value + (choiceKey to NarrationStatus.Generating)
+            _isGeneratingNarration.value = true
+            
+            try {
+                narrationService.generateNarration(
+                    text = choice.text,
+                    languageOverride = _narrationLanguage.value,
+                    voiceOverride = _narrationVoice.value
+                ).onSuccess { response ->
+                    response.audioUrl?.let { url ->
+                        updateChoiceAudioUrl(questionIndex, choiceIndex, url)
+                        _narrationStatus.value = _narrationStatus.value + (choiceKey to NarrationStatus.Ready(url))
+                    }
+                }.onFailure { error ->
+                    _narrationStatus.value = _narrationStatus.value + (choiceKey to NarrationStatus.Failed(error.message ?: "Unknown error"))
+                }
+            } catch (e: Exception) {
+                _narrationStatus.value = _narrationStatus.value + (choiceKey to NarrationStatus.Failed(e.message ?: "Unknown error"))
+            }
+            
+            _isGeneratingNarration.value = false
+        }
+    }
+    
+    fun generateExplanationNarration(questionIndex: Int) {
+        val question = _questions.value.getOrNull(questionIndex) ?: return
+        if (question.explanation.isBlank()) return
+        
+        viewModelScope.launch {
+            val explanationKey = "explanation_$questionIndex"
+            
+            _narrationStatus.value = _narrationStatus.value + (explanationKey to NarrationStatus.Generating)
+            _isGeneratingNarration.value = true
+            
+            try {
+                narrationService.generateNarration(
+                    text = question.explanation,
+                    languageOverride = _narrationLanguage.value,
+                    voiceOverride = _narrationVoice.value
+                ).onSuccess { response ->
+                    response.audioUrl?.let { url ->
+                        updateExplanationAudioUrl(questionIndex, url)
+                        _narrationStatus.value = _narrationStatus.value + (explanationKey to NarrationStatus.Ready(url))
+                    }
+                }.onFailure { error ->
+                    _narrationStatus.value = _narrationStatus.value + (explanationKey to NarrationStatus.Failed(error.message ?: "Unknown error"))
+                }
+            } catch (e: Exception) {
+                _narrationStatus.value = _narrationStatus.value + (explanationKey to NarrationStatus.Failed(e.message ?: "Unknown error"))
+            }
+            
+            _isGeneratingNarration.value = false
+        }
+    }
+    
+    fun generateAllNarrations() {
+        if (!_enableLessonNarration.value) return
+        
+        viewModelScope.launch {
+            _isGeneratingNarration.value = true
+            
+            _questions.value.forEachIndexed { index, question ->
+                // Generate question audio
+                if (question.text.isNotBlank() && question.questionAudioUrl.isNullOrEmpty()) {
+                    generateQuestionNarration(index)
+                }
+                // Generate answer audio
+                if (question.answerText.isNotBlank() && question.answerAudioUrl.isNullOrEmpty()) {
+                    generateAnswerNarration(index)
+                }
+                // Generate choice audio for multiple choice questions
+                if (question.type == QuestionType.MULTIPLE_CHOICE) {
+                    question.choices.forEachIndexed { choiceIndex, choice ->
+                        if (choice.text.isNotBlank() && choice.audioUrl.isNullOrEmpty()) {
+                            generateChoiceNarration(index, choiceIndex)
+                        }
+                    }
+                }
+                // Generate choice audio for matching questions (both question and answer pairs)
+                if (question.type == QuestionType.MATCHING) {
+                    question.choices.forEachIndexed { choiceIndex, choice ->
+                        if (choice.text.isNotBlank() && choice.audioUrl.isNullOrEmpty()) {
+                            generateChoiceNarration(index, choiceIndex)
+                        }
+                    }
+                }
+                // Generate explanation audio
+                if (question.explanation.isNotBlank() && question.explanationAudioUrl.isNullOrEmpty()) {
+                    generateExplanationNarration(index)
+                }
+            }
+            
+            _isGeneratingNarration.value = false
+        }
+    }
+    
+    fun clearNarrationStatus() {
+        _narrationStatus.value = emptyMap()
+    }
+    
+    fun allNarrationsReady(): Boolean {
+        if (!_enableLessonNarration.value) return true
+        
+        return _questions.value.all { question ->
+            // Check question audio
+            val hasQuestionAudio = question.questionAudioUrl?.isNotEmpty() == true
+            
+            // Check answer audio if answer text exists
+            val needsAnswerAudio = question.answerText.isNotBlank()
+            val hasAnswerAudio = question.answerAudioUrl?.isNotEmpty() == true
+            
+            // Check choice audio for multiple choice questions
+            val choicesReady = if (question.type == QuestionType.MULTIPLE_CHOICE) {
+                question.choices.all { choice ->
+                    choice.text.isBlank() || choice.audioUrl?.isNotEmpty() == true
+                }
+            } else {
+                true
+            }
+            
+            // Check choice audio for matching questions (all pairs need audio)
+            val matchingReady = if (question.type == QuestionType.MATCHING) {
+                question.choices.all { choice ->
+                    choice.text.isBlank() || choice.audioUrl?.isNotEmpty() == true
+                }
+            } else {
+                true
+            }
+            
+            // Check explanation audio if explanation exists
+            val needsExplanationAudio = question.explanation.isNotBlank()
+            val hasExplanationAudio = question.explanationAudioUrl?.isNotEmpty() == true
+            
+            hasQuestionAudio && 
+            (!needsAnswerAudio || hasAnswerAudio) && 
+            choicesReady && 
+            matchingReady &&
+            (!needsExplanationAudio || hasExplanationAudio)
+        }
+    }
+}
+
+// ============================================
+// NARRATION STATUS
+// ============================================
+
+sealed class NarrationStatus {
+    object Idle : NarrationStatus()
+    object Generating : NarrationStatus()
+    data class Ready(val audioUrl: String) : NarrationStatus()
+    data class Failed(val error: String) : NarrationStatus()
 }
 
 // ============================================
@@ -777,7 +1059,12 @@ data class QuestionBuilder(
     val answerAudioUrl: String? = null,
     val errorText: String = "",
     val explanation: String = "",
+    val explanationAudioUrl: String? = null,
     val wrongAnswerFeedback: String = "",
+    val enableQuestionNarration: Boolean = true,
+    val enableAnswerNarration: Boolean = true,
+    val narrationLanguage: String? = null,
+    val narrationVoice: String? = null,
     val choices: List<ChoiceBuilder> = emptyList()
 ) {
     fun toQuestionCreate(order: Int = 0) = QuestionCreate(
@@ -789,7 +1076,12 @@ data class QuestionBuilder(
         answerAudioUrl = answerAudioUrl,
         errorText = errorText.takeIf { it.isNotBlank() },
         explanation = explanation.takeIf { it.isNotBlank() },
+        explanationAudioUrl = explanationAudioUrl,
         wrongAnswerFeedback = wrongAnswerFeedback.takeIf { it.isNotBlank() },
+        enableQuestionNarration = enableQuestionNarration,
+        enableAnswerNarration = enableAnswerNarration,
+        narrationLanguage = narrationLanguage,
+        narrationVoice = narrationVoice,
         choices = choices.mapIndexed { index, choice -> choice.toChoiceCreate(index) }
     )
 }

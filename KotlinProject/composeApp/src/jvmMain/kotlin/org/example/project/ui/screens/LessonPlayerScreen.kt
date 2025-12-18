@@ -5,6 +5,8 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.BrokenImage
@@ -48,6 +50,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.example.project.core.audio.AudioPlayer
+import kotlinx.coroutines.launch
 
 /**
  * Simple in-memory image cache for faster loading
@@ -533,6 +537,17 @@ private fun QuestionTextSection(
     questionNumber: Int,
     audioUrl: String?
 ) {
+    val audioPlayer = remember { AudioPlayer() }
+    var isPlayingAudio by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    
+    // Cleanup when component is disposed
+    DisposableEffect(Unit) {
+        onDispose {
+            audioPlayer.dispose()
+        }
+    }
+    
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -576,21 +591,36 @@ private fun QuestionTextSection(
             // Audio narration button
             if (audioUrl != null) {
                 IconButton(
-                    onClick = { /* TODO: Play audio narration */ },
+                    onClick = {
+                        if (isPlayingAudio) {
+                            audioPlayer.stop()
+                            isPlayingAudio = false
+                        } else {
+                            coroutineScope.launch {
+                                isPlayingAudio = true
+                                audioPlayer.play(audioUrl) {
+                                    isPlayingAudio = false
+                                }
+                            }
+                        }
+                    },
                     modifier = Modifier.size(40.dp)
                 ) {
                     Surface(
                         shape = CircleShape,
-                        color = Color(0xFF3A3147).copy(alpha = 0.5f)
+                        color = if (isPlayingAudio) 
+                            WordBridgeColors.PrimaryPurple.copy(alpha = 0.8f) 
+                        else 
+                            Color(0xFF3A3147).copy(alpha = 0.5f)
                     ) {
                         Box(
                             modifier = Modifier.size(40.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                Icons.Default.VolumeUp,
-                                contentDescription = "Play question audio",
-                                tint = WordBridgeColors.PrimaryPurple,
+                                if (isPlayingAudio) Icons.Default.Stop else Icons.Default.VolumeUp,
+                                contentDescription = if (isPlayingAudio) "Stop audio" else "Play question audio",
+                                tint = if (isPlayingAudio) Color.White else WordBridgeColors.PrimaryPurple,
                                 modifier = Modifier.size(22.dp)
                             )
                         }
@@ -684,21 +714,77 @@ private fun MultipleChoiceQuestion(
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    Icons.Default.Info,
-                                    contentDescription = null,
-                                    tint = Color(0xFF8B5CF6),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Text(
-                                    "Explanation",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF8B5CF6)
-                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Info,
+                                        contentDescription = null,
+                                        tint = Color(0xFF8B5CF6),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        "Explanation",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF8B5CF6)
+                                    )
+                                }
+                                
+                                // Explanation audio button
+                                if (question.explanationAudioUrl != null) {
+                                    val audioPlayer = remember { AudioPlayer() }
+                                    var isPlayingExplanation by remember { mutableStateOf(false) }
+                                    val coroutineScope = rememberCoroutineScope()
+                                    
+                                    DisposableEffect(Unit) {
+                                        onDispose {
+                                            audioPlayer.dispose()
+                                        }
+                                    }
+                                    
+                                    IconButton(
+                                        onClick = {
+                                            if (isPlayingExplanation) {
+                                                audioPlayer.stop()
+                                                isPlayingExplanation = false
+                                            } else {
+                                                coroutineScope.launch {
+                                                    isPlayingExplanation = true
+                                                    audioPlayer.play(question.explanationAudioUrl!!) {
+                                                        isPlayingExplanation = false
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = if (isPlayingExplanation) 
+                                                Color(0xFF8B5CF6).copy(alpha = 0.8f) 
+                                            else 
+                                                Color(0xFF3A3147).copy(alpha = 0.5f)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier.size(32.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    if (isPlayingExplanation) Icons.Default.Stop else Icons.Default.VolumeUp,
+                                                    contentDescription = if (isPlayingExplanation) "Stop explanation audio" else "Play explanation audio",
+                                                    tint = if (isPlayingExplanation) Color.White else Color(0xFF8B5CF6),
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             Text(
                                 question.explanation!!,
@@ -841,17 +927,7 @@ private fun ChoiceCard(
                     
                     // Audio if available
                     if (choice.audioUrl != null) {
-                        IconButton(
-                            onClick = { /* TODO: Play audio */ },
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.VolumeUp,
-                                contentDescription = "Play audio",
-                                tint = WordBridgeColors.PrimaryPurple,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                        ChoiceAudioButton(audioUrl = choice.audioUrl)
                     }
                 }
             }
@@ -882,6 +958,43 @@ private fun ChoiceCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ChoiceAudioButton(audioUrl: String) {
+    val audioPlayer = remember { AudioPlayer() }
+    var isPlaying by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    
+    DisposableEffect(Unit) {
+        onDispose {
+            audioPlayer.dispose()
+        }
+    }
+    
+    IconButton(
+        onClick = {
+            if (isPlaying) {
+                audioPlayer.stop()
+                isPlaying = false
+            } else {
+                coroutineScope.launch {
+                    isPlaying = true
+                    audioPlayer.play(audioUrl) {
+                        isPlaying = false
+                    }
+                }
+            }
+        },
+        modifier = Modifier.size(28.dp)
+    ) {
+        Icon(
+            if (isPlaying) Icons.Default.Stop else Icons.Default.VolumeUp,
+            contentDescription = if (isPlaying) "Stop audio" else "Play audio",
+            tint = if (isPlaying) Color(0xFFEF4444) else WordBridgeColors.PrimaryPurple,
+            modifier = Modifier.size(18.dp)
+        )
     }
 }
 
@@ -960,6 +1073,66 @@ private fun TextEntryQuestion(
             shape = RoundedCornerShape(12.dp)
         )
         
+        // Answer audio hint if available
+        if (question.answerAudioUrl != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val audioPlayer = remember { AudioPlayer() }
+                var isPlaying by remember { mutableStateOf(false) }
+                val coroutineScope = rememberCoroutineScope()
+                
+                DisposableEffect(Unit) {
+                    onDispose {
+                        audioPlayer.dispose()
+                    }
+                }
+                
+                IconButton(
+                    onClick = {
+                        if (isPlaying) {
+                            audioPlayer.stop()
+                            isPlaying = false
+                        } else {
+                            coroutineScope.launch {
+                                isPlaying = true
+                                audioPlayer.play(question.answerAudioUrl!!) {
+                                    isPlaying = false
+                                }
+                            }
+                        }
+                    },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = if (isPlaying) Color(0xFFEF4444).copy(alpha = 0.2f) else Color(0xFF8B5CF6).copy(alpha = 0.2f),
+                        border = BorderStroke(1.dp, if (isPlaying) Color(0xFFEF4444) else Color(0xFF8B5CF6))
+                    ) {
+                        Box(
+                            modifier = Modifier.size(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                if (isPlaying) Icons.Default.Stop else Icons.Default.VolumeUp,
+                                contentDescription = if (isPlaying) "Stop hint audio" else "Play hint audio",
+                                tint = if (isPlaying) Color(0xFFEF4444) else Color(0xFF8B5CF6),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+                
+                Text(
+                    "Listen to pronunciation hint",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF8B5CF6)
+                )
+            }
+        }
+        
         // Show feedback after checking
         if (showFeedback && isCorrect != null) {
             Column(
@@ -1010,21 +1183,77 @@ private fun TextEntryQuestion(
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    Icons.Default.Info,
-                                    contentDescription = null,
-                                    tint = Color(0xFF8B5CF6),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Text(
-                                    "Explanation",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF8B5CF6)
-                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Info,
+                                        contentDescription = null,
+                                        tint = Color(0xFF8B5CF6),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        "Explanation",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF8B5CF6)
+                                    )
+                                }
+                                
+                                // Explanation audio button
+                                if (question.explanationAudioUrl != null) {
+                                    val audioPlayer = remember { AudioPlayer() }
+                                    var isPlayingExplanation by remember { mutableStateOf(false) }
+                                    val coroutineScope = rememberCoroutineScope()
+                                    
+                                    DisposableEffect(Unit) {
+                                        onDispose {
+                                            audioPlayer.dispose()
+                                        }
+                                    }
+                                    
+                                    IconButton(
+                                        onClick = {
+                                            if (isPlayingExplanation) {
+                                                audioPlayer.stop()
+                                                isPlayingExplanation = false
+                                            } else {
+                                                coroutineScope.launch {
+                                                    isPlayingExplanation = true
+                                                    audioPlayer.play(question.explanationAudioUrl!!) {
+                                                        isPlayingExplanation = false
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = if (isPlayingExplanation) 
+                                                Color(0xFF8B5CF6).copy(alpha = 0.8f) 
+                                            else 
+                                                Color(0xFF3A3147).copy(alpha = 0.5f)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier.size(32.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    if (isPlayingExplanation) Icons.Default.Stop else Icons.Default.VolumeUp,
+                                                    contentDescription = if (isPlayingExplanation) "Stop explanation audio" else "Play explanation audio",
+                                                    tint = if (isPlayingExplanation) Color.White else Color(0xFF8B5CF6),
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             Text(
                                 question.explanation!!,
@@ -1197,21 +1426,77 @@ private fun MatchingQuestion(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    Icons.Default.Info,
-                                    contentDescription = null,
-                                    tint = Color(0xFF8B5CF6),
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Text(
-                                    "Explanation",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF8B5CF6)
-                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Info,
+                                        contentDescription = null,
+                                        tint = Color(0xFF8B5CF6),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        "Explanation",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF8B5CF6)
+                                    )
+                                }
+                                
+                                // Explanation audio button
+                                if (question.explanationAudioUrl != null) {
+                                    val audioPlayer = remember { AudioPlayer() }
+                                    var isPlayingExplanation by remember { mutableStateOf(false) }
+                                    val coroutineScope = rememberCoroutineScope()
+                                    
+                                    DisposableEffect(Unit) {
+                                        onDispose {
+                                            audioPlayer.dispose()
+                                        }
+                                    }
+                                    
+                                    IconButton(
+                                        onClick = {
+                                            if (isPlayingExplanation) {
+                                                audioPlayer.stop()
+                                                isPlayingExplanation = false
+                                            } else {
+                                                coroutineScope.launch {
+                                                    isPlayingExplanation = true
+                                                    audioPlayer.play(question.explanationAudioUrl!!) {
+                                                        isPlayingExplanation = false
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = if (isPlayingExplanation) 
+                                                Color(0xFF8B5CF6).copy(alpha = 0.8f) 
+                                            else 
+                                                Color(0xFF3A3147).copy(alpha = 0.5f)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier.size(28.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    if (isPlayingExplanation) Icons.Default.Stop else Icons.Default.VolumeUp,
+                                                    contentDescription = if (isPlayingExplanation) "Stop explanation audio" else "Play explanation audio",
+                                                    tint = if (isPlayingExplanation) Color.White else Color(0xFF8B5CF6),
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             Text(
                                 question.explanation!!,
@@ -1632,8 +1917,46 @@ private fun MatchingItemCard(
                     color = if (isMatched || isSelected) Color.White else Color(0xFFB4B4C4),
                     fontWeight = if (isMatched || isSelected) FontWeight.SemiBold else FontWeight.Normal,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
+                
+                // Audio button for item
+                if (item.audioUrl != null) {
+                    val audioPlayer = remember { AudioPlayer() }
+                    var isPlaying by remember { mutableStateOf(false) }
+                    val coroutineScope = rememberCoroutineScope()
+                    
+                    DisposableEffect(Unit) {
+                        onDispose {
+                            audioPlayer.dispose()
+                        }
+                    }
+                    
+                    IconButton(
+                        onClick = {
+                            if (isPlaying) {
+                                audioPlayer.stop()
+                                isPlaying = false
+                            } else {
+                                coroutineScope.launch {
+                                    isPlaying = true
+                                    audioPlayer.play(item.audioUrl!!) {
+                                        isPlaying = false
+                                    }
+                                }
+                            }
+                        },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            if (isPlaying) Icons.Default.Stop else Icons.Default.VolumeUp,
+                            contentDescription = if (isPlaying) "Stop audio" else "Play audio",
+                            tint = if (isPlaying) Color(0xFFEF4444) else Color(0xFF8B5CF6),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
             }
             
             // Status icon
@@ -1785,21 +2108,77 @@ private fun ParaphrasingQuestion(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            Icons.Default.Info,
-                            contentDescription = null,
-                            tint = Color(0xFF8B5CF6),
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            "Explanation",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF8B5CF6)
-                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = null,
+                                tint = Color(0xFF8B5CF6),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                "Explanation",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF8B5CF6)
+                            )
+                        }
+                        
+                        // Explanation audio button
+                        if (question.explanationAudioUrl != null) {
+                            val audioPlayer = remember { AudioPlayer() }
+                            var isPlayingExplanation by remember { mutableStateOf(false) }
+                            val coroutineScope = rememberCoroutineScope()
+                            
+                            DisposableEffect(Unit) {
+                                onDispose {
+                                    audioPlayer.dispose()
+                                }
+                            }
+                            
+                            IconButton(
+                                onClick = {
+                                    if (isPlayingExplanation) {
+                                        audioPlayer.stop()
+                                        isPlayingExplanation = false
+                                    } else {
+                                        coroutineScope.launch {
+                                            isPlayingExplanation = true
+                                            audioPlayer.play(question.explanationAudioUrl!!) {
+                                                isPlayingExplanation = false
+                                            }
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = if (isPlayingExplanation) 
+                                        Color(0xFF8B5CF6).copy(alpha = 0.8f) 
+                                    else 
+                                        Color(0xFF3A3147).copy(alpha = 0.5f)
+                                ) {
+                                    Box(
+                                        modifier = Modifier.size(32.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            if (isPlayingExplanation) Icons.Default.Stop else Icons.Default.VolumeUp,
+                                            contentDescription = if (isPlayingExplanation) "Stop explanation audio" else "Play explanation audio",
+                                            tint = if (isPlayingExplanation) Color.White else Color(0xFF8B5CF6),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                     Text(
                         question.explanation!!,
@@ -1943,21 +2322,77 @@ private fun ErrorCorrectionQuestion(
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    Icons.Default.Info,
-                                    contentDescription = null,
-                                    tint = Color(0xFF8B5CF6),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Text(
-                                    "Explanation",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF8B5CF6)
-                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Info,
+                                        contentDescription = null,
+                                        tint = Color(0xFF8B5CF6),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        "Explanation",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF8B5CF6)
+                                    )
+                                }
+                                
+                                // Explanation audio button
+                                if (question.explanationAudioUrl != null) {
+                                    val audioPlayer = remember { AudioPlayer() }
+                                    var isPlayingExplanation by remember { mutableStateOf(false) }
+                                    val coroutineScope = rememberCoroutineScope()
+                                    
+                                    DisposableEffect(Unit) {
+                                        onDispose {
+                                            audioPlayer.dispose()
+                                        }
+                                    }
+                                    
+                                    IconButton(
+                                        onClick = {
+                                            if (isPlayingExplanation) {
+                                                audioPlayer.stop()
+                                                isPlayingExplanation = false
+                                            } else {
+                                                coroutineScope.launch {
+                                                    isPlayingExplanation = true
+                                                    audioPlayer.play(question.explanationAudioUrl!!) {
+                                                        isPlayingExplanation = false
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = if (isPlayingExplanation) 
+                                                Color(0xFF8B5CF6).copy(alpha = 0.8f) 
+                                            else 
+                                                Color(0xFF3A3147).copy(alpha = 0.5f)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier.size(32.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    if (isPlayingExplanation) Icons.Default.Stop else Icons.Default.VolumeUp,
+                                                    contentDescription = if (isPlayingExplanation) "Stop explanation audio" else "Play explanation audio",
+                                                    tint = if (isPlayingExplanation) Color.White else Color(0xFF8B5CF6),
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             Text(
                                 question.explanation!!,
@@ -2291,68 +2726,189 @@ private fun ResultsScreen(
     onRestart: () -> Unit,
     onBack: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    // Soft gradient background
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
-        Icon(
-            if (result.isPassed) Icons.Default.CheckCircle else Icons.Default.Cancel,
-            contentDescription = null,
-            modifier = Modifier.size(80.dp),
-            tint = if (result.isPassed) Color(0xFF10B981) else Color(0xFFEF4444)
+        // Background gradient overlay
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF2D1B69).copy(alpha = 0.3f),
+                            Color(0xFF1A0E2E).copy(alpha = 0.5f)
+                        )
+                    )
+                )
         )
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            if (result.isPassed) "Great Job!" else "Keep Practicing",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-            color = WordBridgeColors.TextPrimary
-        )
-        Spacer(modifier = Modifier.height(16.dp))
         
-        Card(
-            modifier = Modifier.fillMaxWidth(0.6f),
-            colors = CardDefaults.cardColors(
-                containerColor = WordBridgeColors.CardBackground
-            )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+            // Success/Failure icon with soft glow
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .background(
+                        if (result.isPassed) 
+                            Color(0xFF10B981).copy(alpha = 0.1f) 
+                        else 
+                            Color(0xFFEF4444).copy(alpha = 0.1f),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    "Score: ${result.score.toInt()}%",
-                    style = MaterialTheme.typography.displayMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = WordBridgeColors.PrimaryPurple
-                )
-                Text(
-                    "${result.correctAnswers} / ${result.totalQuestions} Correct",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = WordBridgeColors.TextSecondary
+                Icon(
+                    if (result.isPassed) Icons.Default.CheckCircle else Icons.Default.Cancel,
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = if (result.isPassed) 
+                        Color(0xFF34D399) // Softer green
+                    else 
+                        Color(0xFFF87171) // Softer red
                 )
             }
-        }
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedButton(onClick = onBack) {
-                Text("Back to Lessons")
-            }
-            Button(
-                onClick = onRestart,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = WordBridgeColors.PrimaryPurple
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            // Title with soft shadow effect
+            Text(
+                if (result.isPassed) "Excellent Work!" else "Keep Learning!",
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFFF8FAFC), // Soft white
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                if (result.isPassed) 
+                    "You've mastered this lesson!" 
+                else 
+                    "Practice makes perfect. Try again!",
+                style = MaterialTheme.typography.bodyLarge,
+                color = Color(0xFFCBD5E1), // Soft gray
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(40.dp))
+            
+            // Score card with soft design
+            Card(
+                modifier = Modifier.fillMaxWidth(0.7f),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF1E1B4B).copy(alpha = 0.8f) // Soft purple background
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 8.dp,
+                    pressedElevation = 12.dp
                 )
             ) {
-                Icon(Icons.Default.Refresh, null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Try Again")
+                Column(
+                    modifier = Modifier.padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    // Score percentage with gradient text effect
+                    Text(
+                        "${result.score.toInt()}%",
+                        style = MaterialTheme.typography.displayLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = if (result.isPassed) 
+                            Color(0xFF34D399) // Soft green
+                        else 
+                            Color(0xFFF87171), // Soft red
+                        textAlign = TextAlign.Center
+                    )
+                    
+                    Divider(
+                        modifier = Modifier.fillMaxWidth(0.5f),
+                        color = Color(0xFF4C1D95).copy(alpha = 0.3f), // Soft purple divider
+                        thickness = 1.dp
+                    )
+                    
+                    Text(
+                        "${result.correctAnswers} of ${result.totalQuestions} correct",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color(0xFFE2E8F0), // Soft light gray
+                        textAlign = TextAlign.Center
+                    )
+                    
+                    // Progress indicator
+                    LinearProgressIndicator(
+                        progress = result.score / 100f,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = if (result.isPassed) 
+                            Color(0xFF34D399) 
+                        else 
+                            Color(0xFFF87171),
+                        trackColor = Color(0xFF4C1D95).copy(alpha = 0.2f)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(48.dp))
+            
+            // Action buttons with soft design
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth(0.8f)
+            ) {
+                OutlinedButton(
+                    onClick = onBack,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFFCBD5E1)
+                    ),
+                    border = BorderStroke(1.dp, Color(0xFF4C1D95).copy(alpha = 0.3f))
+                ) {
+                    Text(
+                        "Back to Lessons",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                
+                Button(
+                    onClick = onRestart,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (result.isPassed) 
+                            Color(0xFF34D399) 
+                        else 
+                            Color(0xFFF87171),
+                        contentColor = Color.White
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 6.dp,
+                        pressedElevation = 8.dp
+                    )
+                ) {
+                    Icon(
+                        Icons.Default.Refresh, 
+                        null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "Try Again",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }

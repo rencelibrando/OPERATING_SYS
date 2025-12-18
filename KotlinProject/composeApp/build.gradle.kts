@@ -68,6 +68,10 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
             implementation(libs.androidx.collection)
+            
+            // MP3 audio support
+            implementation("com.googlecode.soundlibs:jlayer:1.0.1.4")
+            implementation("com.googlecode.soundlibs:mp3spi:1.9.5.4")
         }
     }
 }

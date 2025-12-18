@@ -24,11 +24,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.example.project.admin.presentation.AdminLessonContentViewModel
 import org.example.project.admin.presentation.ChoiceBuilder
 import org.example.project.admin.presentation.QuestionBuilder
+import org.example.project.admin.presentation.NarrationStatus
+import org.example.project.core.audio.AudioPlayer
 import org.example.project.core.image.DesktopFilePicker
 import org.example.project.domain.model.QuestionType
 import java.io.File
 import androidx.compose.foundation.Image
 import androidx.compose.ui.window.DialogProperties
+import kotlinx.coroutines.launch
 
 /**
  * Admin screen for creating and editing lesson content.
@@ -401,6 +404,86 @@ private fun LessonCreationDialog(
                 
                 Divider(color = Color(0xFF3A3147))
                 
+                // Narration Settings Section
+                val enableNarration by viewModel.enableLessonNarration
+                
+                Text(
+                    "🎙️ Audio Narration",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Enable Narration",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color.White
+                        )
+                        Text(
+                            "Auto-generates audio for questions using Edge TTS",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF6B6B7B)
+                        )
+                    }
+                    Switch(
+                        checked = enableNarration,
+                        onCheckedChange = { viewModel.setEnableLessonNarration(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Color(0xFF8B5CF6)
+                        )
+                    )
+                }
+                
+                if (enableNarration) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Color(0xFF2D2A3E).copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                "Advanced Settings (Optional)",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color(0xFF8B5CF6),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "Leave blank for automatic language detection via FastText",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF6B6B7B)
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = Color(0xFF8B5CF6),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    "Supports: Korean, German, Chinese, Spanish, French, English",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFFB4B4C4)
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                Divider(color = Color(0xFF3A3147))
+                
                 // Questions Section
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -583,14 +666,27 @@ private fun LessonCreationDialog(
                     
                     Spacer(modifier = Modifier.width(12.dp))
                     
+                    val enableNarration by viewModel.enableLessonNarration
+                    val allNarrationsReady = viewModel.allNarrationsReady()
+                    val canSave = lessonTitle.isNotBlank() && questions.isNotEmpty() && (!enableNarration || allNarrationsReady)
+                    
                     Button(
                         onClick = onSave,
-                        enabled = lessonTitle.isNotBlank() && questions.isNotEmpty(),
+                        enabled = canSave,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF8B5CF6)
                         )
                     ) {
                         Text(if (isEditing) "Save Changes" else "Create Lesson")
+                    }
+                    
+                    if (!canSave && enableNarration && !allNarrationsReady) {
+                        Text(
+                            "Generate all narrations before saving",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFFEF4444),
+                            modifier = Modifier.padding(start = 12.dp)
+                        )
                     }
                 }
             }
@@ -675,12 +771,14 @@ private fun QuestionBuilderCard(
                 colors = textFieldColors()
             )
             
-            // Audio for Question
-            MediaUploadField(
-                label = "Question Audio (Optional)",
+            // Audio for Question with Narration Controls
+            NarrationControlField(
+                label = "Question Audio",
+                text = question.text,
                 currentUrl = question.questionAudioUrl,
-                mediaType = "audio",
+                statusKey = "question_$index",
                 viewModel = viewModel,
+                onGenerate = { viewModel.generateQuestionNarration(index) },
                 onUrlChanged = { viewModel.updateQuestionAudioUrl(index, it) }
             )
             
@@ -724,15 +822,51 @@ private fun QuestionBuilderCard(
             }
             
             // Explanation field (optional for all types)
-            OutlinedTextField(
-                value = question.explanation,
-                onValueChange = { viewModel.updateQuestionExplanation(index, it) },
-                label = { Text("Explanation (Optional)") },
+            Surface(
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 2,
-                placeholder = { Text("Explain the answer to help students learn") },
-                colors = textFieldColors()
-            )
+                color = Color(0xFF8B5CF6).copy(alpha = 0.1f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        "📚 EXPLANATION FIELD",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF8B5CF6),
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "This text will be shown as the 'Explanation' to students after they answer",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFFB4B4C4)
+                    )
+                    
+                    OutlinedTextField(
+                        value = question.explanation,
+                        onValueChange = { viewModel.updateQuestionExplanation(index, it) },
+                        label = { Text("Explanation (Optional)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2,
+                        placeholder = { Text("Explain the answer to help students learn") },
+                        colors = textFieldColors()
+                    )
+                }
+            }
+            
+            // Explanation audio narration
+            if (question.explanation.isNotBlank()) {
+                NarrationControlField(
+                    label = "Explanation Audio",
+                    text = question.explanation,
+                    currentUrl = question.explanationAudioUrl,
+                    statusKey = "explanation_$index",
+                    viewModel = viewModel,
+                    onGenerate = { viewModel.generateExplanationNarration(index) },
+                    onUrlChanged = { viewModel.updateExplanationAudioUrl(index, it) }
+                )
+            }
             
             // Student view preview
             StudentViewPreview(question = question, questionIndex = index)
@@ -850,47 +984,23 @@ private fun ChoiceEditor(
                     },
                     modifier = Modifier.weight(1f)
                 )
-                
-                MediaUploadField(
-                    label = "Audio",
-                    currentUrl = choice.audioUrl,
-                    mediaType = "audio",
-                    viewModel = viewModel,
-                    onUrlChanged = { 
-                        viewModel.updateChoiceAudioUrl(questionIndex, choiceIndex, it) 
-                    },
-                    modifier = Modifier.weight(1f)
-                )
             }
+            
+            // Audio narration for choice
+            NarrationControlField(
+                label = "Choice Audio",
+                text = choice.text,
+                currentUrl = choice.audioUrl,
+                statusKey = "choice_${questionIndex}_${choiceIndex}",
+                viewModel = viewModel,
+                onGenerate = { viewModel.generateChoiceNarration(questionIndex, choiceIndex) },
+                onUrlChanged = { viewModel.updateChoiceAudioUrl(questionIndex, choiceIndex, it) }
+            )
         }
     }
 }
 
-@Composable
-private fun IdentificationEditor(
-    question: QuestionBuilder,
-    questionIndex: Int,
-    viewModel: AdminLessonContentViewModel
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(
-            value = question.answerText,
-            onValueChange = { viewModel.updateQuestionAnswerText(questionIndex, it) },
-            label = { Text("Correct Answer*") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            colors = textFieldColors()
-        )
-        
-        MediaUploadField(
-            label = "Answer Audio (Optional)",
-            currentUrl = question.answerAudioUrl,
-            mediaType = "audio",
-            viewModel = viewModel,
-            onUrlChanged = { viewModel.updateAnswerAudioUrl(questionIndex, it) }
-        )
-    }
-}
+
 
 @Composable
 private fun TextEntryEditor(
@@ -905,15 +1015,52 @@ private fun TextEntryEditor(
             color = Color(0xFFB4B4C4)
         )
         
-        OutlinedTextField(
-            value = question.answerText,
-            onValueChange = { viewModel.updateQuestionAnswerText(questionIndex, it) },
-            label = { Text("Expected Answer/Keywords*") },
+        // Answer field for text entry questions
+        Surface(
             modifier = Modifier.fillMaxWidth(),
-            minLines = 2,
-            placeholder = { Text("Enter the correct answer or keywords to check for") },
-            colors = textFieldColors()
-        )
+            color = Color(0xFF2D2A3E).copy(alpha = 0.3f),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "✅ CORRECT ANSWER FIELD",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF10B981),
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "This text will be shown as the 'Sample Answer' to students",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFFB4B4C4)
+                )
+                
+                OutlinedTextField(
+                    value = question.answerText,
+                    onValueChange = { viewModel.updateQuestionAnswerText(questionIndex, it) },
+                    label = { Text("Expected Answer/Keywords*") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    placeholder = { Text("Enter the correct answer or keywords to check for") },
+                    colors = textFieldColors()
+                )
+                
+                // Answer audio narration control
+                if (question.answerText.isNotBlank()) {
+                    NarrationControlField(
+                        label = "Answer Audio",
+                        text = question.answerText,
+                        currentUrl = question.answerAudioUrl,
+                        statusKey = "answer_$questionIndex",
+                        viewModel = viewModel,
+                        onGenerate = { viewModel.generateAnswerNarration(questionIndex) },
+                        onUrlChanged = { viewModel.updateAnswerAudioUrl(questionIndex, it) }
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -1153,6 +1300,20 @@ private fun MatchingEditor(
                                 singleLine = true,
                                 colors = textFieldColors()
                             )
+                            
+                            // Narration control for question/left side
+                            val leftIndex = question.choices.indexOf(choices[0])
+                            if (leftIndex >= 0) {
+                                NarrationControlField(
+                                    label = "Question Audio",
+                                    text = choices[0].text,
+                                    currentUrl = choices[0].audioUrl,
+                                    statusKey = "choice_${questionIndex}_${leftIndex}",
+                                    viewModel = viewModel,
+                                    onGenerate = { viewModel.generateChoiceNarration(questionIndex, leftIndex) },
+                                    onUrlChanged = { viewModel.updateChoiceAudioUrl(questionIndex, leftIndex, it) }
+                                )
+                            }
                         }
                         
                         Icon(
@@ -1178,6 +1339,20 @@ private fun MatchingEditor(
                                 singleLine = true,
                                 colors = textFieldColors()
                             )
+                            
+                            // Narration control for answer/right side
+                            val rightIndex = question.choices.indexOf(choices.getOrNull(1))
+                            if (rightIndex >= 0) {
+                                NarrationControlField(
+                                    label = "Answer Audio",
+                                    text = choices.getOrNull(1)?.text ?: "",
+                                    currentUrl = choices.getOrNull(1)?.audioUrl,
+                                    statusKey = "choice_${questionIndex}_${rightIndex}",
+                                    viewModel = viewModel,
+                                    onGenerate = { viewModel.generateChoiceNarration(questionIndex, rightIndex) },
+                                    onUrlChanged = { viewModel.updateChoiceAudioUrl(questionIndex, rightIndex, it) }
+                                )
+                            }
                         }
                         
                         IconButton(
@@ -1222,15 +1397,38 @@ private fun ParaphrasingEditor(
                 color = Color(0xFFB4B4C4)
             )
 
-            // Question text remains full width for clarity
-            OutlinedTextField(
-                value = question.text,
-                onValueChange = { viewModel.updateQuestionText(questionIndex, it) },
-                label = { Text("Question Text*") },
+            // Question text field with visual clarification
+            Surface(
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 2,
-                colors = textFieldColors()
-            )
+                color = Color(0xFF3A3147).copy(alpha = 0.3f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        "❓ QUESTION/PROMPT FIELD",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF60A5FA),
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "This is the text students will paraphrase (rewrite in their own words)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFFB4B4C4)
+                    )
+                    
+                    OutlinedTextField(
+                        value = question.text,
+                        onValueChange = { viewModel.updateQuestionText(questionIndex, it) },
+                        label = { Text("Question Text*") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2,
+                        colors = textFieldColors()
+                    )
+                }
+            }
 
             // Place audio + sample/wrong message side by side when wide
             if (isWide) {
@@ -1251,16 +1449,38 @@ private fun ParaphrasingEditor(
                         modifier = Modifier.weight(0.4f),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        OutlinedTextField(
-                            value = question.answerText,
-                            onValueChange = { viewModel.updateQuestionAnswerText(questionIndex, it) },
-                            label = { Text("Sample Answer (Optional, for hints)") },
+                        Surface(
                             modifier = Modifier.fillMaxWidth(),
-                            minLines = 3,
-                            placeholder = { Text("Provide a sample paraphrased answer (optional)") },
-                            colors = textFieldColors()
-                        )
-
+                            color = Color(0xFF10B981).copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    "✅ SAMPLE ANSWER",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color(0xFF10B981),
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "Shown as hint to students",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFFB4B4C4)
+                                )
+                                
+                                OutlinedTextField(
+                                    value = question.answerText,
+                                    onValueChange = { viewModel.updateQuestionAnswerText(questionIndex, it) },
+                                    label = { Text("Sample Answer (Optional)") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    minLines = 3,
+                                    placeholder = { Text("Provide a sample paraphrased answer") },
+                                    colors = textFieldColors()
+                                )
+                            }
+                        }
                     }
                 }
             } else {
@@ -1272,15 +1492,38 @@ private fun ParaphrasingEditor(
                     onUrlChanged = { viewModel.updateQuestionAudioUrl(questionIndex, it) }
                 )
 
-                OutlinedTextField(
-                    value = question.answerText,
-                    onValueChange = { viewModel.updateQuestionAnswerText(questionIndex, it) },
-                    label = { Text("Sample Answer (Optional, for hints)") },
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    placeholder = { Text("Provide a sample paraphrased answer (optional)") },
-                    colors = textFieldColors()
-                )
+                    color = Color(0xFF10B981).copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            "✅ SAMPLE ANSWER",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF10B981),
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "Shown as hint to students",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFFB4B4C4)
+                        )
+                        
+                        OutlinedTextField(
+                            value = question.answerText,
+                            onValueChange = { viewModel.updateQuestionAnswerText(questionIndex, it) },
+                            label = { Text("Sample Answer (Optional)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 3,
+                            placeholder = { Text("Provide a sample paraphrased answer") },
+                            colors = textFieldColors()
+                        )
+                    }
+                }
 
             }
 
@@ -1291,15 +1534,38 @@ private fun ParaphrasingEditor(
                 fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
             )
 
-            OutlinedTextField(
-                value = question.explanation,
-                onValueChange = { viewModel.updateQuestionExplanation(questionIndex, it) },
-                label = { Text("Explanation (Optional)") },
+            Surface(
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 2,
-                placeholder = { Text("Explain the answer to help students learn") },
-                colors = textFieldColors()
-            )
+                color = Color(0xFF8B5CF6).copy(alpha = 0.1f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        "📚 EXPLANATION FIELD",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF8B5CF6),
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "This explains the paraphrasing concept or provides learning context",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFFB4B4C4)
+                    )
+                    
+                    OutlinedTextField(
+                        value = question.explanation,
+                        onValueChange = { viewModel.updateQuestionExplanation(questionIndex, it) },
+                        label = { Text("Explanation (Optional)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2,
+                        placeholder = { Text("Explain the answer to help students learn") },
+                        colors = textFieldColors()
+                    )
+                }
+            }
         }
     }
 }
@@ -2135,6 +2401,163 @@ private fun StudentViewPreview(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun NarrationControlField(
+    label: String,
+    text: String,
+    currentUrl: String?,
+    statusKey: String,
+    viewModel: AdminLessonContentViewModel,
+    onGenerate: () -> Unit,
+    onUrlChanged: (String?) -> Unit
+) {
+    val narrationStatus by viewModel.narrationStatus
+    val status = narrationStatus[statusKey] ?: NarrationStatus.Idle
+    val coroutineScope = rememberCoroutineScope()
+    val audioPlayer = remember { AudioPlayer() }
+    var isPlaying by remember { mutableStateOf(false) }
+    
+    DisposableEffect(Unit) {
+        onDispose {
+            audioPlayer.dispose()
+        }
+    }
+    
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                color = Color(0xFFB4B4C4)
+            )
+            
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (currentUrl != null) {
+                    IconButton(
+                        onClick = {
+                            if (isPlaying) {
+                                audioPlayer.stop()
+                                isPlaying = false
+                            } else {
+                                coroutineScope.launch {
+                                    isPlaying = true
+                                    audioPlayer.play(currentUrl) {
+                                        isPlaying = false
+                                    }
+                                }
+                            }
+                        },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
+                            contentDescription = if (isPlaying) "Stop preview" else "Preview audio",
+                            tint = Color(0xFF8B5CF6),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                
+                Button(
+                    onClick = onGenerate,
+                    enabled = text.isNotBlank() && status !is NarrationStatus.Generating,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF8B5CF6)
+                    ),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    when (status) {
+                        is NarrationStatus.Generating -> {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(14.dp),
+                                strokeWidth = 2.dp,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Generating...", style = MaterialTheme.typography.labelSmall)
+                        }
+                        is NarrationStatus.Ready -> {
+                            Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Regenerate", style = MaterialTheme.typography.labelSmall)
+                        }
+                        is NarrationStatus.Failed -> {
+                            Icon(Icons.Default.Refresh, null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Retry", style = MaterialTheme.typography.labelSmall)
+                        }
+                        else -> {
+                            Icon(Icons.Default.VolumeUp, null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Generate", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
+        }
+        
+        when (status) {
+            is NarrationStatus.Ready -> {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Color(0xFF10B981).copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(6.dp),
+                    border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = Color(0xFF10B981),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            "Audio ready",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF10B981)
+                        )
+                    }
+                }
+            }
+            is NarrationStatus.Failed -> {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Color(0xFFEF4444).copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(6.dp),
+                    border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Error,
+                            contentDescription = null,
+                            tint = Color(0xFFEF4444),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            "Failed: ${status.error}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFFEF4444)
+                        )
+                    }
+                }
+            }
+            else -> {}
         }
     }
 }
