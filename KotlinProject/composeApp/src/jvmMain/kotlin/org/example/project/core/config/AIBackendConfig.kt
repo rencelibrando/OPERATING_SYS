@@ -2,6 +2,7 @@ package org.example.project.core.config
 
 object AIBackendConfig {
     const val BASE_URL = "http://localhost:8000"
+    const val AUTO_START_ON_LAUNCH = false
 
     // API endpoints
     const val HEALTH_ENDPOINT = "/health"

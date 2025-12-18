@@ -14,57 +14,8 @@ data class SpeakingExercise(
     val lastAttempt: Long? = null,
 ) {
     companion object {
+        /** Returns an empty list for initial state. */
         fun getSampleExercises(): List<SpeakingExercise> = emptyList()
-
-        fun getDemoExercises(): List<SpeakingExercise> =
-            listOf(
-                SpeakingExercise(
-                    id = "pronunciation_basics",
-                    title = "Pronunciation Basics",
-                    description = "Master fundamental English sounds and phonetics",
-                    type = SpeakingExerciseType.PRONUNCIATION,
-                    difficulty = "Beginner",
-                    duration = 15,
-                    category = "Fundamentals",
-                    icon = "🔤",
-                    completionRate = 75,
-                    lastAttempt = System.currentTimeMillis() - 86400000, 
-                ),
-                SpeakingExercise(
-                    id = "conversation_starters",
-                    title = "Conversation Starters",
-                    description = "Practice common phrases for starting conversations",
-                    type = SpeakingExerciseType.CONVERSATION,
-                    difficulty = "Intermediate",
-                    duration = 20,
-                    category = "Social Skills",
-                    icon = "💬",
-                    completionRate = 45,
-                    lastAttempt = System.currentTimeMillis() - 172800000, 
-                ),
-                SpeakingExercise(
-                    id = "accent_training",
-                    title = "Accent Training",
-                    description = "Improve your accent with native speaker guidance",
-                    type = SpeakingExerciseType.ACCENT_TRAINING,
-                    difficulty = "Advanced",
-                    duration = 25,
-                    category = "Pronunciation",
-                    icon = "🎯",
-                    completionRate = 20,
-                ),
-                SpeakingExercise(
-                    id = "storytelling",
-                    title = "Storytelling Practice",
-                    description = "Learn to tell engaging stories in English",
-                    type = SpeakingExerciseType.STORYTELLING,
-                    difficulty = "Advanced",
-                    duration = 30,
-                    category = "Fluency",
-                    icon = "📖",
-                    completionRate = 0,
-                ),
-            )
     }
 }
 
@@ -90,35 +41,8 @@ data class SpeakingSession(
     val recordingPath: String?,
 ) {
     companion object {
+        /** Returns an empty list for initial state. */
         fun getSampleSessions(): List<SpeakingSession> = emptyList()
-
-        fun getDemoSessions(): List<SpeakingSession> =
-            listOf(
-                SpeakingSession(
-                    id = "session_1",
-                    exerciseId = "pronunciation_basics",
-                    startTime = System.currentTimeMillis() - 86400000,
-                    endTime = System.currentTimeMillis() - 86400000 + 900000, 
-                    accuracyScore = 85,
-                    fluencyScore = 78,
-                    pronunciationScore = 82,
-                    overallScore = 82,
-                    feedback = "Great improvement in vowel sounds! Focus on consonant clusters next.",
-                    recordingPath = "/recordings/session_1.wav",
-                ),
-                SpeakingSession(
-                    id = "session_2",
-                    exerciseId = "conversation_starters",
-                    startTime = System.currentTimeMillis() - 172800000,
-                    endTime = System.currentTimeMillis() - 172800000 + 1200000, 
-                    accuracyScore = 75,
-                    fluencyScore = 70,
-                    pronunciationScore = 73,
-                    overallScore = 73,
-                    feedback = "Good use of intonation. Work on reducing hesitation pauses.",
-                    recordingPath = "/recordings/session_2.wav",
-                ),
-            )
     }
 }
 
@@ -133,6 +57,7 @@ data class SpeakingStats(
     val exercisesCompleted: Int,
 ) {
     companion object {
+        /** Returns default stats for initial state. */
         fun getSampleStats(): SpeakingStats =
             SpeakingStats(
                 totalSessions = 0,
@@ -143,18 +68,6 @@ data class SpeakingStats(
                 currentStreak = 0,
                 longestStreak = 0,
                 exercisesCompleted = 0,
-            )
-
-        fun getDemoStats(): SpeakingStats =
-            SpeakingStats(
-                totalSessions = 15,
-                totalMinutes = 320,
-                averageAccuracy = 82,
-                averageFluency = 78,
-                averagePronunciation = 80,
-                currentStreak = 5,
-                longestStreak = 12,
-                exercisesCompleted = 8,
             )
     }
 }

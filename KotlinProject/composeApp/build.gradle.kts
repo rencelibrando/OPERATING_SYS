@@ -38,6 +38,7 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.androidx.collection)
             implementation(libs.kamel.image)
 
             // Supabase
@@ -66,6 +67,11 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.androidx.collection)
+            
+            // MP3 audio support
+            implementation("com.googlecode.soundlibs:jlayer:1.0.1.4")
+            implementation("com.googlecode.soundlibs:mp3spi:1.9.5.4")
         }
     }
 }

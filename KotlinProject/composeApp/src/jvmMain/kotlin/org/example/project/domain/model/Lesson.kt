@@ -13,55 +13,8 @@ data class Lesson(
     val isAvailable: Boolean = true,
 ) {
     companion object {
+        /** Returns an empty list for initial state. */
         fun getSampleLessons(): List<Lesson> = emptyList()
-
-        fun getDemoLessons(): List<Lesson> =
-            listOf(
-                Lesson(
-                    id = "grammar_mastery",
-                    title = "Grammar Mastery",
-                    category = LessonCategory.GRAMMAR,
-                    difficulty = LessonDifficulty.INTERMEDIATE,
-                    duration = 15,
-                    lessonsCount = 12,
-                    completedCount = 8,
-                    progressPercentage = 67,
-                    icon = "📚",
-                ),
-                Lesson(
-                    id = "vocabulary_builder",
-                    title = "Vocabulary Builder",
-                    category = LessonCategory.VOCABULARY,
-                    difficulty = LessonDifficulty.INTERMEDIATE,
-                    duration = 20,
-                    lessonsCount = 15,
-                    completedCount = 10,
-                    progressPercentage = 67,
-                    icon = "📖",
-                ),
-                Lesson(
-                    id = "conversation_skills",
-                    title = "Conversation Skills",
-                    category = LessonCategory.CONVERSATION,
-                    difficulty = LessonDifficulty.INTERMEDIATE,
-                    duration = 18,
-                    lessonsCount = 10,
-                    completedCount = 5,
-                    progressPercentage = 50,
-                    icon = "💬",
-                ),
-                Lesson(
-                    id = "pronunciation_guide",
-                    title = "Pronunciation Guide",
-                    category = LessonCategory.PRONUNCIATION,
-                    difficulty = LessonDifficulty.INTERMEDIATE,
-                    duration = 12,
-                    lessonsCount = 8,
-                    completedCount = 3,
-                    progressPercentage = 38,
-                    icon = "🎙️",
-                ),
-            )
     }
 }
 
@@ -115,47 +68,8 @@ data class RecentLesson(
     val icon: String,
 ) {
     companion object {
+        /** Returns an empty list for initial state. */
         fun getSampleRecentLessons(): List<RecentLesson> = emptyList()
-
-        fun getDemoRecentLessons(): List<RecentLesson> =
-            listOf(
-                RecentLesson(
-                    id = "present_perfect",
-                    title = "Present Perfect Tense",
-                    category = "Grammar",
-                    difficulty = "Intermediate",
-                    duration = 15,
-                    progressPercentage = 75,
-                    icon = "📚",
-                ),
-                RecentLesson(
-                    id = "business_vocab",
-                    title = "Business Vocabulary",
-                    category = "Vocabulary",
-                    difficulty = "Intermediate",
-                    duration = 20,
-                    progressPercentage = 100,
-                    icon = "📖",
-                ),
-                RecentLesson(
-                    id = "restaurant_conv",
-                    title = "Restaurant Conversations",
-                    category = "Conversation",
-                    difficulty = "Intermediate",
-                    duration = 18,
-                    progressPercentage = 0,
-                    icon = "💬",
-                ),
-                RecentLesson(
-                    id = "difficult_consonants",
-                    title = "Difficult Consonants",
-                    category = "Pronunciation",
-                    difficulty = "Intermediate",
-                    duration = 12,
-                    progressPercentage = 40,
-                    icon = "🎙️",
-                ),
-            )
     }
 }
 
