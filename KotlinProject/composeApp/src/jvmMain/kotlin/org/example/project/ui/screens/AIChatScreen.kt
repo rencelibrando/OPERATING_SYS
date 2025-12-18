@@ -668,19 +668,6 @@ private fun ModernChatInput(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.Bottom
             ) {
-                // Attachment Button
-                IconButton(
-                    onClick = { },
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                ) {
-                    Text(
-                        text = "📎",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-
                 // Message Input
                 OutlinedTextField(
                     value = message,
@@ -702,32 +689,6 @@ private fun ModernChatInput(
                     ),
                     maxLines = 3,
                 )
-
-                // Emoji Button
-                IconButton(
-                    onClick = { },
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                ) {
-                    Text(
-                        text = "😊",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-
-                // Mic Button
-                IconButton(
-                    onClick = { },
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                ) {
-                    Text(
-                        text = "🎤",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
 
                 // Send Button
                 val buttonInteraction = remember { MutableInteractionSource() }
@@ -768,61 +729,12 @@ private fun ModernChatInput(
             Spacer(modifier = Modifier.height(12.dp))
 
             // Status Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            if (botOnline) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Press ",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextMuted,
-                    )
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = Color(0xFFE2E8F0) // slate-200
-                    ) {
-                        Text(
-                            text = "Enter",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.Medium,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                            ),
-                            color = WordBridgeColors.TextSecondary,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                    Text(
-                        text = " to send, ",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextMuted,
-                    )
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = Color(0xFFE2E8F0)
-                    ) {
-                        Text(
-                            text = "Shift+Enter",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.Medium,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                            ),
-                            color = WordBridgeColors.TextSecondary,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                    Text(
-                        text = " for new line",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextMuted,
-                    )
-                }
-
-                if (botOnline) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically

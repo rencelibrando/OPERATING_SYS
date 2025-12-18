@@ -6,7 +6,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import org.example.project.core.auth.*
+import org.example.project.core.utils.ErrorLogger
 import org.example.project.core.utils.ValidationUtils
+
+private const val LOG_TAG = "AuthViewModel.kt"
 
 class AuthViewModel : ViewModel() {
     private val authService = RealSupabaseAuthService()
@@ -68,6 +71,7 @@ class AuthViewModel : ViewModel() {
                         AuthState.Unauthenticated
                     }
             } catch (e: Exception) {
+                ErrorLogger.logException(LOG_TAG, e, "Failed to check authentication status")
                 _authState.value = AuthState.Error("Failed to check authentication status")
             }
         }

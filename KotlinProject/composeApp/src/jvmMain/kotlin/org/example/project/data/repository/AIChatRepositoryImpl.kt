@@ -8,11 +8,14 @@ import org.example.project.core.ai.*
 import org.example.project.core.auth.RealSupabaseAuthService
 import org.example.project.core.config.SupabaseConfig
 import org.example.project.core.onboarding.OnboardingRepository
+import org.example.project.core.utils.ErrorLogger
 import org.example.project.data.dto.ChatSessionDTO
 import org.example.project.domain.model.ChatBot
 import org.example.project.domain.model.ChatMessage
 import org.example.project.domain.model.ChatSession
 import org.example.project.domain.model.MessageSender
+
+private const val LOG_TAG = "AIChatRepositoryImpl.kt"
 
 class AIChatRepositoryImpl(
     private val aiService: AIBackendService = AIBackendService(),
@@ -56,9 +59,7 @@ class AIChatRepositoryImpl(
                         }
                     println("Session saved to Supabase: ${session.id}")
                 } catch (e: Exception) {
-                    println("Failed to save session to Supabase: ${e.message}")
-                    e.printStackTrace()
-                    
+                    ErrorLogger.logException(LOG_TAG, e, "Failed to save session to Supabase")
                 }
 
                 
@@ -92,7 +93,7 @@ class AIChatRepositoryImpl(
                         session
                     }
                 } catch (e: Exception) {
-                    println("Failed to load session from Supabase: ${e.message}")
+                    ErrorLogger.logException(LOG_TAG, e, "Failed to load session from Supabase")
                     null
                 }
             }
@@ -126,9 +127,7 @@ class AIChatRepositoryImpl(
                     println("Loaded ${loadedSessions.size} sessions from Supabase for user: $actualUserId")
                     loadedSessions
                 } catch (e: Exception) {
-                    println("Failed to load sessions from Supabase: ${e.message}")
-                    e.printStackTrace()
-                    
+                    ErrorLogger.logException(LOG_TAG, e, "Failed to load sessions from Supabase")
                     sessions.values.toList()
                 }
             }

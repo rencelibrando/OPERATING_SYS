@@ -6,7 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.example.project.core.ai.BackendManager
+import org.example.project.core.utils.ErrorLogger
 import org.example.project.data.repository.AIChatRepository
 import org.example.project.data.repository.AIChatRepositoryImpl
 import org.example.project.domain.model.ChatBot
@@ -16,11 +18,14 @@ import org.example.project.domain.model.ChatSession
 import org.example.project.domain.model.MessageSender
 import org.example.project.domain.model.MessageType
 
+private const val LOG_TAG = "AIChatViewModel.kt"
+
 class AIChatViewModel(
     private val repository: AIChatRepository = AIChatRepositoryImpl(),
 ) : ViewModel() {
-    // Backend is now started in App.kt when user authenticates
-    // No need to start it here to prevent UI freeze
+    private val _isChatInitialized = mutableStateOf(false)
+    private val _isBackendStarting = mutableStateOf(false)
+    private val _backendStatusMessage = mutableStateOf<String?>(null)
     
     private val _chatMessages = mutableStateOf(ChatMessage.getSampleMessages())
     private val _chatSessions = mutableStateOf(ChatSession.getSampleSessions())
@@ -43,19 +48,68 @@ class AIChatViewModel(
     val isLoading: State<Boolean> = _isLoading
     val currentSession: State<ChatSession?> = _currentSession
     val error: State<String?> = _error
+    val isChatInitialized: State<Boolean> = _isChatInitialized
+    val isBackendStarting: State<Boolean> = _isBackendStarting
+    val backendStatusMessage: State<String?> = _backendStatusMessage
+
+    fun initializeChat() {
+        if (_isChatInitialized.value || _isBackendStarting.value) {
+            return
+        }
+
+        viewModelScope.launch {
+            _isBackendStarting.value = true
+            _backendStatusMessage.value = "Preparing AI tutor..."
+            _error.value = null
+
+            val backendReady =
+                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    if (BackendManager.isRunning()) {
+                        true
+                    } else {
+                        BackendManager.ensureBackendIsRunning()
+                    }
+                }
+
+            if (backendReady) {
+                _backendStatusMessage.value = "AI tutor ready"
+                _isChatInitialized.value = true
+                refreshChatData(force = true)
+            } else {
+                _backendStatusMessage.value =
+                    BackendManager.getLastSetupError()
+                        ?: "AI backend is not running. Open Settings ▸ AI Backend to start it."
+            }
+
+            _isBackendStarting.value = false
+        }
+    }
+
+    private fun ensureChatInitialized(action: String): Boolean {
+        return if (!_isChatInitialized.value) {
+            _error.value = "Start the AI tutor before $action."
+            false
+        } else {
+            true
+        }
+    }
 
     fun onMessageChanged(message: String) {
         _currentMessage.value = message
     }
 
     fun onSendMessage() {
+        if (!ensureChatInitialized("sending messages")) {
+            return
+        }
+
         val messageText = _currentMessage.value.trim()
         if (messageText.isEmpty()) return
 
         // Check if we have an active session
         val session = _currentSession.value
         if (session == null) {
-            println("No active session, cannot send message")
+            ErrorLogger.log(LOG_TAG, "No active session, cannot send message")
             _error.value = "Please select a bot to start chatting"
             return
         }
@@ -121,8 +175,7 @@ class AIChatViewModel(
                 _isTyping.value = false
                 _chatMessages.value = _chatMessages.value + aiMessage
             } catch (e: Exception) {
-                println("Failed to get AI response: ${e.message}")
-                e.printStackTrace()
+                ErrorLogger.logException(LOG_TAG, e, "Failed to get AI response")
 
                 _isTyping.value = false
                 _error.value = "Failed to get response: ${e.message}"
@@ -142,11 +195,19 @@ class AIChatViewModel(
     }
 
     fun onBotSelected(bot: ChatBot) {
+        if (!ensureChatInitialized("selecting bots")) {
+            return
+        }
+
         _selectedBot.value = bot
         startNewSession(bot)
     }
 
     fun onStartFirstConversationClicked() {
+        if (!ensureChatInitialized("starting a conversation")) {
+            return
+        }
+
         val defaultBot = _availableBots.value.firstOrNull()
         if (defaultBot != null) {
             onBotSelected(defaultBot)
@@ -159,6 +220,10 @@ class AIChatViewModel(
     }
 
     fun onSessionSelected(sessionId: String) {
+        if (!ensureChatInitialized("loading sessions")) {
+            return
+        }
+
         viewModelScope.launch {
             try {
                 println("Loading session: $sessionId")
@@ -201,16 +266,17 @@ class AIChatViewModel(
                     }
                 }
             } catch (e: Exception) {
-                println("Failed to load session: ${e.message}")
-                e.printStackTrace()
+                ErrorLogger.logException(LOG_TAG, e, "Failed to load session")
                 _error.value = "Failed to load session"
             }
         }
     }
 
     fun onNewSessionClicked() {
-        // "New Chat" button - always create a new session
-        // Start a new session with default bot (same as "Start First Conversation")
+        if (!ensureChatInitialized("creating a new chat")) {
+            return
+        }
+
         val defaultBot = _availableBots.value.firstOrNull()
         if (defaultBot != null) {
             onBotSelected(defaultBot)
@@ -224,6 +290,10 @@ class AIChatViewModel(
     }
 
     fun onDeleteSession(sessionId: String) {
+        if (!ensureChatInitialized("deleting chats")) {
+            return
+        }
+
         viewModelScope.launch {
             try {
                 println("Deleting session: $sessionId")
@@ -256,7 +326,11 @@ class AIChatViewModel(
         println("Voice input toggled")
     }
 
-    fun refreshChatData() {
+    fun refreshChatData(force: Boolean = false) {
+        if (!_isChatInitialized.value && !force) {
+            return
+        }
+
         _isLoading.value = true
 
         viewModelScope.launch {
@@ -307,6 +381,10 @@ class AIChatViewModel(
     }
 
     private fun startNewSession(bot: ChatBot) {
+        if (!ensureChatInitialized("starting a new session")) {
+            return
+        }
+
         viewModelScope.launch {
             try {
                 println("Starting new session with bot: ${bot.name}")

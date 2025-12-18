@@ -15,6 +15,7 @@ class HomeViewModel : ViewModel() {
     private val _selectedNavigationItem = mutableStateOf("home")
     private val _isLoading = mutableStateOf(false)
     private val _showProfile = mutableStateOf(false)
+    private val _selectedLessonId = mutableStateOf<String?>(null)
 
     
     val user: State<User> = _user
@@ -23,10 +24,12 @@ class HomeViewModel : ViewModel() {
     val selectedNavigationItem: State<String> = _selectedNavigationItem
     val isLoading: State<Boolean> = _isLoading
     val showProfile: State<Boolean> = _showProfile
+    val selectedLessonId: State<String?> = _selectedLessonId
 
     fun onNavigationItemSelected(itemId: String) {
         
         _showProfile.value = false
+        _selectedLessonId.value = null
 
         _selectedNavigationItem.value = itemId
 
@@ -91,5 +94,20 @@ class HomeViewModel : ViewModel() {
 
     fun updateStreak(newStreak: Int) {
         _user.value = _user.value.copy(streak = newStreak)
+    }
+    
+    fun onLessonSelected(lessonId: String) {
+        println("[HomeViewModel] Lesson selected: $lessonId")
+        _selectedLessonId.value = lessonId
+        _showProfile.value = false
+        _navigationItems.value = _navigationItems.value.map { it.copy(isSelected = false) }
+        _selectedNavigationItem.value = ""
+    }
+    
+    fun onCloseLessonPlayer() {
+        println("[HomeViewModel] Closing lesson player")
+        _selectedLessonId.value = null
+        // Return to lessons screen
+        onNavigationItemSelected("lessons")
     }
 }

@@ -2,6 +2,7 @@ package org.example.project.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -73,6 +74,7 @@ fun HomeScreen(
     val isLoading by viewModel.isLoading
     val selectedNavigationItem by viewModel.selectedNavigationItem
     val showProfile by viewModel.showProfile
+    val selectedLessonId by viewModel.selectedLessonId
 
     val (isSidebarExpanded, setSidebarExpanded) = remember { mutableStateOf(true) }
 
@@ -105,6 +107,15 @@ fun HomeScreen(
         )
 
         when {
+            selectedLessonId != null -> {
+                Box(modifier = Modifier.weight(1f)) {
+                    LessonPlayerScreen(
+                        lessonId = selectedLessonId!!,
+                        userId = authenticatedUser?.id ?: "",
+                        onBack = viewModel::onCloseLessonPlayer
+                    )
+                }
+            }
             showProfile -> {
                 ProfileScreen(
                     authenticatedUser = authenticatedUser,
@@ -181,6 +192,7 @@ fun HomeScreen(
                 LessonsScreen(
                     authenticatedUser = authenticatedUser,
                     onUserAvatarClick = viewModel::onUserAvatarClicked,
+                    onLessonSelected = viewModel::onLessonSelected,
                     modifier = Modifier.weight(1f),
                 )
             }
