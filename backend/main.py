@@ -1,7 +1,9 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
+import tempfile
+from pathlib import Path
 
 from config import settings
 from models import (
@@ -13,11 +15,16 @@ from models import (
     SaveHistoryResponse,
     LoadHistoryRequest,
     LoadHistoryResponse,
+    GenerateReferenceAudioRequest,
+    GenerateReferenceAudioResponse,
+    ComparePronunciationRequest,
+    ComparePronunciationResponse,
 )
 from prompts import build_system_prompt, format_conversation_history
 from providers.gemini import GeminiProvider
 from chat_history_service import ChatHistoryService
 from supabase_client import SupabaseManager
+from pronunciation_service import generate_reference_audio, compare_user_pronunciation
 
 
 # Configure logging
@@ -276,6 +283,131 @@ async def delete_chat_history(session_id: str):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete chat history: {str(e)}"
+        )
+
+
+@app.post("/pronunciation/generate-reference", response_model=GenerateReferenceAudioResponse, tags=["Pronunciation"])
+async def generate_reference_audio_endpoint(request: GenerateReferenceAudioRequest):
+    """
+    Generate reference audio for a word using gTTS and save directly to Supabase storage.
+    Also saves the URL to vocabulary_words table if word_id is provided.
+    """
+    try:
+        logger.info(f"Generating reference audio for '{request.word}' in {request.language_code} (word_id: {request.word_id})")
+        
+        # Generate and upload directly to Supabase, save URL to database
+        supabase_url = generate_reference_audio(
+            word=request.word,
+            language_code=request.language_code,
+            word_id=request.word_id
+        )
+        
+        return GenerateReferenceAudioResponse(
+            success=True,
+            reference_audio_url=supabase_url,
+            local_file_path=None  # No local file, only Supabase URL
+        )
+        
+    except Exception as e:
+        logger.error(f"Error generating reference audio: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate reference audio: {str(e)}"
+        )
+
+
+@app.post("/pronunciation/compare", response_model=ComparePronunciationResponse, tags=["Pronunciation"])
+async def compare_pronunciation_endpoint(
+    word: str = Form(...),
+    language_code: str = Form(...),
+    reference_audio_url: str = Form(None),
+    user_audio: UploadFile = File(...)
+):
+    """
+    Compare user's pronunciation with reference audio.
+    
+    Args:
+        word: The word being practiced (form field)
+        language_code: Language code (ko, zh, fr, de, es, en) (form field)
+        reference_audio_url: URL to reference audio (form field, optional)
+        user_audio: User's recorded audio file (WAV format)
+    """
+    try:
+        if not word or not language_code:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="word and language_code are required"
+            )
+        
+        logger.info(f"Comparing pronunciation for '{word}' in {language_code}")
+        
+        # Save user audio to temporary file
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            user_audio_path = Path(tmp.name)
+            content = await user_audio.read()
+            tmp.write(content)
+        
+        try:
+            # Get or generate reference audio
+            if reference_audio_url:
+                # Download reference audio from URL
+                import httpx
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(reference_audio_url)
+                    if response.status_code == 200:
+                        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as ref_tmp:
+                            ref_path = Path(ref_tmp.name)
+                            ref_tmp.write(response.content)
+                    else:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Failed to download reference audio"
+                        )
+            else:
+                # Generate reference audio if not provided (download from Supabase)
+                # First generate and upload to Supabase
+                reference_audio_url = generate_reference_audio(word, language_code, word_id=None)
+                
+                # Download the reference audio for comparison
+                import httpx
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(reference_audio_url)
+                    if response.status_code == 200:
+                        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as ref_tmp:
+                            ref_path = Path(ref_tmp.name)
+                            ref_tmp.write(response.content)
+                    else:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Failed to download generated reference audio"
+                        )
+            
+            # Compare pronunciations
+            result = compare_user_pronunciation(
+                reference_audio_path=ref_path,
+                user_audio_path=user_audio_path,
+                word=word
+            )
+            
+            return ComparePronunciationResponse(**result)
+            
+        finally:
+            # Clean up temporary files
+            try:
+                if user_audio_path.exists():
+                    user_audio_path.unlink()
+                if 'ref_path' in locals() and ref_path.exists():
+                    ref_path.unlink()
+            except Exception as e:
+                logger.warning(f"Failed to clean up temp files: {e}")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error comparing pronunciation: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to compare pronunciation: {str(e)}"
         )
 
 

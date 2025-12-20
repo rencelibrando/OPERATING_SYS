@@ -7,6 +7,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.size
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.example.project.presentation.viewmodel.PracticeLanguage
 import org.example.project.presentation.viewmodel.SpeakingViewModel
@@ -46,6 +49,7 @@ fun SpeakingScreen(
     val isAnalyzing by viewModel.isAnalyzing
     val showLanguageDialog by viewModel.showLanguageDialog
     val recordingDuration by viewModel.recordingDuration
+    val isGeneratingAudio by viewModel.isGeneratingAudio
 
     // Show language selection dialog
     if (showLanguageDialog && currentWord != null) {
@@ -107,7 +111,15 @@ fun SpeakingScreen(
                 definition = currentWord!!.definition,
                 example = currentWord!!.examples.firstOrNull() ?: "No example available",
                 language = selectedLanguage!!,
-                pronunciation = currentWord!!.pronunciation
+                pronunciation = currentWord!!.pronunciation,
+                audioUrl = currentWord!!.audioUrl,
+                isGeneratingAudio = isGeneratingAudio,
+                onPlayAudio = { audioUrl ->
+                    viewModel.playReferenceAudio(audioUrl)
+                },
+                onGenerateAudio = {
+                    viewModel.generateReferenceAudioManually()
+                }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -162,6 +174,10 @@ private fun WordInfoCard(
     example: String,
     language: PracticeLanguage,
     pronunciation: String,
+    audioUrl: String? = null,
+    isGeneratingAudio: Boolean = false,
+    onPlayAudio: (String) -> Unit = {},
+    onGenerateAudio: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -207,6 +223,63 @@ private fun WordInfoCard(
                             text = pronunciation,
                             style = MaterialTheme.typography.bodyLarge,
                             color = WordBridgeColors.TextSecondary
+                        )
+                    }
+                }
+            }
+            
+            // Play audio button or generate audio button
+            Spacer(modifier = Modifier.height(12.dp))
+            if (!audioUrl.isNullOrBlank()) {
+                Button(
+                    onClick = { onPlayAudio(audioUrl!!) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = WordBridgeColors.PrimaryPurple
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    enabled = !isGeneratingAudio
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.VolumeUp,
+                        contentDescription = "Play pronunciation",
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "🔊 Listen to Pronunciation",
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                }
+            } else {
+                OutlinedButton(
+                    onClick = onGenerateAudio,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = WordBridgeColors.PrimaryPurple
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    enabled = !isGeneratingAudio
+                ) {
+                    if (isGeneratingAudio) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = WordBridgeColors.PrimaryPurple
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Generating Audio...",
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.VolumeUp,
+                            contentDescription = "Generate pronunciation audio",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Generate Pronunciation Audio",
+                            modifier = Modifier.padding(vertical = 4.dp)
                         )
                     }
                 }
