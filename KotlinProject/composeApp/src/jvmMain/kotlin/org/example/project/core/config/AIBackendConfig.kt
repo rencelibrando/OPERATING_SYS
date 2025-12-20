@@ -11,6 +11,8 @@ object AIBackendConfig {
     const val SAVE_HISTORY_ENDPOINT = "/chat/history/save"
     const val LOAD_HISTORY_ENDPOINT = "/chat/history/load"
     const val DELETE_HISTORY_ENDPOINT = "/chat/history"
+    const val GENERATE_REFERENCE_AUDIO_ENDPOINT = "/pronunciation/generate-reference"
+    const val COMPARE_PRONUNCIATION_ENDPOINT = "/pronunciation/compare"
     const val DEFAULT_PROVIDER = "gemini"
     const val CONNECTION_TIMEOUT_MS = 30000L
     const val REQUEST_TIMEOUT_MS = 60000L

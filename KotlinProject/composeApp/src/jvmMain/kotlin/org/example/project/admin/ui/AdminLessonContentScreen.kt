@@ -2,6 +2,7 @@ package org.example.project.admin.ui
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
@@ -15,7 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -402,7 +403,7 @@ private fun LessonCreationDialog(
                     )
                 }
                 
-                Divider(color = Color(0xFF3A3147))
+                HorizontalDivider(color = Color(0xFF3A3147))
                 
                 // Narration Settings Section
                 val enableNarration by viewModel.enableLessonNarration
@@ -482,7 +483,7 @@ private fun LessonCreationDialog(
                     }
                 }
                 
-                Divider(color = Color(0xFF3A3147))
+                HorizontalDivider(color = Color(0xFF3A3147))
                 
                 // Questions Section
                 Row(
@@ -1794,7 +1795,7 @@ private fun NetworkImage(
                 connection.connect()
                 val inputStream = connection.getInputStream()
                 val loadedBitmap = inputStream.use { 
-                    org.jetbrains.skia.Image.makeFromEncoded(it.readBytes()).asImageBitmap()
+                    org.jetbrains.skia.Image.makeFromEncoded(it.readBytes()).toComposeImageBitmap()
                 }
                 bitmap = loadedBitmap
                 isLoading = false
@@ -2016,7 +2017,7 @@ private fun StudentViewPreview(
                         )
                     }
                     
-                    Divider(color = Color(0xFF3A3147))
+                    HorizontalDivider(color = Color(0xFF3A3147))
                     
                     // Question type badge
                     Surface(
@@ -2423,7 +2424,7 @@ private fun NarrationControlField(
     
     DisposableEffect(Unit) {
         onDispose {
-            audioPlayer.dispose()
+            audioPlayer.stop()
         }
     }
     
@@ -2449,9 +2450,10 @@ private fun NarrationControlField(
                             } else {
                                 coroutineScope.launch {
                                     isPlaying = true
-                                    audioPlayer.play(currentUrl) {
+                                    audioPlayer.setPlaybackFinishedCallback {
                                         isPlaying = false
                                     }
+                                    audioPlayer.playAudioFromUrl(currentUrl)
                                 }
                             }
                         },

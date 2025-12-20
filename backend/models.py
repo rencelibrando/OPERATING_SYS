@@ -106,3 +106,40 @@ class LoadHistoryResponse(BaseModel):
     original_size: int
     compressed_size: int
     compression_ratio: float
+
+
+# Pronunciation Practice Models
+class GenerateReferenceAudioRequest(BaseModel):
+    word: str
+    language_code: str  # ko, zh, fr, de, es, en
+    word_id: Optional[str] = None  # Optional: ID of the word in vocabulary_words table to save audio_url
+
+
+class GenerateReferenceAudioResponse(BaseModel):
+    success: bool
+    reference_audio_url: str
+    local_file_path: Optional[str] = None  # For debugging
+
+
+class ComparePronunciationRequest(BaseModel):
+    word: str
+    language_code: str
+    reference_audio_url: Optional[str] = None  # If provided, download from URL
+
+
+class PronunciationMetrics(BaseModel):
+    mfcc_similarity: float
+    pitch_similarity: float
+    duration_ratio: float
+    energy_ratio: float
+
+
+class ComparePronunciationResponse(BaseModel):
+    success: bool
+    overall_score: int  # 0-100
+    pronunciation_score: int  # 0-100
+    clarity_score: int  # 0-100
+    fluency_score: int  # 0-100
+    metrics: PronunciationMetrics
+    feedback_messages: List[str]
+    suggestions: List[str]

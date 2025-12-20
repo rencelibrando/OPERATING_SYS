@@ -16,12 +16,8 @@ from models import (
 )
 from prompts import build_system_prompt, format_conversation_history
 from providers.gemini import GeminiProvider
-from providers.exceptions import ProviderQuotaExceededError
 from chat_history_service import ChatHistoryService
 from supabase_client import SupabaseManager
-from lesson_routes import router as lesson_router
-from narration_routes import router as narration_router
-from error_logger import get_logger
 
 
 # Configure logging
@@ -29,7 +25,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = get_logger("main.py")
+logger = logging.getLogger(__name__)
 
 # Initialize providers
 providers = {}
@@ -57,7 +53,7 @@ async def lifespan(app: FastAPI):
         if supabase_healthy:
             logger.info("Supabase connection established")
         else:
-            logger.error("Supabase health check failed")
+            logger.warning("Supabase health check failed")
     else:
         logger.warning("Supabase not configured - chat history will not be saved")
     
@@ -84,10 +80,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(lesson_router)
-app.include_router(narration_router)
-
 
 @app.get("/", tags=["General"])
 async def root():
@@ -109,7 +101,7 @@ async def health_check():
             is_healthy = await provider.health_check()
             provider_status[provider_name.value] = is_healthy
         except Exception as e:
-            logger.error(f"Health check failed for {provider_name}", exc=e)
+            logger.error(f"Health check failed for {provider_name}: {e}")
             provider_status[provider_name.value] = False
     
     # Add Supabase status
@@ -166,23 +158,10 @@ async def chat_completion(request: ChatRequest):
         
         return response
         
-    except ProviderQuotaExceededError as e:
-        logger.warning(
-            "Gemini quota exceeded (retry_after=%s)", 
-            e.retry_after_seconds,
-        )
-        headers = {}
-        if e.retry_after_seconds:
-            headers["Retry-After"] = str(e.retry_after_seconds)
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=e.args[0],
-            headers=headers or None,
-        )
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in chat completion: {str(e)}", exc=e)
+        logger.error(f"Error in chat completion: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate response: {str(e)}"
@@ -233,7 +212,7 @@ async def save_chat_history(request: SaveHistoryRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error saving chat history: {str(e)}", exc=e)
+        logger.error(f"Error saving chat history: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to save chat history: {str(e)}"
@@ -268,7 +247,7 @@ async def load_chat_history(request: LoadHistoryRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error loading chat history: {str(e)}", exc=e)
+        logger.error(f"Error loading chat history: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to load chat history: {str(e)}"
@@ -293,7 +272,7 @@ async def delete_chat_history(session_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting chat history: {str(e)}", exc=e)
+        logger.error(f"Error deleting chat history: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete chat history: {str(e)}"
