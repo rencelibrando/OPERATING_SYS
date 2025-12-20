@@ -33,6 +33,12 @@ interface VocabularyRepository {
         status: VocabularyStatus,
     ): Result<Unit>
 
+    suspend fun updateUserAudioUrl(
+        userId: String,
+        wordId: String,
+        audioUrl: String,
+    ): Result<Unit>
+
     suspend fun getUserWordsByStatus(
         userId: String,
         status: VocabularyStatus,

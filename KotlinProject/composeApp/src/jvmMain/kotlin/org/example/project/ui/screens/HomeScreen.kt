@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.example.project.presentation.viewmodel.HomeViewModel
+import org.example.project.presentation.viewmodel.LessonsViewModel
 import org.example.project.presentation.viewmodel.OnboardingViewModel
 import org.example.project.ui.components.ContinueLearningCard
 import org.example.project.ui.components.HomeEmptyState
@@ -185,9 +187,16 @@ fun HomeScreen(
                 )
             }
             selectedNavigationItem == "vocabulary" -> {
+                val lessonsViewModel: LessonsViewModel = viewModel()
+                LaunchedEffect(authenticatedUser) {
+                    if (authenticatedUser != null) {
+                        lessonsViewModel.initializeWithAuthenticatedUser(authenticatedUser)
+                    }
+                }
                 VocabularyScreen(
                     authenticatedUser = authenticatedUser,
                     onUserAvatarClick = viewModel::onUserAvatarClicked,
+                    lessonsViewModel = lessonsViewModel,
                     modifier = Modifier.weight(1f),
                 )
             }
