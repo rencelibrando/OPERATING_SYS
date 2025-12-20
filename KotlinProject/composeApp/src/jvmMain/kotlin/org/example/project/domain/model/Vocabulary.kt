@@ -11,7 +11,8 @@ data class VocabularyWord(
     val examples: List<String>,
     val status: VocabularyStatus,
     val dateAdded: Long,
-    val lastReviewed: Long?
+    val lastReviewed: Long?,
+    val language: String = "English" // Language code (e.g., "ko", "zh", "fr", "de", "es")
 )
 
 enum class VocabularyStatus(val displayName: String) {

@@ -124,7 +124,35 @@ class VocabularyRepositoryImpl : VocabularyRepository {
     override suspend fun deleteVocabularyWord(wordId: String) = Result.success(Unit)
     override suspend fun getUserVocabulary(userId: String) = Result.success(emptyList<UserVocabularyWord>())
     override suspend fun addWordToUserVocabulary(userId: String, wordId: String) = Result.failure<UserVocabularyWord>(NotImplementedError())
-    override suspend fun updateUserWordStatus(userId: String, wordId: String, status: VocabularyStatus) = Result.success(Unit)
+    override suspend fun updateUserWordStatus(userId: String, wordId: String, status: VocabularyStatus): Result<Unit> = runCatching {
+        supabase.postgrest["user_vocabulary"]
+            .update(
+                mapOf("status" to status.name.lowercase())
+            ) {
+                filter {
+                    eq("user_id", userId)
+                    eq("word_id", wordId)
+                }
+            }
+        Unit
+    }
+
+    override suspend fun updateUserAudioUrl(
+        userId: String,
+        wordId: String,
+        audioUrl: String,
+    ): Result<Unit> = runCatching {
+        supabase.postgrest["user_vocabulary"]
+            .update(
+                mapOf("user_audio_url" to audioUrl)
+            ) {
+                filter {
+                    eq("user_id", userId)
+                    eq("word_id", wordId)
+                }
+            }
+        Unit
+    }
     override suspend fun getUserWordsByStatus(userId: String, status: VocabularyStatus) = Result.success(emptyList<UserVocabularyWord>())
     override suspend fun removeWordFromUserVocabulary(userId: String, wordId: String) = Result.success(Unit)
     override suspend fun getUserVocabularyStats(userId: String) = Result.success(VocabularyStats(0, 0, 0, 0, 0, 0, 0))
@@ -141,8 +169,9 @@ private data class VocabularyWordDTO(
     @SerialName("example_sentence") val exampleSentence: String? = null,
     @SerialName("difficulty_level") val difficultyLevel: String,
     val category: String,
-    @SerialName("audio_url") val audioUrl: String,
+    @SerialName("audio_url") val audioUrl: String? = null,
     @SerialName("image_url") val imageUrl: String? = null,
+    val language: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null
 ) {
@@ -153,12 +182,13 @@ private data class VocabularyWordDTO(
             definition = definition,
             pronunciation = pronunciation ?: "",
             category = category,
-            audioUrl = audioUrl,
+            audioUrl = audioUrl ?: "",
             difficulty = difficultyLevel,
             examples = exampleSentence?.let { listOf(it) } ?: emptyList(),
             status = VocabularyStatus.NEW,
             dateAdded = System.currentTimeMillis(),
-            lastReviewed = null
+            lastReviewed = null,
+            language = language ?: "en"
         )
     }
 
@@ -172,7 +202,8 @@ private data class VocabularyWordDTO(
                 difficultyLevel = w.difficulty.ifBlank { "Beginner" },
                 category = w.category.ifBlank { "General" },
                 audioUrl = w.audioUrl,
-                imageUrl = null
+                imageUrl = null,
+                language = w.language
             )
         }
     }
@@ -215,7 +246,7 @@ private data class UserVocabularyJoinDTO(
                 definition = word.definition,
                 pronunciation = word.pronunciation ?: "",
                 category = word.category,
-                audioUrl = word.audioUrl,
+                audioUrl = word.audioUrl ?: "",
                 difficulty = word.difficultyLevel,
                 examples = word.exampleSentence?.let { listOf(it) } ?: emptyList(),
                 status = when (status.lowercase()) {
@@ -225,7 +256,8 @@ private data class UserVocabularyJoinDTO(
                     else -> VocabularyStatus.NEW
                 },
                 dateAdded = System.currentTimeMillis(),
-                lastReviewed = lastReviewed?.let { System.currentTimeMillis() }
+                lastReviewed = lastReviewed?.let { System.currentTimeMillis() },
+                language = word.language ?: "en"
             )
         }
     }

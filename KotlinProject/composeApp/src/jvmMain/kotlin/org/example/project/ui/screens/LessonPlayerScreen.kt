@@ -544,7 +544,7 @@ private fun QuestionTextSection(
     // Cleanup when component is disposed
     DisposableEffect(Unit) {
         onDispose {
-            audioPlayer.dispose()
+            audioPlayer.stop()
         }
     }
     
@@ -598,9 +598,10 @@ private fun QuestionTextSection(
                         } else {
                             coroutineScope.launch {
                                 isPlayingAudio = true
-                                audioPlayer.play(audioUrl) {
+                                audioPlayer.setPlaybackFinishedCallback {
                                     isPlayingAudio = false
                                 }
+                                audioPlayer.playAudioFromUrl(audioUrl)
                             }
                         }
                     },
@@ -744,7 +745,7 @@ private fun MultipleChoiceQuestion(
                                     
                                     DisposableEffect(Unit) {
                                         onDispose {
-                                            audioPlayer.dispose()
+                                            audioPlayer.stop()
                                         }
                                     }
                                     
@@ -756,9 +757,10 @@ private fun MultipleChoiceQuestion(
                                             } else {
                                                 coroutineScope.launch {
                                                     isPlayingExplanation = true
-                                                    audioPlayer.play(question.explanationAudioUrl!!) {
+                                                    audioPlayer.setPlaybackFinishedCallback {
                                                         isPlayingExplanation = false
                                                     }
+                                                    audioPlayer.playAudioFromUrl(question.explanationAudioUrl!!)
                                                 }
                                             }
                                         },
@@ -969,7 +971,7 @@ private fun ChoiceAudioButton(audioUrl: String) {
     
     DisposableEffect(Unit) {
         onDispose {
-            audioPlayer.dispose()
+            audioPlayer.stop()
         }
     }
     
@@ -981,9 +983,10 @@ private fun ChoiceAudioButton(audioUrl: String) {
             } else {
                 coroutineScope.launch {
                     isPlaying = true
-                    audioPlayer.play(audioUrl) {
+                    audioPlayer.setPlaybackFinishedCallback {
                         isPlaying = false
                     }
+                    audioPlayer.playAudioFromUrl(audioUrl)
                 }
             }
         },
@@ -1086,7 +1089,7 @@ private fun TextEntryQuestion(
                 
                 DisposableEffect(Unit) {
                     onDispose {
-                        audioPlayer.dispose()
+                        audioPlayer.stop()
                     }
                 }
                 
@@ -1098,9 +1101,10 @@ private fun TextEntryQuestion(
                         } else {
                             coroutineScope.launch {
                                 isPlaying = true
-                                audioPlayer.play(question.answerAudioUrl!!) {
+                                audioPlayer.setPlaybackFinishedCallback {
                                     isPlaying = false
                                 }
+                                audioPlayer.playAudioFromUrl(question.answerAudioUrl!!)
                             }
                         }
                     },
@@ -1213,7 +1217,7 @@ private fun TextEntryQuestion(
                                     
                                     DisposableEffect(Unit) {
                                         onDispose {
-                                            audioPlayer.dispose()
+                                            audioPlayer.stop()
                                         }
                                     }
                                     
@@ -1225,9 +1229,10 @@ private fun TextEntryQuestion(
                                             } else {
                                                 coroutineScope.launch {
                                                     isPlayingExplanation = true
-                                                    audioPlayer.play(question.explanationAudioUrl!!) {
+                                                    audioPlayer.setPlaybackFinishedCallback {
                                                         isPlayingExplanation = false
                                                     }
+                                                    audioPlayer.playAudioFromUrl(question.explanationAudioUrl!!)
                                                 }
                                             }
                                         },
@@ -1456,7 +1461,7 @@ private fun MatchingQuestion(
                                     
                                     DisposableEffect(Unit) {
                                         onDispose {
-                                            audioPlayer.dispose()
+                                            audioPlayer.stop()
                                         }
                                     }
                                     
@@ -1468,9 +1473,10 @@ private fun MatchingQuestion(
                                             } else {
                                                 coroutineScope.launch {
                                                     isPlayingExplanation = true
-                                                    audioPlayer.play(question.explanationAudioUrl!!) {
+                                                    audioPlayer.setPlaybackFinishedCallback {
                                                         isPlayingExplanation = false
                                                     }
+                                                    audioPlayer.playAudioFromUrl(question.explanationAudioUrl!!)
                                                 }
                                             }
                                         },
@@ -1929,7 +1935,7 @@ private fun MatchingItemCard(
                     
                     DisposableEffect(Unit) {
                         onDispose {
-                            audioPlayer.dispose()
+                            audioPlayer.stop()
                         }
                     }
                     
@@ -1941,9 +1947,10 @@ private fun MatchingItemCard(
                             } else {
                                 coroutineScope.launch {
                                     isPlaying = true
-                                    audioPlayer.play(item.audioUrl!!) {
+                                    audioPlayer.setPlaybackFinishedCallback {
                                         isPlaying = false
                                     }
+                                    audioPlayer.playAudioFromUrl(item.audioUrl!!)
                                 }
                             }
                         },
@@ -2138,7 +2145,7 @@ private fun ParaphrasingQuestion(
                             
                             DisposableEffect(Unit) {
                                 onDispose {
-                                    audioPlayer.dispose()
+                                    audioPlayer.stop()
                                 }
                             }
                             
@@ -2150,9 +2157,10 @@ private fun ParaphrasingQuestion(
                                     } else {
                                         coroutineScope.launch {
                                             isPlayingExplanation = true
-                                            audioPlayer.play(question.explanationAudioUrl!!) {
+                                            audioPlayer.setPlaybackFinishedCallback {
                                                 isPlayingExplanation = false
                                             }
+                                            audioPlayer.playAudioFromUrl(question.explanationAudioUrl!!)
                                         }
                                     }
                                 },
@@ -2352,7 +2360,7 @@ private fun ErrorCorrectionQuestion(
                                     
                                     DisposableEffect(Unit) {
                                         onDispose {
-                                            audioPlayer.dispose()
+                                            audioPlayer.stop()
                                         }
                                     }
                                     
@@ -2364,9 +2372,10 @@ private fun ErrorCorrectionQuestion(
                                             } else {
                                                 coroutineScope.launch {
                                                     isPlayingExplanation = true
-                                                    audioPlayer.play(question.explanationAudioUrl!!) {
+                                                    audioPlayer.setPlaybackFinishedCallback {
                                                         isPlayingExplanation = false
                                                     }
+                                                    audioPlayer.playAudioFromUrl(question.explanationAudioUrl!!)
                                                 }
                                             }
                                         },
