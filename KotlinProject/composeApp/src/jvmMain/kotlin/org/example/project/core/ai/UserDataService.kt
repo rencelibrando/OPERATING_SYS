@@ -6,7 +6,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import org.example.project.core.config.SupabaseConfig
 
-
 class UserDataService {
     private val supabase = SupabaseConfig.client
 
@@ -16,7 +15,7 @@ class UserDataService {
                 println("Fetching comprehensive user data for: $userId")
 
                 val userProfile = fetchUserProfile(userId)
-                
+
                 val firstName = userProfile?.personalInfo?.get("firstName")?.toString()?.trim('"')
                 val lastName = userProfile?.personalInfo?.get("lastName")?.toString()?.trim('"')
 
@@ -441,4 +440,3 @@ data class UserSettingsRow(
     val ai_preferences: JsonObject? = null,
     val notification_settings: JsonObject? = null,
 )
-

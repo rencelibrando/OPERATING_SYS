@@ -43,25 +43,26 @@ class UserManagementRepository {
                         throw Exception("Supabase not configured")
                     }
 
-                    val response = supabase.postgrest["user_profiles"].select {
-
-                    }
+                    val response =
+                        supabase.postgrest["user_profiles"].select {
+                        }
 
                     val profiles = response.decodeList<UserProfileRow>()
-                    
+
                     profiles.map { profile ->
                         val personalInfo = profile.personalInfo
                         val accountInfo = profile.accountInfo
 
-
                         val firstName = personalInfo?.get("firstName")?.jsonPrimitive?.contentOrNull
                         val lastName = personalInfo?.get("lastName")?.jsonPrimitive?.contentOrNull
-                        val email = personalInfo?.get("email")?.jsonPrimitive?.contentOrNull
-                            ?: accountInfo?.get("email")?.jsonPrimitive?.contentOrNull
-                            ?: ""
-                        val avatarUrl = personalInfo?.get("avatar_url")?.jsonPrimitive?.contentOrNull
-                            ?: personalInfo?.get("avatar")?.jsonPrimitive?.contentOrNull
-                        
+                        val email =
+                            personalInfo?.get("email")?.jsonPrimitive?.contentOrNull
+                                ?: accountInfo?.get("email")?.jsonPrimitive?.contentOrNull
+                                ?: ""
+                        val avatarUrl =
+                            personalInfo?.get("avatar_url")?.jsonPrimitive?.contentOrNull
+                                ?: personalInfo?.get("avatar")?.jsonPrimitive?.contentOrNull
+
                         AdminUser(
                             id = profile.id,
                             email = email,
@@ -99,4 +100,3 @@ class UserManagementRepository {
             }
         }
 }
-

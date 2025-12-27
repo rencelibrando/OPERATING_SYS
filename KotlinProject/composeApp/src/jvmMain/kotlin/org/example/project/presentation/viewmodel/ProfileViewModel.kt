@@ -18,7 +18,6 @@ class ProfileViewModel : ViewModel() {
     private val authService = RealSupabaseAuthService()
     private val filePicker = DesktopFilePicker()
 
-    
     private val _userProfile = mutableStateOf(UserProfile.getDefaultProfile())
     private val _profileCompletion = mutableStateOf(ProfileCompletion.calculate(UserProfile.getDefaultProfile()))
     private val _isEditing = mutableStateOf(false)
@@ -27,17 +26,14 @@ class ProfileViewModel : ViewModel() {
     private val _isSaving = mutableStateOf(false)
     private val _showDeleteConfirmation = mutableStateOf(false)
 
-    
     private val _editingSection = mutableStateOf<ProfileSection?>(null)
     private val _editingPersonalInfo = mutableStateOf<PersonalInfo?>(null)
     private val _editingLearningProfile = mutableStateOf<LearningProfile?>(null)
 
-    
     private val _isEditingProfilePicture = mutableStateOf(false)
     private val _tempProfileImageBytes = mutableStateOf<ByteArray?>(null)
     private val _tempProfileImageUrl = mutableStateOf<String?>(null)
 
-    
     val userProfile: State<UserProfile> = _userProfile
     val profileCompletion: State<ProfileCompletion> = _profileCompletion
     val isEditing: State<Boolean> = _isEditing
@@ -46,12 +42,10 @@ class ProfileViewModel : ViewModel() {
     val isSaving: State<Boolean> = _isSaving
     val showDeleteConfirmation: State<Boolean> = _showDeleteConfirmation
 
-    
     val editingSection: State<ProfileSection?> = _editingSection
     val editingPersonalInfo: State<PersonalInfo?> = _editingPersonalInfo
     val editingLearningProfile: State<LearningProfile?> = _editingLearningProfile
 
-    
     val isEditingProfilePicture: State<Boolean> = _isEditingProfilePicture
     val tempProfileImageBytes: State<ByteArray?> = _tempProfileImageBytes
     val tempProfileImageUrl: State<String?> = _tempProfileImageUrl
@@ -62,14 +56,12 @@ class ProfileViewModel : ViewModel() {
                 _isLoading.value = true
                 println("Loading profile data for user: ${authUser.email}")
 
-                
                 val personalInfoResult = profileService.loadPersonalInfo()
                 val personalInfo = personalInfoResult.getOrNull() ?: PersonalInfo.getDefault()
 
                 val learningProfileResult = profileService.loadLearningProfile()
                 val learningProfile = learningProfileResult.getOrNull() ?: LearningProfile.getDefault()
 
-                
                 val mergedPersonalInfo =
                     personalInfo.copy(
                         firstName = if (personalInfo.firstName.isNotEmpty()) personalInfo.firstName else authUser.firstName,
@@ -95,7 +87,7 @@ class ProfileViewModel : ViewModel() {
                 println("   profileImageUrl: ${mergedPersonalInfo.profileImageUrl}")
             } catch (e: Exception) {
                 println("Failed to initialize profile from Supabase: ${e.message}")
-                
+
                 val currentProfile = _userProfile.value
                 val updatedProfile =
                     currentProfile.copy(
@@ -136,7 +128,6 @@ class ProfileViewModel : ViewModel() {
                 _editingLearningProfile.value = _userProfile.value.learningProfile.copy()
             }
             else -> {
-                
             }
         }
     }
@@ -342,15 +333,13 @@ class ProfileViewModel : ViewModel() {
             try {
                 _isSaving.value = true
 
-                
                 val imageBytes = filePicker.selectImage()
                 if (imageBytes == null) {
                     println("No image selected")
                     return@launch
                 }
 
-                
-                val maxSize = 5 * 1024 * 1024 
+                val maxSize = 5 * 1024 * 1024
                 if (imageBytes.size > maxSize) {
                     println("Image too large. Please select an image smaller than 5MB")
                     return@launch
@@ -358,18 +347,16 @@ class ProfileViewModel : ViewModel() {
 
                 println("Uploading image (${imageBytes.size} bytes)...")
 
-                
                 val uploadResult = imageUploadService.uploadProfilePicture(imageBytes)
                 uploadResult.fold(
                     onSuccess = { imageUrl ->
                         println("Received image URL: $imageUrl")
 
-                        
                         val currentProfile = _userProfile.value
                         val updatedPersonalInfo =
                             currentProfile.personalInfo.copy(
                                 profileImageUrl = imageUrl,
-                                avatar = "", 
+                                avatar = "",
                             )
 
                         _userProfile.value =
@@ -382,14 +369,12 @@ class ProfileViewModel : ViewModel() {
 
                         _profileCompletion.value = ProfileCompletion.calculate(_userProfile.value)
 
-                        
                         saveProfile()
 
                         println("Profile picture uploaded successfully!")
                     },
                     onFailure = { error ->
                         println("Failed to upload profile picture: ${error.message}")
-                        
                     },
                 )
             } catch (e: Exception) {
@@ -403,21 +388,18 @@ class ProfileViewModel : ViewModel() {
     fun onStartProfilePictureEdit() {
         viewModelScope.launch {
             try {
-                
                 val imageBytes = filePicker.selectImage()
                 if (imageBytes == null) {
                     println("No image selected")
                     return@launch
                 }
 
-                
-                val maxSize = 5 * 1024 * 1024 
+                val maxSize = 5 * 1024 * 1024
                 if (imageBytes.size > maxSize) {
                     println("Image too large. Please select an image smaller than 5MB")
                     return@launch
                 }
 
-                
                 _tempProfileImageBytes.value = imageBytes
                 _isEditingProfilePicture.value = true
 
@@ -441,7 +423,6 @@ class ProfileViewModel : ViewModel() {
 
                 println("Uploading profile picture (${imageBytes.size} bytes)...")
 
-                
                 val currentProfile = _userProfile.value
                 val oldImageUrl = currentProfile.personalInfo.profileImageUrl
                 if (!oldImageUrl.isNullOrEmpty()) {
@@ -449,17 +430,15 @@ class ProfileViewModel : ViewModel() {
                     imageUploadService.deleteProfilePicture(oldImageUrl)
                 }
 
-                
                 val uploadResult = imageUploadService.uploadProfilePicture(imageBytes)
                 uploadResult.fold(
                     onSuccess = { imageUrl ->
                         println("Received image URL: $imageUrl")
 
-                        
                         val updatedPersonalInfo =
                             currentProfile.personalInfo.copy(
                                 profileImageUrl = imageUrl,
-                                avatar = "", 
+                                avatar = "",
                             )
 
                         _userProfile.value =
@@ -472,20 +451,16 @@ class ProfileViewModel : ViewModel() {
 
                         _profileCompletion.value = ProfileCompletion.calculate(_userProfile.value)
 
-                        
                         saveProfile()
 
-                        
                         updateUserMetadataInAuth(imageUrl)
 
-                        
                         onCancelProfilePictureEdit()
 
                         println("Profile picture saved successfully!")
                     },
                     onFailure = { error ->
                         println("Failed to upload profile picture: ${error.message}")
-                        
                     },
                 )
             } catch (e: Exception) {
@@ -511,7 +486,6 @@ class ProfileViewModel : ViewModel() {
     }
 
     fun onChangePassword() {
-        
         println("Changing password...")
     }
 
@@ -529,17 +503,14 @@ class ProfileViewModel : ViewModel() {
     }
 
     fun onVerifyEmail() {
-        
         println("Sending verification email...")
     }
 
     fun onVerifyPhone() {
-        
         println("Sending verification SMS...")
     }
 
     fun onManageSubscription() {
-        
         println("Managing subscription...")
     }
 
@@ -550,16 +521,13 @@ class ProfileViewModel : ViewModel() {
             try {
                 val profile = _userProfile.value
 
-                
                 profileService.updatePersonalInfo(profile.personalInfo)
 
-                
                 profileService.updateLearningProfile(profile.learningProfile)
 
                 println("Profile saved to Supabase successfully")
             } catch (e: Exception) {
                 println("Failed to save profile to Supabase: ${e.message}")
-                
             } finally {
                 _isSaving.value = false
             }

@@ -1,7 +1,6 @@
 package org.example.project.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,20 +17,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import org.example.project.domain.model.LessonLanguage
-import org.example.project.ui.theme.WordBridgeColors
 
 /**
  * Language Switcher Component for Lessons Tab
- * 
+ *
  * Allows users to switch their active learning language directly from the Lessons tab
  * without needing to go through onboarding or profile settings.
  */
@@ -48,40 +42,44 @@ fun LessonLanguageSwitcher(
     val isHovered by interactionSource.collectIsHoveredAsState()
 
     val backgroundColor by animateColorAsState(
-        targetValue = when {
-            !enabled -> Color(0xFFF1F5F9) // slate-100
-            isHovered || expanded -> Color(0xFFEDE9FE) // violet-100
-            else -> Color.White
-        },
+        targetValue =
+            when {
+                !enabled -> Color(0xFFF1F5F9) // slate-100
+                isHovered || expanded -> Color(0xFFEDE9FE) // violet-100
+                else -> Color.White
+            },
         animationSpec = tween(durationMillis = 200),
-        label = "backgroundColor"
+        label = "backgroundColor",
     )
 
     val borderColor by animateColorAsState(
-        targetValue = when {
-            !enabled -> Color(0xFFE2E8F0) // slate-200
-            expanded -> Color(0xFF8B5CF6) // violet-500
-            isHovered -> Color(0xFFA78BFA) // violet-400
-            else -> Color(0xFFE2E8F0) // slate-200
-        },
+        targetValue =
+            when {
+                !enabled -> Color(0xFFE2E8F0) // slate-200
+                expanded -> Color(0xFF8B5CF6) // violet-500
+                isHovered -> Color(0xFFA78BFA) // violet-400
+                else -> Color(0xFFE2E8F0) // slate-200
+            },
         animationSpec = tween(durationMillis = 200),
-        label = "borderColor"
+        label = "borderColor",
     )
 
     Box(modifier = modifier) {
         // Main Button
         Surface(
-            modifier = Modifier
-                .hoverable(interactionSource)
-                .clickable(enabled = enabled) { expanded = !expanded },
+            modifier =
+                Modifier
+                    .hoverable(interactionSource)
+                    .clickable(enabled = enabled) { expanded = !expanded },
             shape = RoundedCornerShape(12.dp),
             color = backgroundColor,
             shadowElevation = if (expanded) 4.dp else 0.dp,
         ) {
             Row(
-                modifier = Modifier
-                    .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                modifier =
+                    Modifier
+                        .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -100,9 +98,10 @@ fun LessonLanguageSwitcher(
                     )
                     Text(
                         text = selectedLanguage.displayName,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.SemiBold
-                        ),
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                            ),
                         color = Color(0xFF1E293B), // slate-800
                     )
                 }
@@ -120,21 +119,24 @@ fun LessonLanguageSwitcher(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .width(280.dp)
-                .background(Color.White, RoundedCornerShape(16.dp)),
+            modifier =
+                Modifier
+                    .width(280.dp)
+                    .background(Color.White, RoundedCornerShape(16.dp)),
         ) {
             // Header
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
             ) {
                 Text(
                     text = "🌍 Switch Language",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
+                    style =
+                        MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
                     color = Color(0xFF1E293B),
                 )
                 Spacer(modifier = Modifier.height(4.dp))
@@ -172,22 +174,24 @@ private fun LanguageDropdownItem(
     val isHovered by interactionSource.collectIsHoveredAsState()
 
     val backgroundColor by animateColorAsState(
-        targetValue = when {
-            isSelected -> Color(0xFFF5F3FF) // violet-50
-            isHovered -> Color(0xFFF8FAFC) // slate-50
-            else -> Color.Transparent
-        },
+        targetValue =
+            when {
+                isSelected -> Color(0xFFF5F3FF) // violet-50
+                isHovered -> Color(0xFFF8FAFC) // slate-50
+                else -> Color.Transparent
+            },
         animationSpec = tween(durationMillis = 150),
-        label = "itemBackground"
+        label = "itemBackground",
     )
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .hoverable(interactionSource)
-            .clickable(onClick = onClick)
-            .background(backgroundColor)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .hoverable(interactionSource)
+                .clickable(onClick = onClick)
+                .background(backgroundColor)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -205,9 +209,10 @@ private fun LanguageDropdownItem(
             Column {
                 Text(
                     text = language.displayName,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                    ),
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                        ),
                     color = if (isSelected) Color(0xFF7C3AED) else Color(0xFF1E293B), // violet-600 or slate-800
                 )
                 Text(
@@ -221,14 +226,16 @@ private fun LanguageDropdownItem(
         // Selected checkmark
         if (isSelected) {
             Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(Color(0xFF8B5CF6), Color(0xFF6366F1))
+                modifier =
+                    Modifier
+                        .size(24.dp)
+                        .background(
+                            brush =
+                                Brush.linearGradient(
+                                    colors = listOf(Color(0xFF8B5CF6), Color(0xFF6366F1)),
+                                ),
+                            shape = RoundedCornerShape(6.dp),
                         ),
-                        shape = RoundedCornerShape(6.dp)
-                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -258,15 +265,17 @@ fun LessonLanguageSwitcherCompact(
 
     Box(modifier = modifier) {
         Surface(
-            modifier = Modifier
-                .hoverable(interactionSource)
-                .clickable { expanded = !expanded },
+            modifier =
+                Modifier
+                    .hoverable(interactionSource)
+                    .clickable { expanded = !expanded },
             shape = RoundedCornerShape(8.dp),
             color = if (isHovered || expanded) Color(0xFFEDE9FE) else Color(0xFFF8FAFC),
         ) {
             Row(
-                modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                modifier =
+                    Modifier
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
@@ -276,9 +285,10 @@ fun LessonLanguageSwitcherCompact(
                 )
                 Text(
                     text = selectedLanguage.displayName,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontWeight = FontWeight.Medium
-                    ),
+                    style =
+                        MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Medium,
+                        ),
                     color = Color(0xFF475569),
                 )
                 Icon(
@@ -312,15 +322,18 @@ fun LessonLanguageSwitcherCompact(
                         onLanguageSelected(language)
                         expanded = false
                     },
-                    trailingIcon = if (language == selectedLanguage) {
-                        {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = null,
-                                tint = Color(0xFF8B5CF6),
-                            )
-                        }
-                    } else null,
+                    trailingIcon =
+                        if (language == selectedLanguage) {
+                            {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = Color(0xFF8B5CF6),
+                                )
+                            }
+                        } else {
+                            null
+                        },
                 )
             }
         }
@@ -352,4 +365,3 @@ private fun getLanguageNativeName(language: LessonLanguage): String {
         LessonLanguage.SPANISH -> "Español"
     }
 }
-

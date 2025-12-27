@@ -31,7 +31,6 @@ class AIBackendService {
                 )
             }
 
-            
             install(io.ktor.client.plugins.HttpTimeout) {
                 requestTimeoutMillis = AIBackendConfig.REQUEST_TIMEOUT_MS
                 connectTimeoutMillis = AIBackendConfig.CONNECTION_TIMEOUT_MS
@@ -156,9 +155,7 @@ class AIBackendService {
             println("Failed to delete chat history: ${error.message}")
         }
 
-
     fun close() {
         client.close()
     }
 }
-

@@ -3,6 +3,7 @@ from typing import List
 import os
 from pathlib import Path
 import logging
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -11,19 +12,19 @@ def find_env_file():
     """Find .env file in common locations"""
     current_dir = Path.cwd()
     script_dir = Path(__file__).parent
-    
+
     possible_locations = [
         current_dir / ".env",  # Current working directory
         script_dir / ".env",  # Backend directory
         script_dir.parent / ".env",  # Parent of backend (project root)
         script_dir.parent / "KotlinProject" / "composeApp" / ".env",  # Kotlin app .env
     ]
-    
+
     for env_path in possible_locations:
         if env_path.exists():
             logger.info(f"Found .env file at: {env_path.absolute()}")
             return str(env_path.absolute())
-    
+
     logger.warning("No .env file found in any checked location")
     for loc in possible_locations:
         logger.warning(f"  Checked: {loc.absolute()}")
@@ -45,7 +46,15 @@ class Settings(BaseSettings):
     )
     
     # AI Provider API Keys
-    gemini_api_key: str = ""
+    gemini_api_key: str = Field(..., env="GEMINI_API_KEY")
+    deepgram_api_key: str = Field(..., env="DEEPGRAM_API_KEY")
+    deepseek_api_key: str = Field(..., env="DEEPSEEK_API_KEY")
+    eleven_labs_api_key: str = Field(..., env="ELEVEN_LABS_API_KEY")
+    
+    # Deepgram Configuration
+    deepgram_model: str = Field(default="nova-3", env="DEEPGRAM_MODEL")
+    deepgram_language: str = Field(default="multi", env="DEEPGRAM_LANGUAGE")
+    deepgram_endpointing: int = Field(default=100, env="DEEPGRAM_ENDPOINTING")
     
     # Supabase Configuration
     # Accept both SUPABASE_KEY and SUPABASE_ANON_KEY
@@ -89,3 +98,8 @@ if not settings.supabase_url and not settings.supabase_key:
     logger.error(f"Current working directory: {os.getcwd()}")
     logger.error(f"Checked .env file: {find_env_file()}")
     logger.error("=" * 60)
+
+
+def get_settings() -> Settings:
+    """Get the application settings instance."""
+    return settings

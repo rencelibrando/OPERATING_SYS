@@ -7,7 +7,6 @@ data class User(
     val streak: Int,
     val xpPoints: Int,
     val wordsLearned: Int,
-    
     val accuracy: Int,
     val avatarInitials: String,
     val profileImageUrl: String? = null,

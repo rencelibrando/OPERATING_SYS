@@ -318,5 +318,4 @@ class AuthViewModel : ViewModel() {
         clearLoginForm()
         clearSignUpForm()
     }
-
 }

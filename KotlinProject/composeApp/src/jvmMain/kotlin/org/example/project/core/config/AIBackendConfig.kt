@@ -21,4 +21,3 @@ object AIBackendConfig {
 
     fun getEndpointUrl(endpoint: String): String = "$BASE_URL$endpoint"
 }
-

@@ -22,6 +22,7 @@ import org.example.project.core.dictionary.WordNotFoundException
 import org.example.project.domain.model.LessonLanguage
 import org.example.project.domain.model.VocabularyStatus
 import org.example.project.domain.model.VocabularyWord
+import org.example.project.models.PracticeLanguage
 import org.example.project.presentation.viewmodel.LessonsViewModel
 import org.example.project.presentation.viewmodel.SpeakingViewModel
 import org.example.project.presentation.viewmodel.VocabularyViewModel
@@ -70,12 +71,10 @@ fun VocabularyScreen(
         }
     }
 
-    
     val currentWord by speakingViewModel.currentWord
     val practiceLanguage by speakingViewModel.selectedLanguage
     val showLanguageDialog by speakingViewModel.showLanguageDialog
 
-    
     if (showLanguageDialog && currentWord != null) {
         LanguageSelectionDialog(
             wordToLearn = currentWord!!.word,
@@ -258,7 +257,7 @@ fun VocabularyScreen(
                                         // Use the app's selected learning language for speaking practice
                                         speakingViewModel.startPracticeSessionForLessonLanguage(
                                             vocabularyWord,
-                                            selectedLanguage
+                                            selectedLanguage.code
                                         )
                                     } else {
                                         // Fallback: show language selection dialog
@@ -344,7 +343,7 @@ fun VocabularyScreen(
                 if (selectedLanguage != null) {
                     speakingViewModel.startPracticeSessionForLessonLanguage(
                         word,
-                        selectedLanguage
+                        selectedLanguage.code
                     )
                 } else {
                     speakingViewModel.startPracticeSession(word)

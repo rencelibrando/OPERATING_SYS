@@ -21,15 +21,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.example.project.domain.model.*
 import org.example.project.presentation.viewmodel.ProfileViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
 import org.jetbrains.skia.Image
-import java.awt.Desktop
-import java.net.URI
 import org.example.project.core.auth.User as AuthUser
 
 @Composable
@@ -81,23 +78,26 @@ fun ProfileScreen(
 
             // User Avatar Circle (top right)
             Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                Color(0xFF3B82F6), // blue-500
-                                Color(0xFFA855F7)  // purple-500
-                            )
-                        )
-                    ),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(
+                            brush =
+                                Brush.linearGradient(
+                                    colors =
+                                        listOf(
+                                            Color(0xFF3B82F6), // blue-500
+                                            Color(0xFFA855F7), // purple-500
+                                        ),
+                                ),
+                        ),
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = userProfile.personalInfo.initials,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color.White
+                    color = Color.White,
                 )
             }
         }
@@ -197,44 +197,51 @@ private fun ProfileHeaderGradient(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFFEFF6FF), // blue-50
-                            Color(0xFFF5F3FF), // purple-50
-                            Color(0xFFFCE7F3)  // pink-50
-                        )
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(
+                        brush =
+                            Brush.linearGradient(
+                                colors =
+                                    listOf(
+                                        Color(0xFFEFF6FF), // blue-50
+                                        Color(0xFFF5F3FF), // purple-50
+                                        Color(0xFFFCE7F3), // pink-50
+                                    ),
+                            ),
                     )
-                )
-                .border(
-                    width = 2.dp,
-                    color = Color.White,
-                    shape = RoundedCornerShape(24.dp)
-                )
+                    .border(
+                        width = 2.dp,
+                        color = Color.White,
+                        shape = RoundedCornerShape(24.dp),
+                    ),
         ) {
             // Decorative blur circle
             Box(
-                modifier = Modifier
-                    .size(384.dp)
-                    .offset(x = 200.dp, y = (-100).dp)
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0x333B82F6), // blue-400/20
-                                Color(0x33A855F7), // purple-400/20
-                                Color.Transparent
-                            )
+                modifier =
+                    Modifier
+                        .size(384.dp)
+                        .offset(x = 200.dp, y = (-100).dp)
+                        .background(
+                            brush =
+                                Brush.radialGradient(
+                                    colors =
+                                        listOf(
+                                            Color(0x333B82F6), // blue-400/20
+                                            Color(0x33A855F7), // purple-400/20
+                                            Color.Transparent,
+                                        ),
+                                ),
+                            shape = CircleShape,
                         ),
-                        shape = CircleShape
-                    )
             )
 
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(32.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // Avatar with Camera Button
@@ -244,19 +251,22 @@ private fun ProfileHeaderGradient(
                 ) {
                     // Main Avatar
                     Box(
-                        modifier = Modifier
-                            .size(128.dp)
-                            .clip(CircleShape)
-                            .background(
-                                brush = Brush.linearGradient(
-                                    colors = listOf(
-                                        Color(0xFF3B82F6), // blue-500
-                                        Color(0xFFA855F7)  // purple-500
-                                    )
+                        modifier =
+                            Modifier
+                                .size(128.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    brush =
+                                        Brush.linearGradient(
+                                            colors =
+                                                listOf(
+                                                    Color(0xFF3B82F6), // blue-500
+                                                    Color(0xFFA855F7), // purple-500
+                                                ),
+                                        ),
                                 )
-                            )
-                            .clickable(onClick = onStartEditPhoto),
-                        contentAlignment = Alignment.Center
+                                .clickable(onClick = onStartEditPhoto),
+                        contentAlignment = Alignment.Center,
                     ) {
                         if (isEditingPicture && tempImageBytes != null) {
                             Image(
@@ -269,7 +279,7 @@ private fun ProfileHeaderGradient(
                             Text(
                                 text = profile.personalInfo.initials,
                                 style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
-                                color = Color.White
+                                color = Color.White,
                             )
                         }
                     }
@@ -277,13 +287,14 @@ private fun ProfileHeaderGradient(
                     // Camera Button
                     if (!isEditingPicture) {
                         Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(Color.White)
-                                .border(2.dp, Color(0xFFE9D5FF), CircleShape) // purple-200
-                                .clickable(onClick = onStartEditPhoto),
-                            contentAlignment = Alignment.Center
+                            modifier =
+                                Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White)
+                                    .border(2.dp, Color(0xFFE9D5FF), CircleShape) // purple-200
+                                    .clickable(onClick = onStartEditPhoto),
+                            contentAlignment = Alignment.Center,
                         ) {
                             Text(text = "📷", style = MaterialTheme.typography.titleMedium)
                         }
@@ -293,15 +304,16 @@ private fun ProfileHeaderGradient(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = if (profile.personalInfo.fullName.isBlank()) {
-                        if (profile.personalInfo.firstName.isNotBlank() || profile.personalInfo.lastName.isNotBlank()) {
-                            "${profile.personalInfo.firstName} ${profile.personalInfo.lastName}".trim()
+                    text =
+                        if (profile.personalInfo.fullName.isBlank()) {
+                            if (profile.personalInfo.firstName.isNotBlank() || profile.personalInfo.lastName.isNotBlank()) {
+                                "${profile.personalInfo.firstName} ${profile.personalInfo.lastName}".trim()
+                            } else {
+                                "Complete your profile"
+                            }
                         } else {
-                            "Complete your profile"
-                        }
-                    } else {
-                        profile.personalInfo.fullName
-                    },
+                            profile.personalInfo.fullName
+                        },
                     style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
                     color = Color(0xFF1E293B), // slate-800
                     textAlign = TextAlign.Center,
@@ -319,46 +331,50 @@ private fun ProfileHeaderGradient(
 
                 // Profile Completion Progress
                 Column(
-                    modifier = Modifier.widthIn(max = 448.dp).fillMaxWidth()
+                    modifier = Modifier.widthIn(max = 448.dp).fillMaxWidth(),
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Text(
                             text = "Profile Completion",
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = Color(0xFF334155) // slate-700
+                            color = Color(0xFF334155), // slate-700
                         )
                         Text(
                             text = "${completion.completionPercentage}%",
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                            color = Color(0xFF2563EB) // blue-600
+                            color = Color(0xFF2563EB), // blue-600
                         )
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(12.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(Color.White)
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(12.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color.White),
                     ) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .fillMaxWidth(completion.completionPercentage / 100f)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(
-                                    brush = Brush.horizontalGradient(
-                                        colors = listOf(
-                                            Color(0xFF3B82F6), // blue-500
-                                            Color(0xFFA855F7)  // purple-500
-                                        )
-                                    )
-                                )
+                            modifier =
+                                Modifier
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(completion.completionPercentage / 100f)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(
+                                        brush =
+                                            Brush.horizontalGradient(
+                                                colors =
+                                                    listOf(
+                                                        Color(0xFF3B82F6), // blue-500
+                                                        Color(0xFFA855F7), // purple-500
+                                                    ),
+                                            ),
+                                    ),
                         )
                     }
                 }
@@ -370,35 +386,40 @@ private fun ProfileHeaderGradient(
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Button(
                             onClick = onCancelEditPhoto,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFF1F5F9), // slate-100
-                                contentColor = Color(0xFF64748B)    // slate-500
-                            )
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFF1F5F9), // slate-100
+                                    contentColor = Color(0xFF64748B), // slate-500
+                                ),
                         ) {
                             Text("Cancel")
                         }
 
                         Button(
                             onClick = onSavePhoto,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Transparent
-                            ),
-                            modifier = Modifier.background(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(
-                                        Color(0xFFA855F7), // purple-500
-                                        Color(0xFF3B82F6)  // blue-500
-                                    )
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = Color.Transparent,
                                 ),
-                                shape = RoundedCornerShape(8.dp)
-                            ),
-                            enabled = !isSaving
+                            modifier =
+                                Modifier.background(
+                                    brush =
+                                        Brush.horizontalGradient(
+                                            colors =
+                                                listOf(
+                                                    Color(0xFFA855F7), // purple-500
+                                                    Color(0xFF3B82F6), // blue-500
+                                                ),
+                                        ),
+                                    shape = RoundedCornerShape(8.dp),
+                                ),
+                            enabled = !isSaving,
                         ) {
                             if (isSaving) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(16.dp),
                                     strokeWidth = 2.dp,
-                                    color = Color.White
+                                    color = Color.White,
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                             }
@@ -433,25 +454,28 @@ private fun PersonalInformationSection(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                brush = Brush.linearGradient(
-                                    colors = listOf(
-                                        Color(0xFF60A5FA), // blue-400
-                                        Color(0xFFA855F7)  // purple-500
-                                    )
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(
+                                    brush =
+                                        Brush.linearGradient(
+                                            colors =
+                                                listOf(
+                                                    Color(0xFF60A5FA), // blue-400
+                                                    Color(0xFFA855F7), // purple-500
+                                                ),
+                                        ),
+                                ),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text(text = "👤", style = MaterialTheme.typography.headlineMedium)
                     }
@@ -459,7 +483,7 @@ private fun PersonalInformationSection(
                     Text(
                         text = "Personal Information",
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF1E293B) // slate-800
+                        color = Color(0xFF1E293B), // slate-800
                     )
                 }
 
@@ -470,18 +494,22 @@ private fun PersonalInformationSection(
                         }
                         Button(
                             onClick = onSave,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Transparent
-                            ),
-                            modifier = Modifier.background(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(
-                                        Color(0xFFA855F7), // purple-500
-                                        Color(0xFF3B82F6)  // blue-500
-                                    )
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = Color.Transparent,
                                 ),
-                                shape = RoundedCornerShape(8.dp)
-                            )
+                            modifier =
+                                Modifier.background(
+                                    brush =
+                                        Brush.horizontalGradient(
+                                            colors =
+                                                listOf(
+                                                    Color(0xFFA855F7), // purple-500
+                                                    Color(0xFF3B82F6), // blue-500
+                                                ),
+                                        ),
+                                    shape = RoundedCornerShape(8.dp),
+                                ),
                         ) {
                             Text("Save", color = Color.White)
                         }
@@ -508,7 +536,7 @@ private fun PersonalInformationSection(
                     PersonalInfoViewGrid(
                         personalInfo = info,
                         isEmailVerified = isEmailVerified,
-                        onVerifyEmail = onVerifyEmail
+                        onVerifyEmail = onVerifyEmail,
                     )
                 }
             }
@@ -520,22 +548,22 @@ private fun PersonalInformationSection(
 private fun PersonalInfoViewGrid(
     personalInfo: PersonalInfo,
     isEmailVerified: Boolean,
-    onVerifyEmail: () -> Unit
+    onVerifyEmail: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(24.dp)
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             InfoFieldDisplay(
                 label = "First Name *",
                 value = personalInfo.firstName,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
             InfoFieldDisplay(
                 label = "Last Name *",
                 value = personalInfo.lastName,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
         }
 
@@ -546,37 +574,38 @@ private fun PersonalInfoViewGrid(
                 if (!isEmailVerified) {
                     Button(
                         onClick = onVerifyEmail,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFA855F7),
-                            contentColor = Color.White
-                        ),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFA855F7),
+                                contentColor = Color.White,
+                            ),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                     ) {
                         Text("Verify", style = MaterialTheme.typography.bodySmall)
                     }
                 }
-            }
+            },
         )
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(24.dp)
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             InfoFieldDisplay(
                 label = "Date of Birth",
                 value = personalInfo.dateOfBirth ?: "YYYY-MM-DD",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
             InfoFieldDisplay(
                 label = "Location",
                 value = personalInfo.location ?: "City, Country",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
         }
 
         InfoFieldDisplay(
             label = "Bio",
-            value = personalInfo.bio ?: "learning the language i want"
+            value = personalInfo.bio ?: "learning the language i want",
         )
     }
 }
@@ -586,31 +615,32 @@ private fun InfoFieldDisplay(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
-    trailingContent: @Composable (() -> Unit)? = null
+    trailingContent: @Composable (() -> Unit)? = null,
 ) {
     Column(modifier = modifier) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = Color(0xFF64748B) // slate-600
+            color = Color(0xFF64748B), // slate-600
         )
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFFF8FAFC)) // slate-50
-                .border(2.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp)) // slate-200
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFF8FAFC)) // slate-50
+                    .border(2.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp)) // slate-200
+                    .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (value.contains("YYYY") || value.contains("City")) Color(0xFF94A3B8) else Color(0xFF1E293B),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
             trailingContent?.invoke()
         }
@@ -634,59 +664,68 @@ private fun LearningProfileGradientSection(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFFF5F3FF), // purple-50
-                            Color(0xFFEFF6FF), // blue-50
-                            Color(0xFFECFEFF)  // cyan-50
-                        )
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(
+                        brush =
+                            Brush.linearGradient(
+                                colors =
+                                    listOf(
+                                        Color(0xFFF5F3FF), // purple-50
+                                        Color(0xFFEFF6FF), // blue-50
+                                        Color(0xFFECFEFF), // cyan-50
+                                    ),
+                            ),
                     )
-                )
-                .border(2.dp, Color.White, RoundedCornerShape(24.dp))
+                    .border(2.dp, Color.White, RoundedCornerShape(24.dp)),
         ) {
             // Decorative blur circle
             Box(
-                modifier = Modifier
-                    .size(384.dp)
-                    .offset(x = (-100).dp, y = (-50).dp)
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0x33A855F7), // purple-400/20
-                                Color(0x333B82F6), // blue-400/20
-                                Color.Transparent
-                            )
+                modifier =
+                    Modifier
+                        .size(384.dp)
+                        .offset(x = (-100).dp, y = (-50).dp)
+                        .background(
+                            brush =
+                                Brush.radialGradient(
+                                    colors =
+                                        listOf(
+                                            Color(0x33A855F7), // purple-400/20
+                                            Color(0x333B82F6), // blue-400/20
+                                            Color.Transparent,
+                                        ),
+                                ),
+                            shape = CircleShape,
                         ),
-                        shape = CircleShape
-                    )
             )
 
             Column(modifier = Modifier.fillMaxWidth().padding(32.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    brush = Brush.linearGradient(
-                                        colors = listOf(
-                                            Color(0xFFA855F7), // purple-400
-                                            Color(0xFF3B82F6)  // blue-500
-                                        )
-                                    )
-                                ),
-                            contentAlignment = Alignment.Center
+                            modifier =
+                                Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        brush =
+                                            Brush.linearGradient(
+                                                colors =
+                                                    listOf(
+                                                        Color(0xFFA855F7), // purple-400
+                                                        Color(0xFF3B82F6), // blue-500
+                                                    ),
+                                            ),
+                                    ),
+                            contentAlignment = Alignment.Center,
                         ) {
                             Text(text = "📚", style = MaterialTheme.typography.headlineMedium)
                         }
@@ -694,7 +733,7 @@ private fun LearningProfileGradientSection(
                         Text(
                             text = "Learning Profile",
                             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                            color = Color(0xFF1E293B)
+                            color = Color(0xFF1E293B),
                         )
                     }
 
@@ -706,12 +745,14 @@ private fun LearningProfileGradientSection(
                             Button(
                                 onClick = onSave,
                                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                                modifier = Modifier.background(
-                                    brush = Brush.horizontalGradient(
-                                        colors = listOf(Color(0xFFA855F7), Color(0xFF3B82F6))
+                                modifier =
+                                    Modifier.background(
+                                        brush =
+                                            Brush.horizontalGradient(
+                                                colors = listOf(Color(0xFFA855F7), Color(0xFF3B82F6)),
+                                            ),
+                                        shape = RoundedCornerShape(8.dp),
                                     ),
-                                    shape = RoundedCornerShape(8.dp)
-                                )
                             ) {
                                 Text("Save", color = Color.White)
                             }
@@ -730,7 +771,7 @@ private fun LearningProfileGradientSection(
                         LearningProfileEditForm(
                             learningProfile = profile,
                             onUpdateField = onUpdateField,
-                            onUpdateList = onUpdateList
+                            onUpdateList = onUpdateList,
                         )
                     } else {
                         LearningProfileViewGrid(learningProfile = profile)
@@ -746,56 +787,63 @@ private fun LearningProfileViewGrid(learningProfile: LearningProfile) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(24.dp)
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             LearningFieldCard(
                 label = "Current Level",
                 value = learningProfile.currentLevel,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
             LearningFieldCard(
                 label = "Primary Goal",
                 value = learningProfile.primaryGoal,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
         }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(24.dp)
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             LearningFieldCard(
                 label = "Weekly Goal",
                 value = "${learningProfile.weeklyGoalHours} hours",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
             LearningFieldCard(
                 label = "Learning Style",
                 value = learningProfile.preferredLearningStyle,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
         }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(24.dp)
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             LearningFieldCard(
                 label = "Focus Areas",
                 value = if (learningProfile.focusAreas.isNotEmpty()) learningProfile.focusAreas.joinToString(", ") else "Not set",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
             LearningFieldCard(
                 label = "Available Time Slots",
-                value = if (learningProfile.availableTimeSlots.isNotEmpty()) learningProfile.availableTimeSlots.joinToString(", ") else "Not set",
-                modifier = Modifier.weight(1f)
+                value =
+                    if (learningProfile.availableTimeSlots.isNotEmpty()) {
+                        learningProfile.availableTimeSlots.joinToString(
+                            ", ",
+                        )
+                    } else {
+                        "Not set"
+                    },
+                modifier = Modifier.weight(1f),
             )
         }
 
         LearningFieldCard(
             label = "Motivations",
             value = if (learningProfile.motivations.isNotEmpty()) learningProfile.motivations.joinToString(", ") else "Not set",
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -804,27 +852,28 @@ private fun LearningProfileViewGrid(learningProfile: LearningProfile) {
 private fun LearningFieldCard(
     label: String,
     value: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0x99FFFFFF) // white/60 with backdrop blur effect
-        ),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE9D5FF)) // purple-100
+        colors =
+            CardDefaults.cardColors(
+                containerColor = Color(0x99FFFFFF), // white/60 with backdrop blur effect
+            ),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE9D5FF)), // purple-100
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = Color(0xFF64748B) // slate-600
+                color = Color(0xFF64748B), // slate-600
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFF1E293B) // slate-800
+                color = Color(0xFF1E293B), // slate-800
             )
         }
     }
@@ -847,21 +896,24 @@ private fun AccountSecuritySection(
         Column(modifier = Modifier.fillMaxWidth().padding(32.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            brush = Brush.linearGradient(
-                                colors = listOf(
-                                    Color(0xFFFBBF24), // amber-400
-                                    Color(0xFFF97316)  // orange-500
-                                )
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                brush =
+                                    Brush.linearGradient(
+                                        colors =
+                                            listOf(
+                                                Color(0xFFFBBF24), // amber-400
+                                                Color(0xFFF97316), // orange-500
+                                            ),
+                                    ),
+                            ),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(text = "🔒", style = MaterialTheme.typography.headlineMedium)
                 }
@@ -869,7 +921,7 @@ private fun AccountSecuritySection(
                 Text(
                     text = "Account & Security",
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF1E293B)
+                    color = Color(0xFF1E293B),
                 )
             }
 
@@ -881,38 +933,41 @@ private fun AccountSecuritySection(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-                    border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF1F5F9))
+                    border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF1F5F9)),
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column {
                             Text(
                                 text = "Subscription",
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                                color = Color(0xFF1E293B)
+                                color = Color(0xFF1E293B),
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "${userProfile.accountInfo.subscriptionType} (${userProfile.accountInfo.subscriptionStatus})",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFF64748B)
+                                color = Color(0xFF64748B),
                             )
                         }
 
                         Button(
                             onClick = onManageSubscription,
                             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                            modifier = Modifier.background(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(Color(0xFFA855F7), Color(0xFF3B82F6))
+                            modifier =
+                                Modifier.background(
+                                    brush =
+                                        Brush.horizontalGradient(
+                                            colors = listOf(Color(0xFFA855F7), Color(0xFF3B82F6)),
+                                        ),
+                                    shape = RoundedCornerShape(8.dp),
                                 ),
-                                shape = RoundedCornerShape(8.dp)
-                            )
                         ) {
                             Text("Upgrade", color = Color.White)
                         }
@@ -924,14 +979,14 @@ private fun AccountSecuritySection(
                     label = "Two-Factor Authentication",
                     description = "Add an extra layer of security",
                     isEnabled = userProfile.accountInfo.twoFactorEnabled,
-                    onToggle = onToggleTwoFactor
+                    onToggle = onToggleTwoFactor,
                 )
 
                 // Change Password
                 SecurityActionCard(
                     label = "Change Password",
                     description = "Update your account password",
-                    onClick = onChangePassword
+                    onClick = onChangePassword,
                 )
 
                 // Verify Phone
@@ -939,7 +994,7 @@ private fun AccountSecuritySection(
                     SecurityActionCard(
                         label = "Verify Phone Number",
                         description = "Secure your account with phone verification",
-                        onClick = onVerifyPhone
+                        onClick = onVerifyPhone,
                     )
                 }
             }
@@ -952,32 +1007,33 @@ private fun SecurityToggleCard(
     label: String,
     description: String,
     isEnabled: Boolean,
-    onToggle: (Boolean) -> Unit
+    onToggle: (Boolean) -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-        border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF1F5F9))
+        border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF1F5F9)),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = label,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color(0xFF1E293B)
+                    color = Color(0xFF1E293B),
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF64748B)
+                    color = Color(0xFF64748B),
                 )
             }
             Switch(checked = isEnabled, onCheckedChange = onToggle)
@@ -989,33 +1045,34 @@ private fun SecurityToggleCard(
 private fun SecurityActionCard(
     label: String,
     description: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-        border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF1F5F9))
+        border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF1F5F9)),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = label,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color(0xFF1E293B)
+                    color = Color(0xFF1E293B),
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF64748B)
+                    color = Color(0xFF64748B),
                 )
             }
             Text(text = "›", style = MaterialTheme.typography.headlineMedium, color = Color(0xFF94A3B8))
@@ -1032,55 +1089,64 @@ private fun StatisticsGradientSection(stats: ProfileStats) {
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFFECFDF5), // emerald-50
-                            Color(0xFFECFEFF), // cyan-50
-                            Color(0xFFEFF6FF)  // blue-50
-                        )
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(
+                        brush =
+                            Brush.linearGradient(
+                                colors =
+                                    listOf(
+                                        Color(0xFFECFDF5), // emerald-50
+                                        Color(0xFFECFEFF), // cyan-50
+                                        Color(0xFFEFF6FF), // blue-50
+                                    ),
+                            ),
                     )
-                )
-                .border(2.dp, Color.White, RoundedCornerShape(24.dp))
+                    .border(2.dp, Color.White, RoundedCornerShape(24.dp)),
         ) {
             // Decorative blur circle
             Box(
-                modifier = Modifier
-                    .size(384.dp)
-                    .align(Alignment.BottomEnd)
-                    .offset(x = 100.dp, y = 100.dp)
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0x3334D399), // emerald-400/20
-                                Color(0x3306B6D4), // cyan-400/20
-                                Color.Transparent
-                            )
+                modifier =
+                    Modifier
+                        .size(384.dp)
+                        .align(Alignment.BottomEnd)
+                        .offset(x = 100.dp, y = 100.dp)
+                        .background(
+                            brush =
+                                Brush.radialGradient(
+                                    colors =
+                                        listOf(
+                                            Color(0x3334D399), // emerald-400/20
+                                            Color(0x3306B6D4), // cyan-400/20
+                                            Color.Transparent,
+                                        ),
+                                ),
+                            shape = CircleShape,
                         ),
-                        shape = CircleShape
-                    )
             )
 
             Column(modifier = Modifier.fillMaxWidth().padding(32.dp)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                brush = Brush.linearGradient(
-                                    colors = listOf(
-                                        Color(0xFF34D399), // emerald-400
-                                        Color(0xFF06B6D4)  // cyan-500
-                                    )
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(
+                                    brush =
+                                        Brush.linearGradient(
+                                            colors =
+                                                listOf(
+                                                    Color(0xFF34D399), // emerald-400
+                                                    Color(0xFF06B6D4), // cyan-500
+                                                ),
+                                        ),
+                                ),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text(text = "📊", style = MaterialTheme.typography.headlineMedium)
                     }
@@ -1088,7 +1154,7 @@ private fun StatisticsGradientSection(stats: ProfileStats) {
                     Text(
                         text = "Your Statistics",
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF1E293B)
+                        color = Color(0xFF1E293B),
                     )
                 }
 
@@ -1096,21 +1162,21 @@ private fun StatisticsGradientSection(stats: ProfileStats) {
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     StatCard(
                         icon = "⏰",
                         value = "${stats.totalStudyTime / 60}h",
                         label = "Study Time",
                         gradient = listOf(Color(0xFF60A5FA), Color(0xFF06B6D4)),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     )
                     StatCard(
                         icon = "📚",
                         value = "${stats.lessonsCompleted}",
                         label = "Lessons",
                         gradient = listOf(Color(0xFFA855F7), Color(0xFFEC4899)),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     )
                 }
 
@@ -1118,21 +1184,21 @@ private fun StatisticsGradientSection(stats: ProfileStats) {
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     StatCard(
                         icon = "💬",
                         value = "${stats.wordsLearned}",
                         label = "Words Learned",
                         gradient = listOf(Color(0xFF34D399), Color(0xFF14B8A6)),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     )
                     StatCard(
                         icon = "🏆",
                         value = "${stats.achievementsUnlocked}",
                         label = "Achievements",
                         gradient = listOf(Color(0xFFFBBF24), Color(0xFFF97316)),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     )
                 }
             }
@@ -1146,24 +1212,25 @@ private fun StatCard(
     value: String,
     label: String,
     gradient: List<Color>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0x99FFFFFF)),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White)
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(brush = Brush.linearGradient(colors = gradient)),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(brush = Brush.linearGradient(colors = gradient)),
+                contentAlignment = Alignment.Center,
             ) {
                 Text(text = icon, style = MaterialTheme.typography.headlineMedium.copy(color = Color.White))
             }
@@ -1173,7 +1240,7 @@ private fun StatCard(
             Text(
                 text = value,
                 style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                color = gradient.first() // Use gradient start color
+                color = gradient.first(), // Use gradient start color
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -1181,7 +1248,7 @@ private fun StatCard(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                color = Color(0xFF64748B)
+                color = Color(0xFF64748B),
             )
         }
     }
@@ -1198,21 +1265,24 @@ private fun ProfileCustomizationSection() {
         Column(modifier = Modifier.fillMaxWidth().padding(32.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            brush = Brush.linearGradient(
-                                colors = listOf(
-                                    Color(0xFFF472B6), // pink-400
-                                    Color(0xFFF43F5E)  // rose-500
-                                )
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                brush =
+                                    Brush.linearGradient(
+                                        colors =
+                                            listOf(
+                                                Color(0xFFF472B6), // pink-400
+                                                Color(0xFFF43F5E), // rose-500
+                                            ),
+                                    ),
+                            ),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(text = "🎨", style = MaterialTheme.typography.headlineMedium)
                 }
@@ -1220,7 +1290,7 @@ private fun ProfileCustomizationSection() {
                 Text(
                     text = "Profile Customization",
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF1E293B)
+                    color = Color(0xFF1E293B),
                 )
             }
 
@@ -1229,7 +1299,7 @@ private fun ProfileCustomizationSection() {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 CustomizationCard(
                     label = "App Theme",
-                    currentValue = "Light Mode"
+                    currentValue = "Light Mode",
                 )
             }
         }
@@ -1239,41 +1309,43 @@ private fun ProfileCustomizationSection() {
 @Composable
 private fun CustomizationCard(
     label: String,
-    currentValue: String
+    currentValue: String,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-        border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF1F5F9))
+        border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF1F5F9)),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
                 Text(
                     text = label,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color(0xFF1E293B)
+                    color = Color(0xFF1E293B),
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = currentValue,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF64748B)
+                    color = Color(0xFF64748B),
                 )
             }
 
             Button(
                 onClick = { },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFE2E8F0),
-                    contentColor = Color(0xFF334155)
-                )
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFE2E8F0),
+                        contentColor = Color(0xFF334155),
+                    ),
             ) {
                 Text("Change")
             }
@@ -1292,7 +1364,7 @@ private fun PersonalInfoEditForm(
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             OutlinedTextField(
                 value = personalInfo.firstName,
@@ -1328,7 +1400,7 @@ private fun PersonalInfoEditForm(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             OutlinedTextField(
                 value = personalInfo.dateOfBirth ?: "",
@@ -1366,7 +1438,7 @@ private fun LearningProfileEditForm(
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             OutlinedTextField(
                 value = learningProfile.currentLevel,
@@ -1385,7 +1457,7 @@ private fun LearningProfileEditForm(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             OutlinedTextField(
                 value = learningProfile.weeklyGoalHours.toString(),

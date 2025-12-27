@@ -2,6 +2,11 @@ from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
+import sys
+import os
+
+# Add parent directory to path to allow importing from deps_installer
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import settings
 from models import (
@@ -18,6 +23,12 @@ from prompts import build_system_prompt, format_conversation_history
 from providers.gemini import GeminiProvider
 from chat_history_service import ChatHistoryService
 from supabase_client import SupabaseManager
+from lesson_routes import router as lesson_router
+from narration_routes import router as narration_router
+from voice_routes import router as voice_router
+from conversation_routes import router as conversation_router
+from agent_routes import router as agent_router
+from error_logger import get_logger
 
 
 # Configure logging
@@ -27,7 +38,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize providers
+# Initialize empty providers dict; will populate later when API key present
 providers = {}
 
 # Initialize chat history service
@@ -41,11 +52,18 @@ async def lifespan(app: FastAPI):
     logger.info("Starting AI Backend Service")
     
     # Initialize AI providers
-    if settings.gemini_api_key:
+    gemini_key = None
+    # Try to fetch Gemini API key from settings (supports both cases)
+    if hasattr(settings, "GEMINI_API_KEY"):
+        gemini_key = settings.GEMINI_API_KEY
+    elif hasattr(settings, "gemini_api_key"):
+        gemini_key = settings.gemini_api_key
+
+    if gemini_key:
         providers[AIProvider.GEMINI] = GeminiProvider()
         logger.info("Gemini provider initialized")
     else:
-        logger.warning("Gemini API key not configured")
+        logger.warning("Gemini API key not configured; Gemini provider disabled")
     
     # Initialize Supabase connection
     if SupabaseManager.is_configured():
@@ -80,6 +98,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include routers
+app.include_router(lesson_router)
+app.include_router(narration_router)
+app.include_router(voice_router)
+app.include_router(conversation_router)
+app.include_router(agent_router)
 
 @app.get("/", tags=["General"])
 async def root():

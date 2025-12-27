@@ -1,14 +1,13 @@
+import org.gradle.api.tasks.Copy
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.gradle.api.tasks.Copy
 import java.io.File
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    // Temporarily disabled to fix unsupported compiler option issue
-    // alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.ktlint)
 }
@@ -60,7 +59,6 @@ kotlin {
             implementation(libs.kotlinx.datetime)
 
             implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
-
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -83,12 +81,13 @@ tasks.named("jvmProcessResources", Copy::class) {
     val rootEnvFile = rootProject.layout.projectDirectory.file(".env").asFile
     val projectRootEnvFile = File(rootProject.layout.projectDirectory.asFile.parentFile, ".env")
 
-    val envFileToInclude = when {
-        envFile.exists() -> envFile
-        rootEnvFile.exists() -> rootEnvFile
-        projectRootEnvFile.exists() -> projectRootEnvFile
-        else -> null
-    }
+    val envFileToInclude =
+        when {
+            envFile.exists() -> envFile
+            rootEnvFile.exists() -> rootEnvFile
+            projectRootEnvFile.exists() -> projectRootEnvFile
+            else -> null
+        }
 
     if (envFileToInclude != null) {
         from(envFileToInclude) {
@@ -140,10 +139,10 @@ val copyBackendToResources by tasks.registering(Copy::class) {
     group = "distribution"
     description = "Copies the backend Python directory into the installer resources"
 
-    // Backend lives at the repo root: ../backend relative to this module
+    // Backend lives at the repo root:./backend relative to this module
     val backendDir = rootProject.layout.projectDirectory.asFile.parentFile.resolve("backend")
 
-    // Only run if backend exists
+    // Only run if the backend exists
     onlyIf { backendDir.exists() }
 
     // Destination: compose resources directory used by nativeDistributions.appResourcesRootDir
@@ -163,9 +162,11 @@ val copyBackendToResources by tasks.registering(Copy::class) {
 // Ensure backend and icons are copied before packaging installers (MSI/DMG/DEB)
 tasks.matching { task ->
     task.name.startsWith("packageRelease") &&
-        (task.name.contains("Msi", ignoreCase = true) ||
-            task.name.contains("Dmg", ignoreCase = true) ||
-            task.name.contains("Deb", ignoreCase = true))
+        (
+            task.name.contains("Msi", ignoreCase = true) ||
+                task.name.contains("Dmg", ignoreCase = true) ||
+                task.name.contains("Deb", ignoreCase = true)
+        )
 }.configureEach {
     dependsOn(copyIconsToResources, copyBackendToResources)
 }
@@ -193,11 +194,11 @@ compose.desktop {
             val resourcesDir = layout.buildDirectory.dir("compose/resources")
             appResourcesRootDir.set(resourcesDir)
 
-            // Add license file if you have one (optional)
+            // Add a license file if you have one (optional)
             // licenseFile.set(project.file("LICENSE.txt"))
 
             windows {
-                // Show console window for debugging (set to false for release builds)
+                // Show a console window for debugging (set to false for release builds)
                 console = false
 
                 // Create Start Menu entry and Desktop shortcut
@@ -219,7 +220,6 @@ compose.desktop {
                 // Optional: Add Windows registry entries
                 // See: https://github.com/JetBrains/compose-multiplatform/blob/master/components/tooling/native-distributions/src/commonMain/kotlin/org/jetbrains/compose/desktop/application/dsl/NativeDistribution.kt
             }
-
         }
         buildTypes {
             release {
@@ -243,13 +243,15 @@ tasks.register<JavaExec>("runAdmin") {
 
     classpath(
         jvmMain.output.classesDirs,
-        runtimeClasspath
+        runtimeClasspath,
     )
 
     dependsOn("jvmProcessResources", "jvmMainClasses")
 
-    // Use same JVM toolchain as main app
-    javaLauncher.set(javaToolchains.launcherFor {
-        languageVersion.set(JavaLanguageVersion.of(18))
-    })
+
+    javaLauncher.set(
+        javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(18))
+        },
+    )
 }

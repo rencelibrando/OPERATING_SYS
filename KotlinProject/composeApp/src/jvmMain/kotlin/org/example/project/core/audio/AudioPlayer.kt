@@ -331,5 +331,21 @@ class AudioPlayer {
      * Check if audio is currently playing
      */
     fun isPlaying(): Boolean = isPlaying
+
+    /**
+     * Play audio from a File with callback when finished
+     */
+    suspend fun playFile(file: File, onFinished: () -> Unit) {
+        setPlaybackFinishedCallback(onFinished)
+        playAudioFromFile(file.absolutePath)
+    }
+
+    /**
+     * Dispose resources
+     */
+    fun dispose() {
+        stop()
+        playbackFinishedCallback = null
+    }
 }
 

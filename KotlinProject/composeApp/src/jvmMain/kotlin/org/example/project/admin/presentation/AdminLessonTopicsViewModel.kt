@@ -31,74 +31,80 @@ class AdminLessonTopicsViewModel : ViewModel() {
 
     private val _successMessage = mutableStateOf<String?>(null)
     val successMessage: State<String?> = _successMessage
-    
+
     private val _searchQuery = mutableStateOf("")
     val searchQuery: State<String> = _searchQuery
-    
+
     private val _selectedTopics = mutableStateOf<Set<String>>(emptySet())
     val selectedTopics: State<Set<String>> = _selectedTopics
-    
+
     private val _sortOrder = mutableStateOf<SortOrder>(SortOrder.SORT_ORDER)
     val sortOrder: State<SortOrder> = _sortOrder
-    
+
     enum class SortOrder(val displayName: String) {
         SORT_ORDER("Sort Order"),
         TITLE("Title A-Z"),
         TITLE_DESC("Title Z-A"),
         LESSON_NUMBER("Lesson Number"),
-        DURATION("Duration")
+        DURATION("Duration"),
     }
-    
+
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
     }
-    
+
     fun setSortOrder(order: SortOrder) {
         _sortOrder.value = order
     }
-    
+
     fun toggleTopicSelection(topicId: String) {
-        _selectedTopics.value = if (_selectedTopics.value.contains(topicId)) {
-            _selectedTopics.value - topicId
-        } else {
-            _selectedTopics.value + topicId
-        }
+        _selectedTopics.value =
+            if (_selectedTopics.value.contains(topicId)) {
+                _selectedTopics.value - topicId
+            } else {
+                _selectedTopics.value + topicId
+            }
     }
-    
+
     fun selectAllTopics() {
         _selectedTopics.value = _topics.value.map { it.id }.toSet()
     }
-    
+
     fun clearSelection() {
         _selectedTopics.value = emptySet()
     }
-    
+
     fun getFilteredAndSortedTopics(): List<LessonTopic> {
         var filtered = _topics.value
-        
+
         // Apply search filter
         if (_searchQuery.value.isNotEmpty()) {
             val query = _searchQuery.value.lowercase()
-            filtered = filtered.filter {
-                it.title.lowercase().contains(query) ||
-                it.description.lowercase().contains(query) ||
-                it.id.lowercase().contains(query)
-            }
+            filtered =
+                filtered.filter {
+                    it.title.lowercase().contains(query) ||
+                        it.description.lowercase().contains(query) ||
+                        it.id.lowercase().contains(query)
+                }
         }
-        
+
         // Apply sort
-        filtered = when (_sortOrder.value) {
-            SortOrder.SORT_ORDER -> filtered.sortedBy { it.lessonNumber ?: Int.MAX_VALUE }
-            SortOrder.TITLE -> filtered.sortedBy { it.title }
-            SortOrder.TITLE_DESC -> filtered.sortedByDescending { it.title }
-            SortOrder.LESSON_NUMBER -> filtered.sortedBy { it.lessonNumber ?: Int.MAX_VALUE }
-            SortOrder.DURATION -> filtered.sortedBy { it.durationMinutes ?: Int.MAX_VALUE }
-        }
-        
+        filtered =
+            when (_sortOrder.value) {
+                SortOrder.SORT_ORDER -> filtered.sortedBy { it.lessonNumber ?: Int.MAX_VALUE }
+                SortOrder.TITLE -> filtered.sortedBy { it.title }
+                SortOrder.TITLE_DESC -> filtered.sortedByDescending { it.title }
+                SortOrder.LESSON_NUMBER -> filtered.sortedBy { it.lessonNumber ?: Int.MAX_VALUE }
+                SortOrder.DURATION -> filtered.sortedBy { it.durationMinutes ?: Int.MAX_VALUE }
+            }
+
         return filtered
     }
 
-    fun loadTopics(language: LessonLanguage, difficulty: LessonDifficulty) {
+    fun loadTopics(
+        language: LessonLanguage,
+        difficulty: LessonDifficulty,
+    ) {
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
@@ -114,7 +120,7 @@ class AdminLessonTopicsViewModel : ViewModel() {
                     onFailure = { e ->
                         _errorMessage.value = "Failed to load topics: ${e.message}"
                         _topics.value = emptyList()
-                    }
+                    },
                 )
             } catch (e: Exception) {
                 _errorMessage.value = "Error loading topics: ${e.message}"
@@ -130,15 +136,16 @@ class AdminLessonTopicsViewModel : ViewModel() {
             val topic = _topics.value.find { it.id == topicId } ?: return@launch
             val difficulty = _selectedDifficulty.value ?: return@launch
             val language = _selectedLanguage.value ?: return@launch
-            
+
             _isLoading.value = true
             _errorMessage.value = null
-            
+
             try {
-                val newTopic = topic.copy(
-                    id = "${topic.id}_copy_${System.currentTimeMillis()}",
-                    title = "${topic.title} (Copy)"
-                )
+                val newTopic =
+                    topic.copy(
+                        id = "${topic.id}_copy_${System.currentTimeMillis()}",
+                        title = "${topic.title} (Copy)",
+                    )
                 val sortOrder = _topics.value.size
                 val result = lessonTopicsRepository.createTopic(newTopic, difficulty, language, sortOrder)
                 result.fold(
@@ -148,7 +155,7 @@ class AdminLessonTopicsViewModel : ViewModel() {
                     },
                     onFailure = { e ->
                         _errorMessage.value = "Failed to duplicate topic: ${e.message}"
-                    }
+                    },
                 )
             } catch (e: Exception) {
                 _errorMessage.value = "Error duplicating topic: ${e.message}"
@@ -157,38 +164,38 @@ class AdminLessonTopicsViewModel : ViewModel() {
             }
         }
     }
-    
+
     fun deleteSelectedTopics() {
         viewModelScope.launch {
             if (_selectedTopics.value.isEmpty()) return@launch
-            
+
             val difficulty = _selectedDifficulty.value ?: return@launch
             val language = _selectedLanguage.value ?: return@launch
-            
+
             _isLoading.value = true
             _errorMessage.value = null
-            
+
             var successCount = 0
             var errorCount = 0
-            
+
             _selectedTopics.value.forEach { topicId ->
                 try {
                     val result = lessonTopicsRepository.deleteTopic(topicId)
                     result.fold(
                         onSuccess = { successCount++ },
-                        onFailure = { errorCount++ }
+                        onFailure = { errorCount++ },
                     )
                 } catch (e: Exception) {
                     errorCount++
                 }
             }
-            
+
             if (errorCount == 0) {
                 _successMessage.value = "Deleted $successCount topic(s) successfully!"
             } else {
                 _errorMessage.value = "Deleted $successCount topic(s), $errorCount failed"
             }
-            
+
             _selectedTopics.value = emptySet()
             // loadTopics manages its own loading state, so don't set _isLoading = false here
             loadTopics(language, difficulty)
@@ -212,7 +219,7 @@ class AdminLessonTopicsViewModel : ViewModel() {
             _errorMessage.value = null
             val difficulty = _selectedDifficulty.value ?: return@launch
             val language = _selectedLanguage.value ?: return@launch
-            
+
             try {
                 val result = lessonTopicsRepository.updateTopic(updatedTopic, difficulty, language)
                 result.fold(
@@ -223,7 +230,7 @@ class AdminLessonTopicsViewModel : ViewModel() {
                     },
                     onFailure = { e ->
                         _errorMessage.value = "Failed to update topic: ${e.message}"
-                    }
+                    },
                 )
             } catch (e: Exception) {
                 _errorMessage.value = "Error updating topic: ${e.message}"
@@ -239,19 +246,19 @@ class AdminLessonTopicsViewModel : ViewModel() {
             _isLoading.value = true
             _errorMessage.value = null
             _successMessage.value = null
-            
+
             val difficulty = _selectedDifficulty.value
             val language = _selectedLanguage.value
-            
+
             if (difficulty == null || language == null) {
                 _errorMessage.value = "Please select a language and difficulty level first"
                 _isLoading.value = false
                 println("[AdminViewModel] Cannot delete: language or difficulty not selected")
                 return@launch
             }
-            
+
             println("[AdminViewModel] Deleting topic: $topicId for ${language.displayName} - ${difficulty.displayName}")
-            
+
             try {
                 val result = lessonTopicsRepository.deleteTopic(topicId)
                 result.fold(
@@ -264,7 +271,7 @@ class AdminLessonTopicsViewModel : ViewModel() {
                         println("[AdminViewModel] Failed to delete topic: ${e.message}")
                         e.printStackTrace()
                         _errorMessage.value = "Failed to delete topic: ${e.message}"
-                    }
+                    },
                 )
             } catch (e: Exception) {
                 println("[AdminViewModel] Exception while deleting topic: ${e.message}")
@@ -282,7 +289,7 @@ class AdminLessonTopicsViewModel : ViewModel() {
             _errorMessage.value = null
             val difficulty = _selectedDifficulty.value ?: return@launch
             val language = _selectedLanguage.value ?: return@launch
-            
+
             try {
                 val sortOrder = _topics.value.size
                 val result = lessonTopicsRepository.createTopic(newTopic, difficulty, language, sortOrder)
@@ -293,7 +300,7 @@ class AdminLessonTopicsViewModel : ViewModel() {
                     },
                     onFailure = { e ->
                         _errorMessage.value = "Failed to create topic: ${e.message}"
-                    }
+                    },
                 )
             } catch (e: Exception) {
                 _errorMessage.value = "Error creating topic: ${e.message}"
@@ -307,17 +314,16 @@ class AdminLessonTopicsViewModel : ViewModel() {
         _errorMessage.value = null
         _successMessage.value = null
     }
-    
+
     fun togglePublishStatus(topicId: String) {
         viewModelScope.launch {
             val topic = _topics.value.find { it.id == topicId } ?: return@launch
             val difficulty = _selectedDifficulty.value ?: return@launch
             val language = _selectedLanguage.value ?: return@launch
-            
+
             // Note: This requires adding isPublished to LessonTopic model and repository
             // For now, we'll just reload after update
             loadTopics(language, difficulty)
         }
     }
 }
-

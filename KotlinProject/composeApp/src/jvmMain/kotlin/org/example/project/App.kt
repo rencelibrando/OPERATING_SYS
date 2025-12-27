@@ -33,6 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.example.project.core.ai.BackendManager
 import org.example.project.core.auth.AuthState
+import org.example.project.core.utils.ErrorLogger
 import org.example.project.presentation.viewmodel.AuthViewModel
 import org.example.project.ui.screens.AuthScreen
 import org.example.project.ui.screens.EmailVerificationScreen
@@ -41,7 +42,6 @@ import org.example.project.ui.screens.HomeScreen
 import org.example.project.ui.screens.SignupCompleteScreen
 import org.example.project.ui.screens.SplashScreen
 import org.example.project.ui.theme.WordBridgeTheme
-import org.example.project.core.utils.ErrorLogger
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
@@ -49,7 +49,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 fun App() {
     WordBridgeTheme {
         var showSplash by remember { mutableStateOf(true) }
-        
+
         if (showSplash) {
             // Show splash screen while initializing
             SplashScreen(
@@ -81,7 +81,7 @@ private fun MainApp() {
             // Backend is already set up during initial startup, just verify it's running
             var backendError by remember { mutableStateOf<String?>(null) }
             var isCheckingBackend by remember { mutableStateOf(true) }
-            
+
             LaunchedEffect(Unit) {
                 withContext(Dispatchers.IO) {
                     // Backend should already be running from startup, but verify
@@ -89,8 +89,9 @@ private fun MainApp() {
                         ErrorLogger.logInfo("App.kt", "Backend not running, attempting to start")
                         val success = BackendManager.ensureBackendIsRunning()
                         if (!success) {
-                            val error = BackendManager.getLastSetupError() 
-                                ?: "Backend server is not responding"
+                            val error =
+                                BackendManager.getLastSetupError()
+                                    ?: "Backend server is not responding"
                             ErrorLogger.log("App.kt", error)
                             backendError = error
                         }
@@ -98,7 +99,7 @@ private fun MainApp() {
                     isCheckingBackend = false
                 }
             }
-            
+
             when {
                 backendError != null -> {
                     BackendSetupErrorScreen(
@@ -110,7 +111,7 @@ private fun MainApp() {
                         onContinueAnyway = {
                             backendError = null
                             isCheckingBackend = false
-                        }
+                        },
                     )
                 }
                 isCheckingBackend -> {
@@ -160,7 +161,6 @@ private fun MainApp() {
         }
     }
 }
-
 
 @Composable
 private fun LoadingScreen() {
@@ -251,7 +251,6 @@ private fun ErrorScreen(
     }
 }
 
-
 @Composable
 private fun AuthenticatedApp(
     user: org.example.project.core.auth.User,
@@ -263,7 +262,6 @@ private fun AuthenticatedApp(
         modifier = Modifier.fillMaxSize(),
     )
 }
-
 
 @Composable
 private fun BackendSetupErrorScreen(
@@ -349,12 +347,13 @@ private fun BackendSetupErrorScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Python is being installed automatically.\n" +
-                                   "If it fails:\n" +
-                                   "1. Download Python 3.9+ from python.org\n" +
-                                   "2. Run the installer\n" +
-                                   "3. Check 'Add Python to PATH'\n" +
-                                   "4. Restart this application",
+                            text =
+                                "Python is being installed automatically.\n" +
+                                    "If it fails:\n" +
+                                    "1. Download Python 3.9+ from python.org\n" +
+                                    "2. Run the installer\n" +
+                                    "3. Check 'Add Python to PATH'\n" +
+                                    "4. Restart this application",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
@@ -373,7 +372,7 @@ private fun BackendSetupErrorScreen(
                 ) {
                     Text("Continue Without AI")
                 }
-                
+
                 Button(
                     onClick = onRetry,
                     modifier = Modifier.weight(1f),

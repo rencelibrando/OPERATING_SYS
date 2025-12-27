@@ -6,14 +6,13 @@ import org.example.project.core.config.SupabaseConfig
 
 object SupabaseApiHelper {
     private var lastSessionCheck: Long = 0
-    private const val SESSION_CHECK_INTERVAL = 5000L 
+    private const val SESSION_CHECK_INTERVAL = 5000L
 
-    
     suspend fun ensureValidSession(): Boolean {
         return try {
             val now = System.currentTimeMillis()
             if (now - lastSessionCheck < SESSION_CHECK_INTERVAL) {
-                return true 
+                return true
             }
 
             val supabase = SupabaseConfig.client
@@ -24,9 +23,8 @@ object SupabaseApiHelper {
                 return false
             }
 
-            
             val expiresIn = session.expiresIn
-            val isExpiringSoon = expiresIn < 60 
+            val isExpiringSoon = expiresIn < 60
 
             if (isExpiringSoon) {
                 println("[API] Session expiring soon (${expiresIn}s remaining), refreshing...")
@@ -71,7 +69,6 @@ object SupabaseApiHelper {
                 val errorMessage = e.message ?: "Unknown error"
 
                 when {
-                    
                     errorMessage.contains("401") ||
                         errorMessage.contains("unauthorized", ignoreCase = true) -> {
                         println("[API] Authentication error, not retrying: $errorMessage")
@@ -80,7 +77,6 @@ object SupabaseApiHelper {
                         )
                     }
 
-                    
                     errorMessage.contains("403") ||
                         errorMessage.contains("forbidden", ignoreCase = true) -> {
                         println("[API] Access denied error, not retrying: $errorMessage")
@@ -89,18 +85,16 @@ object SupabaseApiHelper {
                         )
                     }
 
-                    
                     errorMessage.contains("network", ignoreCase = true) ||
                         errorMessage.contains("timeout", ignoreCase = true) ||
                         errorMessage.contains("connection", ignoreCase = true) -> {
                         if (attempt < maxRetries - 1) {
                             println("[API] Network error on attempt ${attempt + 1}, retrying in ${delayMs}ms...")
                             delay(delayMs)
-                            delayMs *= 2 
+                            delayMs *= 2
                         }
                     }
 
-                    
                     else -> {
                         if (attempt < maxRetries - 1) {
                             println("[API] Request failed on attempt ${attempt + 1}: $errorMessage, retrying...")
@@ -132,4 +126,3 @@ object SupabaseApiHelper {
         }
     }
 }
-

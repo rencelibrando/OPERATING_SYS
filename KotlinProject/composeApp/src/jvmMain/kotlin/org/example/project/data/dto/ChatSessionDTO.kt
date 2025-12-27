@@ -30,12 +30,13 @@ data class ChatSessionDTO(
 ) {
     fun toDomain(): ChatSession {
         val startTimeMillis = createdAt?.let { parseTimestamp(it) } ?: System.currentTimeMillis()
-        val endTimeMillis = if (status == "archived") {
-            updatedAt?.let { parseTimestamp(it) } ?: System.currentTimeMillis()
-        } else {
-            null
-        }
-        
+        val endTimeMillis =
+            if (status == "archived") {
+                updatedAt?.let { parseTimestamp(it) } ?: System.currentTimeMillis()
+            } else {
+                null
+            }
+
         return ChatSession(
             id = id,
             title = title ?: "Chat Session",
@@ -79,4 +80,3 @@ data class ChatSessionDTO(
         }
     }
 }
-

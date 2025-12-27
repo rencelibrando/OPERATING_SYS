@@ -32,11 +32,22 @@ interface LessonTopicsRepository {
         isCompleted: Boolean,
         timeSpent: Int? = null,
     ): Result<Unit>
-    
+
     // Admin operations
-    suspend fun updateTopic(topic: LessonTopic, difficulty: LessonDifficulty, language: org.example.project.domain.model.LessonLanguage): Result<Unit>
+    suspend fun updateTopic(
+        topic: LessonTopic,
+        difficulty: LessonDifficulty,
+        language: org.example.project.domain.model.LessonLanguage,
+    ): Result<Unit>
+
     suspend fun deleteTopic(topicId: String): Result<Unit>
-    suspend fun createTopic(topic: LessonTopic, difficulty: LessonDifficulty, language: org.example.project.domain.model.LessonLanguage, sortOrder: Int): Result<Unit>
+
+    suspend fun createTopic(
+        topic: LessonTopic,
+        difficulty: LessonDifficulty,
+        language: org.example.project.domain.model.LessonLanguage,
+        sortOrder: Int,
+    ): Result<Unit>
 }
 
 @Serializable
@@ -131,7 +142,6 @@ class LessonTopicsRepositoryImpl : LessonTopicsRepository {
             SupabaseApiHelper.executeWithRetry {
                 withContext(Dispatchers.IO) {
                     if (!SupabaseApiHelper.ensureValidSession()) {
-                        
                         println("[LessonTopics] No valid session, fetching topics without progress tracking")
                     }
 
@@ -149,15 +159,14 @@ class LessonTopicsRepositoryImpl : LessonTopicsRepository {
                             }
                         }
 
-                    val topicDTOs = response.decodeList<LessonTopicDTO>()
-                        .sortedWith(compareBy({ it.sortOrder }, { it.lessonNumber ?: Int.MAX_VALUE }))
+                    val topicDTOs =
+                        response.decodeList<LessonTopicDTO>()
+                            .sortedWith(compareBy({ it.sortOrder }, { it.lessonNumber ?: Int.MAX_VALUE }))
 
                     println("[LessonTopics] Fetched ${topicDTOs.size} topics from database")
 
-                    
                     val userId = SupabaseApiHelper.getCurrentUserId()
 
-                    
                     val topics =
                         if (userId != null) {
                             val progressMap = getUserProgressMap(userId, topicDTOs.map { it.id })
@@ -283,21 +292,26 @@ class LessonTopicsRepositoryImpl : LessonTopicsRepository {
             }
         }
 
-    override suspend fun updateTopic(topic: LessonTopic, difficulty: LessonDifficulty, language: org.example.project.domain.model.LessonLanguage): Result<Unit> =
+    override suspend fun updateTopic(
+        topic: LessonTopic,
+        difficulty: LessonDifficulty,
+        language: org.example.project.domain.model.LessonLanguage,
+    ): Result<Unit> =
         SupabaseApiHelper.executeWithRetry {
             withContext(Dispatchers.IO) {
                 try {
-                    val payload = buildJsonObject {
-                        put("id", topic.id)
-                        put("difficulty_level", difficulty.displayName)
-                        put("language", language.displayName)
-                        put("title", topic.title)
-                        put("description", topic.description)
-                        topic.lessonNumber?.let { put("lesson_number", it) }
-                        topic.durationMinutes?.let { put("duration_minutes", it) }
-                        put("is_locked", topic.isLocked)
-                        put("is_published", true)
-                    }
+                    val payload =
+                        buildJsonObject {
+                            put("id", topic.id)
+                            put("difficulty_level", difficulty.displayName)
+                            put("language", language.displayName)
+                            put("title", topic.title)
+                            put("description", topic.description)
+                            topic.lessonNumber?.let { put("lesson_number", it) }
+                            topic.durationMinutes?.let { put("duration_minutes", it) }
+                            put("is_locked", topic.isLocked)
+                            put("is_published", true)
+                        }
 
                     supabase.postgrest["lesson_topics"].update(payload) {
                         filter {
@@ -345,22 +359,28 @@ class LessonTopicsRepositoryImpl : LessonTopicsRepository {
             }
         }
 
-    override suspend fun createTopic(topic: LessonTopic, difficulty: LessonDifficulty, language: org.example.project.domain.model.LessonLanguage, sortOrder: Int): Result<Unit> =
+    override suspend fun createTopic(
+        topic: LessonTopic,
+        difficulty: LessonDifficulty,
+        language: org.example.project.domain.model.LessonLanguage,
+        sortOrder: Int,
+    ): Result<Unit> =
         SupabaseApiHelper.executeWithRetry {
             withContext(Dispatchers.IO) {
                 try {
-                    val payload = buildJsonObject {
-                        put("id", topic.id)
-                        put("difficulty_level", difficulty.displayName)
-                        put("language", language.displayName)
-                        put("title", topic.title)
-                        put("description", topic.description)
-                        topic.lessonNumber?.let { put("lesson_number", it) }
-                        topic.durationMinutes?.let { put("duration_minutes", it) }
-                        put("sort_order", sortOrder)
-                        put("is_locked", topic.isLocked)
-                        put("is_published", true)
-                    }
+                    val payload =
+                        buildJsonObject {
+                            put("id", topic.id)
+                            put("difficulty_level", difficulty.displayName)
+                            put("language", language.displayName)
+                            put("title", topic.title)
+                            put("description", topic.description)
+                            topic.lessonNumber?.let { put("lesson_number", it) }
+                            topic.durationMinutes?.let { put("duration_minutes", it) }
+                            put("sort_order", sortOrder)
+                            put("is_locked", topic.isLocked)
+                            put("is_published", true)
+                        }
 
                     supabase.postgrest["lesson_topics"].insert(payload)
 
@@ -402,14 +422,15 @@ class LessonTopicsRepositoryImpl : LessonTopicsRepository {
             // Check if it's a "table not found" error - this is expected if migration hasn't been run
             val errorMessage = e.message ?: ""
             if (errorMessage.contains("Could not find the table", ignoreCase = true) ||
-                errorMessage.contains("does not exist", ignoreCase = true)) {
-                println("[LessonTopics] Progress table not found - progress tracking will be unavailable until migration 004_lesson_topics.sql is run")
+                errorMessage.contains("does not exist", ignoreCase = true)
+            ) {
+                println(
+                    "[LessonTopics] Progress table not found - progress tracking will be unavailable until migration 004_lesson_topics.sql is run",
+                )
             } else {
                 println("[LessonTopics] Error fetching progress map: ${e.message}")
             }
             emptyMap()
         }
     }
-
 }
-
