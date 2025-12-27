@@ -15,7 +15,7 @@ fun EditTopicDialog(
     topic: LessonTopic?,
     onDismiss: () -> Unit,
     onSave: (LessonTopic) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     if (topic == null) return
 
@@ -28,20 +28,21 @@ fun EditTopicDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Color(0xFF1E1B2E),
-        title = { 
+        title = {
             Text(
-                "Edit Topic", 
+                "Edit Topic",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
-            ) 
+                color = Color.White,
+            )
         },
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 OutlinedTextField(
                     value = title,
@@ -49,18 +50,19 @@ fun EditTopicDialog(
                     label = { Text("Title") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF8B5CF6),
-                        unfocusedBorderColor = Color(0xFF3A3147),
-                        focusedContainerColor = Color(0xFF2D2A3E),
-                        unfocusedContainerColor = Color(0xFF2D2A3E),
-                        cursorColor = Color(0xFF8B5CF6),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedLabelColor = Color(0xFF8B5CF6),
-                        unfocusedLabelColor = Color(0xFFB4B4C4)
-                    ),
-                    shape = MaterialTheme.shapes.medium
+                    colors =
+                        OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF8B5CF6),
+                            unfocusedBorderColor = Color(0xFF3A3147),
+                            focusedContainerColor = Color(0xFF2D2A3E),
+                            unfocusedContainerColor = Color(0xFF2D2A3E),
+                            cursorColor = Color(0xFF8B5CF6),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedLabelColor = Color(0xFF8B5CF6),
+                            unfocusedLabelColor = Color(0xFFB4B4C4),
+                        ),
+                    shape = MaterialTheme.shapes.medium,
                 )
 
                 OutlinedTextField(
@@ -70,31 +72,8 @@ fun EditTopicDialog(
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
                     maxLines = 5,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF8B5CF6),
-                        unfocusedBorderColor = Color(0xFF3A3147),
-                        focusedContainerColor = Color(0xFF2D2A3E),
-                        unfocusedContainerColor = Color(0xFF2D2A3E),
-                        cursorColor = Color(0xFF8B5CF6),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedLabelColor = Color(0xFF8B5CF6),
-                        unfocusedLabelColor = Color(0xFFB4B4C4)
-                    ),
-                    shape = MaterialTheme.shapes.medium
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    OutlinedTextField(
-                        value = lessonNumber,
-                        onValueChange = { lessonNumber = it },
-                        label = { Text("Lesson #") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
+                    colors =
+                        OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF8B5CF6),
                             unfocusedBorderColor = Color(0xFF3A3147),
                             focusedContainerColor = Color(0xFF2D2A3E),
@@ -103,9 +82,34 @@ fun EditTopicDialog(
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
                             focusedLabelColor = Color(0xFF8B5CF6),
-                            unfocusedLabelColor = Color(0xFFB4B4C4)
+                            unfocusedLabelColor = Color(0xFFB4B4C4),
                         ),
-                        shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    OutlinedTextField(
+                        value = lessonNumber,
+                        onValueChange = { lessonNumber = it },
+                        label = { Text("Lesson #") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        colors =
+                            OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF8B5CF6),
+                                unfocusedBorderColor = Color(0xFF3A3147),
+                                focusedContainerColor = Color(0xFF2D2A3E),
+                                unfocusedContainerColor = Color(0xFF2D2A3E),
+                                cursorColor = Color(0xFF8B5CF6),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedLabelColor = Color(0xFF8B5CF6),
+                                unfocusedLabelColor = Color(0xFFB4B4C4),
+                            ),
+                        shape = MaterialTheme.shapes.medium,
                     )
 
                     OutlinedTextField(
@@ -114,32 +118,34 @@ fun EditTopicDialog(
                         label = { Text("Duration (min)") },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF8B5CF6),
-                            unfocusedBorderColor = Color(0xFF3A3147),
-                            focusedContainerColor = Color(0xFF2D2A3E),
-                            unfocusedContainerColor = Color(0xFF2D2A3E),
-                            cursorColor = Color(0xFF8B5CF6),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedLabelColor = Color(0xFF8B5CF6),
-                            unfocusedLabelColor = Color(0xFFB4B4C4)
-                        ),
-                        shape = MaterialTheme.shapes.medium
+                        colors =
+                            OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF8B5CF6),
+                                unfocusedBorderColor = Color(0xFF3A3147),
+                                focusedContainerColor = Color(0xFF2D2A3E),
+                                unfocusedContainerColor = Color(0xFF2D2A3E),
+                                cursorColor = Color(0xFF8B5CF6),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedLabelColor = Color(0xFF8B5CF6),
+                                unfocusedLabelColor = Color(0xFFB4B4C4),
+                            ),
+                        shape = MaterialTheme.shapes.medium,
                     )
                 }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                 ) {
                     Checkbox(
                         checked = isLocked,
                         onCheckedChange = { isLocked = it },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = Color(0xFF8B5CF6),
-                            uncheckedColor = Color(0xFF6B6B7B)
-                        )
+                        colors =
+                            CheckboxDefaults.colors(
+                                checkedColor = Color(0xFF8B5CF6),
+                                uncheckedColor = Color(0xFF6B6B7B),
+                            ),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Locked", color = Color.White)
@@ -148,28 +154,30 @@ fun EditTopicDialog(
                 Text(
                     text = "ID: ${topic.id}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF6B6B7B)
+                    color = Color(0xFF6B6B7B),
                 )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    val updatedTopic = LessonTopic(
-                        id = topic.id,
-                        title = title.text,
-                        description = description.text,
-                        lessonNumber = lessonNumber.toIntOrNull(),
-                        isCompleted = topic.isCompleted,
-                        isLocked = isLocked,
-                        durationMinutes = durationMinutes.toIntOrNull(),
-                        language = topic.language
-                    )
+                    val updatedTopic =
+                        LessonTopic(
+                            id = topic.id,
+                            title = title.text,
+                            description = description.text,
+                            lessonNumber = lessonNumber.toIntOrNull(),
+                            isCompleted = topic.isCompleted,
+                            isLocked = isLocked,
+                            durationMinutes = durationMinutes.toIntOrNull(),
+                            language = topic.language,
+                        )
                     onSave(updatedTopic)
                 },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF8B5CF6)
-                )
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF8B5CF6),
+                    ),
             ) {
                 Text("Save Changes")
             }
@@ -178,7 +186,6 @@ fun EditTopicDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel", color = Color(0xFFB4B4C4))
             }
-        }
+        },
     )
 }
-

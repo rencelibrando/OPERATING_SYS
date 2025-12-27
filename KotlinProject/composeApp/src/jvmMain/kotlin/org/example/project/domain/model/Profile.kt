@@ -50,12 +50,12 @@ data class UserProfile(
                     AccountInfo(
                         subscriptionType = "Premium",
                         subscriptionStatus = "Active",
-                        subscriptionExpiry = System.currentTimeMillis() + 2592000000, 
-                        joinDate = System.currentTimeMillis(), 
+                        subscriptionExpiry = System.currentTimeMillis() + 2592000000,
+                        joinDate = System.currentTimeMillis(),
                         isEmailVerified = true,
                         isPhoneVerified = false,
                         twoFactorEnabled = true,
-                        lastLoginDate = System.currentTimeMillis() - 86400000, 
+                        lastLoginDate = System.currentTimeMillis() - 86400000,
                     ),
                 profileStats =
                     ProfileStats(
@@ -67,7 +67,7 @@ data class UserProfile(
                         longestStreak = 0,
                         profileCompleteness = 0,
                     ),
-                createdAt = System.currentTimeMillis(), 
+                createdAt = System.currentTimeMillis(),
                 lastUpdated = System.currentTimeMillis(),
             )
     }
@@ -184,13 +184,13 @@ data class AccountInfo(
 }
 
 data class ProfileStats(
-    val totalStudyTime: Int = 0, 
+    val totalStudyTime: Int = 0,
     val lessonsCompleted: Int = 0,
     val wordsLearned: Int = 0,
     val achievementsUnlocked: Int = 0,
     val currentStreak: Int = 0,
     val longestStreak: Int = 0,
-    val profileCompleteness: Int = 0, 
+    val profileCompleteness: Int = 0,
 ) {
     companion object {
         fun getDefault(): ProfileStats = ProfileStats()

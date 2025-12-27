@@ -8,8 +8,9 @@ import java.util.prefs.Preferences
  */
 object AdminPreferencesManager {
     // Use a different package/node for admin app preferences
-    private val prefs: Preferences = Preferences.userNodeForPackage(AdminPreferencesManager::class.java)
-        .node("wordbridge_admin")
+    private val prefs: Preferences =
+        Preferences.userNodeForPackage(AdminPreferencesManager::class.java)
+            .node("wordbridge_admin")
 
     private const val KEY_LAST_SYNC_TIME = "last_sync_time"
     private const val KEY_WINDOW_WIDTH = "window_width"
@@ -96,4 +97,3 @@ object AdminPreferencesManager {
         }
     }
 }
-

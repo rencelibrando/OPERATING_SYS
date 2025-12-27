@@ -8,7 +8,6 @@ import org.example.project.domain.model.NavigationItem
 import org.example.project.domain.model.User
 
 class HomeViewModel : ViewModel() {
-    
     private val _user = mutableStateOf(User.sampleUser())
     private val _navigationItems = mutableStateOf(NavigationItem.getDefaultNavigationItems())
     private val _learningActivities = mutableStateOf(LearningActivity.getDefaultActivities())
@@ -17,7 +16,6 @@ class HomeViewModel : ViewModel() {
     private val _showProfile = mutableStateOf(false)
     private val _selectedLessonId = mutableStateOf<String?>(null)
 
-    
     val user: State<User> = _user
     val navigationItems: State<List<NavigationItem>> = _navigationItems
     val learningActivities: State<List<LearningActivity>> = _learningActivities
@@ -27,13 +25,11 @@ class HomeViewModel : ViewModel() {
     val selectedLessonId: State<String?> = _selectedLessonId
 
     fun onNavigationItemSelected(itemId: String) {
-        
         _showProfile.value = false
         _selectedLessonId.value = null
 
         _selectedNavigationItem.value = itemId
 
-        
         _navigationItems.value =
             _navigationItems.value.map { item ->
                 item.copy(isSelected = item.id == itemId)
@@ -43,7 +39,6 @@ class HomeViewModel : ViewModel() {
     fun onUserAvatarClicked() {
         _showProfile.value = true
 
-        
         _navigationItems.value =
             _navigationItems.value.map { item ->
                 item.copy(isSelected = false)
@@ -56,7 +51,6 @@ class HomeViewModel : ViewModel() {
     fun onCloseProfile() {
         _showProfile.value = false
 
-        
         _selectedNavigationItem.value = "home"
         _navigationItems.value =
             _navigationItems.value.map { item ->
@@ -67,27 +61,19 @@ class HomeViewModel : ViewModel() {
     }
 
     fun onLearningActivityClicked(activityId: String) {
-        
-        
         println("Navigating to activity: $activityId")
     }
 
     fun onContinueLearningClicked() {
         _isLoading.value = true
 
-        
-        
         println("Continuing learning journey...")
 
-        
         _isLoading.value = false
     }
 
     fun refreshUserData() {
         _isLoading.value = true
-
-        
-        
 
         _isLoading.value = false
     }
@@ -95,7 +81,7 @@ class HomeViewModel : ViewModel() {
     fun updateStreak(newStreak: Int) {
         _user.value = _user.value.copy(streak = newStreak)
     }
-    
+
     fun onLessonSelected(lessonId: String) {
         println("[HomeViewModel] Lesson selected: $lessonId")
         _selectedLessonId.value = lessonId
@@ -103,7 +89,7 @@ class HomeViewModel : ViewModel() {
         _navigationItems.value = _navigationItems.value.map { it.copy(isSelected = false) }
         _selectedNavigationItem.value = ""
     }
-    
+
     fun onCloseLessonPlayer() {
         println("[HomeViewModel] Closing lesson player")
         _selectedLessonId.value = null

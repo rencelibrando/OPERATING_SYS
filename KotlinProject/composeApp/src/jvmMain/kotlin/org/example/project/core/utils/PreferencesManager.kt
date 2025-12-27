@@ -24,13 +24,11 @@ object PreferencesManager {
         }
     }
 
-
     fun getCachedOnboardingCompletion(userId: String): Boolean? {
         try {
             val lastSyncTime = prefs.getLong(KEY_LAST_SYNC_TIME + userId, 0L)
             val cacheAge = System.currentTimeMillis() - lastSyncTime
-            val maxCacheAge = 7 * 24 * 60 * 60 * 1000L 
-
+            val maxCacheAge = 7 * 24 * 60 * 60 * 1000L
 
             if (lastSyncTime == 0L || cacheAge > maxCacheAge) {
                 println("PreferencesManager: Cache miss or stale for user $userId")
@@ -45,7 +43,6 @@ object PreferencesManager {
             return null
         }
     }
-
 
     fun clearOnboardingCache(userId: String) {
         try {
@@ -72,12 +69,11 @@ object PreferencesManager {
     fun getCachedBackendSetupCompleted(): Boolean {
         try {
             val lastSetupTime = prefs.getLong(KEY_BACKEND_SETUP_TIME, 0L)
-            
-            
+
             if (lastSetupTime == 0L) {
                 return false
             }
-            
+
             val isCompleted = prefs.getBoolean(KEY_BACKEND_SETUP_COMPLETED, false)
             println("PreferencesManager: Backend setup cache status: $isCompleted (setup time: $lastSetupTime)")
             return isCompleted

@@ -37,7 +37,7 @@ class UserManagementViewModel : ViewModel() {
                     onFailure = { e ->
                         _errorMessage.value = "Failed to load users: ${e.message}"
                         _users.value = emptyList()
-                    }
+                    },
                 )
             } catch (e: Exception) {
                 _errorMessage.value = "Error loading users: ${e.message}"
@@ -61,7 +61,7 @@ class UserManagementViewModel : ViewModel() {
                     },
                     onFailure = { e ->
                         _errorMessage.value = "Failed to delete user: ${e.message}"
-                    }
+                    },
                 )
             } catch (e: Exception) {
                 _errorMessage.value = "Error deleting user: ${e.message}"
@@ -76,4 +76,3 @@ class UserManagementViewModel : ViewModel() {
         _successMessage.value = null
     }
 }
-

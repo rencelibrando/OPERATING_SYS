@@ -30,29 +30,28 @@ fun LessonTopicCard(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
-    
-    
-    val gradientStart = Color(0xFF34D399) 
-    val gradientEnd = Color(0xFF14B8A6)   
-    val hoverBorderColor = Color(0xFF6EE7B7) 
-    val hoverTitleColor = Color(0xFF059669) 
-    
+
+    val gradientStart = Color(0xFF34D399)
+    val gradientEnd = Color(0xFF14B8A6)
+    val hoverBorderColor = Color(0xFF6EE7B7)
+    val hoverTitleColor = Color(0xFF059669)
+
     val elevation by animateDpAsState(
         targetValue = if (isHovered) 12.dp else 4.dp,
         animationSpec = tween(300),
-        label = "elevation"
+        label = "elevation",
     )
-    
+
     val borderColor by animateColorAsState(
         targetValue = if (isHovered && !topic.isLocked) hoverBorderColor else Color.Transparent,
         animationSpec = tween(300),
-        label = "border"
+        label = "border",
     )
-    
+
     val titleColor by animateColorAsState(
         targetValue = if (isHovered && !topic.isLocked) hoverTitleColor else WordBridgeColors.TextPrimary,
         animationSpec = tween(300),
-        label = "titleColor"
+        label = "titleColor",
     )
 
     Card(
@@ -78,9 +77,8 @@ fun LessonTopicCard(
                     .fillMaxWidth()
                     .padding(24.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            
             if (topic.lessonNumber != null) {
                 Box(
                     modifier =
@@ -88,9 +86,10 @@ fun LessonTopicCard(
                             .size(48.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(
-                                brush = Brush.linearGradient(
-                                    colors = listOf(gradientStart, gradientEnd)
-                                )
+                                brush =
+                                    Brush.linearGradient(
+                                        colors = listOf(gradientStart, gradientEnd),
+                                    ),
                             ),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -104,16 +103,16 @@ fun LessonTopicCard(
                     )
                 }
             } else {
-                
                 Box(
                     modifier =
                         Modifier
                             .size(48.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(
-                                brush = Brush.linearGradient(
-                                    colors = listOf(gradientStart, gradientEnd)
-                                )
+                                brush =
+                                    Brush.linearGradient(
+                                        colors = listOf(gradientStart, gradientEnd),
+                                    ),
                             ),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -124,7 +123,6 @@ fun LessonTopicCard(
                 }
             }
 
-            
             Column(
                 modifier = Modifier.weight(1f),
             ) {
@@ -142,8 +140,7 @@ fun LessonTopicCard(
                         color = titleColor,
                         modifier = Modifier.weight(1f),
                     )
-                    
-                    
+
                     if (topic.durationMinutes != null) {
                         Surface(
                             shape = RoundedCornerShape(20.dp),
@@ -152,7 +149,7 @@ fun LessonTopicCard(
                             Row(
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
                                     text = "🕐",
@@ -180,19 +177,19 @@ fun LessonTopicCard(
                     )
                 }
             }
-            
-            
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 when {
                     topic.isCompleted -> {
                         Text(
                             text = "✓",
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
+                            style =
+                                MaterialTheme.typography.headlineSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
                             color = WordBridgeColors.AccentGreen,
                         )
                     }
@@ -203,12 +200,12 @@ fun LessonTopicCard(
                         )
                     }
                     else -> {
-                        
                         Text(
                             text = "›",
-                            style = MaterialTheme.typography.displayMedium.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
+                            style =
+                                MaterialTheme.typography.displayMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
                             color = if (isHovered) gradientStart else Color(0xFFCBD5E1),
                         )
                     }

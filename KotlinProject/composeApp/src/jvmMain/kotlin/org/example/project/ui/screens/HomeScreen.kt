@@ -114,7 +114,7 @@ fun HomeScreen(
                     LessonPlayerScreen(
                         lessonId = selectedLessonId!!,
                         userId = authenticatedUser?.id ?: "",
-                        onBack = viewModel::onCloseLessonPlayer
+                        onBack = viewModel::onCloseLessonPlayer,
                     )
                 }
             }

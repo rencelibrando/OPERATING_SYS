@@ -6,11 +6,11 @@ data class SpeakingExercise(
     val description: String,
     val type: SpeakingExerciseType,
     val difficulty: String,
-    val duration: Int, 
+    val duration: Int,
     val category: String,
     val icon: String,
     val isAvailable: Boolean = true,
-    val completionRate: Int = 0, 
+    val completionRate: Int = 0,
     val lastAttempt: Long? = null,
 ) {
     companion object {
@@ -72,61 +72,6 @@ data class SpeakingStats(
     }
 }
 
-data class SpeakingFeature(
-    val id: String,
-    val title: String,
-    val description: String,
-    val icon: String,
-    val color: String,
-) {
-    companion object {
-        fun getSpeakingFeatures(): List<SpeakingFeature> =
-            listOf(
-                SpeakingFeature(
-                    id = "ai_feedback",
-                    title = "AI-Powered Feedback",
-                    description = "Get instant, detailed feedback on your pronunciation, fluency, and accuracy.",
-                    icon = "🤖",
-                    color = "#8B5CF6",
-                ),
-                SpeakingFeature(
-                    id = "pronunciation_analysis",
-                    title = "Pronunciation Analysis",
-                    description = "Advanced speech recognition analyzes your pronunciation in real-time.",
-                    icon = "🎙️",
-                    color = "#10B981",
-                ),
-                SpeakingFeature(
-                    id = "conversation_practice",
-                    title = "Conversation Practice",
-                    description = "Practice real-world conversations with AI-powered conversation partners.",
-                    icon = "💬",
-                    color = "#F59E0B",
-                ),
-                SpeakingFeature(
-                    id = "progress_tracking",
-                    title = "Progress Tracking",
-                    description = "Track your speaking improvement with detailed analytics and scores.",
-                    icon = "📊",
-                    color = "#3B82F6",
-                ),
-                SpeakingFeature(
-                    id = "accent_coaching",
-                    title = "Accent Coaching",
-                    description = "Personalized accent training with native speaker audio examples.",
-                    icon = "🎯",
-                    color = "#EF4444",
-                ),
-                SpeakingFeature(
-                    id = "recording_playback",
-                    title = "Recording & Playback",
-                    description = "Record your sessions and compare with native speaker examples.",
-                    icon = "🔊",
-                    color = "#8B5CF6",
-                ),
-            )
-    }
-}
 
 enum class SpeakingFilter(val displayName: String) {
     ALL("All"),

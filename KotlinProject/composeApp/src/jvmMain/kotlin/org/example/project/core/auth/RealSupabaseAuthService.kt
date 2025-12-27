@@ -1,13 +1,11 @@
 package org.example.project.core.auth
 
-
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.example.project.core.config.SupabaseConfig
-
 
 class RealSupabaseAuthService {
     private val supabase = SupabaseConfig.client
@@ -304,5 +302,4 @@ class RealSupabaseAuthService {
             Result.failure(e)
         }
     }
-
 }

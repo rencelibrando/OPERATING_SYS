@@ -12,7 +12,7 @@ import org.example.project.admin.ui.AdminApp
  */
 fun main() =
     application {
-        val windowState = rememberWindowState(width = 1400.dp, height = 900.dp)
+        val windowState = rememberWindowState(width = 1300.dp, height = 600.dp)
         Window(
             onCloseRequest = ::exitApplication,
             title = "WordBridge Admin Panel",
@@ -21,4 +21,3 @@ fun main() =
             AdminApp()
         }
     }
-

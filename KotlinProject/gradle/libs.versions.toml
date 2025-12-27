@@ -3,8 +3,9 @@ androidx-lifecycle = "2.9.3"
 androidx-collection = "1.5.0"
 composeHotReload = "1.0.0-beta06"
 composeMultiplatform = "1.8.2"
+composeBom = "2024.12.01"
 junit = "4.13.2"
-kotlin = "2.0.21"
+kotlin = "2.2.10"
 kotlinx-coroutines = "1.10.2"
 supabase = "2.5.4"
 ktor = "2.3.12"
@@ -15,6 +16,8 @@ kamel = "0.9.1"
 ktlintPlugin = "12.1.1"
 
 [libraries]
+# Compose BOM for version alignment
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { module = "junit:junit", version.ref = "junit" }

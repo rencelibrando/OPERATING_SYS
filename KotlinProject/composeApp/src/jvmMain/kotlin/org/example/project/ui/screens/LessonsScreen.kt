@@ -3,11 +3,7 @@ package org.example.project.ui.screens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
@@ -23,12 +19,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import org.example.project.domain.model.LessonLanguage
 import org.example.project.presentation.viewmodel.LessonsViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
 import org.example.project.core.auth.User as AuthUser
-import org.example.project.domain.model.LessonDifficulty
-import org.example.project.domain.model.LessonLanguage
 
 @Composable
 fun LessonsScreen(
@@ -72,75 +67,81 @@ fun LessonsScreen(
             },
             onUserAvatarClick = onUserAvatarClick,
             onLanguageSelected = viewModel::changeLanguage,
-            modifier = modifier
+            modifier = modifier,
         )
     }
     // Use LazyColumn when showing topics to avoid nested scroll issues
     else if (selectedCategory != null && lessonTopics.isNotEmpty()) {
         val listState = rememberLazyListState()
-        
+
         // Smooth scroll progress calculation - slower and more gradual
         val density = LocalDensity.current
-        val scrollProgress = remember(density) { derivedStateOf {
-            val layoutInfo = listState.layoutInfo
-            val visibleItems = layoutInfo.visibleItemsInfo
-            
-            if (visibleItems.isEmpty() || layoutInfo.totalItemsCount == 0 || lessonTopics.isEmpty()) {
-                return@derivedStateOf 0f
+        val scrollProgress =
+            remember(density) {
+                derivedStateOf {
+                    val layoutInfo = listState.layoutInfo
+                    val visibleItems = layoutInfo.visibleItemsInfo
+
+                    if (visibleItems.isEmpty() || layoutInfo.totalItemsCount == 0 || lessonTopics.isEmpty()) {
+                        return@derivedStateOf 0f
+                    }
+
+                    // Find the timeline item (should be at index 4 after header, spacer, intro, spacer)
+                    val timelineItem = visibleItems.find { it.index == 4 }
+
+                    if (timelineItem != null) {
+                        // Calculate how much of the timeline has been scrolled (offset is already in pixels)
+                        val timelineOffset = -timelineItem.offset.toFloat()
+
+                        // Each lesson is ~280dp tall (bigger cards) - convert to pixels for accurate calculation
+                        val lessonHeightPx = with(density) { 280.dp.toPx() }
+
+                        // Account for centered node positioning (120dp from top)
+                        val nodeCenterOffsetPx = with(density) { 120.dp.toPx() }
+
+                        // Calculate the total height needed to reach the last node's center
+                        // Last node is at position: (lessonTopics.size - 1) * 280dp + 120dp
+                        val lastNodePositionPx = (lessonTopics.size - 1) * lessonHeightPx + nodeCenterOffsetPx
+                        // Add buffer to ensure line reaches the last node
+                        val totalTimelineHeight = lastNodePositionPx + with(density) { 200.dp.toPx() }
+
+                        // Calculate raw progress (0 to 1) - immediate response, no easing delay
+                        // Adjust buffer to account for centered node positioning
+                        val rawProgress = ((timelineOffset + nodeCenterOffsetPx) / totalTimelineHeight).coerceIn(0f, 1f)
+
+                        // Use linear progress for immediate visual feedback - no easing delay
+                        rawProgress
+                    } else {
+                        // Not yet scrolled to timeline
+                        0f
+                    }
+                }
             }
-            
-            // Find the timeline item (should be at index 4 after header, spacer, intro, spacer)
-            val timelineItem = visibleItems.find { it.index == 4 }
-            
-            if (timelineItem != null) {
-                // Calculate how much of the timeline has been scrolled (offset is already in pixels)
-                val timelineOffset = -timelineItem.offset.toFloat()
-                
-                // Each lesson is ~280dp tall (bigger cards) - convert to pixels for accurate calculation
-                val lessonHeightPx = with(density) { 280.dp.toPx() }
-                
-                // Account for centered node positioning (120dp from top)
-                val nodeCenterOffsetPx = with(density) { 120.dp.toPx() }
-                
-                // Calculate the total height needed to reach the last node's center
-                // Last node is at position: (lessonTopics.size - 1) * 280dp + 120dp
-                val lastNodePositionPx = (lessonTopics.size - 1) * lessonHeightPx + nodeCenterOffsetPx
-                // Add buffer to ensure line reaches the last node
-                val totalTimelineHeight = lastNodePositionPx + with(density) { 200.dp.toPx() }
-                
-                // Calculate raw progress (0 to 1) - immediate response, no easing delay
-                // Adjust buffer to account for centered node positioning
-                val rawProgress = ((timelineOffset + nodeCenterOffsetPx) / totalTimelineHeight).coerceIn(0f, 1f)
-                
-                // Use linear progress for immediate visual feedback - no easing delay
-                rawProgress
-            } else {
-                // Not yet scrolled to timeline
-                0f
-            }
-        } }
-        
+
         // Track which lesson item is currently visible for pop-up animation
-        val visibleItemIndex = remember { derivedStateOf {
-            val layoutInfo = listState.layoutInfo
-            val visibleItems = layoutInfo.visibleItemsInfo
-            
-            if (visibleItems.isEmpty()) {
-                return@derivedStateOf 0
+        val visibleItemIndex =
+            remember {
+                derivedStateOf {
+                    val layoutInfo = listState.layoutInfo
+                    val visibleItems = layoutInfo.visibleItemsInfo
+
+                    if (visibleItems.isEmpty()) {
+                        return@derivedStateOf 0
+                    }
+
+                    val timelineItem = visibleItems.find { it.index == 4 }
+
+                    if (timelineItem != null) {
+                        val timelineOffset = -timelineItem.offset.toFloat()
+                        val lessonHeightPx = with(density) { 280.dp.toPx() }
+                        val currentLessonIndex = (timelineOffset / lessonHeightPx).toInt().coerceIn(0, lessonTopics.size - 1)
+                        currentLessonIndex
+                    } else {
+                        0
+                    }
+                }
             }
-            
-            val timelineItem = visibleItems.find { it.index == 4 }
-            
-            if (timelineItem != null) {
-                val timelineOffset = -timelineItem.offset.toFloat()
-                val lessonHeightPx = with(density) { 280.dp.toPx() }
-                val currentLessonIndex = (timelineOffset / lessonHeightPx).toInt().coerceIn(0, lessonTopics.size - 1)
-                currentLessonIndex
-            } else {
-                0
-            }
-        } }
-        
+
         LazyColumn(
             state = listState,
             modifier =
@@ -196,7 +197,7 @@ fun LessonsScreen(
                             },
                             enabled = !isLanguageChanging,
                         )
-                        
+
                         UserAvatar(
                             initials = authenticatedUser?.initials ?: "U",
                             profileImageUrl = authenticatedUser?.profileImageUrl,
@@ -219,7 +220,7 @@ fun LessonsScreen(
                     color = WordBridgeColors.TextSecondary,
                 )
             }
-            
+
             // Show loading indicator when changing language
             if (isLanguageChanging) {
                 item {
@@ -253,7 +254,7 @@ fun LessonsScreen(
                     lessonTopics = lessonTopics,
                     onLessonClick = { lessonId -> viewModel.onLessonTopicClicked(lessonId) },
                     scrollProgress = scrollProgress.value,
-                    visibleItemIndex = visibleItemIndex.value
+                    visibleItemIndex = visibleItemIndex.value,
                 )
             }
         }
@@ -318,7 +319,7 @@ fun LessonsScreen(
                         },
                         enabled = !isLanguageChanging,
                     )
-                    
+
                     UserAvatar(
                         initials = authenticatedUser?.initials ?: "U",
                         profileImageUrl = authenticatedUser?.profileImageUrl,
@@ -419,60 +420,64 @@ private fun LessonListView(
     onLessonClick: (String) -> Unit,
     onUserAvatarClick: (() -> Unit)?,
     onLanguageSelected: (LessonLanguage) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState())
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
     ) {
         // Header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
                     text = "←",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
+                    style =
+                        MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
                     color = WordBridgeColors.TextPrimary,
-                    modifier = Modifier
-                        .clickable { onBack() }
-                        .padding(8.dp)
+                    modifier =
+                        Modifier
+                            .clickable { onBack() }
+                            .padding(8.dp),
                 )
 
                 Text(
                     text = topic.title,
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = WordBridgeColors.TextPrimary
+                    style =
+                        MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    color = WordBridgeColors.TextPrimary,
                 )
             }
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 LessonLanguageSwitcher(
                     selectedLanguage = selectedLanguage,
                     availableLanguages = availableLanguages,
                     onLanguageSelected = onLanguageSelected,
-                    enabled = !isLanguageChanging
+                    enabled = !isLanguageChanging,
                 )
 
                 UserAvatar(
                     initials = authenticatedUser?.initials ?: "U",
                     profileImageUrl = authenticatedUser?.profileImageUrl,
                     size = 48.dp,
-                    onClick = onUserAvatarClick
+                    onClick = onUserAvatarClick,
                 )
             }
         }
@@ -484,7 +489,7 @@ private fun LessonListView(
             Text(
                 text = topic.description,
                 style = MaterialTheme.typography.bodyLarge,
-                color = WordBridgeColors.TextSecondary
+                color = WordBridgeColors.TextSecondary,
             )
             Spacer(modifier = Modifier.height(24.dp))
         }
@@ -494,42 +499,44 @@ private fun LessonListView(
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
                 horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(32.dp),
                     color = WordBridgeColors.PrimaryPurple,
-                    strokeWidth = 3.dp
+                    strokeWidth = 3.dp,
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = "Loading lessons...",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = WordBridgeColors.TextSecondary
+                    color = WordBridgeColors.TextSecondary,
                 )
             }
         }
         // Empty state
         else if (lessons.isEmpty()) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 48.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 48.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     text = "📝",
-                    style = MaterialTheme.typography.displayMedium
+                    style = MaterialTheme.typography.displayMedium,
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
                     text = "No lessons available yet",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    color = WordBridgeColors.TextPrimary
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                    color = WordBridgeColors.TextPrimary,
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -537,7 +544,7 @@ private fun LessonListView(
                 Text(
                     text = "Lessons for this topic will be available soon. Check back later!",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = WordBridgeColors.TextSecondary
+                    color = WordBridgeColors.TextSecondary,
                 )
             }
         }
@@ -545,10 +552,11 @@ private fun LessonListView(
         else {
             Text(
                 text = "${lessons.size} Lesson${if (lessons.size != 1) "s" else ""}",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.SemiBold
-                ),
-                color = WordBridgeColors.TextPrimary
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                color = WordBridgeColors.TextPrimary,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -557,7 +565,7 @@ private fun LessonListView(
                 LessonCard(
                     lesson = lesson,
                     onClick = { onLessonClick(lesson.id) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -569,36 +577,41 @@ private fun LessonListView(
 private fun LessonCard(
     lesson: org.example.project.domain.model.LessonSummary,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     androidx.compose.material3.Card(
-        modifier = modifier
-            .clickable(onClick = onClick),
+        modifier =
+            modifier
+                .clickable(onClick = onClick),
         shape = MaterialTheme.shapes.medium,
-        colors = androidx.compose.material3.CardDefaults.cardColors(
-            containerColor = WordBridgeColors.CardBackground
-        ),
-        elevation = androidx.compose.material3.CardDefaults.cardElevation(
-            defaultElevation = 2.dp,
-            pressedElevation = 4.dp
-        )
+        colors =
+            androidx.compose.material3.CardDefaults.cardColors(
+                containerColor = WordBridgeColors.CardBackground,
+            ),
+        elevation =
+            androidx.compose.material3.CardDefaults.cardElevation(
+                defaultElevation = 2.dp,
+                pressedElevation = 4.dp,
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             ) {
                 Text(
                     text = lesson.title,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    color = WordBridgeColors.TextPrimary
+                    style =
+                        MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                    color = WordBridgeColors.TextPrimary,
                 )
 
                 if (!lesson.description.isNullOrBlank()) {
@@ -606,26 +619,26 @@ private fun LessonCard(
                     Text(
                         text = lesson.description,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = WordBridgeColors.TextSecondary
+                        color = WordBridgeColors.TextSecondary,
                     )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Text(
                         text = "${lesson.questionCount} questions",
                         style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextSecondary
+                        color = WordBridgeColors.TextSecondary,
                     )
 
                     if (lesson.isPublished) {
                         Text(
                             text = "• Published",
                             style = MaterialTheme.typography.bodySmall,
-                            color = WordBridgeColors.AccentGreen
+                            color = WordBridgeColors.AccentGreen,
                         )
                     }
                 }
@@ -633,10 +646,11 @@ private fun LessonCard(
 
             Text(
                 text = "→",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = WordBridgeColors.PrimaryPurple
+                style =
+                    MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
+                color = WordBridgeColors.PrimaryPurple,
             )
         }
     }

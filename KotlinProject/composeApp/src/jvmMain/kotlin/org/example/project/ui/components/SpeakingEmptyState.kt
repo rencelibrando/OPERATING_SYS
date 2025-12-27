@@ -9,10 +9,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.example.project.presentation.viewmodel.SpeakingFeature
+import androidx.compose.ui.unit.sp
+import org.example.project.models.SpeakingFeature
 import org.example.project.ui.theme.WordBridgeColors
 
 @Composable
@@ -20,6 +22,7 @@ fun SpeakingEmptyState(
     features: List<SpeakingFeature>,
     onStartFirstPracticeClick: () -> Unit,
     onExploreExercisesClick: () -> Unit,
+    onStartConversationClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -31,12 +34,7 @@ fun SpeakingEmptyState(
     ) {
         Spacer(modifier = Modifier.height(40.dp))
 
-        Text(
-            text = "🎤",
-            style = MaterialTheme.typography.displayMedium,
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = "Perfect Your Speaking Skills",
@@ -51,33 +49,65 @@ fun SpeakingEmptyState(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Start your journey to confident English speaking! Practice pronunciation, conversation skills, and fluency with AI-powered feedback. Record yourself, get instant analysis, and track your improvement over time.",
-            style = MaterialTheme.typography.bodyLarge,
+            text = "Start your journey to confident speaking! Practice pronunciation with AI feedback or have natural conversations with our voice agent. Choose the mode that fits your learning goals.",
+            style = MaterialTheme.typography.bodyMedium,
             color = WordBridgeColors.TextSecondary,
             textAlign = TextAlign.Center,
-            lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
+            lineHeight = 20.sp,
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Button(
-            onClick = onStartFirstPracticeClick,
-            modifier = Modifier.fillMaxWidth(0.6f),
-            colors =
-                ButtonDefaults.buttonColors(
-                    containerColor = WordBridgeColors.PrimaryPurple,
-                ),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+        // Mode selection buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(0.8f),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "🎙️ Start Your First Practice",
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Medium,
+            Button(
+                onClick = onStartFirstPracticeClick,
+                modifier = Modifier.weight(1f),
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = WordBridgeColors.PrimaryPurple,
                     ),
-                color = androidx.compose.ui.graphics.Color.White,
-                modifier = Modifier.padding(vertical = 4.dp),
-            )
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Practice Mode",
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium,
+                            ),
+                        color = Color.White,
+                    )
+                }
+            }
+
+            Button(
+                onClick = onStartConversationClick,
+                modifier = Modifier.weight(1f),
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF10B981),
+                    ),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Conversation",
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium,
+                            ),
+                        color = Color.White,
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))

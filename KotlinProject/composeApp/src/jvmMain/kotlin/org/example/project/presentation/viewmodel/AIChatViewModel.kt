@@ -26,7 +26,7 @@ class AIChatViewModel(
     private val _isChatInitialized = mutableStateOf(false)
     private val _isBackendStarting = mutableStateOf(false)
     private val _backendStatusMessage = mutableStateOf<String?>(null)
-    
+
     private val _chatMessages = mutableStateOf(ChatMessage.getSampleMessages())
     private val _chatSessions = mutableStateOf(ChatSession.getSampleSessions())
     private val _availableBots = mutableStateOf(ChatBot.getAvailableBots())
@@ -227,7 +227,7 @@ class AIChatViewModel(
         viewModelScope.launch {
             try {
                 println("Loading session: $sessionId")
-                
+
                 val session = repository.getChatSession(sessionId).getOrNull()
                 if (session != null) {
                     _currentSession.value = session
@@ -243,7 +243,7 @@ class AIChatViewModel(
 
                     // Load messages for this session (will load from Supabase if not in memory)
                     val messages = repository.getChatMessages(sessionId).getOrNull() ?: emptyList()
-                    
+
                     if (messages.isNotEmpty()) {
                         _chatMessages.value = messages
                         println("Loaded session with ${messages.size} messages")
@@ -251,13 +251,14 @@ class AIChatViewModel(
                         // No messages, show welcome message based on bot
                         val selectedBot = _selectedBot.value ?: _availableBots.value.firstOrNull()
                         if (selectedBot != null) {
-                            val welcomeMessage = ChatMessage(
-                                id = "welcome_${System.currentTimeMillis()}",
-                                content = getWelcomeMessage(selectedBot),
-                                sender = MessageSender.AI,
-                                timestamp = System.currentTimeMillis(),
-                                type = MessageType.TEXT,
-                            )
+                            val welcomeMessage =
+                                ChatMessage(
+                                    id = "welcome_${System.currentTimeMillis()}",
+                                    content = getWelcomeMessage(selectedBot),
+                                    sender = MessageSender.AI,
+                                    timestamp = System.currentTimeMillis(),
+                                    type = MessageType.TEXT,
+                                )
                             _chatMessages.value = listOf(welcomeMessage)
                             println("Showing welcome message for bot: ${selectedBot.name}")
                         } else {
@@ -297,14 +298,14 @@ class AIChatViewModel(
         viewModelScope.launch {
             try {
                 println("Deleting session: $sessionId")
-                
+
                 // Delete from repository
                 repository.deleteChatSession(sessionId).onSuccess {
                     println("Session deleted successfully")
-                    
+
                     // Remove from local list
                     _chatSessions.value = _chatSessions.value.filter { it.id != sessionId }
-                    
+
                     // If deleted session was current, clear it
                     if (_currentSession.value?.id == sessionId) {
                         onNewSessionClicked()
@@ -352,7 +353,7 @@ class AIChatViewModel(
                 if (sessions != null) {
                     _chatSessions.value = sessions
                     println("Loaded ${sessions.size} previous chat sessions")
-                    
+
                     // Only auto-load a session if:
                     // 1. We have existing sessions
                     // 2. No current session is set
@@ -362,7 +363,7 @@ class AIChatViewModel(
                         onSessionSelected(mostRecentSession.id)
                     }
                 }
-                
+
                 // If there's a current session, reload its messages
                 _currentSession.value?.let { session ->
                     val messages = repository.getChatMessages(session.id).getOrNull()
@@ -403,7 +404,7 @@ class AIChatViewModel(
 
                 // Try to load existing messages from Supabase
                 val existingMessages = repository.getChatMessages(session.id).getOrNull() ?: emptyList()
-                
+
                 if (existingMessages.isNotEmpty()) {
                     // Load existing conversation history
                     println("Loaded ${existingMessages.size} messages from history")

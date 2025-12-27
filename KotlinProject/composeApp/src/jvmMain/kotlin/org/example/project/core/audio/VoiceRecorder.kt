@@ -2,7 +2,15 @@ package org.example.project.core.audio
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.cancelAndJoin
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import javax.sound.sampled.*
 
 /**
@@ -10,122 +18,291 @@ import javax.sound.sampled.*
  * Captures audio from the microphone and saves to file.
  */
 class VoiceRecorder {
-    
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var targetDataLine: TargetDataLine? = null
-    private var isRecording = false
-    private var recordingThread: Thread? = null
+    private val isRecording = AtomicBoolean(false)
+    private var recordingJob: Job? = null
+    private var audioFormat: AudioFormat? = null
+    private val audioData = mutableListOf<ByteArray>()
+    private val audioDataLock = Any()
+    private var onAudioChunkCallback: AtomicReference<((ByteArray) -> Unit)?> = AtomicReference(null)
     
+    // Debounce tracking to prevent rapid start/stop
+    private var lastStartTime = 0L
+    private val minRecordingIntervalMs = 200L
+
     /**
      * Start recording audio from the default microphone.
      * Audio is captured but not saved until stopRecording is called.
+     * @param onAudioChunk Optional callback for real-time audio chunks (for streaming)
      */
-    suspend fun startRecording(): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
-            if (isRecording) {
-                return@withContext Result.failure(Exception("Already recording"))
+    suspend fun startRecording(onAudioChunk: ((ByteArray) -> Unit)? = null): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            try {
+                // Atomic check-and-set to prevent race conditions
+                if (!isRecording.compareAndSet(false, true)) {
+                    println("[VoiceRecorder] Already recording - ignoring duplicate start")
+                    return@withContext Result.failure(Exception("Already recording"))
+                }
+                
+                // Debounce check
+                val now = System.currentTimeMillis()
+                if (now - lastStartTime < minRecordingIntervalMs) {
+                    isRecording.set(false)
+                    println("[VoiceRecorder] Start called too quickly - debouncing")
+                    return@withContext Result.failure(Exception("Recording started too quickly"))
+                }
+                lastStartTime = now
+
+                // Set up audio format (24kHz, 16-bit, mono) - matches Deepgram Agent API requirements
+                val format =
+                    AudioFormat(
+                        AudioFormat.Encoding.PCM_SIGNED,
+                        24000f, // Sample rate (24kHz for Deepgram)
+                        16, // Bits per sample
+                        1, // Mono
+                        2, // Frame size
+                        24000f, // Frame rate
+                        false, // Big endian
+                    )
+
+                // Get the default microphone
+                val info = DataLine.Info(TargetDataLine::class.java, format)
+
+                if (!AudioSystem.isLineSupported(info)) {
+                    isRecording.set(false)
+                    return@withContext Result.failure(Exception("Audio line not supported"))
+                }
+
+                targetDataLine = AudioSystem.getLine(info) as TargetDataLine
+                targetDataLine?.open(format)
+                targetDataLine?.start()
+
+                audioFormat = format
+                synchronized(audioDataLock) {
+                    audioData.clear()
+                }
+                onAudioChunkCallback.set(onAudioChunk)
+
+                // Start recording coroutine for proper lifecycle management
+                recordingJob = scope.launch {
+                    val buffer = ByteArray(2400) // 50ms chunks at 24kHz (smaller for lower latency)
+                    val dataLine = targetDataLine
+                    
+                    while (isActive && isRecording.get() && dataLine?.isOpen == true) {
+                        try {
+                            val bytesRead = dataLine.read(buffer, 0, buffer.size)
+                            if (bytesRead > 0 && isRecording.get()) {
+                                val chunk = buffer.copyOf(bytesRead)
+                                synchronized(audioDataLock) {
+                                    audioData.add(chunk)
+                                }
+                                // Stream chunk in real-time if callback provided
+                                onAudioChunkCallback.get()?.invoke(chunk)
+                            }
+                        } catch (e: Exception) {
+                            if (isRecording.get()) {
+                                println("[VoiceRecorder] Error reading audio: ${e.message}")
+                            }
+                            break
+                        }
+                    }
+                    println("[VoiceRecorder] Recording loop ended")
+                }
+
+                val mode = if (onAudioChunk != null) "streaming" else "buffered"
+                println("[VoiceRecorder] Started recording ($mode mode) - format: ${format.sampleRate}Hz ${format.sampleSizeInBits}bit ${format.channels}ch")
+                Result.success(Unit)
+            } catch (e: Exception) {
+                isRecording.set(false)
+                println("[VoiceRecorder] Error starting recording: ${e.message}")
+                Result.failure(e)
             }
-            
-            // Set up audio format (44.1kHz, 16-bit, mono)
-            val format = AudioFormat(
-                AudioFormat.Encoding.PCM_SIGNED,
-                44100f, // Sample rate
-                16,     // Bits per sample
-                1,      // Mono
-                2,      // Frame size
-                44100f, // Frame rate
-                false   // Big endian
-            )
-            
-            // Get the default microphone
-            val info = DataLine.Info(TargetDataLine::class.java, format)
-            
-            if (!AudioSystem.isLineSupported(info)) {
-                return@withContext Result.failure(Exception("Audio line not supported"))
-            }
-            
-            targetDataLine = AudioSystem.getLine(info) as TargetDataLine
-            targetDataLine?.open(format)
-            targetDataLine?.start()
-            
-            isRecording = true
-            
-            Result.success(Unit)
-        } catch (e: Exception) {
-            println("[VoiceRecorder] Error starting recording: ${e.message}")
-            Result.failure(e)
         }
-    }
-    
+
     /**
      * Stop recording and save the audio to a file.
-     * 
+     *
      * @param outputFile The file to save the recording to (WAV format)
      * @return Result containing the file path on success
      */
-    suspend fun stopRecording(outputFile: File): Result<String> = withContext(Dispatchers.IO) {
-        try {
-            if (!isRecording || targetDataLine == null) {
-                return@withContext Result.failure(Exception("Not currently recording"))
+    suspend fun stopRecording(outputFile: File): Result<String> =
+        withContext(Dispatchers.IO) {
+            try {
+                if (!isRecording.compareAndSet(true, false)) {
+                    return@withContext Result.failure(Exception("Not currently recording"))
+                }
+                
+                // Clear callback immediately to prevent further chunk sends
+                onAudioChunkCallback.set(null)
+
+                // Wait for recording job to finish gracefully
+                try {
+                    recordingJob?.cancelAndJoin()
+                } catch (e: Exception) {
+                    println("[VoiceRecorder] Error canceling recording job: ${e.message}")
+                }
+                recordingJob = null
+
+                // Stop and close the line
+                try {
+                    targetDataLine?.stop()
+                    targetDataLine?.close()
+                } catch (e: Exception) {
+                    println("[VoiceRecorder] Error closing audio line: ${e.message}")
+                }
+
+                // Calculate total audio data size
+                val (totalSize, chunkCount, combinedData) = synchronized(audioDataLock) {
+                    val size = audioData.sumOf { it.size }
+                    val count = audioData.size
+                    val combined = if (size > 0) {
+                        ByteArray(size).also { arr ->
+                            var offset = 0
+                            for (chunk in audioData) {
+                                chunk.copyInto(arr, offset)
+                                offset += chunk.size
+                            }
+                        }
+                    } else null
+                    audioData.clear()
+                    Triple(size, count, combined)
+                }
+                
+                println("[VoiceRecorder] Captured $totalSize bytes of audio data in $chunkCount chunks")
+
+                if (totalSize == 0 || combinedData == null) {
+                    targetDataLine = null
+                    return@withContext Result.failure(Exception("No audio data captured"))
+                }
+
+                // Create audio input stream from captured data
+                val audioInputStream = AudioInputStream(
+                    java.io.ByteArrayInputStream(combinedData),
+                    audioFormat!!,
+                    (totalSize / audioFormat!!.frameSize).toLong()
+                )
+
+                // Write to WAV file
+                AudioSystem.write(
+                    audioInputStream,
+                    AudioFileFormat.Type.WAVE,
+                    outputFile,
+                )
+
+                println("[VoiceRecorder] Saved recording to: ${outputFile.absolutePath} (${outputFile.length()} bytes)")
+
+                targetDataLine = null
+
+                Result.success(outputFile.absolutePath)
+            } catch (e: Exception) {
+                println("[VoiceRecorder] Error stopping recording: ${e.message}")
+                e.printStackTrace()
+                Result.failure(e)
             }
-            
-            isRecording = false
-            
-            // Stop and close the line
-            targetDataLine?.stop()
-            targetDataLine?.close()
-            
-            // Create the audio input stream
-            val audioInputStream = AudioInputStream(
-                targetDataLine
-            )
-            
-            // Write to file
-            AudioSystem.write(
-                audioInputStream,
-                AudioFileFormat.Type.WAVE,
-                outputFile
-            )
-            
-            targetDataLine = null
-            
-            Result.success(outputFile.absolutePath)
-        } catch (e: Exception) {
-            println("[VoiceRecorder] Error stopping recording: ${e.message}")
-            Result.failure(e)
         }
-    }
-    
+
     /**
      * Cancel recording without saving.
      */
     fun cancelRecording() {
-        if (isRecording) {
-            isRecording = false
-            targetDataLine?.stop()
-            targetDataLine?.close()
+        if (isRecording.compareAndSet(true, false)) {
+            println("[VoiceRecorder] Canceling recording")
+            onAudioChunkCallback.set(null)
+            recordingJob?.cancel()
+            recordingJob = null
+            try {
+                targetDataLine?.stop()
+                targetDataLine?.close()
+            } catch (e: Exception) {
+                println("[VoiceRecorder] Error closing audio line: ${e.message}")
+            }
             targetDataLine = null
+            synchronized(audioDataLock) {
+                audioData.clear()
+            }
+            println("[VoiceRecorder] Recording canceled")
         }
     }
-    
+
+    /**
+     * Stop recording without saving to file.
+     * Used for streaming mode where chunks are already sent.
+     */
+    suspend fun stopRecordingNoSave(): Result<Int> =
+        withContext(Dispatchers.IO) {
+            try {
+                if (!isRecording.compareAndSet(true, false)) {
+                    println("[VoiceRecorder] stopRecordingNoSave called but not recording")
+                    return@withContext Result.failure(Exception("Not currently recording"))
+                }
+                
+                // Clear callback immediately to prevent further chunk sends
+                onAudioChunkCallback.set(null)
+                println("[VoiceRecorder] Stopping recording (no save mode)")
+
+                // Wait for recording job to finish gracefully
+                try {
+                    recordingJob?.cancelAndJoin()
+                } catch (e: Exception) {
+                    println("[VoiceRecorder] Error canceling recording job: ${e.message}")
+                }
+                recordingJob = null
+
+                // Stop and close the line
+                try {
+                    targetDataLine?.stop()
+                    targetDataLine?.close()
+                } catch (e: Exception) {
+                    println("[VoiceRecorder] Error closing audio line: ${e.message}")
+                }
+
+                // Calculate total audio data size
+                val (totalSize, chunkCount) = synchronized(audioDataLock) {
+                    val size = audioData.sumOf { it.size }
+                    val count = audioData.size
+                    audioData.clear()
+                    Pair(size, count)
+                }
+                
+                println("[VoiceRecorder] Stopped recording - streamed $totalSize bytes in $chunkCount chunks")
+
+                targetDataLine = null
+
+                Result.success(totalSize)
+            } catch (e: Exception) {
+                println("[VoiceRecorder] Error stopping recording: ${e.message}")
+                e.printStackTrace()
+                Result.failure(e)
+            }
+        }
+
     /**
      * Check if currently recording.
      */
-    fun isCurrentlyRecording(): Boolean = isRecording
+    fun isCurrentlyRecording(): Boolean = isRecording.get()
     
+    /**
+     * Clean up resources.
+     */
+    fun dispose() {
+        cancelRecording()
+    }
+
     companion object {
         /**
          * Check if a microphone is available on the system.
          */
         fun isMicrophoneAvailable(): Boolean {
             return try {
-                val format = AudioFormat(44100f, 16, 1, true, false)
+                val format = AudioFormat(24000f, 16, 1, true, false)
                 val info = DataLine.Info(TargetDataLine::class.java, format)
                 AudioSystem.isLineSupported(info)
             } catch (e: Exception) {
                 false
             }
         }
-        
+
         /**
          * Get a list of available audio input devices.
          */
@@ -156,103 +333,5 @@ enum class RecordingState {
     RECORDING,
     PROCESSING,
     COMPLETED,
-    ERROR
-}
-
-/**
- * Audio player for playback of recorded audio files.
- * Separate from AudioPlayer (which handles URL-based TTS narration).
- */
-class RecordedAudioPlayer {
-    
-    private var clip: Clip? = null
-    private var isPlaying = false
-    
-    /**
-     * Load an audio file for playback.
-     */
-    suspend fun loadAudio(audioFile: File): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
-            val audioInputStream = AudioSystem.getAudioInputStream(audioFile)
-            clip = AudioSystem.getClip()
-            clip?.open(audioInputStream)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            println("[RecordedAudioPlayer] Error loading audio: ${e.message}")
-            Result.failure(e)
-        }
-    }
-    
-    /**
-     * Play the loaded audio.
-     */
-    fun play() {
-        clip?.let {
-            if (isPlaying) {
-                it.stop()
-                it.framePosition = 0
-            }
-            it.start()
-            isPlaying = true
-        }
-    }
-    
-    /**
-     * Stop playback.
-     */
-    fun stop() {
-        clip?.stop()
-        isPlaying = false
-    }
-    
-    /**
-     * Release resources.
-     */
-    fun release() {
-        stop()
-        clip?.close()
-        clip = null
-    }
-    
-    /**
-     * Check if currently playing.
-     */
-    fun isCurrentlyPlaying(): Boolean = isPlaying && clip?.isRunning == true
-}
-
-/**
- * Simple audio visualizer for recording feedback.
- */
-class AudioVisualizer {
-    
-    private var lastVolume: Float = 0f
-    
-    /**
-     * Calculate the current audio level (0.0 to 1.0).
-     * This is a simplified version - in production, you'd use FFT or RMS.
-     */
-    fun getCurrentLevel(dataLine: TargetDataLine?): Float {
-        if (dataLine == null || !dataLine.isOpen) return 0f
-        
-        try {
-            val buffer = ByteArray(1024)
-            val bytesRead = dataLine.read(buffer, 0, buffer.size)
-            
-            if (bytesRead <= 0) return 0f
-            
-            // Calculate simple RMS (root mean square)
-            var sum = 0.0
-            for (i in 0 until bytesRead step 2) {
-                val sample = ((buffer[i + 1].toInt() shl 8) or (buffer[i].toInt() and 0xFF)).toShort()
-                sum += sample * sample
-            }
-            
-            val rms = Math.sqrt(sum / (bytesRead / 2))
-            lastVolume = (rms / Short.MAX_VALUE).toFloat().coerceIn(0f, 1f)
-            
-            return lastVolume
-        } catch (e: Exception) {
-            return lastVolume
-        }
-    }
+    ERROR,
 }

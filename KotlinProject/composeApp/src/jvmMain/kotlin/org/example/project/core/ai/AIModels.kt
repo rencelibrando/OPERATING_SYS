@@ -4,7 +4,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
-
 @Serializable
 enum class AIProvider {
     @SerialName("gemini")
@@ -34,12 +33,10 @@ data class AIChatMessage(
 data class AIUserContext(
     @SerialName("user_id")
     val userId: String,
-    
     @SerialName("first_name")
     val firstName: String? = null,
     @SerialName("last_name")
     val lastName: String? = null,
-    
     @SerialName("native_language")
     val nativeLanguage: String? = null,
     @SerialName("target_languages")
@@ -58,7 +55,6 @@ data class AIUserContext(
     val interests: List<String> = emptyList(),
     @SerialName("ai_profile")
     val aiProfile: JsonObject? = null,
-    
     @SerialName("learning_progress")
     val learningProgress: AILearningProgress? = null,
     @SerialName("skill_progress")
@@ -212,7 +208,6 @@ data class AIHealthResponse(
     val providers: Map<String, Boolean>,
 )
 
-
 @Serializable
 data class SaveHistoryRequest(
     @SerialName("session_id")
@@ -259,4 +254,3 @@ data class LoadHistoryResponse(
     @SerialName("compression_ratio")
     val compressionRatio: Double,
 )
-

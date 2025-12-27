@@ -91,13 +91,13 @@ data class LessonCategoryInfo(
         fun getSampleCategories(userLevel: LessonDifficulty): List<LessonCategoryInfo> {
             val beginnerCompleted = 0
             val intermediateCompleted = 0
-            
+
             // Lesson counts are now dynamic from Supabase, set to 0 as placeholder
             // The actual counts will be shown when lessons are loaded from the database
             val beginnerLessonCount = 0
             val intermediateLessonCount = 0
             val advancedLessonCount = 0
-            
+
             return listOf(
                 LessonCategoryInfo(
                     difficulty = LessonDifficulty.BEGINNER,

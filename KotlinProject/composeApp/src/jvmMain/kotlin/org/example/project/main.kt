@@ -7,7 +7,7 @@ import androidx.compose.ui.window.rememberWindowState
 
 fun main() =
     application {
-        val windowState = rememberWindowState(width = 1400.dp, height = 900.dp)
+        val windowState = rememberWindowState(width = 1400.dp, height = 700.dp)
         Window(
             onCloseRequest = ::exitApplication,
             title = "KotlinProject",

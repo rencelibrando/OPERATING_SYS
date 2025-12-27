@@ -1,9 +1,6 @@
 package org.example.project.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,9 +28,9 @@ import org.example.project.domain.model.MessageSender
 import org.example.project.presentation.viewmodel.AIChatViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
-import org.example.project.core.auth.User as AuthUser
 import java.text.SimpleDateFormat
 import java.util.*
+import org.example.project.core.auth.User as AuthUser
 
 @Composable
 fun AIChatScreen(
@@ -76,15 +73,16 @@ fun AIChatScreen(
         val hasNoChatHistory = chatSessions.isEmpty()
         val hasNoActiveChat = chatMessages.isEmpty() && currentSession == null
         val shouldShowEmptyState = hasNoChatHistory && hasNoActiveChat
-        
+
         if (shouldShowEmptyState) {
             // Empty State - user has never started a conversation
             // Don't create any session - just show the empty state
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .padding(horizontal = 32.dp, vertical = 24.dp),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(horizontal = 32.dp, vertical = 24.dp),
             ) {
                 // Header Row
                 Row(
@@ -94,9 +92,10 @@ fun AIChatScreen(
                 ) {
                     Text(
                         text = "AI Chat Tutor",
-                        style = MaterialTheme.typography.displaySmall.copy(
-                            fontWeight = FontWeight.Bold,
-                        ),
+                        style =
+                            MaterialTheme.typography.displaySmall.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
                         color = WordBridgeColors.TextPrimary,
                     )
 
@@ -121,19 +120,21 @@ fun AIChatScreen(
             // Loading existing chat - show loading indicator
             // This happens when user has chat history but we're still loading the session
             Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator(color = WordBridgeColors.PrimaryPurple)
             }
         } else {
             // Active Chat
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
             ) {
                 // Chat Header
                 ChatHeader(
@@ -145,25 +146,29 @@ fun AIChatScreen(
 
                 // Messages Area
                 Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color(0xFFF8FAFC), // slate-50
-                                    Color.White
-                                )
-                            )
-                        )
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .background(
+                                brush =
+                                    Brush.verticalGradient(
+                                        colors =
+                                            listOf(
+                                                Color(0xFFF8FAFC), // slate-50
+                                                Color.White,
+                                            ),
+                                    ),
+                            ),
                 ) {
                     val listState = rememberLazyListState()
 
                     LazyColumn(
                         state = listState,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(32.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .padding(32.dp),
                         verticalArrangement = Arrangement.spacedBy(24.dp),
                     ) {
                         items(chatMessages) { message ->
@@ -180,7 +185,7 @@ fun AIChatScreen(
                             item {
                                 TypingIndicator(
                                     botAvatar = selectedBot?.avatar ?: "🤖",
-                                    botName = selectedBot?.name ?: "AI"
+                                    botName = selectedBot?.name ?: "AI",
                                 )
                             }
                         }
@@ -192,7 +197,7 @@ fun AIChatScreen(
                                     onReplyClick = { reply ->
                                         viewModel.onMessageChanged(reply)
                                         viewModel.onSendMessage()
-                                    }
+                                    },
                                 )
                             }
                         }
@@ -231,48 +236,53 @@ private fun ChatHeader(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color.White,
-        shadowElevation = 2.dp
+        shadowElevation = 2.dp,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp, vertical = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp, vertical = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Back Button
                 IconButton(
                     onClick = onBackClick,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                    modifier =
+                        Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(8.dp)),
                 ) {
                     Text(
                         text = "←",
                         style = MaterialTheme.typography.titleLarge,
-                        color = WordBridgeColors.TextSecondary
+                        color = WordBridgeColors.TextSecondary,
                     )
                 }
 
                 if (bot != null) {
                     // Bot Avatar
                     Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                brush = Brush.linearGradient(
-                                    colors = listOf(
-                                        Color(0xFFF472B6), // pink-400
-                                        Color(0xFFFB923C)  // orange-400
-                                    )
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(
+                                    brush =
+                                        Brush.linearGradient(
+                                            colors =
+                                                listOf(
+                                                    Color(0xFFF472B6), // pink-400
+                                                    Color(0xFFFB923C), // orange-400
+                                                ),
+                                        ),
+                                ),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = bot.avatar,
@@ -283,9 +293,10 @@ private fun ChatHeader(
                     Column {
                         Text(
                             text = "Chatting with ${bot.name}",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
+                            style =
+                                MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
                             color = WordBridgeColors.TextPrimary,
                         )
                         Text(
@@ -299,19 +310,20 @@ private fun ChatHeader(
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 // More Options
                 IconButton(
                     onClick = { },
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                    modifier =
+                        Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(8.dp)),
                 ) {
                     Text(
                         text = "⋮",
                         style = MaterialTheme.typography.titleLarge,
-                        color = WordBridgeColors.TextSecondary
+                        color = WordBridgeColors.TextSecondary,
                     )
                 }
 
@@ -335,37 +347,43 @@ private fun ChatMessageBubble(
     botName: String,
 ) {
     val dateFormat = remember { SimpleDateFormat("h:mm a", Locale.getDefault()) }
-    val formattedTime = remember(timestamp) {
-        dateFormat.format(Date(timestamp))
-    }
+    val formattedTime =
+        remember(timestamp) {
+            dateFormat.format(Date(timestamp))
+        }
 
     if (isFromUser) {
         // User message (right-aligned)
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.End,
         ) {
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.Transparent
-                ),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 0.dp
-                )
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = Color.Transparent,
+                    ),
+                elevation =
+                    CardDefaults.cardElevation(
+                        defaultElevation = 0.dp,
+                    ),
             ) {
                 Box(
-                    modifier = Modifier
-                        .background(
-                            brush = Brush.linearGradient(
-                                colors = listOf(
-                                    Color(0xFFA855F7), // purple-500
-                                    Color(0xFF3B82F6)  // blue-500
-                                )
-                            ),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .padding(16.dp)
+                    modifier =
+                        Modifier
+                            .background(
+                                brush =
+                                    Brush.linearGradient(
+                                        colors =
+                                            listOf(
+                                                Color(0xFFA855F7), // purple-500
+                                                Color(0xFF3B82F6), // blue-500
+                                            ),
+                                    ),
+                                shape = RoundedCornerShape(16.dp),
+                            )
+                            .padding(16.dp),
                 ) {
                     Text(
                         text = message,
@@ -380,22 +398,25 @@ private fun ChatMessageBubble(
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.Top,
         ) {
             // Bot Avatar
             Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                Color(0xFFF472B6), // pink-400
-                                Color(0xFFFB923C)  // orange-400
-                            )
-                        )
-                    ),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            brush =
+                                Brush.linearGradient(
+                                    colors =
+                                        listOf(
+                                            Color(0xFFF472B6), // pink-400
+                                            Color(0xFFFB923C), // orange-400
+                                        ),
+                                ),
+                        ),
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = botAvatar,
@@ -406,18 +427,19 @@ private fun ChatMessageBubble(
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = botName,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.SemiBold
-                        ),
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                            ),
                         color = WordBridgeColors.TextPrimary,
                     )
                     Text(
@@ -430,40 +452,48 @@ private fun ChatMessageBubble(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Card(
-                    shape = RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 16.dp,
-                        bottomStart = 4.dp,
-                        bottomEnd = 16.dp
-                    ),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.Transparent
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        Color(0xFFE9D5FF) // purple-100
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 0.dp
-                    )
+                    shape =
+                        RoundedCornerShape(
+                            topStart = 16.dp,
+                            topEnd = 16.dp,
+                            bottomStart = 4.dp,
+                            bottomEnd = 16.dp,
+                        ),
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor = Color.Transparent,
+                        ),
+                    border =
+                        androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            Color(0xFFE9D5FF), // purple-100
+                        ),
+                    elevation =
+                        CardDefaults.cardElevation(
+                            defaultElevation = 0.dp,
+                        ),
                 ) {
                     Box(
-                        modifier = Modifier
-                            .background(
-                                brush = Brush.linearGradient(
-                                    colors = listOf(
-                                        Color(0xFFF3E5F5), // purple-50
-                                        Color(0xFFEFF6FF)  // blue-50
-                                    )
-                                ),
-                                shape = RoundedCornerShape(
-                                    topStart = 16.dp,
-                                    topEnd = 16.dp,
-                                    bottomStart = 4.dp,
-                                    bottomEnd = 16.dp
+                        modifier =
+                            Modifier
+                                .background(
+                                    brush =
+                                        Brush.linearGradient(
+                                            colors =
+                                                listOf(
+                                                    Color(0xFFF3E5F5), // purple-50
+                                                    Color(0xFFEFF6FF), // blue-50
+                                                ),
+                                        ),
+                                    shape =
+                                        RoundedCornerShape(
+                                            topStart = 16.dp,
+                                            topEnd = 16.dp,
+                                            bottomStart = 4.dp,
+                                            bottomEnd = 16.dp,
+                                        ),
                                 )
-                            )
-                            .padding(16.dp)
+                                .padding(16.dp),
                     ) {
                         Text(
                             text = message,
@@ -485,21 +515,24 @@ private fun TypingIndicator(
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Start,
-        verticalAlignment = Alignment.Top
+        verticalAlignment = Alignment.Top,
     ) {
         Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFFF472B6),
-                            Color(0xFFFB923C)
-                        )
-                    )
-                ),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        brush =
+                            Brush.linearGradient(
+                                colors =
+                                    listOf(
+                                        Color(0xFFF472B6),
+                                        Color(0xFFFB923C),
+                                    ),
+                            ),
+                    ),
+            contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = botAvatar,
@@ -512,30 +545,33 @@ private fun TypingIndicator(
         Column {
             Text(
                 text = "$botName is typing...",
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontWeight = FontWeight.Medium
-                ),
+                style =
+                    MaterialTheme.typography.bodySmall.copy(
+                        fontWeight = FontWeight.Medium,
+                    ),
                 color = WordBridgeColors.TextSecondary,
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Card(
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFF3F4F6) // gray-100
-                )
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = Color(0xFFF3F4F6), // gray-100
+                    ),
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     repeat(3) {
                         Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF9CA3AF)) // gray-400
+                            modifier =
+                                Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF9CA3AF)), // gray-400
                         )
                     }
                 }
@@ -545,26 +581,28 @@ private fun TypingIndicator(
 }
 
 @Composable
-private fun QuickReplies(
-    onReplyClick: (String) -> Unit,
-) {
-    val replies = listOf(
-        "Tell me about yourself",
-        "Let's practice greetings",
-        "Help me with pronunciation",
-        "Discuss daily routines"
-    )
+private fun QuickReplies(onReplyClick: (String) -> Unit) {
+    val replies =
+        listOf(
+            "Tell me about yourself",
+            "Let's practice greetings",
+            "Help me with pronunciation",
+            "Discuss daily routines",
+        )
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 56.dp), // Align with message bubble
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 56.dp),
+        // Align with message bubble
     ) {
         Text(
             text = "Quick replies:",
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontWeight = FontWeight.Medium
-            ),
+            style =
+                MaterialTheme.typography.bodySmall.copy(
+                    fontWeight = FontWeight.Medium,
+                ),
             color = WordBridgeColors.TextSecondary,
         )
 
@@ -572,13 +610,13 @@ private fun QuickReplies(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             replies.take(2).forEach { reply ->
                 QuickReplyButton(
                     text = reply,
                     onClick = { onReplyClick(reply) },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -587,13 +625,13 @@ private fun QuickReplies(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             replies.drop(2).forEach { reply ->
                 QuickReplyButton(
                     text = reply,
                     onClick = { onReplyClick(reply) },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -610,30 +648,36 @@ private fun QuickReplyButton(
     val isHovered by interactionSource.collectIsHoveredAsState()
 
     Card(
-        modifier = modifier
-            .hoverable(interactionSource)
-            .clickable { onClick() },
+        modifier =
+            modifier
+                .hoverable(interactionSource)
+                .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isHovered) {
-                Color(0xFFF3E5F5) // purple-50
-            } else {
-                Color.White
-            }
-        ),
-        border = androidx.compose.foundation.BorderStroke(
-            2.dp,
-            if (isHovered) Color(0xFFC084FC) else Color(0xFFE2E8F0) // purple-300 : slate-200
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isHovered) 4.dp else 2.dp
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    if (isHovered) {
+                        Color(0xFFF3E5F5) // purple-50
+                    } else {
+                        Color.White
+                    },
+            ),
+        border =
+            androidx.compose.foundation.BorderStroke(
+                2.dp,
+                if (isHovered) Color(0xFFC084FC) else Color(0xFFE2E8F0), // purple-300 : slate-200
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = if (isHovered) 4.dp else 2.dp,
+            ),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+            contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = text,
@@ -656,17 +700,18 @@ private fun ModernChatInput(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color.White,
-        shadowElevation = 8.dp
+        shadowElevation = 8.dp,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp, vertical = 24.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp, vertical = 24.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.Bottom
+                verticalAlignment = Alignment.Bottom,
             ) {
                 // Message Input
                 OutlinedTextField(
@@ -681,12 +726,13 @@ private fun ModernChatInput(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(16.dp),
                     enabled = enabled,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = Color(0xFFF1F5F9), // slate-100
-                        focusedContainerColor = Color.White,
-                        focusedBorderColor = Color(0xFFA855F7), // purple-500
-                        unfocusedBorderColor = Color.Transparent,
-                    ),
+                    colors =
+                        OutlinedTextFieldDefaults.colors(
+                            unfocusedContainerColor = Color(0xFFF1F5F9), // slate-100
+                            focusedContainerColor = Color.White,
+                            focusedBorderColor = Color(0xFFA855F7), // purple-500
+                            unfocusedBorderColor = Color.Transparent,
+                        ),
                     maxLines = 3,
                 )
 
@@ -695,28 +741,32 @@ private fun ModernChatInput(
                 val buttonHovered by buttonInteraction.collectIsHoveredAsState()
                 val buttonScale by animateFloatAsState(
                     targetValue = if (buttonHovered) 1.05f else 1f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    )
+                    animationSpec =
+                        spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium,
+                        ),
                 )
 
                 IconButton(
                     onClick = onSendMessage,
                     enabled = enabled && message.trim().isNotEmpty(),
-                    modifier = Modifier
-                        .size(48.dp)
-                        .scale(buttonScale)
-                        .hoverable(buttonInteraction)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color(0xFFA855F7),
-                                    Color(0xFF3B82F6)
-                                )
-                            )
-                        )
+                    modifier =
+                        Modifier
+                            .size(48.dp)
+                            .scale(buttonScale)
+                            .hoverable(buttonInteraction)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                brush =
+                                    Brush.horizontalGradient(
+                                        colors =
+                                            listOf(
+                                                Color(0xFFA855F7),
+                                                Color(0xFF3B82F6),
+                                            ),
+                                    ),
+                            ),
                 ) {
                     Text(
                         text = "➤",
@@ -733,17 +783,18 @@ private fun ModernChatInput(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF10B981)) // green-500
+                            modifier =
+                                Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF10B981)), // green-500
                         )
                         Text(
                             text = "$botName is online",

@@ -10,8 +10,7 @@ import org.example.project.domain.model.PersonalInfo
 
 class ProfileService {
     private val supabase = SupabaseConfig.client
-    
-    
+
     private var personalInfoCache: Pair<PersonalInfo?, Long>? = null
     private var learningProfileCache: Pair<LearningProfile?, Long>? = null
     private val cacheDuration = 30_000L
@@ -20,14 +19,12 @@ class ProfileService {
         return try {
             println("[ProfileService] Updating personal info in Supabase")
 
-            
             personalInfoCache = null
 
             if (!SupabaseConfig.isConfigured()) {
                 throw Exception("Supabase is not configured")
             }
 
-            
             if (!SupabaseApiHelper.ensureValidSession()) {
                 throw Exception("No valid session. Please sign in again.")
             }
@@ -67,14 +64,12 @@ class ProfileService {
         return try {
             println("[ProfileService] Updating learning profile in Supabase")
 
-            
             learningProfileCache = null
 
             if (!SupabaseConfig.isConfigured()) {
                 throw Exception("Supabase is not configured")
             }
 
-            
             if (!SupabaseApiHelper.ensureValidSession()) {
                 throw Exception("No valid session. Please sign in again.")
             }
@@ -109,7 +104,6 @@ class ProfileService {
 
     suspend fun loadPersonalInfo(): Result<PersonalInfo?> {
         return try {
-            
             val cached = personalInfoCache
             if (cached != null && System.currentTimeMillis() - cached.second < cacheDuration) {
                 println("[ProfileService] Returning cached personal info")
@@ -118,7 +112,6 @@ class ProfileService {
 
             println("[ProfileService] Loading personal info from Supabase")
 
-            
             if (!SupabaseApiHelper.ensureValidSession()) {
                 println("[ProfileService] No valid session")
                 return Result.success(null)
@@ -147,7 +140,6 @@ class ProfileService {
                     bio = metadata?.get("bio")?.toString()?.removeSurrounding("\"")?.takeIf { it.isNotEmpty() },
                 )
 
-            
             personalInfoCache = Pair(personalInfo, System.currentTimeMillis())
             println("[ProfileService] Personal info loaded and cached successfully")
             Result.success(personalInfo)
@@ -159,7 +151,6 @@ class ProfileService {
 
     suspend fun loadLearningProfile(): Result<LearningProfile?> {
         return try {
-            
             val cached = learningProfileCache
             if (cached != null && System.currentTimeMillis() - cached.second < cacheDuration) {
                 println("[ProfileService] Returning cached learning profile")
@@ -168,7 +159,6 @@ class ProfileService {
 
             println("[ProfileService] Loading learning profile from Supabase")
 
-            
             if (!SupabaseApiHelper.ensureValidSession()) {
                 println("[ProfileService] No valid session")
                 return Result.success(null)
@@ -197,7 +187,6 @@ class ProfileService {
                             ?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList(),
                 )
 
-            
             learningProfileCache = Pair(learningProfile, System.currentTimeMillis())
             println("[ProfileService] Learning profile loaded and cached successfully")
             Result.success(learningProfile)

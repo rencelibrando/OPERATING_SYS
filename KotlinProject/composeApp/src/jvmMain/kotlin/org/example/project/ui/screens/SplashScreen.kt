@@ -14,7 +14,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import org.example.project.core.initialization.AppInitializer
-import org.example.project.ui.theme.WordBridgeColors
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -26,17 +25,16 @@ fun SplashScreen(
     var progress by remember { mutableStateOf(0f) }
     var isComplete by remember { mutableStateOf(false) }
 
-    
     LaunchedEffect(Unit) {
         try {
             AppInitializer.initialize(
                 onProgress = { step, progressValue ->
                     currentStep = step
                     progress = progressValue
-                }
+                },
             ).onSuccess {
                 isComplete = true
-                delay(800) 
+                delay(800)
                 onInitializationComplete()
             }.onFailure { e ->
                 println("Initialization failed: ${e.message}")
@@ -54,37 +52,40 @@ fun SplashScreen(
         }
     }
 
-    
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        )
+        animationSpec =
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow,
+            ),
     )
 
-    
     val infiniteTransition = rememberInfiniteTransition()
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.6f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        )
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(1000, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
     )
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF7C3AED),
-                        Color(0xFF5B21B6),
-                    )
-                )
-            ),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(
+                    brush =
+                        androidx.compose.ui.graphics.Brush.verticalGradient(
+                            colors =
+                                listOf(
+                                    Color(0xFF7C3AED),
+                                    Color(0xFF5B21B6),
+                                ),
+                        ),
+                ),
         contentAlignment = Alignment.Center,
     ) {
         Column(
@@ -92,13 +93,13 @@ fun SplashScreen(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth().padding(32.dp),
         ) {
-            
             Text(
                 text = "WordBridge",
-                style = MaterialTheme.typography.displayLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 48.sp,
-                ),
+                style =
+                    MaterialTheme.typography.displayLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 48.sp,
+                    ),
                 color = Color.White.copy(alpha = pulseAlpha),
             )
 
@@ -112,30 +113,28 @@ fun SplashScreen(
 
             Spacer(modifier = Modifier.height(64.dp))
 
-            
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.width(300.dp),
             ) {
-                
                 LinearProgressIndicator(
                     progress = { animatedProgress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(6.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(6.dp),
                     color = Color.White,
                     trackColor = Color.White.copy(alpha = 0.3f),
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                
                 AnimatedContent(
                     targetState = currentStep,
                     transitionSpec = {
                         fadeIn(animationSpec = tween(300)) togetherWith
                             fadeOut(animationSpec = tween(300))
-                    }
+                    },
                 ) { step ->
                     Text(
                         text = step,
@@ -146,7 +145,6 @@ fun SplashScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                
                 Text(
                     text = "${(animatedProgress * 100).toInt()}%",
                     style = MaterialTheme.typography.bodySmall,
@@ -156,7 +154,6 @@ fun SplashScreen(
 
             Spacer(modifier = Modifier.height(64.dp))
 
-            
             AnimatedVisibility(
                 visible = isComplete,
                 enter = scaleIn() + fadeIn(),
@@ -181,4 +178,3 @@ fun SplashScreen(
         }
     }
 }
-

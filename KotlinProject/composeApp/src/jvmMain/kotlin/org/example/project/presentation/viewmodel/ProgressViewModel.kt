@@ -53,27 +53,22 @@ class ProgressViewModel : ViewModel() {
     }
 
     fun onAchievementClicked(achievementId: String) {
-        
         println("Achievement clicked: $achievementId")
     }
 
     fun onGoalClicked(goalId: String) {
-        
         println("Goal clicked: $goalId")
     }
 
     fun onCreateGoalClicked() {
-        
         println("Create goal clicked")
     }
 
     fun onSetFirstGoalClicked() {
-        
         println("Set first goal clicked")
     }
 
     fun onExploreAchievementsClicked() {
-        
         println("Explore achievements clicked")
     }
 
@@ -107,19 +102,15 @@ class ProgressViewModel : ViewModel() {
     private fun loadProgressData(timeframe: ProgressTimeframe) {
         _isLoading.value = true
 
-        
         when (timeframe) {
             ProgressTimeframe.WEEK -> {
                 _weeklyProgressData.value = WeeklyProgressData.getSampleWeeklyData()
             }
             ProgressTimeframe.MONTH -> {
-                
             }
             ProgressTimeframe.YEAR -> {
-                
             }
             ProgressTimeframe.ALL_TIME -> {
-                
             }
         }
 
