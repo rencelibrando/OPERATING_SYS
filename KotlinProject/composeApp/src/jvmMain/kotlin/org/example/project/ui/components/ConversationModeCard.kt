@@ -2,6 +2,7 @@ package org.example.project.ui.components
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.presentation.viewmodel.SpeakingViewModel
 import org.example.project.ui.theme.WordBridgeColors
-import org.example.project.models.PracticeLanguage
+import org.example.project.domain.model.PracticeLanguage
 import org.example.project.models.ConversationTurnUI
 
 /**
@@ -33,12 +34,16 @@ fun ConversationModeCard(
     scenario: String,
     conversationTurns: List<ConversationTurnUI>,
     isAgentSpeaking: Boolean,
+    isAgentThinking: Boolean = false,
     isRecording: Boolean,
     isConversationActive: Boolean,
+    audioLevel: Float = 0f,
     onStartConversation: () -> Unit,
     onStopConversation: () -> Unit,
     onStartRecording: () -> Unit,
     onStopRecording: () -> Unit,
+    onRetryConnection: (() -> Unit)? = null,
+    conversationError: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
@@ -108,6 +113,56 @@ fun ConversationModeCard(
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            // Error display
+            conversationError?.let { error ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFEF4444).copy(alpha = 0.1f)
+                    ),
+                    border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.3f))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "⚠️",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color(0xFFEF4444)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Connection Error",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = Color(0xFFEF4444)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = error,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFFEF4444).copy(alpha = 0.8f)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = onRetryConnection ?: onStartConversation,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFEF4444)
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Retry Connection", color = Color.White)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
             HorizontalDivider(color = Color(0xFF3A3147).copy(alpha = 0.5f))
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -121,24 +176,30 @@ fun ConversationModeCard(
                         .padding(vertical = 40.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "🎙️",
-                        style = MaterialTheme.typography.displayLarge
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Start Conversation",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = Color.White
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Click below to start a real-time conversation with your AI tutor",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White
-                    )
+                    if (isConversationActive && isAgentThinking) {
+                        // Show thinking indicator when agent is processing first response
+                        AgentThinkingIndicator(isThinking = true)
+                    } else {
+                        // Show normal empty state
+                        Text(
+                            text = "🎙️",
+                            style = MaterialTheme.typography.displayLarge
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Start Conversation",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = Color.White
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Click below to start a real-time conversation with your AI tutor",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White
+                        )
+                    }
                 }
             } else {
                 // Chat messages with animations
@@ -155,15 +216,9 @@ fun ConversationModeCard(
                     ) { index, turn ->
                         ConversationBubble(
                             turn = turn,
-                            animationDelay = index * 50
+                            animationDelay = index * 50,
+                            isAgentThinking = isAgentThinking && turn.role == "assistant" && index == conversationTurns.size - 1
                         )
-                    }
-
-                    // Agent typing indicator
-                    if (isAgentSpeaking) {
-                        item {
-                            TypingIndicator()
-                        }
                     }
                 }
             }
@@ -204,24 +259,22 @@ fun ConversationModeCard(
                 }
             }
             
-            // Audio is now continuous - show listening indicator when active
+            // Push-to-talk button when conversation is active
             if (isConversationActive) {
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                Row(
+                Box(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "🎤",
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Listening continuously - just speak naturally",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF10B981)
+                    CircularWaveformMicrophone(
+                        isRecording = isRecording,
+                        isAgentSpeaking = isAgentSpeaking,
+                        isAgentThinking = isAgentThinking,
+                        isAgentReady = true,
+                        audioLevel = audioLevel,
+                        onPress = onStartRecording,
+                        onRelease = onStopRecording
                     )
                 }
             }
@@ -236,7 +289,8 @@ fun ConversationModeCard(
 @Composable
 private fun ConversationBubble(
     turn: ConversationTurnUI,
-    animationDelay: Int = 0
+    animationDelay: Int = 0,
+    isAgentThinking: Boolean = false
 ) {
     val isUser = turn.role == "user"
     var visible by remember { mutableStateOf(false) }
@@ -272,86 +326,22 @@ private fun ConversationBubble(
                 modifier = Modifier.widthIn(max = 280.dp),
                 shadowElevation = 1.dp
             ) {
-                Text(
-                    text = turn.text,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White,
-                    modifier = Modifier.padding(10.dp),
-                    lineHeight = 20.sp
-                )
-            }
-        }
-    }
-}
-
-/**
- * Typing indicator for when agent is speaking with fade-in animation.
- */
-@Composable
-private fun TypingIndicator() {
-    AnimatedVisibility(
-        visible = true,
-        enter = fadeIn(animationSpec = tween(200)) + expandVertically(),
-        exit = fadeOut() + shrinkVertically()
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start
-        ) {
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = Color(0xFF3A3147).copy(alpha = 0.6f),
-                shadowElevation = 1.dp
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                Column(
+                    modifier = Modifier.padding(10.dp)
                 ) {
-                    repeat(3) { index ->
-                        TypingDot(delay = index * 150)
+                    // Show thinking indicator for agent messages that are currently being generated
+                    if (!isUser && isAgentThinking && turn.text.isBlank()) {
+                        CompactThinkingIndicator(isThinking = true)
+                    } else {
+                        Text(
+                            text = turn.text,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White,
+                            lineHeight = 20.sp
+                        )
                     }
                 }
             }
         }
     }
-}
-
-/**
- * Animated typing dot with smooth transitions.
- */
-@Composable
-private fun TypingDot(delay: Int = 0) {
-    var visible by remember { mutableStateOf(false) }
-    val infiniteTransition = rememberInfiniteTransition()
-    
-    // Smooth scale animation
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 0.7f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(600, delayMillis = delay),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
-
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(delay.toLong())
-        while (true) {
-            visible = true
-            kotlinx.coroutines.delay(600)
-            visible = false
-            kotlinx.coroutines.delay(400)
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .size(8.dp)
-            .scale(scale)
-            .background(
-                color = if (visible) Color(0xFFB4B4C4) else Color(0xFF6B7280),
-                shape = RoundedCornerShape(4.dp)
-            )
-    )
 }

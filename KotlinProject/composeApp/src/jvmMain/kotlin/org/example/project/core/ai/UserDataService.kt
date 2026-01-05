@@ -419,9 +419,13 @@ data class VocabularyWordRow(
 
 @kotlinx.serialization.Serializable
 data class UserLessonProgressRow(
-    val status: String,
+    val user_id: String,
+    val lesson_id: String? = null,
+    val status: String? = null,
     val score: Int? = null,
     val time_spent: Int = 0,
+    val started_at: String? = null,
+    val completed_at: String? = null,
 )
 
 @kotlinx.serialization.Serializable

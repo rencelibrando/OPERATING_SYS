@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.LessonTopic
 import org.example.project.ui.theme.WordBridgeColors
+import androidx.compose.ui.draw.alpha
 
 @Composable
 fun LessonTopicCard(
@@ -49,7 +50,7 @@ fun LessonTopicCard(
     )
 
     val titleColor by animateColorAsState(
-        targetValue = if (isHovered && !topic.isLocked) hoverTitleColor else WordBridgeColors.TextPrimary,
+        targetValue = if (isHovered && !topic.isLocked) hoverTitleColor else WordBridgeColors.TextPrimaryDark,
         animationSpec = tween(300),
         label = "titleColor",
     )
@@ -63,7 +64,7 @@ fun LessonTopicCard(
         shape = RoundedCornerShape(16.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = Color.White,
+                containerColor = Color(0xFF1E293B),
             ),
         elevation =
             CardDefaults.cardElevation(
@@ -137,14 +138,14 @@ fun LessonTopicCard(
                             MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
                             ),
-                        color = titleColor,
+                        color = if (topic.isLocked) Color(0xFF94A3B8) else titleColor,
                         modifier = Modifier.weight(1f),
                     )
 
                     if (topic.durationMinutes != null) {
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFFF1F5F9),
+                            color = Color(0xFF1E293B),
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -161,7 +162,7 @@ fun LessonTopicCard(
                                         MaterialTheme.typography.bodySmall.copy(
                                             fontWeight = FontWeight.Medium,
                                         ),
-                                    color = Color(0xFF64748B),
+                                    color = Color(0xFF94A3B8),
                                 )
                             }
                         }
@@ -173,8 +174,61 @@ fun LessonTopicCard(
                     Text(
                         text = topic.description,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = WordBridgeColors.TextSecondary,
+                        color = if (topic.isLocked) Color(0xFF94A3B8) else WordBridgeColors.TextSecondaryDark,
                     )
+                }
+
+                // Progress indicator
+                if (!topic.isLocked && topic.totalLessonsCount > 0) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "${topic.completedLessonsCount}/${topic.totalLessonsCount} lessons",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = WordBridgeColors.TextSecondaryDark,
+                            )
+                            Text(
+                                text = "${topic.progressPercentage}%",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                ),
+                                color = WordBridgeColors.AccentGreen,
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        LinearProgressIndicator(
+                            progress = topic.progressPercentage / 100f,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp)),
+                            color = WordBridgeColors.AccentGreen,
+                            trackColor = Color(0xFF334155),
+                        )
+                    }
+                } else if (topic.isLocked) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            text = "🔒",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        Text(
+                            text = "Complete previous topic to unlock",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.Medium,
+                            ),
+                            color = Color(0xFF94A3B8),
+                        )
+                    }
                 }
             }
 
@@ -206,7 +260,7 @@ fun LessonTopicCard(
                                 MaterialTheme.typography.displayMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                 ),
-                            color = if (isHovered) gradientStart else Color(0xFFCBD5E1),
+                            color = if (isHovered) gradientStart else Color(0xFF64748B),
                         )
                     }
                 }

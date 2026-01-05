@@ -23,6 +23,10 @@ class LessonsViewModel : ViewModel() {
     private val profileService = ProfileService()
     private val lessonTopicsRepository: LessonTopicsRepository = LessonTopicsRepositoryImpl()
     private val lessonContentRepository: LessonContentRepository = LessonContentRepositoryImpl()
+    
+    // Track last loaded state to avoid redundant API calls
+    private var lastLoadedCategory: LessonDifficulty? = null
+    private var lastLoadedLanguage: LessonLanguage? = null
 
     private val _lessons = mutableStateOf(Lesson.getSampleLessons())
     private val _levelProgress = mutableStateOf(LevelProgress.getSampleProgress())
@@ -118,13 +122,66 @@ class LessonsViewModel : ViewModel() {
     }
 
     private fun refreshCategories() {
-        _lessonCategories.value = LessonCategoryInfo.getSampleCategories(_userLevel.value)
+        viewModelScope.launch {
+            try {
+                loadAllDifficultyProgress()
+            } catch (e: Exception) {
+                println("[LessonsViewModel] Error loading categories on init: ${e.message}")
+                // Fallback to sample categories if loading fails
+                _lessonCategories.value = LessonCategoryInfo.getSampleCategories(_userLevel.value)
+            }
+        }
+    }
+
+    private fun calculateLevelProgress(difficulty: LessonDifficulty, topics: List<org.example.project.domain.model.LessonTopic>): LessonCategoryInfo {
+        val totalTopics = topics.size
+        val totalLessons = topics.sumOf { it.totalLessonsCount }
+        val completedLessons = topics.sumOf { it.completedLessonsCount }
+        val progressPercentage = if (totalLessons > 0) {
+            ((completedLessons.toFloat() / totalLessons.toFloat()) * 100).toInt()
+        } else {
+            0
+        }
+
+        return when (difficulty) {
+            LessonDifficulty.BEGINNER -> LessonCategoryInfo(
+                difficulty = LessonDifficulty.BEGINNER,
+                title = "Beginner",
+                description = "Start your language learning journey with foundational lessons",
+                totalLessons = totalTopics,
+                completedLessons = completedLessons,
+                isLocked = false,
+                progressPercentage = progressPercentage,
+            )
+            LessonDifficulty.INTERMEDIATE -> LessonCategoryInfo(
+                difficulty = LessonDifficulty.INTERMEDIATE,
+                title = "Intermediate",
+                description = "Build on your basics with more complex concepts and conversations",
+                totalLessons = totalTopics,
+                completedLessons = completedLessons,
+                isLocked = false,
+                progressPercentage = progressPercentage,
+            )
+            LessonDifficulty.ADVANCED -> LessonCategoryInfo(
+                difficulty = LessonDifficulty.ADVANCED,
+                title = "Advanced",
+                description = "Master advanced topics and achieve fluency in complex situations",
+                totalLessons = totalTopics,
+                completedLessons = completedLessons,
+                isLocked = false,
+                progressPercentage = progressPercentage,
+            )
+        }
     }
 
     fun onCategoryClicked(difficulty: LessonDifficulty) {
+        val previousCategory = _selectedCategory.value
         _selectedCategory.value = difficulty
-        _categoryLessons.value = emptyList()
-        _lessonTopics.value = emptyList()
+        // Don't clear existing data if clicking the same category - let cache handle it
+        // Only clear if switching to a different category
+        if (previousCategory != null && previousCategory != difficulty) {
+            _lessonTopics.value = emptyList()
+        }
         println("Category clicked: ${difficulty.displayName}")
 
         viewModelScope.launch {
@@ -137,13 +194,16 @@ class LessonsViewModel : ViewModel() {
         try {
             val language = _selectedLanguage.value
             println("[LessonsViewModel] ========================================")
-            println("[LessonsViewModel] 🔍 Loading topics for ${language.displayName} - ${difficulty.displayName} from Supabase...")
+            println("[LessonsViewModel] 🔍 Loading topics for ${language.displayName} - ${difficulty.displayName}...")
+
+            // Load topics for all difficulty levels to calculate progress (will use cache)
+            loadAllDifficultyProgress()
 
             val result = lessonTopicsRepository.getTopicsByDifficulty(difficulty, language)
 
             result.fold(
                 onSuccess = { topicsFromDb ->
-                    println("[LessonsViewModel] ✅ Successfully loaded ${topicsFromDb.size} topics from Supabase")
+                    println("[LessonsViewModel] ✅ Successfully loaded ${topicsFromDb.size} topics")
 
                     // Debug: Print each topic's language to verify filtering
                     if (topicsFromDb.isNotEmpty()) {
@@ -218,6 +278,43 @@ class LessonsViewModel : ViewModel() {
         }
     }
 
+    private suspend fun loadAllDifficultyProgress() {
+        try {
+            val language = _selectedLanguage.value
+            val updatedCategories = mutableListOf<LessonCategoryInfo>()
+
+            for (difficulty in LessonDifficulty.entries) {
+                val result = lessonTopicsRepository.getTopicsByDifficulty(difficulty, language)
+                result.fold(
+                    onSuccess = { topics ->
+                        val categoryInfo = calculateLevelProgress(difficulty, topics)
+                        updatedCategories.add(categoryInfo)
+                        println("[LessonsViewModel] ${difficulty.displayName}: ${categoryInfo.completedLessons}/${categoryInfo.totalLessons} lessons (${categoryInfo.progressPercentage}%)")
+                    },
+                    onFailure = { e ->
+                        println("[LessonsViewModel] Error loading ${difficulty.displayName} progress: ${e.message}")
+                        // Add default empty category
+                        updatedCategories.add(
+                            LessonCategoryInfo(
+                                difficulty = difficulty,
+                                title = difficulty.displayName,
+                                description = "",
+                                totalLessons = 0,
+                                completedLessons = 0,
+                                isLocked = false,
+                                progressPercentage = 0,
+                            )
+                        )
+                    }
+                )
+            }
+
+            _lessonCategories.value = updatedCategories
+        } catch (e: Exception) {
+            println("[LessonsViewModel] Error loading difficulty progress: ${e.message}")
+        }
+    }
+
     fun onLessonTopicClicked(topicId: String) {
         println("[LessonsViewModel] Lesson topic clicked: $topicId")
 
@@ -235,23 +332,23 @@ class LessonsViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoadingLessons.value = true
             try {
-                println("[LessonsViewModel] 🔍 Loading lessons for topic: $topicId")
+                println("[LessonsViewModel]  Loading lessons for topic: $topicId")
 
                 val result = lessonContentRepository.getLessonsByTopic(topicId, publishedOnly = true)
 
                 result.fold(
                     onSuccess = { lessons ->
-                        println("[LessonsViewModel] ✅ Successfully loaded ${lessons.size} lessons")
+                        println("[LessonsViewModel]  Successfully loaded ${lessons.size} lessons")
                         _topicLessons.value = lessons
                     },
                     onFailure = { error ->
-                        println("[LessonsViewModel] ❌ Error loading lessons: ${error.message}")
+                        println("[LessonsViewModel]  Error loading lessons: ${error.message}")
                         error.printStackTrace()
                         _topicLessons.value = emptyList()
                     },
                 )
             } catch (e: Exception) {
-                println("[LessonsViewModel] ❌ Exception loading lessons: ${e.message}")
+                println("[LessonsViewModel]  Exception loading lessons: ${e.message}")
                 e.printStackTrace()
                 _topicLessons.value = emptyList()
             } finally {
@@ -275,8 +372,8 @@ class LessonsViewModel : ViewModel() {
         } else {
             // Otherwise, go back to category selection
             _selectedCategory.value = null
-            _categoryLessons.value = emptyList()
-            _lessonTopics.value = emptyList()
+            // Keep cached data - don't clear unnecessarily
+            // Data will still be available if user navigates back
         }
     }
 
@@ -308,8 +405,8 @@ class LessonsViewModel : ViewModel() {
                 // Update the selected language
                 _selectedLanguage.value = language
 
-                // Clear current topics to show loading state
-                _lessonTopics.value = emptyList()
+                // Keep current topics visible while loading new ones - better UX
+                // They will be replaced when new data arrives
 
                 // Persist to profile if requested
                 if (persistToProfile) {
@@ -397,11 +494,44 @@ class LessonsViewModel : ViewModel() {
     }
 
     fun refreshLessons() {
-        _isLoading.value = true
-        _lessons.value = Lesson.getSampleLessons()
-        _levelProgress.value = LevelProgress.getSampleProgress()
-        _recentLessons.value = RecentLesson.getSampleRecentLessons()
-        refreshCategories()
-        _isLoading.value = false
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                // Clear repository caches to force fresh data
+                (lessonTopicsRepository as? LessonTopicsRepositoryImpl)?.clearCache()
+                (lessonContentRepository as? LessonContentRepositoryImpl)?.clearCache()
+                
+                // Reload current view
+                val currentCategory = _selectedCategory.value
+                if (currentCategory != null) {
+                    loadLessonTopics(currentCategory)
+                } else {
+                    refreshCategories()
+                }
+                
+                println("[LessonsViewModel] ✅ Refreshed lessons data")
+            } catch (e: Exception) {
+                println("[LessonsViewModel] ❌ Error refreshing: ${e.message}")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+    
+    /**
+     * Clear cache for the current user - call after completing a lesson
+     */
+    fun invalidateUserProgress(userId: String) {
+        viewModelScope.launch {
+            (lessonTopicsRepository as? LessonTopicsRepositoryImpl)?.clearUserCache(userId)
+            (lessonContentRepository as? LessonContentRepositoryImpl)?.clearUserCache(userId)
+            
+            // Reload current view to show updated progress
+            val currentCategory = _selectedCategory.value
+            if (currentCategory != null) {
+                loadLessonTopics(currentCategory)
+            }
+            println("[LessonsViewModel] ✅ User progress invalidated and reloaded")
+        }
     }
 }

@@ -8,6 +8,7 @@ from enum import Enum
 
 
 class VoiceLanguage(str, Enum):
+    ENGLISH = "en"
     FRENCH = "fr"
     GERMAN = "de"
     KOREAN = "ko"

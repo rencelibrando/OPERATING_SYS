@@ -71,10 +71,10 @@ kotlin {
             // MP3 audio support
             implementation("com.googlecode.soundlibs:jlayer:1.0.1.4")
             implementation("com.googlecode.soundlibs:mp3spi:1.9.5.4")
+            implementation(libs.androidx.foundation.desktop)
         }
     }
 }
-
 // Task to copy .env file to JAR resources before packaging
 tasks.named("jvmProcessResources", Copy::class) {
     val envFile = layout.projectDirectory.file(".env").asFile
@@ -108,7 +108,6 @@ tasks.named("jvmProcessResources", Copy::class) {
         }
     }
 }
-
 ktlint {
     android.set(false)
     ignoreFailures.set(false)
@@ -133,7 +132,6 @@ val copyIconsToResources by tasks.registering(Copy::class) {
     }
     into(resourcesDirProvider)
 }
-
 // Task to copy the Python backend into the resources used by the installer
 val copyBackendToResources by tasks.registering(Copy::class) {
     group = "distribution"
@@ -158,7 +156,6 @@ val copyBackendToResources by tasks.registering(Copy::class) {
         into("backend")
     }
 }
-
 // Ensure backend and icons are copied before packaging installers (MSI/DMG/DEB)
 tasks.matching { task ->
     task.name.startsWith("packageRelease") &&
@@ -170,7 +167,6 @@ tasks.matching { task ->
 }.configureEach {
     dependsOn(copyIconsToResources, copyBackendToResources)
 }
-
 compose.desktop {
     application {
         mainClass = "org.example.project.MainKt"
@@ -211,12 +207,10 @@ compose.desktop {
                 // Keep this GUID constant across releases to enable in-place upgrades
                 // This is important for Windows Update to recognize upgrades
                 upgradeUuid = "5a3e6f7e-4a2c-4c87-9c9a-9b2d1c1f4c55"
-
                 // Windows installer metadata
                 menuGroup = "WordBridge"
                 dirChooser = true
                 perUserInstall = false // Install for all users (requires admin)
-
                 // Optional: Add Windows registry entries
                 // See: https://github.com/JetBrains/compose-multiplatform/blob/master/components/tooling/native-distributions/src/commonMain/kotlin/org/jetbrains/compose/desktop/application/dsl/NativeDistribution.kt
             }
@@ -231,7 +225,6 @@ compose.desktop {
         }
     }
 }
-
 // Custom task to run admin app
 tasks.register<JavaExec>("runAdmin") {
     group = "application"
@@ -241,14 +234,11 @@ tasks.register<JavaExec>("runAdmin") {
     val jvmMain = kotlin.jvm().compilations.getByName("main")
     val runtimeClasspath = configurations.getByName(jvmMain.runtimeDependencyConfigurationName)
 
-    classpath(
+    classpath = files(
         jvmMain.output.classesDirs,
         runtimeClasspath,
     )
-
     dependsOn("jvmProcessResources", "jvmMainClasses")
-
-
     javaLauncher.set(
         javaToolchains.launcherFor {
             languageVersion.set(JavaLanguageVersion.of(18))

@@ -167,7 +167,7 @@ fun LessonsScreen(
                                 MaterialTheme.typography.headlineMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                 ),
-                            color = WordBridgeColors.TextPrimary,
+                            color = WordBridgeColors.TextPrimaryDark,
                             modifier =
                                 Modifier
                                     .clickable { viewModel.onBackFromCategory() }
@@ -180,7 +180,7 @@ fun LessonsScreen(
                                 MaterialTheme.typography.headlineMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                 ),
-                            color = WordBridgeColors.TextPrimary,
+                            color = WordBridgeColors.TextPrimaryDark,
                         )
                     }
 
@@ -217,7 +217,7 @@ fun LessonsScreen(
                 Text(
                     text = "Your ${selectedLanguage.displayName} learning journey. We've also included valuable learning tips. Enjoy!",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = WordBridgeColors.TextSecondary,
+                    color = WordBridgeColors.TextSecondaryDark,
                 )
             }
 
@@ -238,7 +238,7 @@ fun LessonsScreen(
                         Text(
                             text = "Switching to ${selectedLanguage.displayName}...",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = WordBridgeColors.TextSecondary,
+                            color = WordBridgeColors.TextSecondaryDark,
                         )
                     }
                 }
@@ -302,7 +302,7 @@ fun LessonsScreen(
                             MaterialTheme.typography.headlineMedium.copy(
                                 fontWeight = FontWeight.Bold,
                             ),
-                        color = WordBridgeColors.TextPrimary,
+                        color = WordBridgeColors.TextPrimaryDark,
                     )
                 }
 
@@ -333,19 +333,20 @@ fun LessonsScreen(
 
             if (selectedCategory == null) {
                 Text(
-                    text = "Select a path to continue your personalized language learning journey.",
+                    text = "Choose your learning path and start your journey",
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold,
                         ),
-                    color = WordBridgeColors.TextPrimary,
+                    color = WordBridgeColors.TextPrimaryDark,
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                Row(
+                // Enhanced grid layout for better visual appeal
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     lessonCategories.forEach { category ->
                         LessonCategoryCard(
@@ -355,7 +356,7 @@ fun LessonsScreen(
                                     viewModel.onCategoryClicked(category.difficulty)
                                 }
                             },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
@@ -364,7 +365,7 @@ fun LessonsScreen(
                 Text(
                     text = "Your ${selectedLanguage.displayName} learning journey. We've also included valuable learning tips. Enjoy!",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = WordBridgeColors.TextSecondary,
+                    color = WordBridgeColors.TextSecondaryDark,
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -390,7 +391,7 @@ fun LessonsScreen(
                             MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.SemiBold,
                             ),
-                        color = WordBridgeColors.TextPrimary,
+                        color = WordBridgeColors.TextPrimaryDark,
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -399,7 +400,7 @@ fun LessonsScreen(
                         text =
                             "Lesson topics for this category will be available soon. Check back later!",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = WordBridgeColors.TextSecondary,
+                        color = WordBridgeColors.TextSecondaryDark,
                     )
                 }
             }
@@ -445,7 +446,7 @@ private fun LessonListView(
                         MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Bold,
                         ),
-                    color = WordBridgeColors.TextPrimary,
+                    color = WordBridgeColors.TextPrimaryDark,
                     modifier =
                         Modifier
                             .clickable { onBack() }
@@ -458,7 +459,7 @@ private fun LessonListView(
                         MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Bold,
                         ),
-                    color = WordBridgeColors.TextPrimary,
+                    color = WordBridgeColors.TextPrimaryDark,
                 )
             }
 
@@ -489,7 +490,7 @@ private fun LessonListView(
             Text(
                 text = topic.description,
                 style = MaterialTheme.typography.bodyLarge,
-                color = WordBridgeColors.TextSecondary,
+                color = WordBridgeColors.TextSecondaryDark,
             )
             Spacer(modifier = Modifier.height(24.dp))
         }
@@ -510,7 +511,7 @@ private fun LessonListView(
                 Text(
                     text = "Loading lessons...",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = WordBridgeColors.TextSecondary,
+                    color = WordBridgeColors.TextSecondaryDark,
                 )
             }
         }
@@ -536,7 +537,7 @@ private fun LessonListView(
                         MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold,
                         ),
-                    color = WordBridgeColors.TextPrimary,
+                    color = WordBridgeColors.TextPrimaryDark,
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -544,7 +545,7 @@ private fun LessonListView(
                 Text(
                     text = "Lessons for this topic will be available soon. Check back later!",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = WordBridgeColors.TextSecondary,
+                    color = WordBridgeColors.TextSecondaryDark,
                 )
             }
         }
@@ -556,7 +557,7 @@ private fun LessonListView(
                     MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                     ),
-                color = WordBridgeColors.TextPrimary,
+                color = WordBridgeColors.TextPrimaryDark,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -586,7 +587,7 @@ private fun LessonCard(
         shape = MaterialTheme.shapes.medium,
         colors =
             androidx.compose.material3.CardDefaults.cardColors(
-                containerColor = WordBridgeColors.CardBackground,
+                containerColor = WordBridgeColors.CardBackgroundDark,
             ),
         elevation =
             androidx.compose.material3.CardDefaults.cardElevation(
@@ -611,7 +612,7 @@ private fun LessonCard(
                         MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.SemiBold,
                         ),
-                    color = WordBridgeColors.TextPrimary,
+                    color = WordBridgeColors.TextPrimaryDark,
                 )
 
                 if (!lesson.description.isNullOrBlank()) {
@@ -619,7 +620,7 @@ private fun LessonCard(
                     Text(
                         text = lesson.description,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = WordBridgeColors.TextSecondary,
+                        color = WordBridgeColors.TextSecondaryDark,
                     )
                 }
 
@@ -631,7 +632,7 @@ private fun LessonCard(
                     Text(
                         text = "${lesson.questionCount} questions",
                         style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextSecondary,
+                        color = WordBridgeColors.TextSecondaryDark,
                     )
 
                     if (lesson.isPublished) {
@@ -650,7 +651,7 @@ private fun LessonCard(
                     MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold,
                     ),
-                color = WordBridgeColors.PrimaryPurple,
+                color = WordBridgeColors.PrimaryPurpleLight,
             )
         }
     }

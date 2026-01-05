@@ -2,10 +2,13 @@ package org.example.project.core.audio
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.example.project.core.config.SupabaseConfig
+import org.example.project.core.api.SupabaseApiHelper
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
 import javax.sound.sampled.*
+import io.github.jan.supabase.storage.storage
 
 /**
  * Audio player for playing audio from URLs or local files directly in the app
@@ -28,10 +31,16 @@ class AudioPlayer {
      * Play audio from a URL directly in the app
      * Downloads the file and plays it using Java AudioSystem (for WAV files)
      * The backend should convert MP3 to WAV format for compatibility
+     * For Supabase URLs, uses authenticated download
      */
     suspend fun playAudioFromUrl(audioUrl: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             println("Playing audio from URL: $audioUrl")
+            
+            // Validate URL
+            if (audioUrl.isBlank()) {
+                return@withContext Result.failure(Exception("Audio URL is blank"))
+            }
             
             // Stop any currently playing audio
             stop()
@@ -41,14 +50,22 @@ class AudioPlayer {
             tempFile.deleteOnExit()
             
             try {
-                // Download the file
-                URL(audioUrl).openStream().use { input ->
-                    FileOutputStream(tempFile).use { output ->
-                        input.copyTo(output)
-                    }
+                // Check if this is a Supabase storage URL and handle authentication
+                val downloadSuccess = if (audioUrl.contains("supabase.co/storage/v1")) {
+                    downloadFromSupabase(audioUrl, tempFile)
+                } else {
+                    downloadFromDirectUrl(audioUrl, tempFile)
+                }
+                
+                if (!downloadSuccess) {
+                    return@withContext Result.failure(Exception("Failed to download audio file"))
                 }
                 
                 println("Downloaded audio file: ${tempFile.absolutePath} (${tempFile.length()} bytes)")
+                
+                if (tempFile.length() == 0L) {
+                    return@withContext Result.failure(Exception("Downloaded audio file is empty"))
+                }
                 
                 // Try to determine the file format
                 val fileExtension = audioUrl.substringAfterLast('.', "").lowercase()
@@ -65,48 +82,118 @@ class AudioPlayer {
                             String(fileHeader, Charsets.ISO_8859_1).startsWith("ID3")
                 
                 if (isMp3) {
-                    println("File is MP3 format, converting to WAV...")
-                    val convertedResult = tryConvertAndPlay(tempFile, "mp3")
-                    if (convertedResult.isSuccess) {
-                        return@withContext convertedResult
-                    }
+                    println("File is MP3 format, will use bundled MP3 decoder...")
                 }
                 
-                // Try to play with AudioSystem (works for WAV, which backend should provide)
+                // Try to play with AudioSystem (supports WAV and MP3 via mp3spi)
                 val playResult = tryPlayWithAudioSystem(tempFile)
                 
                 if (playResult.isSuccess) {
                     return@withContext playResult
                 } else {
-                    // If AudioSystem fails, try conversion as fallback
-                    if (!isMp3) {
-                        val convertedResult = tryConvertAndPlay(tempFile, fileExtension)
-                        if (convertedResult.isSuccess) {
-                            return@withContext convertedResult
-                        }
-                    }
-                    
-                    // Last resort: show error message
-                    println("AudioSystem failed and conversion not possible")
+                    println("AudioSystem failed to play file")
                     return@withContext Result.failure(
-                        Exception("Unable to play audio format. File appears to be MP3 but conversion failed. Please ensure ffmpeg is installed.")
+                        Exception("Unable to play audio format. AudioSystem failed: ${playResult.exceptionOrNull()?.message}")
                     )
                 }
             } finally {
                 // Clean up temp file after a delay (to allow playback to finish)
                 // Note: For system player, file might be needed longer, so we use deleteOnExit
             }
+        } catch (e: java.net.SocketTimeoutException) {
+            println("Timeout downloading audio: ${e.message}")
+            Result.failure(Exception("Timeout downloading audio file. Please check your internet connection."))
+        } catch (e: java.net.UnknownHostException) {
+            println("Unknown host: ${e.message}")
+            Result.failure(Exception("Unable to connect to audio server. Please check the URL."))
+        } catch (e: java.io.FileNotFoundException) {
+            println("Audio file not found: ${e.message}")
+            Result.failure(Exception("Audio file not found on server."))
         } catch (e: Exception) {
             println("Error playing audio: ${e.message}")
             e.printStackTrace()
             isPlaying = false
             currentClip = null
-            Result.failure(e)
+            Result.failure(Exception("Failed to play audio: ${e.message}"))
+        }
+    }
+    
+    /**
+     * Download file from Supabase storage with authentication
+     */
+    private suspend fun downloadFromSupabase(audioUrl: String, tempFile: File): Boolean {
+        return try {
+            // Extract bucket and path from URL
+            // URL format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[path]
+            val urlParts = audioUrl.split("/")
+            val bucketIndex = urlParts.indexOf("public") + 1
+            val pathIndex = bucketIndex + 1
+            
+            if (bucketIndex >= urlParts.size || pathIndex >= urlParts.size) {
+                println("Invalid Supabase storage URL format")
+                return false
+            }
+            
+            val bucket = urlParts[bucketIndex]
+            val path = urlParts.subList(pathIndex, urlParts.size).joinToString("/")
+            
+            println("Downloading from Supabase - Bucket: $bucket, Path: $path")
+            
+            // Ensure we have a valid session
+            if (!SupabaseApiHelper.ensureValidSession()) {
+                println("No valid Supabase session for authenticated download")
+                return false
+            }
+            
+            // Use Supabase storage client to download
+            val storage = SupabaseConfig.client.storage.from(bucket)
+            val bytes = try {
+                // Try authenticated download first
+                storage.downloadAuthenticated(path)
+            } catch (e: Exception) {
+                println("Authenticated download failed, trying public download: ${e.message}")
+                // Fall back to public download
+                storage.downloadPublic(path)
+            }
+            
+            // Write to temp file
+            tempFile.writeBytes(bytes)
+            println("Successfully downloaded ${bytes.size} bytes from Supabase")
+            true
+            
+        } catch (e: Exception) {
+            println("Error downloading from Supabase: ${e.message}")
+            e.printStackTrace()
+            false
+        }
+    }
+    
+    /**
+     * Download file from direct URL (non-Supabase)
+     */
+    private suspend fun downloadFromDirectUrl(audioUrl: String, tempFile: File): Boolean {
+        return try {
+            println("Downloading audio file...")
+            val connection = URL(audioUrl).openConnection()
+            connection.connectTimeout = 30000 // 30 seconds
+            connection.readTimeout = 30000 // 30 seconds
+            connection.getInputStream().use { input ->
+                FileOutputStream(tempFile).use { output ->
+                    val bytesCopied = input.copyTo(output)
+                    println("Downloaded $bytesCopied bytes")
+                }
+            }
+            true
+        } catch (e: Exception) {
+            println("Error downloading from direct URL: ${e.message}")
+            e.printStackTrace()
+            false
         }
     }
     
     /**
      * Try to play audio using Java AudioSystem (supports WAV, AIFF, etc.)
+     * Enhanced with better format detection and error recovery
      */
     private fun tryPlayWithAudioSystem(audioFile: File): Result<Unit> {
         return try {
@@ -120,31 +207,63 @@ class AudioPlayer {
             
             println("Attempting to read audio file: ${audioFile.absolutePath} (${audioFile.length()} bytes)")
             
-            // Try to detect the actual file format by reading the header
-            val fileHeader = ByteArray(12)
+            // Read file header for format detection
+            val fileHeader = ByteArray(32) // Read more bytes for better detection
             audioFile.inputStream().use { it.read(fileHeader) }
             val headerString = String(fileHeader, Charsets.ISO_8859_1)
             println("File header: ${fileHeader.joinToString(" ") { "%02x".format(it) }}")
             println("File header (ASCII): $headerString")
             
-            // Check if it's actually a WAV file (should start with "RIFF")
-            // MP3 files start with "ID3" (ID3v2) or 0xFF 0xFB/0xF3 (MPEG frame sync)
-            val isMp3 = fileHeader[0] == 0xFF.toByte() && 
-                       (fileHeader[1] == 0xFB.toByte() || fileHeader[1] == 0xF3.toByte() || fileHeader[1] == 0xFA.toByte() || fileHeader[1] == 0xF2.toByte())
-            val isId3 = headerString.startsWith("ID3")
+            // Enhanced format detection
+            val isWav = headerString.startsWith("RIFF") && 
+                      headerString.length > 12 && 
+                      headerString.substring(8, 12) == "WAVE"
+            val isMp3 = (fileHeader[0] == 0xFF.toByte() && 
+                       (fileHeader[1] == 0xFB.toByte() || fileHeader[1] == 0xF3.toByte() || 
+                        fileHeader[1] == 0xFA.toByte() || fileHeader[1] == 0xF2.toByte())) ||
+                      headerString.startsWith("ID3")
+            val isOgg = headerString.startsWith("OggS")
+            val isFlac = headerString.startsWith("fLaC")
+            val isM4a = headerString.startsWith("ftyp")
             
-            if (isMp3 || isId3) {
-                println("Detected MP3 file (not WAV), attempting client-side conversion...")
-                // Close the file and try to convert MP3 to WAV
-                return tryConvertAndPlay(audioFile, "mp3")
+            // Detect corrupted or proprietary formats
+            val isCorruptedWav = when {
+                // Check for common corruption patterns
+                fileHeader[0] == 0xA4.toByte() && fileHeader[1] == 0x03.toByte() -> {
+                    println("Detected corrupted WAV format - attempting repair...")
+                    true
+                }
+                // Add more corruption patterns as needed
+                else -> false
             }
             
-            if (!headerString.startsWith("RIFF")) {
-                println("Warning: File does not appear to be a valid WAV file (missing RIFF header)")
-                // Try to convert it anyway, might still work
+            when {
+                isWav -> println("Detected standard WAV file")
+                isMp3 -> println("Detected MP3 file, using mp3spi decoder...")
+                isOgg -> println("Detected OGG Vorbis file")
+                isFlac -> println("Detected FLAC file")
+                isM4a -> println("Detected M4A/AAC file")
+                isCorruptedWav -> println("Attempting to repair corrupted WAV format...")
+                else -> println("Warning: Unknown audio format, attempting playback anyway...")
             }
             
-            val audioInputStream = AudioSystem.getAudioInputStream(audioFile)
+            // Try to repair corrupted WAV files
+            val actualFile = if (isCorruptedWav) {
+                repairCorruptedWavFile(audioFile)
+            } else {
+                audioFile
+            }
+            
+            val audioInputStream = try {
+                AudioSystem.getAudioInputStream(actualFile)
+            } catch (e: UnsupportedAudioFileException) {
+                if (isCorruptedWav && actualFile != audioFile) {
+                    // If repair failed, try one more approach
+                    tryAlternativeAudioAccess(actualFile)
+                } else {
+                    throw e
+                }
+            }
             
             // Get audio format
             val audioFormat = audioInputStream.format
@@ -176,18 +295,51 @@ class AudioPlayer {
                 audioInputStream
             }
             
-            // Create data line info
+            // Create data line info with fallback formats
             val dataLineInfo = DataLine.Info(Clip::class.java, targetFormat.format)
+            val clip: Clip
             
             if (!AudioSystem.isLineSupported(dataLineInfo)) {
-                return Result.failure(Exception("Audio format not supported by AudioSystem: ${targetFormat.format}"))
+                println("Direct format not supported, trying alternative formats...")
+                // Try common PCM formats as fallback
+                val fallbackFormats = listOf(
+                    AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 44100f, 16, 2, 4, 44100f, false),
+                    AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 22050f, 16, 2, 4, 22050f, false),
+                    AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 16000f, 16, 1, 2, 16000f, false),
+                    AudioFormat(AudioFormat.Encoding.PCM_UNSIGNED, 22050f, 8, 1, 1, 22050f, false)
+                )
+                
+                var fallbackStream: AudioInputStream? = null
+                var fallbackClip: Clip? = null
+                
+                for (fallbackFormat in fallbackFormats) {
+                    try {
+                        fallbackStream = AudioSystem.getAudioInputStream(fallbackFormat, audioInputStream)
+                        val fallbackInfo = DataLine.Info(Clip::class.java, fallbackFormat)
+                        if (AudioSystem.isLineSupported(fallbackInfo)) {
+                            println("Using fallback format: ${fallbackFormat.sampleRate}Hz, ${fallbackFormat.sampleSizeInBits}bit, ${fallbackFormat.channels}ch")
+                            fallbackClip = AudioSystem.getLine(fallbackInfo) as Clip
+                            fallbackClip.open(fallbackStream)
+                            break
+                        }
+                    } catch (e: Exception) {
+                        println("Fallback format failed: $fallbackFormat")
+                        fallbackStream?.close()
+                    }
+                }
+                
+                if (fallbackClip == null) {
+                    return Result.failure(Exception("No supported audio format found for: ${targetFormat.format}"))
+                }
+                
+                currentClip = fallbackClip
+                clip = fallbackClip
+            } else {
+                clip = AudioSystem.getLine(dataLineInfo) as Clip
+                clip.open(targetFormat)
+                currentClip = clip
             }
             
-            // Get and open clip
-            val clip = AudioSystem.getLine(dataLineInfo) as Clip
-            clip.open(targetFormat)
-            
-            currentClip = clip
             isPlaying = true
             
             // Play audio
@@ -221,46 +373,145 @@ class AudioPlayer {
     }
     
     /**
-     * Try to convert MP3 to WAV and play (fallback if backend didn't convert)
-     * This uses ffmpeg if available on the system
+     * Attempt to repair corrupted WAV files by reconstructing the WAV header
      */
-    private fun tryConvertAndPlay(audioFile: File, originalExtension: String): Result<Unit> {
-        if (originalExtension != "mp3") {
-            return Result.failure(Exception("Conversion only supported for MP3"))
-        }
-        
+    private fun repairCorruptedWavFile(originalFile: File): File {
         return try {
-            // Try to use ffmpeg to convert MP3 to WAV
-            val wavFile = File(audioFile.parent, audioFile.nameWithoutExtension + ".wav")
+            println("Attempting to repair corrupted WAV file: ${originalFile.name}")
             
-            val processBuilder = ProcessBuilder(
-                "ffmpeg",
-                "-y",  // Overwrite output file
-                "-i", audioFile.absolutePath,
-                "-ac", "1",  // Mono
-                "-ar", "44100",  // Sample rate
-                wavFile.absolutePath
-            )
+            // Read the original file data
+            val originalData = originalFile.readBytes()
             
-            val process = processBuilder.start()
-            val exitCode = process.waitFor()
+            // Try to detect if this is raw PCM data by checking for reasonable audio patterns
+            // This is a heuristic approach - in a real implementation, you'd want more sophisticated detection
+            val isLikelyRawPCM = originalData.size > 1000 && 
+                                 originalData.take(100).any { it.toInt() in 0..255 }
             
-            if (exitCode == 0 && wavFile.exists()) {
-                println("Converted MP3 to WAV: ${wavFile.absolutePath}")
-                // Try playing the converted WAV file
-                val playResult = tryPlayWithAudioSystem(wavFile)
-                // Clean up converted file after playback
-                wavFile.deleteOnExit()
-                return playResult
+            if (isLikelyRawPCM) {
+                // Create a new WAV file with proper header
+                val repairedFile = File.createTempFile("repaired_audio_", ".wav")
+                repairedFile.deleteOnExit()
+                
+                // Assume common PCM parameters (16-bit, mono, 16kHz)
+                val sampleRate = 16000
+                val channels = 1
+                val bitsPerSample = 16
+                val bytesPerSample = bitsPerSample / 8
+                val blockAlign = channels * bytesPerSample
+                val byteRate = sampleRate * blockAlign
+                
+                // Calculate data size (excluding header)
+                val dataSize = originalData.size
+                val fileSize = 36 + dataSize
+                
+                // Create WAV header
+                val header = ByteArray(44)
+                
+                // RIFF header
+                header[0] = 'R'.code.toByte()
+                header[1] = 'I'.code.toByte()
+                header[2] = 'F'.code.toByte()
+                header[3] = 'F'.code.toByte()
+                // File size - 8
+                header[4] = (fileSize and 0xFF).toByte()
+                header[5] = ((fileSize shr 8) and 0xFF).toByte()
+                header[6] = ((fileSize shr 16) and 0xFF).toByte()
+                header[7] = ((fileSize shr 24) and 0xFF).toByte()
+                
+                // WAVE format
+                header[8] = 'W'.code.toByte()
+                header[9] = 'A'.code.toByte()
+                header[10] = 'V'.code.toByte()
+                header[11] = 'E'.code.toByte()
+                
+                // fmt chunk
+                header[12] = 'f'.code.toByte()
+                header[13] = 'm'.code.toByte()
+                header[14] = 't'.code.toByte()
+                header[15] = ' '.code.toByte()
+                // fmt chunk size (16)
+                header[16] = 16
+                header[17] = 0
+                header[18] = 0
+                header[19] = 0
+                // Audio format (PCM = 1)
+                header[20] = 1
+                header[21] = 0
+                // Number of channels
+                header[22] = (channels and 0xFF).toByte()
+                header[23] = ((channels shr 8) and 0xFF).toByte()
+                // Sample rate
+                header[24] = (sampleRate and 0xFF).toByte()
+                header[25] = ((sampleRate shr 8) and 0xFF).toByte()
+                header[26] = ((sampleRate shr 16) and 0xFF).toByte()
+                header[27] = ((sampleRate shr 24) and 0xFF).toByte()
+                // Byte rate
+                header[28] = (byteRate and 0xFF).toByte()
+                header[29] = ((byteRate shr 8) and 0xFF).toByte()
+                header[30] = ((byteRate shr 16) and 0xFF).toByte()
+                header[31] = ((byteRate shr 24) and 0xFF).toByte()
+                // Block align
+                header[32] = (blockAlign and 0xFF).toByte()
+                header[33] = ((blockAlign shr 8) and 0xFF).toByte()
+                // Bits per sample
+                header[34] = (bitsPerSample and 0xFF).toByte()
+                header[35] = ((bitsPerSample shr 8) and 0xFF).toByte()
+                
+                // data chunk
+                header[36] = 'd'.code.toByte()
+                header[37] = 'a'.code.toByte()
+                header[38] = 't'.code.toByte()
+                header[39] = 'a'.code.toByte()
+                // Data size
+                header[40] = (dataSize and 0xFF).toByte()
+                header[41] = ((dataSize shr 8) and 0xFF).toByte()
+                header[42] = ((dataSize shr 16) and 0xFF).toByte()
+                header[43] = ((dataSize shr 24) and 0xFF).toByte()
+                
+                // Write repaired file
+                repairedFile.writeBytes(header + originalData)
+                println("Successfully repaired WAV file: ${repairedFile.absolutePath}")
+                repairedFile
             } else {
-                val errorOutput = process.errorStream.bufferedReader().readText()
-                println("ffmpeg conversion failed: $errorOutput")
-                return Result.failure(Exception("ffmpeg conversion failed"))
+                println("Could not determine audio format for repair, using original file")
+                originalFile
             }
         } catch (e: Exception) {
-            println("Error converting audio: ${e.message}")
-            Result.failure(e)
+            println("Failed to repair WAV file: ${e.message}")
+            originalFile
         }
+    }
+    
+    /**
+     * Try alternative audio access methods for problematic files
+     */
+    private fun tryAlternativeAudioAccess(audioFile: File): AudioInputStream {
+        println("Trying alternative audio access methods...")
+        
+        // Try different approaches to read the audio
+        val approaches = listOf(
+            { AudioSystem.getAudioInputStream(audioFile) },
+            { audioFile.inputStream().use { AudioSystem.getAudioInputStream(it) } },
+            { 
+                // Try with a buffered input stream
+                val bufferedStream = audioFile.inputStream().buffered()
+                AudioSystem.getAudioInputStream(bufferedStream)
+            }
+        )
+        
+        for ((index, approach) in approaches.withIndex()) {
+            try {
+                println("Trying approach ${index + 1}...")
+                return approach()
+            } catch (e: Exception) {
+                println("Approach ${index + 1} failed: ${e.message}")
+                if (index == approaches.size - 1) {
+                    throw e // Re-throw the last exception
+                }
+            }
+        }
+        
+        throw Exception("All audio access approaches failed")
     }
 
     /**

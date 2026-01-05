@@ -30,7 +30,7 @@ fun LearningActivityCard(
                 .clickable { onClick() },
         colors =
             CardDefaults.cardColors(
-                containerColor = WordBridgeColors.BackgroundWhite,
+                containerColor = WordBridgeColors.CardBackgroundDark,
             ),
         elevation =
             CardDefaults.cardElevation(

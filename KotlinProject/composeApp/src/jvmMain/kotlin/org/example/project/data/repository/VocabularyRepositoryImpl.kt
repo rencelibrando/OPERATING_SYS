@@ -66,7 +66,7 @@ class VocabularyRepositoryImpl : VocabularyRepository {
                     val inserted =
                         supabase.postgrest["vocabulary_words"]
                             .insert(
-                                value = VocabularyWordDTO.fromDomain(word),
+                                value = word.toDTO(),
                             ) {
                                 select(Columns.ALL)
                             }
@@ -176,7 +176,7 @@ class VocabularyRepositoryImpl : VocabularyRepository {
 }
 
 @Serializable
-private data class VocabularyWordDTO(
+internal data class VocabularyWordDTO(
     val id: String? = null,
     val word: String,
     val definition: String,
@@ -206,26 +206,24 @@ private data class VocabularyWordDTO(
             language = language ?: "en"
         )
     }
+}
 
-    companion object {
-        fun fromDomain(w: VocabularyWord): VocabularyWordDTO {
-            return VocabularyWordDTO(
-                word = w.word,
-                definition = w.definition,
-                pronunciation = w.pronunciation.ifBlank { null },
-                exampleSentence = w.examples.firstOrNull(),
-                difficultyLevel = w.difficulty.ifBlank { "Beginner" },
-                category = w.category.ifBlank { "General" },
-                audioUrl = w.audioUrl,
-                imageUrl = null,
-                language = w.language
-            )
-        }
-    }
+internal fun VocabularyWord.toDTO(): VocabularyWordDTO {
+    return VocabularyWordDTO(
+        word = this.word,
+        definition = this.definition,
+        pronunciation = this.pronunciation.ifBlank { null },
+        exampleSentence = this.examples.firstOrNull(),
+        difficultyLevel = this.difficulty.ifBlank { "Beginner" },
+        category = this.category.ifBlank { "General" },
+        audioUrl = this.audioUrl,
+        imageUrl = null,
+        language = this.language
+    )
 }
 
 @Serializable
-private data class UserVocabularyDTO(
+internal data class UserVocabularyDTO(
     val id: String? = null,
     @SerialName("user_id") val userId: String,
     @SerialName("word_id") val wordId: String,
@@ -241,7 +239,7 @@ private data class UserVocabularyDTO(
 )
 
 @Serializable
-private data class UserVocabularyJoinDTO(
+internal data class UserVocabularyJoinDTO(
     val id: String,
     @SerialName("user_id") val userId: String,
     @SerialName("word_id") val wordId: String,

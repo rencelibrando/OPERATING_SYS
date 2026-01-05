@@ -31,6 +31,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.example.project.presentation.viewmodel.HomeViewModel
 import org.example.project.presentation.viewmodel.LessonsViewModel
 import org.example.project.presentation.viewmodel.OnboardingViewModel
+import org.example.project.presentation.viewmodel.SpeakingViewModel
 import org.example.project.ui.components.ContinueLearningCard
 import org.example.project.ui.components.HomeEmptyState
 import org.example.project.ui.components.LearningActivityCard
@@ -99,7 +100,7 @@ fun HomeScreen(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(WordBridgeColors.BackgroundLight),
+                .background(WordBridgeColors.BackgroundMain), // Use dark main background
     ) {
         Sidebar(
             navigationItems = navigationItems,
@@ -200,20 +201,38 @@ fun HomeScreen(
             }
             selectedNavigationItem == "vocabulary" -> {
                 val lessonsViewModel: LessonsViewModel = viewModel()
+                val speakingViewModel: SpeakingViewModel = viewModel()
                 LaunchedEffect(authenticatedUser) {
                     if (authenticatedUser != null) {
                         lessonsViewModel.initializeWithAuthenticatedUser(authenticatedUser)
                     }
                 }
+                LaunchedEffect(selectedNavigationItem) {
+                    // Clear any active practice session when switching to vocabulary tab
+                    speakingViewModel.completePractice()
+                }
                 VocabularyScreen(
                     authenticatedUser = authenticatedUser,
                     onUserAvatarClick = viewModel::onUserAvatarClicked,
                     lessonsViewModel = lessonsViewModel,
+                    speakingViewModel = speakingViewModel,
                     modifier = Modifier.weight(1f),
                 )
             }
             selectedNavigationItem == "speaking" -> {
+                val speakingViewModel: SpeakingViewModel = viewModel()
+                LaunchedEffect(selectedNavigationItem) {
+                    // Clear any active practice session when switching to speaking tab
+                    speakingViewModel.completePractice()
+                }
                 SpeakingScreen(
+                    authenticatedUser = authenticatedUser,
+                    onUserAvatarClick = viewModel::onUserAvatarClicked,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            selectedNavigationItem == "ai_feedback" -> {
+                org.example.project.ui.screens.AIFeedbackScreen(
                     authenticatedUser = authenticatedUser,
                     onUserAvatarClick = viewModel::onUserAvatarClicked,
                     modifier = Modifier.weight(1f),
@@ -227,7 +246,7 @@ fun HomeScreen(
                 )
             }
             selectedNavigationItem == "progress" -> {
-                ProgressScreen(
+                ProgressTrackerScreen(
                     authenticatedUser = authenticatedUser,
                     onUserAvatarClick = viewModel::onUserAvatarClicked,
                     modifier = Modifier.weight(1f),

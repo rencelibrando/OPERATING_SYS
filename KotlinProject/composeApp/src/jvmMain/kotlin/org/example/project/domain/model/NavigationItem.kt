@@ -36,6 +36,12 @@ data class NavigationItem(
                     route = "/speaking",
                 ),
                 NavigationItem(
+                    id = "ai_feedback",
+                    title = "AI Feedback",
+                    icon = "ai_chat",
+                    route = "/ai-feedback",
+                ),
+                NavigationItem(
                     id = "ai_chat",
                     title = "AI Chat Tutor",
                     icon = "ai_chat",

@@ -36,7 +36,7 @@ data class AgentV1Agent(
     val language: String,
     val listen: AgentV1Listen,
     val think: AgentV1Think,
-    val speak: AgentV1SpeakProviderConfig,
+    val speak: AgentV1SpeakProviderConfig? = null,
     val greeting: String? = null
 )
 

@@ -36,20 +36,20 @@ private val DarkColorScheme =
         onSecondary = WordBridgeColors.SidebarBackgroundDark,
         tertiary = WordBridgeColors.AccentGreen,
         onTertiary = WordBridgeColors.SidebarBackgroundDark,
-        background = WordBridgeColors.SidebarBackgroundDark,
-        onBackground = WordBridgeColors.SidebarText,
-        surface = WordBridgeColors.SidebarBackground,
-        onSurface = WordBridgeColors.SidebarText,
+        background = WordBridgeColors.BackgroundMain, // Use the darkest background
+        onBackground = WordBridgeColors.TextPrimaryDark,
+        surface = WordBridgeColors.BackgroundDark, // Dark surface for cards
+        onSurface = WordBridgeColors.TextPrimaryDark,
         surfaceVariant = WordBridgeColors.SidebarBackground,
-        onSurfaceVariant = WordBridgeColors.SidebarTextSecondary,
-        outline = WordBridgeColors.TextMuted,
+        onSurfaceVariant = WordBridgeColors.TextSecondaryDark,
+        outline = WordBridgeColors.TextMutedDark,
         error = WordBridgeColors.AccentRed,
         onError = WordBridgeColors.BackgroundWhite,
     )
 
 @Composable
 fun WordBridgeTheme(
-    darkTheme: Boolean = false,
+    darkTheme: Boolean = true, // Changed to true for dark theme by default
     content: @Composable () -> Unit,
 ) {
     val colorScheme =

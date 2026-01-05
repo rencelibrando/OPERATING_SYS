@@ -15,7 +15,13 @@ class SupabaseManager:
     def get_client(cls) -> Optional[Client]:
         if cls._client is not None:
             return cls._client
-        supabase_key = settings.supabase_service_role_key or settings.supabase_key
+        
+        # Check for valid service role key (not placeholder)
+        service_role_key = settings.supabase_service_role_key
+        if service_role_key and "your_supabase_service_role_key" in service_role_key.lower():
+            service_role_key = None  # Ignore placeholder
+        
+        supabase_key = service_role_key or settings.supabase_key
         
         if not settings.supabase_url or not supabase_key:
             logger.warning("Supabase credentials not configured")
@@ -26,7 +32,7 @@ class SupabaseManager:
                 settings.supabase_url,
                 supabase_key
             )
-            if settings.supabase_service_role_key:
+            if service_role_key:
                 logger.info("Supabase client initialized with service role key")
             else:
                 logger.warning("Supabase client using anon key (RLS policies will apply)")

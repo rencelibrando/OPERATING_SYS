@@ -26,7 +26,7 @@ fun VocabularyStatsCard(
         shape = RoundedCornerShape(12.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = WordBridgeColors.BackgroundWhite,
+                containerColor = WordBridgeColors.CardBackgroundDark,
             ),
         elevation =
             CardDefaults.cardElevation(
@@ -52,6 +52,7 @@ fun VocabularyStatsCard(
                 Text(
                     text = icon,
                     style = MaterialTheme.typography.headlineSmall,
+                    color = Color.White,
                 )
             }
 
@@ -63,7 +64,7 @@ fun VocabularyStatsCard(
                     MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.Bold,
                     ),
-                color = WordBridgeColors.TextPrimary,
+                color = WordBridgeColors.TextPrimaryDark,
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -71,7 +72,7 @@ fun VocabularyStatsCard(
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
-                color = WordBridgeColors.TextSecondary,
+                color = WordBridgeColors.TextSecondaryDark,
             )
         }
     }

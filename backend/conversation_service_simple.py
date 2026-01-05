@@ -1,19 +1,21 @@
 """
 Simplified voice conversation service for real-time AI tutor dialogue.
-Uses Deepgram for transcription and Gemini for AI responses.
+Uses Deepgram for transcription, Gemini/DeepSeek for AI responses, and Edge TTS for Chinese/Korean.
 """
 import asyncio
 from typing import Dict, List, Callable, Optional
 from deepgram import DeepgramClient
 from providers.gemini import GeminiProvider
+from providers.deepseek import DeepSeekProvider
 from config import get_settings
+from tts_service import get_tts_service
 
 settings = get_settings()
 
 
 class ConversationAgent:
     """
-    Manages voice conversations using Deepgram transcription + Gemini responses.
+    Manages voice conversations using Deepgram transcription + LLM responses + Edge TTS for Chinese/Korean.
     """
     
     def __init__(
@@ -23,19 +25,38 @@ class ConversationAgent:
         scenario: str,
         on_transcript: Optional[Callable] = None,
         on_agent_response: Optional[Callable] = None,
+        on_audio_generated: Optional[Callable] = None,
+        provider: str = "gemini"  # "gemini" or "deepseek"
     ):
         self.language = language
         self.level = level
         self.scenario = scenario
         self.on_transcript = on_transcript
         self.on_agent_response = on_agent_response
+        self.on_audio_generated = on_audio_generated
+        self.provider = provider
         
-        # Initialize clients (use same pattern as voice_service.py)
+        # Initialize clients
         self.deepgram_client = DeepgramClient(api_key=settings.DEEPGRAM_API_KEY)
-        self.gemini_provider = GeminiProvider()
+        
+        # Initialize LLM provider
+        if provider == "deepseek":
+            self.llm_provider = DeepSeekProvider()
+        else:
+            self.llm_provider = GeminiProvider()
+        
+        # Initialize TTS service (for Edge TTS)
+        self.tts_service = get_tts_service()
         
         self.conversation_history: List[Dict[str, str]] = []
         self.is_active = False
+        
+        # Determine if we should use Edge TTS for this language
+        self.use_edge_tts = language in ['zh', 'ko']
+        
+        print(f"[ConversationAgent] Initialized: {language} / {level} / {scenario}")
+        print(f"[ConversationAgent] Provider: {provider}")
+        print(f"[ConversationAgent] Edge TTS: {self.use_edge_tts}")
         
     def _get_language_name(self) -> str:
         """Get full language name."""
@@ -134,23 +155,32 @@ Be enthusiastic and educational. Encourage questions about culture.""",
             return None
     
     async def generate_response(self, user_message: str) -> Optional[str]:
-        """Generate AI response using Gemini."""
+        """Generate AI response using selected LLM provider and Edge TTS for Chinese/Korean."""
         try:
             system_prompt = self._generate_system_prompt()
             
-            # Format conversation history for Gemini
+            # Format conversation history for LLM
             history = []
             for turn in self.conversation_history[-10:]:  # Last 10 turns
                 history.append(turn)
             
-            # Generate response
-            response = await self.gemini_provider.generate_response(
-                message=user_message,
-                system_prompt=system_prompt,
-                conversation_history=history,
-                temperature=0.8,
-                max_tokens=150,
-            )
+            # Generate response using appropriate provider
+            if self.provider == "deepseek":
+                response = await self.llm_provider.generate_response(
+                    message=user_message,
+                    system_prompt=system_prompt,
+                    conversation_history=history,
+                    temperature=0.8,
+                    max_tokens=150,
+                )
+            else:
+                response = await self.llm_provider.generate_response(
+                    message=user_message,
+                    system_prompt=system_prompt,
+                    conversation_history=history,
+                    temperature=0.8,
+                    max_tokens=150,
+                )
             
             ai_response = response.message
             
@@ -159,6 +189,11 @@ Be enthusiastic and educational. Encourage questions about culture.""",
                 if self.on_agent_response:
                     await self.on_agent_response(ai_response)
                 self.conversation_history.append({"role": "assistant", "content": ai_response})
+                
+                # Generate audio if using Edge TTS for Chinese/Korean
+                if self.use_edge_tts:
+                    await self._generate_audio_with_edge_tts(ai_response)
+                
                 return ai_response
             
             return None
@@ -175,11 +210,39 @@ Be enthusiastic and educational. Encourage questions about culture.""",
             return response
         return None
     
+    async def _generate_audio_with_edge_tts(self, text: str):
+        """Generate audio using Edge TTS for Chinese/Korean."""
+        try:
+            print(f"[Agent] Generating Edge TTS audio for: {text[:50]}...")
+            
+            # Generate audio using Edge TTS
+            audio_url = await self.tts_service.generate_audio(
+                text=text,
+                language_override=self.language,
+                use_cache=True
+            )
+            
+            if audio_url:
+                print(f"[Agent] Edge TTS audio generated: {audio_url}")
+                if self.on_audio_generated:
+                    await self.on_audio_generated(audio_url, text)
+            else:
+                print(f"[Agent] Edge TTS audio generation failed")
+                
+        except Exception as e:
+            print(f"[Agent] Edge TTS error: {e}")
+            import traceback
+            traceback.print_exc()
+    
     async def inject_agent_greeting(self, greeting: str):
-        """Add initial greeting."""
+        """Add initial greeting and generate audio if needed."""
         if self.on_agent_response:
             await self.on_agent_response(greeting)
         self.conversation_history.append({"role": "assistant", "content": greeting})
+        
+        # Generate audio for greeting if using Edge TTS
+        if self.use_edge_tts:
+            await self._generate_audio_with_edge_tts(greeting)
     
     async def stop_conversation(self):
         """Close the conversation."""
@@ -189,6 +252,41 @@ Be enthusiastic and educational. Encourage questions about culture.""",
     def get_conversation_history(self) -> List[Dict[str, str]]:
         """Get the conversation history."""
         return self.conversation_history
+    
+    def get_audio_url_for_text(self, text: str) -> Optional[str]:
+        """
+        Get audio URL for any text using Edge TTS (for manual audio generation).
+        Useful for generating audio on demand.
+        """
+        if not self.use_edge_tts:
+            print(f"[Agent] Edge TTS not available for language: {self.language}")
+            return None
+        
+        try:
+            # Run the async method in a new event loop if needed
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If we're already in an async context, create a new task
+                task = asyncio.create_task(
+                    self.tts_service.generate_audio(
+                        text=text,
+                        language_override=self.language,
+                        use_cache=True
+                    )
+                )
+                return task
+            else:
+                # If we're not in an async context, run it directly
+                return loop.run_until_complete(
+                    self.tts_service.generate_audio(
+                        text=text,
+                        language_override=self.language,
+                        use_cache=True
+                    )
+                )
+        except Exception as e:
+            print(f"[Agent] Manual audio generation error: {e}")
+            return None
 
 
 def get_greeting_for_scenario(language: str, scenario: str, level: str) -> str:
@@ -232,3 +330,39 @@ def get_greeting_for_scenario(language: str, scenario: str, level: str) -> str:
     }
     
     return greetings.get(language, {}).get(scenario, "Hello! How are you?")
+
+
+# Factory function
+def create_conversation_agent(
+    language: str,
+    level: str, 
+    scenario: str,
+    on_transcript: Optional[Callable] = None,
+    on_agent_response: Optional[Callable] = None,
+    on_audio_generated: Optional[Callable] = None,
+    provider: str = "gemini"
+) -> ConversationAgent:
+    """
+    Create a conversation agent with Edge TTS support.
+    
+    Args:
+        language: Language code (zh, ko, fr, de, es, etc.)
+        level: Proficiency level (beginner, intermediate, advanced)
+        scenario: Conversation scenario (travel, food, daily_conversation, etc.)
+        on_transcript: Callback for transcription results
+        on_agent_response: Callback for AI text responses
+        on_audio_generated: Callback for audio generation (Edge TTS)
+        provider: LLM provider (gemini or deepseek)
+    
+    Returns:
+        ConversationAgent instance
+    """
+    return ConversationAgent(
+        language=language,
+        level=level,
+        scenario=scenario,
+        on_transcript=on_transcript,
+        on_agent_response=on_agent_response,
+        on_audio_generated=on_audio_generated,
+        provider=provider
+    )

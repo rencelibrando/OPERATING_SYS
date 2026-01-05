@@ -43,7 +43,7 @@ fun VocabularyEmptyState(
                 MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
                 ),
-            color = WordBridgeColors.TextPrimary,
+            color = WordBridgeColors.TextPrimaryDark,
             textAlign = TextAlign.Center,
         )
 
@@ -52,7 +52,7 @@ fun VocabularyEmptyState(
         Text(
             text = "Start building your personal vocabulary collection! Add words you encounter during lessons, reading, or conversations. Our AI-powered system will help you master each word with personalized practice and smart review schedules.",
             style = MaterialTheme.typography.bodyLarge,
-            color = WordBridgeColors.TextSecondary,
+            color = WordBridgeColors.TextSecondaryDark,
             textAlign = TextAlign.Center,
             lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
         )
@@ -87,7 +87,7 @@ fun VocabularyEmptyState(
             Text(
                 text = "or ",
                 style = MaterialTheme.typography.bodyMedium,
-                color = WordBridgeColors.TextSecondary,
+                color = WordBridgeColors.TextSecondaryDark,
             )
 
             TextButton(

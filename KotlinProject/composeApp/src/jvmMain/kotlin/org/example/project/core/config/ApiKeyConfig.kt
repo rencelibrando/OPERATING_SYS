@@ -22,7 +22,7 @@ object ApiKeyConfig {
         try {
             // Print current working directory for debugging
             val workingDir = System.getProperty("user.dir")
-            println("🔍 Working directory: $workingDir")
+            println("Working directory: $workingDir")
             
             // Try multiple possible locations for .env file
             val possiblePaths = listOf(
@@ -38,7 +38,7 @@ object ApiKeyConfig {
                 println("🔍 Checking: $absolutePath")
                 
                 if (envFile.exists()) {
-                    println("✅ Found .env file at: $absolutePath")
+                    println("Found .env file at: $absolutePath")
                     envFile.readLines().forEach { line ->
                         val trimmed = line.trim()
                         if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
@@ -47,18 +47,18 @@ object ApiKeyConfig {
                                 val key = parts[0].trim()
                                 val value = parts[1].trim()
                                 properties[key] = value
-                                println("   📝 Loaded: $key = ${if (key.contains("KEY")) "***" else value}")
+                                println("Loaded: $key = ${if (key.contains("KEY")) "***" else value}")
                             }
                         }
                     }
-                    println("✅ Successfully loaded configuration from .env file")
+                    println("Successfully loaded configuration from .env file")
                     return
                 }
             }
             
-            println("⚠️ No .env file found in any checked location")
+            println("No .env file found in any checked location")
         } catch (e: Exception) {
-            println("❌ Error loading .env file: ${e.message}")
+            println("Error loading .env file: ${e.message}")
             e.printStackTrace()
         }
     }
@@ -76,12 +76,12 @@ object ApiKeyConfig {
                 val configFile = File(path)
                 if (configFile.exists()) {
                     configFile.inputStream().use { properties.load(it) }
-                    println("✅ Loaded configuration from config.properties at: ${configFile.absolutePath}")
+                    println("Loaded configuration from config.properties at: ${configFile.absolutePath}")
                     return
                 }
             }
         } catch (e: Exception) {
-            println("⚠️ Could not load config.properties: ${e.message}")
+            println("Could not load config.properties: ${e.message}")
         }
     }
     
@@ -94,13 +94,13 @@ object ApiKeyConfig {
     fun getDeepgramApiKey(): String? {
         // First try system environment
         System.getenv("DEEPGRAM_API_KEY")?.let { 
-            println("✅ Using DEEPGRAM_API_KEY from system environment")
+            println("Using DEEPGRAM_API_KEY from system environment")
             return it 
         }
         
         // Then try loaded properties (from .env or config.properties)
         properties.getProperty("DEEPGRAM_API_KEY")?.let { 
-            println("✅ Using DEEPGRAM_API_KEY from config file")
+            println("Using DEEPGRAM_API_KEY from config file")
             return it 
         }
         
@@ -115,13 +115,13 @@ object ApiKeyConfig {
     fun getElevenLabsApiKey(): String? {
         // First try system environment
         System.getenv("ELEVEN_LABS_API_KEY")?.let { 
-            println("✅ Using ELEVEN_LABS_API_KEY from system environment")
+            println("Using ELEVEN_LABS_API_KEY from system environment")
             return it 
         }
         
         // Then try loaded properties (from .env or config.properties)
         properties.getProperty("ELEVEN_LABS_API_KEY")?.let { 
-            println("✅ Using ELEVEN_LABS_API_KEY from config file")
+            println("Using ELEVEN_LABS_API_KEY from config file")
             return it 
         }
         
@@ -142,4 +142,26 @@ object ApiKeyConfig {
         return System.getenv("SUPABASE_ANON_KEY") 
             ?: properties.getProperty("SUPABASE_ANON_KEY")
     }
+    
+    fun getGeminiApiKey(): String? {
+        System.getenv("GEMINI_API_KEY")?.let { 
+            println("Using GEMINI_API_KEY from system environment")
+            return it 
+        }
+        
+        properties.getProperty("GEMINI_API_KEY")?.let { 
+            println("Using GEMINI_API_KEY from config file")
+            return it 
+        }
+        
+        println("GEMINI_API_KEY not found in any configuration source")
+        println("   Please set it in one of these locations:")
+        println("   1. System environment variable: GEMINI_API_KEY")
+        println("   2. File: composeApp/.env")
+        println("   3. File: composeApp/config.properties")
+        return null
+    }
+    
+    // Edge TTS is now handled by the Python backend
+    // No Edge TTS API key needed in the Kotlin client
 }

@@ -14,6 +14,9 @@ kotlinx-datetime = "0.6.1"
 dotenv = "6.4.1"
 kamel = "0.9.1"
 ktlintPlugin = "12.1.1"
+vico = "2.0.0-alpha.28"
+foundationAndroid = "1.10.0"
+foundationDesktop = "1.7.0"
 
 [libraries]
 # Compose BOM for version alignment
@@ -46,8 +49,15 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 # Kamel Image Loader
 kamel-image = { module = "media.kamel:kamel-image", version.ref = "kamel" }
 
+# Vico Charts
+vico-compose = { module = "com.patrykandpatrick.vico:compose", version.ref = "vico" }
+vico-compose-m3 = { module = "com.patrykandpatrick.vico:compose-m3", version.ref = "vico" }
+vico-core = { module = "com.patrykandpatrick.vico:core", version.ref = "vico" }
+
 # Environment configuration
 dotenv-kotlin = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenv" }
+androidx-foundation-android = { group = "androidx.compose.foundation", name = "foundation-android", version.ref = "foundationAndroid" }
+androidx-foundation-desktop = { group = "androidx.compose.foundation", name = "foundation-desktop", version.ref = "foundationDesktop" }
 
 [plugins]
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }

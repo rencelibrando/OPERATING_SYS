@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     deepgram_api_key: str = Field(..., env="DEEPGRAM_API_KEY")
     deepseek_api_key: str = Field(..., env="DEEPSEEK_API_KEY")
     eleven_labs_api_key: str = Field(..., env="ELEVEN_LABS_API_KEY")
+    gladia_api_key: str = Field(default="", env="GLADIA_API_KEY")
     
     # Deepgram Configuration
     deepgram_model: str = Field(default="nova-3", env="DEEPGRAM_MODEL")
@@ -87,6 +88,11 @@ if not settings.supabase_key and settings.supabase_anon_key:
 logger.info(f"Supabase URL configured: {bool(settings.supabase_url)}")
 logger.info(f"Supabase Key configured: {bool(settings.supabase_key)}")
 logger.info(f"Supabase Service Role Key configured: {bool(settings.supabase_service_role_key)}")
+logger.info(f"Gladia API Key configured: {bool(settings.gladia_api_key)}")
+if settings.gladia_api_key:
+    logger.info(f"Gladia API Key: {settings.gladia_api_key[:10]}...")
+else:
+    logger.warning("Gladia API Key not found")
 if settings.supabase_url:
     logger.info(f"Supabase URL: {settings.supabase_url[:30]}...")
 if not settings.supabase_url and not settings.supabase_key:

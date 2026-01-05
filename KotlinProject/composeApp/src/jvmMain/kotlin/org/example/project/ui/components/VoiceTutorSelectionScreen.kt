@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.example.project.models.PracticeLanguage
+import org.example.project.domain.model.PracticeLanguage
 import org.example.project.ui.theme.WordBridgeColors
 
 data class VoiceTutorLevel(
@@ -46,7 +46,7 @@ fun VoiceTutorSelectionFlow(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(WordBridgeColors.BackgroundLight)
+            .background(WordBridgeColors.BackgroundMain)
             .padding(24.dp)
             .verticalScroll(rememberScrollState())
     ) {
@@ -63,7 +63,7 @@ fun VoiceTutorSelectionFlow(
                     SelectionStep.SCENARIO -> currentStep = SelectionStep.LEVEL
                 }
             }) {
-                Text("← Back", color = WordBridgeColors.TextSecondary)
+                Text("← Back", color = WordBridgeColors.TextPrimaryDark)
             }
 
             Text(
@@ -71,7 +71,7 @@ fun VoiceTutorSelectionFlow(
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold
                 ),
-                color = WordBridgeColors.TextPrimary
+                color = WordBridgeColors.TextPrimaryDark
             )
         }
 
@@ -202,7 +202,7 @@ private fun ProgressStep(
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = if (isActive) WordBridgeColors.TextPrimary else WordBridgeColors.TextSecondary,
+            color = if (isActive) WordBridgeColors.TextPrimaryDark else WordBridgeColors.TextSecondaryDark,
             fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal
         )
     }
@@ -234,7 +234,7 @@ private fun LanguageSelection(
         Text(
             text = "Choose Your Language",
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = WordBridgeColors.TextPrimary
+            color = WordBridgeColors.TextPrimaryDark
         )
 
         Spacer(modifier = Modifier.height(6.dp))
@@ -242,7 +242,7 @@ private fun LanguageSelection(
         Text(
             text = "Select the language you want to practice speaking",
             style = MaterialTheme.typography.bodyMedium,
-            color = WordBridgeColors.TextSecondary
+            color = WordBridgeColors.TextSecondaryDark
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -278,7 +278,7 @@ private fun LanguageCard(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = WordBridgeColors.BackgroundWhite
+            containerColor = WordBridgeColors.CardBackgroundDark
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -307,14 +307,14 @@ private fun LanguageCard(
                 Text(
                     text = language.displayName,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = WordBridgeColors.TextPrimary
+                    color = WordBridgeColors.TextPrimaryDark
                 )
             }
 
             Text(
                 text = "→",
                 style = MaterialTheme.typography.titleLarge,
-                color = WordBridgeColors.TextSecondary
+                color = WordBridgeColors.TextSecondaryDark
             )
         }
     }
@@ -332,7 +332,7 @@ private fun LevelSelection(
         Text(
             text = "Choose Your Level",
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = WordBridgeColors.TextPrimary
+            color = WordBridgeColors.TextPrimaryDark
         )
 
         Spacer(modifier = Modifier.height(6.dp))
@@ -340,7 +340,7 @@ private fun LevelSelection(
         Text(
             text = "Select your ${language.displayName} proficiency level",
             style = MaterialTheme.typography.bodyMedium,
-            color = WordBridgeColors.TextSecondary
+            color = WordBridgeColors.TextSecondaryDark
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -392,9 +392,9 @@ private fun LevelCard(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = WordBridgeColors.BackgroundWhite
+            containerColor = WordBridgeColors.CardBackgroundDark
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Row(
             modifier = Modifier
@@ -421,7 +421,7 @@ private fun LevelCard(
                 Text(
                     text = level.name,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = WordBridgeColors.TextPrimary
+                    color = WordBridgeColors.TextPrimaryDark
                 )
 
                 Spacer(modifier = Modifier.height(3.dp))
@@ -429,7 +429,7 @@ private fun LevelCard(
                 Text(
                     text = level.description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = WordBridgeColors.TextSecondary,
+                    color = WordBridgeColors.TextSecondaryDark,
                     lineHeight = 18.sp
                 )
             }
@@ -437,7 +437,7 @@ private fun LevelCard(
             Text(
                 text = "→",
                 style = MaterialTheme.typography.titleLarge,
-                color = WordBridgeColors.TextSecondary
+                color = WordBridgeColors.TextSecondaryDark
             )
         }
     }
@@ -454,7 +454,7 @@ private fun ScenarioSelection(
         Text(
             text = "Choose a Scenario",
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = WordBridgeColors.TextPrimary
+            color = WordBridgeColors.TextPrimaryDark
         )
 
         Spacer(modifier = Modifier.height(6.dp))
@@ -462,7 +462,7 @@ private fun ScenarioSelection(
         Text(
             text = "Pick a topic to practice in ${language.displayName}",
             style = MaterialTheme.typography.bodyMedium,
-            color = WordBridgeColors.TextSecondary
+            color = WordBridgeColors.TextPrimaryDark
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -526,7 +526,7 @@ private fun ScenarioCard(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = WordBridgeColors.BackgroundWhite
+            containerColor = WordBridgeColors.CardBackgroundDark
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -555,7 +555,7 @@ private fun ScenarioCard(
                 Text(
                     text = scenario.name,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = WordBridgeColors.TextPrimary
+                    color = WordBridgeColors.TextPrimaryDark
                 )
 
                 Spacer(modifier = Modifier.height(3.dp))
@@ -563,7 +563,7 @@ private fun ScenarioCard(
                 Text(
                     text = scenario.description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = WordBridgeColors.TextSecondary,
+                    color = WordBridgeColors.TextPrimaryDark,
                     lineHeight = 18.sp
                 )
             }
@@ -571,7 +571,7 @@ private fun ScenarioCard(
             Text(
                 text = "→",
                 style = MaterialTheme.typography.titleLarge,
-                color = WordBridgeColors.TextSecondary
+                color = WordBridgeColors.TextPrimaryDark
             )
         }
     }

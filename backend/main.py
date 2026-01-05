@@ -21,6 +21,9 @@ from models import (
 )
 from prompts import build_system_prompt, format_conversation_history
 from providers.gemini import GeminiProvider
+from providers.deepseek import DeepSeekProvider
+from providers.exceptions import ProviderQuotaExceededError
+from retry_utils import ProviderManager
 from chat_history_service import ChatHistoryService
 from supabase_client import SupabaseManager
 from lesson_routes import router as lesson_router
@@ -28,7 +31,11 @@ from narration_routes import router as narration_router
 from voice_routes import router as voice_router
 from conversation_routes import router as conversation_router
 from agent_routes import router as agent_router
+from edge_conversation_routes import router as edge_conversation_router
 from error_logger import get_logger
+from gladia_stt_service import handle_gladia_websocket
+from fastapi import WebSocket
+from tts_service import get_tts_service
 
 
 # Configure logging
@@ -44,6 +51,9 @@ providers = {}
 # Initialize chat history service
 chat_history_service = ChatHistoryService()
 
+# Initialize provider manager (will be set up in lifespan)
+provider_manager = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -53,17 +63,33 @@ async def lifespan(app: FastAPI):
     
     # Initialize AI providers
     gemini_key = None
+    deepseek_key = None
     # Try to fetch Gemini API key from settings (supports both cases)
     if hasattr(settings, "GEMINI_API_KEY"):
         gemini_key = settings.GEMINI_API_KEY
     elif hasattr(settings, "gemini_api_key"):
         gemini_key = settings.gemini_api_key
+    
+    # Try to fetch DeepSeek API key from settings
+    if hasattr(settings, "deepseek_api_key"):
+        deepseek_key = settings.deepseek_api_key
 
     if gemini_key:
         providers[AIProvider.GEMINI] = GeminiProvider()
         logger.info("Gemini provider initialized")
     else:
         logger.warning("Gemini API key not configured; Gemini provider disabled")
+    
+    if deepseek_key:
+        providers[AIProvider.DEEPSEEK] = DeepSeekProvider()
+        logger.info("DeepSeek provider initialized")
+    else:
+        logger.warning("DeepSeek API key not configured; DeepSeek provider disabled")
+    
+    # Initialize provider manager with available providers
+    global provider_manager
+    provider_manager = ProviderManager(providers)
+    logger.info(f"Provider manager initialized with {len(providers)} providers")
     
     # Initialize Supabase connection
     if SupabaseManager.is_configured():
@@ -104,6 +130,54 @@ app.include_router(narration_router)
 app.include_router(voice_router)
 app.include_router(conversation_router)
 app.include_router(agent_router)
+app.include_router(edge_conversation_router)
+
+# Gladia WebSocket endpoint
+@app.websocket("/gladia/stt")
+async def gladia_stt_websocket(websocket: WebSocket, language: str = "auto"):
+    """
+    WebSocket endpoint for Gladia live speech-to-text
+    Supports automatic language detection for Chinese, Korean, and other languages
+    """
+    await handle_gladia_websocket(websocket, language)
+
+# TTS endpoint for generating audio
+@app.post("/tts/generate")
+async def generate_tts_audio(request: dict):
+    """
+    Generate audio from text using Edge TTS
+    """
+    try:
+        text = request.get("text", "")
+        language = request.get("language", "en-US")
+        use_cache = request.get("use_cache", True)
+        
+        if not text:
+            raise HTTPException(status_code=400, detail="Text is required")
+        
+        tts_service = get_tts_service()
+        
+        # Map language code to voice
+        voice_mapping = {
+            "zh-CN": "zh-CN-XiaoxiaoNeural",
+            "ko-KR": "ko-KR-SunHiNeural",
+            "en-US": "en-US-JennyNeural"
+        }
+        
+        voice = voice_mapping.get(language, "en-US-JennyNeural")
+        
+        # Generate audio - TTS service returns a URL string
+        audio_url = await tts_service.generate_audio(text, voice)
+        
+        return {
+            "audio_url": audio_url,
+            "text": text,
+            "language": language
+        }
+        
+    except Exception as e:
+        logger.error(f"TTS generation error: {e}")
+        raise HTTPException(status_code=500, detail=f"TTS generation failed: {str(e)}")
 
 @app.get("/", tags=["General"])
 async def root():
@@ -144,13 +218,11 @@ async def chat_completion(request: ChatRequest):
         logger.info(f"Chat request from user: {request.user_context.user_id}")
         logger.info(f"Provider: {request.provider.value}")
 
-        if request.provider not in providers:
+        if not provider_manager:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=f"AI provider '{request.provider.value}' is not available"
+                detail="AI providers not initialized"
             )
-        
-        provider = providers[request.provider]
         
         # Build personalized system prompt
         system_prompt = build_system_prompt(
@@ -168,22 +240,28 @@ async def chat_completion(request: ChatRequest):
         
         logger.info(f"History messages: {len(formatted_history)}")
         
-        # Generate response from AI provider
-        response = await provider.generate_response(
+        # Generate response using provider manager with fallback and retry
+        response, provider_used = await provider_manager.generate_with_fallback(
+            primary_provider=request.provider,
             message=request.message,
             system_prompt=system_prompt,
             conversation_history=formatted_history,
             temperature=request.temperature,
             max_tokens=request.max_tokens,
+            enable_retry=True
         )
         
-        logger.info(f"Generated response: {len(response.message)} chars")
+        logger.info(f"Generated response via {provider_used.value}: {len(response.message)} chars")
         logger.info(f"Tokens used: {response.tokens_used}")
         
         return response
         
-    except HTTPException:
-        raise
+    except ProviderQuotaExceededError as e:
+        logger.error(f"All providers quota exceeded: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="All AI providers are currently unavailable due to quota limits. Please try again later."
+        )
     except Exception as e:
         logger.error(f"Error in chat completion: {str(e)}", exc_info=True)
         raise HTTPException(

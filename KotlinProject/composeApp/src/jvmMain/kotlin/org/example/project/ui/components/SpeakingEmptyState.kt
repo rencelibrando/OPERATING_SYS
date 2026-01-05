@@ -14,7 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.example.project.models.SpeakingFeature
+import org.example.project.domain.model.SpeakingFeature
 import org.example.project.ui.theme.WordBridgeColors
 
 @Composable
@@ -42,7 +42,7 @@ fun SpeakingEmptyState(
                 MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
                 ),
-            color = WordBridgeColors.TextPrimary,
+            color = WordBridgeColors.TextPrimaryDark,
             textAlign = TextAlign.Center,
         )
 
@@ -51,7 +51,7 @@ fun SpeakingEmptyState(
         Text(
             text = "Start your journey to confident speaking! Practice pronunciation with AI feedback or have natural conversations with our voice agent. Choose the mode that fits your learning goals.",
             style = MaterialTheme.typography.bodyMedium,
-            color = WordBridgeColors.TextSecondary,
+            color = WordBridgeColors.TextSecondaryDark,
             textAlign = TextAlign.Center,
             lineHeight = 20.sp,
         )
@@ -81,7 +81,7 @@ fun SpeakingEmptyState(
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.Medium,
                             ),
-                        color = Color.White,
+                        color = WordBridgeColors.TextPrimaryDark,
                     )
                 }
             }
@@ -104,7 +104,7 @@ fun SpeakingEmptyState(
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.Medium,
                             ),
-                        color = Color.White,
+                        color = WordBridgeColors.TextPrimaryDark,
                     )
                 }
             }
@@ -118,7 +118,7 @@ fun SpeakingEmptyState(
             Text(
                 text = "or ",
                 style = MaterialTheme.typography.bodyMedium,
-                color = WordBridgeColors.TextSecondary,
+                color = WordBridgeColors.TextSecondaryDark,
             )
 
             TextButton(
@@ -168,7 +168,7 @@ private fun SpeakingFeatureCard(
         shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = WordBridgeColors.BackgroundWhite,
+                containerColor = WordBridgeColors.BackgroundMain,
             ),
         elevation =
             CardDefaults.cardElevation(
@@ -206,7 +206,7 @@ private fun SpeakingFeatureCard(
                     MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                     ),
-                color = WordBridgeColors.TextPrimary,
+                color = WordBridgeColors.TextPrimaryDark,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -214,7 +214,7 @@ private fun SpeakingFeatureCard(
             Text(
                 text = feature.description,
                 style = MaterialTheme.typography.bodyMedium,
-                color = WordBridgeColors.TextSecondary,
+                color = WordBridgeColors.TextSecondaryDark,
                 lineHeight = MaterialTheme.typography.bodyMedium.lineHeight,
             )
         }

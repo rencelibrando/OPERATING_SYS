@@ -15,12 +15,18 @@ object WordBridgeColors {
 
     val BackgroundLight = Color(0xFFF9FAFB)
     val BackgroundWhite = Color(0xFFFFFFFF)
+    val BackgroundDark = Color(0xFF1E293B) // Dark slate background
+    val BackgroundMain = Color(0xFF0F172A) // Even darker for main content
     val CardBackground = Color(0xFFFFFFFF)
+    val CardBackgroundDark = Color(0xFF334155) // Dark card background
     val CardShadow = Color(0x0D000000)
 
     val TextPrimary = Color(0xFF111827)
+    val TextPrimaryDark = Color(0xFFF8FAFC) // Light text for dark backgrounds
     val TextSecondary = Color(0xFF6B7280)
+    val TextSecondaryDark = Color(0xFFCBD5E1) // Lighter secondary text for dark
     val TextMuted = Color(0xFF9CA3AF)
+    val TextMutedDark = Color(0xFF94A3B8) // Muted text for dark backgrounds
 
     val AccentBlue = Color(0xFF3B82F6)
     val AccentGreen = Color(0xFF10B981)
@@ -34,4 +40,5 @@ object WordBridgeColors {
     val HoverOverlay = Color(0x0A000000)
     val PressedOverlay = Color(0x14000000)
     val FocusedBorder = Color(0xFF3B82F6)
+    val BorderLight = Color(0xFFE5E7EB)
 }

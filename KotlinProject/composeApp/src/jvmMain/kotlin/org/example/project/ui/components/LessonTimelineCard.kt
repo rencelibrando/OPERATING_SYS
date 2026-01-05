@@ -77,8 +77,8 @@ private fun LessonTimelineItem(
 
     val freshGreen = Color(0xFF22C55E)
 
-    val timelineGray = Color(0xFFE2E8F0)
-    val inactiveGray = Color(0xFFCBD5E1)
+    val timelineGray = Color(0xFF475569)
+    val inactiveGray = Color(0xFF64748B)
 
     val itemProgress = itemIndex.toFloat() / totalItems.toFloat()
     val nextItemProgress = (itemIndex + 1).toFloat() / totalItems.toFloat()
@@ -384,7 +384,7 @@ private fun LessonNumberLabel(
             if (isHovered && !isLocked) {
                 freshGreen.copy(alpha = 0.15f)
             } else {
-                Color(0xFFF8FAFC)
+                Color(0xFF1E293B)
             },
         border =
             BorderStroke(
@@ -393,7 +393,7 @@ private fun LessonNumberLabel(
                     if (isHovered && !isLocked) {
                         freshGreen.copy(alpha = 0.3f)
                     } else {
-                        Color(0xFFE2E8F0)
+                        Color(0xFF475569)
                     },
             ),
     ) {
@@ -403,7 +403,7 @@ private fun LessonNumberLabel(
                 MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
                 ),
-            color = if (isHovered && !isLocked) freshGreen else WordBridgeColors.TextPrimary,
+            color = if (isHovered && !isLocked) freshGreen else WordBridgeColors.TextPrimaryDark,
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
         )
     }
@@ -419,7 +419,7 @@ private fun LessonTimelineCard(
     modifier: Modifier = Modifier,
 ) {
     val freshGreen = Color(0xFF22C55E)
-    val neutralBorder = Color(0xFFE2E8F0)
+    val neutralBorder = Color(0xFF475569)
 
     val elevation by animateDpAsState(
         targetValue = if (isHovered && !topic.isLocked) 16.dp else 4.dp,
@@ -452,7 +452,7 @@ private fun LessonTimelineCard(
         shape = RoundedCornerShape(16.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = Color.White,
+                containerColor = Color(0xFF1E293B),
             ),
         elevation =
             CardDefaults.cardElevation(
@@ -511,7 +511,7 @@ private fun CardContent(topic: LessonTopic) {
                         MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
                         ),
-                    color = WordBridgeColors.TextPrimary,
+                    color = WordBridgeColors.TextPrimaryDark,
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
@@ -532,7 +532,7 @@ private fun CardContent(topic: LessonTopic) {
                 Text(
                     text = topic.description,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = WordBridgeColors.TextSecondary,
+                    color = WordBridgeColors.TextSecondaryDark,
                     lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.4f,
                     maxLines = 3,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -550,7 +550,7 @@ private fun CardContent(topic: LessonTopic) {
                     if (topic.durationMinutes != null) {
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFFECFDF5),
+                            color = Color(0xFF064E3B),
                             border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.2f)),
                         ) {
                             Row(
@@ -578,7 +578,7 @@ private fun CardContent(topic: LessonTopic) {
                         topic.isCompleted -> {
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = Color(0xFFD1FAE5),
+                                color = Color(0xFF064E3B),
                                 border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.3f)),
                             ) {
                                 Row(
@@ -608,7 +608,7 @@ private fun CardContent(topic: LessonTopic) {
                         topic.isLocked -> {
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = Color(0xFFF1F5F9),
+                                color = Color(0xFF1E293B),
                                 border = BorderStroke(1.dp, Color(0xFF94A3B8).copy(alpha = 0.3f)),
                             ) {
                                 Row(
@@ -626,7 +626,7 @@ private fun CardContent(topic: LessonTopic) {
                                             MaterialTheme.typography.bodyMedium.copy(
                                                 fontWeight = FontWeight.SemiBold,
                                             ),
-                                        color = Color(0xFF64748B),
+                                        color = Color(0xFF94A3B8),
                                     )
                                 }
                             }
@@ -634,7 +634,7 @@ private fun CardContent(topic: LessonTopic) {
                         else -> {
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = Color(0xFFCCFBF1),
+                                color = Color(0xFF042F2E),
                                 border = BorderStroke(1.dp, Color(0xFF14B8A6).copy(alpha = 0.3f)),
                             ) {
                                 Row(

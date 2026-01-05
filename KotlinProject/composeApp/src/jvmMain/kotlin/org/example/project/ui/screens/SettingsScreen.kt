@@ -43,7 +43,7 @@ fun SettingsScreen(
                     MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
                     ),
-                color = WordBridgeColors.TextPrimary,
+                color = WordBridgeColors.TextPrimaryDark,
             )
 
             if (isSaving) {
@@ -59,7 +59,7 @@ fun SettingsScreen(
                     Text(
                         text = "Saving...",
                         style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextSecondary,
+                        color = WordBridgeColors.TextSecondaryDark,
                     )
                 }
             }
@@ -341,7 +341,7 @@ private fun SettingsSection(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.BackgroundWhite),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(
@@ -367,14 +367,14 @@ private fun SettingsSection(
                             MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
                             ),
-                        color = WordBridgeColors.TextPrimary,
+                        color = WordBridgeColors.TextPrimaryDark,
                     )
 
                     if (description != null) {
                         Text(
                             text = description,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = WordBridgeColors.TextSecondary,
+                            color = WordBridgeColors.TextSecondaryDark,
                         )
                     }
                 }
@@ -409,13 +409,13 @@ private fun SettingsToggleItem(
                     MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.Medium,
                     ),
-                color = WordBridgeColors.TextPrimary,
+                color = WordBridgeColors.TextPrimaryDark,
             )
 
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
-                color = WordBridgeColors.TextSecondary,
+                color = WordBridgeColors.TextSecondaryDark,
             )
         }
 
@@ -446,8 +446,8 @@ private fun SettingsSelectionItem(
     Card(
         modifier = modifier.fillMaxWidth(),
         onClick = onClick,
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2A2A)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Row(
             modifier =
@@ -466,20 +466,20 @@ private fun SettingsSelectionItem(
                         MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.Medium,
                         ),
-                    color = WordBridgeColors.TextPrimary,
+                    color = WordBridgeColors.TextPrimaryDark
                 )
 
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = WordBridgeColors.TextSecondary,
+                    color = WordBridgeColors.TextSecondaryDark,
                 )
             }
 
             Text(
                 text = currentValue,
                 style = MaterialTheme.typography.bodyMedium,
-                color = WordBridgeColors.PrimaryPurple,
+                color = Color(0xFFBB86FC),
             )
         }
     }
@@ -495,8 +495,8 @@ private fun SettingsActionItem(
     Card(
         modifier = modifier.fillMaxWidth(),
         onClick = onClick,
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2A2A)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
             modifier =
@@ -510,13 +510,13 @@ private fun SettingsActionItem(
                     MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.Medium,
                     ),
-                color = WordBridgeColors.TextPrimary,
+                color = WordBridgeColors.TextPrimaryDark,
             )
 
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
-                color = WordBridgeColors.TextSecondary,
+                color = WordBridgeColors.TextSecondaryDark,
             )
         }
     }
@@ -539,13 +539,13 @@ private fun SettingsInfoItem(
                 MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Medium,
                 ),
-            color = WordBridgeColors.TextPrimary,
+            color = WordBridgeColors.TextPrimaryDark,
         )
 
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
-            color = WordBridgeColors.TextSecondary,
+            color = WordBridgeColors.TextSecondaryDark,
         )
     }
 }

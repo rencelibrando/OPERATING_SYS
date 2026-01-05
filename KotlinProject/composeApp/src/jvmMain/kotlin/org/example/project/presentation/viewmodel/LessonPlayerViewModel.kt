@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import org.example.project.core.analytics.ProgressAnalyticsService
 import org.example.project.data.repository.LessonContentRepository
 import org.example.project.data.repository.LessonContentRepositoryImpl
 import org.example.project.domain.model.*
@@ -13,7 +14,9 @@ import org.example.project.domain.model.*
  * ViewModel for playing lessons in the main app.
  * Handles lesson display, question answering, and progress tracking.
  */
-class LessonPlayerViewModel : ViewModel() {
+class LessonPlayerViewModel(
+    private val onLessonCompleted: ((userId: String, lessonId: String) -> Unit)? = null
+) : ViewModel() {
     private val repository: LessonContentRepository = LessonContentRepositoryImpl()
 
     // State
@@ -495,6 +498,26 @@ class LessonPlayerViewModel : ViewModel() {
                         _submissionResult.value = result
                         _isSubmitted.value = true
                         _errorMessage.value = null
+                        
+                        // Invalidate lesson content cache
+                        (repository as? LessonContentRepositoryImpl)?.clearUserCache(userId)
+                        println("[LessonPlayer] ✅ Lesson content cache cleared")
+                        
+                        // Invalidate lesson topics cache to refresh topic unlocking
+                        try {
+                            val topicsRepo = org.example.project.data.repository.LessonTopicsRepositoryImpl()
+                            topicsRepo.clearTopicsCache()
+                            println("[LessonPlayer] ✅ Lesson topics cache cleared")
+                        } catch (e: Exception) {
+                            println("[LessonPlayer] ⚠️ Failed to clear topics cache: ${e.message}")
+                        }
+                        
+                        // Invalidate progress analytics cache (all languages for this user)
+                        ProgressAnalyticsService.invalidateCache(userId)
+                        println("[LessonPlayer] ✅ Progress analytics cache invalidated")
+                        
+                        // Notify parent to invalidate caches
+                        onLessonCompleted?.invoke(userId, lesson.id)
                     }
                     .onFailure { error ->
                         val errorMsg = "Failed to submit lesson: ${error.message}"

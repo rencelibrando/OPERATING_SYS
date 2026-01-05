@@ -48,9 +48,9 @@ fun AIChatScreen(
     val isLoading by viewModel.isLoading
     val currentSession by viewModel.currentSession
 
-    // Load chat sessions when screen opens
+    // Initialize chat and load data when screen opens
     LaunchedEffect(Unit) {
-        viewModel.refreshChatData()
+        viewModel.initializeChat()
     }
 
     Row(

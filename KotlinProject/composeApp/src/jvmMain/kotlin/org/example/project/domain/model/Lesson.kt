@@ -140,7 +140,19 @@ data class LessonTopic(
     val isLocked: Boolean = false,
     val durationMinutes: Int? = null,
     val language: LessonLanguage? = null,
+    val completedLessonsCount: Int = 0,
+    val totalLessonsCount: Int = 0,
 ) {
+    val progressPercentage: Int
+        get() = if (totalLessonsCount > 0) {
+            ((completedLessonsCount.toFloat() / totalLessonsCount.toFloat()) * 100).toInt()
+        } else {
+            0
+        }
+
+    val isFullyCompleted: Boolean
+        get() = totalLessonsCount > 0 && completedLessonsCount >= totalLessonsCount
+
     companion object {
     }
 }

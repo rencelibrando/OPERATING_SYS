@@ -28,7 +28,7 @@ fun TodaysProgressCard(
                 .fillMaxWidth(),
         colors =
             CardDefaults.cardColors(
-                containerColor = WordBridgeColors.BackgroundWhite,
+                containerColor = WordBridgeColors.CardBackgroundDark,
             ),
         elevation =
             CardDefaults.cardElevation(
@@ -118,7 +118,7 @@ private fun ProgressMetric(
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = WordBridgeColors.TextSecondary,
+            color = WordBridgeColors.TextSecondaryDark,
         )
 
         Spacer(modifier = Modifier.height(4.dp))

@@ -22,7 +22,7 @@ import org.example.project.core.dictionary.WordNotFoundException
 import org.example.project.domain.model.LessonLanguage
 import org.example.project.domain.model.VocabularyStatus
 import org.example.project.domain.model.VocabularyWord
-import org.example.project.models.PracticeLanguage
+import org.example.project.domain.model.PracticeLanguage
 import org.example.project.presentation.viewmodel.LessonsViewModel
 import org.example.project.presentation.viewmodel.SpeakingViewModel
 import org.example.project.presentation.viewmodel.VocabularyViewModel
@@ -94,8 +94,7 @@ fun VocabularyScreen(
             authenticatedUser = authenticatedUser,
             onBackClick = {
                 speakingViewModel.completePractice()
-            },
-            viewModel = speakingViewModel
+            }
         )
     } else {
         
@@ -116,16 +115,14 @@ fun VocabularyScreen(
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Bold
                         ),
-                        color = WordBridgeColors.TextPrimary
+                        color = WordBridgeColors.TextPrimaryDark
                     )
-                    if (selectedLanguage != null) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Learning ${selectedLanguage.displayName}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = WordBridgeColors.TextSecondary
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Learning ${selectedLanguage.displayName}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = WordBridgeColors.TextSecondaryDark
+                    )
                 }
 
                 Row(
@@ -133,16 +130,14 @@ fun VocabularyScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Language Switcher
-                    if (selectedLanguage != null) {
-                        LessonLanguageSwitcher(
-                            selectedLanguage = selectedLanguage,
-                            availableLanguages = availableLanguages,
-                            onLanguageSelected = { language ->
+                    LessonLanguageSwitcher(
+                        selectedLanguage = selectedLanguage,
+                        availableLanguages = availableLanguages,
+                        onLanguageSelected = { language ->
                                 lessonsViewModel.changeLanguage(language)
                             },
                             enabled = !isLanguageChanging,
                         )
-                    }
 
                     TextButton(
                         onClick = { vocabularyViewModel.refresh() },
@@ -168,17 +163,15 @@ fun VocabularyScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Daily Goal Progress Card
-            if (selectedLanguage != null) {
-                DailyGoalCard(
-                    dailyGoal = dailyGoal,
-                    wordsLearnedToday = wordsLearnedToday,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+            DailyGoalCard(
+                dailyGoal = dailyGoal,
+                wordsLearnedToday = wordsLearnedToday,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Word of the Day Card
-            if (wordOfTheDay != null && selectedLanguage != null) {
+            if (wordOfTheDay != null) {
                 WordOfTheDayCard(
                     word = wordOfTheDay!!,
                     onLearnClick = {
@@ -253,16 +246,11 @@ fun VocabularyScreen(
                             VocabularyWordItem(
                                 word = word,
                                 onPracticeClick = { vocabularyWord ->
-                                    if (selectedLanguage != null) {
-                                        // Use the app's selected learning language for speaking practice
-                                        speakingViewModel.startPracticeSessionForLessonLanguage(
-                                            vocabularyWord,
-                                            selectedLanguage.code
-                                        )
-                                    } else {
-                                        // Fallback: show language selection dialog
-                                        speakingViewModel.startPracticeSession(vocabularyWord)
-                                    }
+                                    // Use the app's selected learning language for speaking practice
+                                    speakingViewModel.startPracticeSessionForLessonLanguage(
+                                        vocabularyWord,
+                                        selectedLanguage.code
+                                    )
                                 },
                                 onClick = { vocabularyViewModel.onVocabularyWordClicked(word.id) },
                                 onStatusChange = { status ->
@@ -290,13 +278,13 @@ fun VocabularyScreen(
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Medium
                             ),
-                            color = WordBridgeColors.TextPrimary
+                            color = WordBridgeColors.TextPrimaryDark
                         )
 
                         Text(
                             text = "Try adjusting your search or filter criteria",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = WordBridgeColors.TextSecondary
+                            color = WordBridgeColors.TextSecondaryDark
                         )
                     }
                 }
@@ -340,14 +328,10 @@ fun VocabularyScreen(
             },
             onPracticeClick = {
                 vocabularyViewModel.hideWordDetails()
-                if (selectedLanguage != null) {
-                    speakingViewModel.startPracticeSessionForLessonLanguage(
-                        word,
-                        selectedLanguage.code
-                    )
-                } else {
-                    speakingViewModel.startPracticeSession(word)
-                }
+                speakingViewModel.startPracticeSessionForLessonLanguage(
+                    word,
+                    selectedLanguage.code
+                )
             }
         )
     }
@@ -366,7 +350,7 @@ private fun VocabularyWordItem(
             .clickable { onClick(word.id) },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = WordBridgeColors.BackgroundWhite
+            containerColor = WordBridgeColors.CardBackgroundDark
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 2.dp,
@@ -392,7 +376,7 @@ private fun VocabularyWordItem(
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.SemiBold
                         ),
-                        color = WordBridgeColors.TextPrimary
+                        color = WordBridgeColors.TextPrimaryDark
                     )
                     
                     // Status badge
@@ -404,7 +388,7 @@ private fun VocabularyWordItem(
                 Text(
                     text = word.definition,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = WordBridgeColors.TextSecondary,
+                    color = WordBridgeColors.TextSecondaryDark,
                     maxLines = 2
                 )
 
@@ -413,7 +397,7 @@ private fun VocabularyWordItem(
                     Text(
                         text = word.pronunciation,
                         style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextMuted
+                        color = WordBridgeColors.TextMutedDark
                     )
                 }
             }
@@ -501,9 +485,9 @@ private fun AddWordDialog(
                 errorMessage = null
             }.onFailure { error ->
                 if (error is WordNotFoundException) {
-                    errorMessage = "❌ Invalid Word: '$word' does not exist in ${selectedLanguage?.displayName ?: "the selected language"}. This word cannot be added to your vocabulary bank. Please check spelling or try a different word."
+                    errorMessage = " Invalid Word: '$word' does not exist in ${selectedLanguage?.displayName ?: "the selected language"}. This word cannot be added to your vocabulary bank. Please check spelling or try a different word."
                 } else {
-                    errorMessage = "❌ Validation Failed: ${error.message ?: "Unable to validate word. Please try again."}"
+                    errorMessage = " Validation Failed: ${error.message ?: "Unable to validate word. Please try again."}"
                 }
                 wordDefinition = null
             }
@@ -518,9 +502,13 @@ private fun AddWordDialog(
                 "Add Vocabulary Word",
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Bold
-                )
+                ),
+                color = WordBridgeColors.TextPrimaryDark
             )
         },
+        containerColor = WordBridgeColors.CardBackgroundDark,
+        titleContentColor = WordBridgeColors.TextPrimaryDark,
+        textContentColor = WordBridgeColors.TextPrimaryDark,
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -564,20 +552,33 @@ private fun AddWordDialog(
                                 "Word in ${selectedLanguage.displayName}"
                             } else {
                                 "Word"
-                            }
+                            },
+                            color = WordBridgeColors.TextSecondaryDark
                         ) 
                     },
-                    placeholder = { Text("Enter a word...") },
+                    placeholder = { Text("Enter a word...", color = WordBridgeColors.TextMutedDark) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     isError = errorMessage != null && validationAttempted,
                     enabled = selectedLanguage != null && !isLoading,
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = WordBridgeColors.PrimaryPurple,
+                        unfocusedIndicatorColor = WordBridgeColors.TextMutedDark,
+                        focusedTextColor = WordBridgeColors.TextPrimaryDark,
+                        unfocusedTextColor = WordBridgeColors.TextPrimaryDark,
+                        focusedLabelColor = WordBridgeColors.PrimaryPurple,
+                        unfocusedLabelColor = WordBridgeColors.TextSecondaryDark,
+                        cursorColor = WordBridgeColors.PrimaryPurple,
+                        focusedContainerColor = WordBridgeColors.CardBackgroundDark,
+                        unfocusedContainerColor = WordBridgeColors.CardBackgroundDark
+                    ),
                     trailingIcon = {
                         when {
                             isLoading -> {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp
+                                    strokeWidth = 2.dp,
+                                    color = WordBridgeColors.PrimaryPurple
                                 )
                             }
                             wordDefinition != null -> {
@@ -618,7 +619,7 @@ private fun AddWordDialog(
                     Text(
                         text = "Validating word in ${selectedLanguage.displayName} using DeepSeek AI...",
                         style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextSecondary
+                        color = WordBridgeColors.TextSecondaryDark
                     )
                 }
 
@@ -805,7 +806,7 @@ private fun AddWordDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = WordBridgeColors.TextSecondary)
+                Text("Cancel", color = WordBridgeColors.TextSecondaryDark)
             }
         }
     )
@@ -924,7 +925,7 @@ private fun WordOfTheDayCard(
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold
                     ),
-                    color = Color(0xFF92400E)
+                    color = WordBridgeColors.TextPrimaryDark
                 )
                 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -932,7 +933,7 @@ private fun WordOfTheDayCard(
                 Text(
                     text = word.definition,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF78350F),
+                    color = WordBridgeColors.TextSecondaryDark,
                     maxLines = 2
                 )
             }
@@ -973,9 +974,13 @@ private fun WordDetailsDialog(
                 text = word.word,
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.Bold
-                )
+                ),
+                color = WordBridgeColors.TextPrimaryDark
             )
         },
+        containerColor = WordBridgeColors.CardBackgroundDark,
+        titleContentColor = WordBridgeColors.TextPrimaryDark,
+        textContentColor = WordBridgeColors.TextPrimaryDark,
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -985,7 +990,7 @@ private fun WordDetailsDialog(
                     Text(
                         text = word.pronunciation,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = WordBridgeColors.TextSecondary
+                        color = WordBridgeColors.TextSecondaryDark
                     )
                 }
                 
@@ -996,13 +1001,26 @@ private fun WordDetailsDialog(
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.SemiBold
                     ),
-                    color = WordBridgeColors.TextSecondary
+                    color = WordBridgeColors.TextSecondaryDark
                 )
-                Text(
-                    text = word.definition,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = WordBridgeColors.TextPrimary
-                )
+                // Create a dark-themed card for the definition
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = WordBridgeColors.CardBackgroundDark
+                    ),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = 1.dp
+                    )
+                ) {
+                    Text(
+                        text = word.definition,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = WordBridgeColors.TextPrimaryDark,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
                 
                 if (word.examples.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -1011,16 +1029,35 @@ private fun WordDetailsDialog(
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.SemiBold
                         ),
-                        color = WordBridgeColors.TextSecondary
+                        color = WordBridgeColors.TextSecondaryDark
                     )
-                    word.examples.forEach { example ->
-                        Text(
-                            text = "\"$example\"",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                            ),
-                            color = WordBridgeColors.TextPrimary
+                    // Create a dark-themed card for the example
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = WordBridgeColors.CardBackgroundDark
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 1.dp
                         )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp)
+                        ) {
+                            word.examples.forEachIndexed { index, example ->
+                                if (index > 0) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
+                                Text(
+                                    text = "\"$example\"",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                                    ),
+                                    color = WordBridgeColors.TextPrimaryDark
+                                )
+                            }
+                        }
                     }
                 }
                 
@@ -1031,7 +1068,7 @@ private fun WordDetailsDialog(
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.SemiBold
                     ),
-                    color = WordBridgeColors.TextSecondary
+                    color = WordBridgeColors.TextSecondaryDark
                 )
                 
                 Row(
@@ -1060,15 +1097,15 @@ private fun WordDetailsDialog(
                         containerColor = WordBridgeColors.PrimaryPurple
                     )
                 ) {
-                    Text("🎤 Practice")
+                    Text("Practice", color = WordBridgeColors.TextPrimaryDark)
                 }
                 Button(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFF1F5F9)
+                        containerColor = WordBridgeColors.PrimaryPurple
                     )
                 ) {
-                    Text("Close", color = Color(0xFF64748B))
+                    Text("Close", color = WordBridgeColors.TextPrimaryDark)
                 }
             }
         }

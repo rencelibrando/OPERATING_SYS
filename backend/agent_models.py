@@ -7,11 +7,22 @@ from datetime import datetime
 from enum import Enum
 
 
+class AgentLevel(str, Enum):
+    BEGINNER = "beginner"
+    INTERMEDIATE = "intermediate"
+    ADVANCED = "advanced"
+
+
 class AgentScenario(str, Enum):
     LANGUAGE_TUTOR = "language_tutor"
     CONVERSATION_PARTNER = "conversation_partner"
     INTERVIEW_PRACTICE = "interview_practice"
     TRAVEL_COMPANION = "travel_companion"
+    TRAVEL = "travel"
+    FOOD = "food"
+    DAILY_CONVERSATION = "daily_conversation"
+    WORK = "work"
+    CULTURE = "culture"
 
 
 class AgentLanguage(str, Enum):
@@ -24,12 +35,29 @@ class AgentLanguage(str, Enum):
 
 
 class AgentVoice(str, Enum):
+    # English voices
     THALIA = "aura-2-thalia-en"
     ANDROMEDA = "aura-2-andromeda-en"
     APOLLO = "aura-2-apollo-en"
     ARIES = "aura-2-aries-en"
     ARCAS = "aura-2-arcas-en"
     HELENA = "aura-2-helena-en"
+    ASTERIA = "aura-2-asteria-en"
+    ATHENA = "aura-2-athena-en"
+    LUNA = "aura-2-luna-en"
+    ORION = "aura-2-orion-en"
+    
+    # Spanish voices
+    SIRIO = "aura-2-sirio-es"
+    NESTOR = "aura-2-nestor-es"
+    CARINA = "aura-2-carina-es"
+    CELESTE = "aura-2-celeste-es"
+    ALVARO = "aura-2-alvaro-es"
+    DIANA = "aura-2-diana-es"
+    AQUILA = "aura-2-aquila-es"
+    SELENA = "aura-2-selena-es"
+    ESTRELLA = "aura-2-estrella-es"
+    JAVIER = "aura-2-javier-es"
 
 
 class AgentStatus(str, Enum):
@@ -44,6 +72,7 @@ class AgentStartRequest(BaseModel):
     user_id: str = Field(..., description="User identifier")
     language: AgentLanguage = Field(default=AgentLanguage.ENGLISH, description="Conversation language")
     scenario: AgentScenario = Field(default=AgentScenario.LANGUAGE_TUTOR, description="Conversation scenario")
+    level: AgentLevel = Field(default=AgentLevel.BEGINNER, description="User proficiency level")
     voice_model: AgentVoice = Field(default=AgentVoice.THALIA, description="Voice model for the agent")
     temperature: float = Field(default=0.7, ge=0.0, le=2.0, description="AI response randomness (0-2)")
     custom_prompt: Optional[str] = Field(None, description="Custom prompt for the agent")

@@ -11,11 +11,17 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.example.project.core.config.SupabaseConfig
 import org.example.project.core.utils.ErrorLogger
+import org.example.project.data.cache.CacheableData
+import org.example.project.data.cache.CachedLessonSummary
+import org.example.project.data.cache.CachedLessonSummaryList
+import org.example.project.data.cache.LocalStorageCache
 import org.example.project.domain.model.*
 import java.io.File
 
@@ -102,6 +108,29 @@ class LessonContentRepositoryImpl(
         }
 
     private val supabase = SupabaseConfig.client
+    
+    // Persistent local storage cache
+    private val localStorageCache = LocalStorageCache(
+        cacheDir = File(System.getProperty("user.home"), ".operating_sys_cache/lesson_content")
+    )
+    
+    // Multi-layer caching with TTL
+    private val CACHE_DURATION_MS = 10 * 60 * 1000L // 10 minutes
+    private val SHORT_CACHE_DURATION_MS = 2 * 60 * 1000L // 2 minutes for user progress
+    private val PERSISTENT_CACHE_TTL_MS = 60 * 60 * 1000L // 1 hour for persistent cache
+    
+    // Cache for lessons by topic
+    private val lessonsCache = mutableMapOf<String, Pair<List<LessonSummary>, Long>>()
+    
+    // Cache for lesson details by ID
+    private val lessonDetailsCache = mutableMapOf<String, Pair<LessonContent, Long>>()
+    
+    // Cache for user progress by (userId, lessonId)
+    private val userProgressCache = mutableMapOf<String, Pair<UserLessonProgress?, Long>>()
+
+    // ============================================
+    // CACHE DATA CLASSES
+    // ============================================
 
     // ============================================
     // LESSON OPERATIONS
@@ -113,10 +142,46 @@ class LessonContentRepositoryImpl(
     ): Result<List<LessonSummary>> =
         withContext(Dispatchers.IO) {
             try {
+                val cacheKey = "${topicId}_$publishedOnly"
+                val currentTime = System.currentTimeMillis()
+                
+                // Check persistent cache first
+                val persistentCacheResult = localStorageCache.retrieve("lessons_$cacheKey")
+                
+                @Suppress("UNCHECKED_CAST")
+                val cachedLessonList = persistentCacheResult.getOrNull() as? CachedLessonSummaryList
+                if (cachedLessonList != null) {
+                    println("[LessonContent] ✅ Persistent cache hit for topic $topicId (${cachedLessonList.lessons.size} lessons)")
+                    return@withContext Result.success(cachedLessonList.lessons.map { it.toDomain() })
+                }
+                
+                // Check in-memory cache second
+                val cached = lessonsCache[cacheKey]
+                if (cached != null && (currentTime - cached.second) < CACHE_DURATION_MS) {
+                    println("[LessonContent] ✅ Memory cache hit for topic $topicId (${cached.first.size} lessons)")
+                    return@withContext Result.success(cached.first)
+                }
+                
+                println("[LessonContent] 🔄 Fetching lessons for topic $topicId from API...")
                 val response: LessonListResponse =
                     client.get("$baseUrl/api/lessons/topic/$topicId") {
                         parameter("published_only", publishedOnly)
                     }.body()
+                
+                // Cache the result in memory
+                lessonsCache[cacheKey] = Pair(response.lessons, currentTime)
+                println("[LessonContent] ✅ Memory cached ${response.lessons.size} lessons for topic $topicId")
+                
+                // Cache the result in persistent storage
+                val cachedLessons = response.lessons.map { CachedLessonSummary.fromDomain(it) }
+                val lessonListWrapper = CachedLessonSummaryList(cachedLessons)
+                localStorageCache.store(
+                    key = "lessons_$cacheKey",
+                    data = lessonListWrapper,
+                    ttlMs = PERSISTENT_CACHE_TTL_MS
+                )
+                println("[LessonContent] ✅ Persistent cached ${response.lessons.size} lessons for topic $topicId")
+                
                 Result.success(response.lessons)
             } catch (e: Exception) {
                 ErrorLogger.logException(LOG_TAG, e, "Error fetching lessons")
@@ -130,10 +195,28 @@ class LessonContentRepositoryImpl(
     ): Result<LessonContent> =
         withContext(Dispatchers.IO) {
             try {
+                // Only cache when questions are included (most common use case)
+                if (includeQuestions) {
+                    val currentTime = System.currentTimeMillis()
+                    val cached = lessonDetailsCache[lessonId]
+                    if (cached != null && (currentTime - cached.second) < CACHE_DURATION_MS) {
+                        println("[LessonContent] ✅ Cache hit for lesson $lessonId")
+                        return@withContext Result.success(cached.first)
+                    }
+                }
+                
+                println("[LessonContent] 🔄 Fetching lesson $lessonId from API...")
                 val response: LessonDetailResponse =
                     client.get("$baseUrl/api/lessons/$lessonId") {
                         parameter("include_questions", includeQuestions)
                     }.body()
+                
+                // Cache if questions included
+                if (includeQuestions) {
+                    lessonDetailsCache[lessonId] = Pair(response.lesson, System.currentTimeMillis())
+                    println("[LessonContent] ✅ Cached lesson $lessonId")
+                }
+                
                 Result.success(response.lesson)
             } catch (e: Exception) {
                 ErrorLogger.logException(LOG_TAG, e, "Error fetching lesson")
@@ -149,6 +232,10 @@ class LessonContentRepositoryImpl(
                         contentType(ContentType.Application.Json)
                         setBody(lessonData)
                     }.body()
+                
+                // Clear cache for the topic
+                invalidateTopicCache(lessonData.topicId)
+                
                 Result.success(response.lesson)
             } catch (e: Exception) {
                 ErrorLogger.logException(LOG_TAG, e, "Error creating lesson")
@@ -176,6 +263,11 @@ class LessonContentRepositoryImpl(
                         contentType(ContentType.Application.Json)
                         setBody(updateData)
                     }.body()
+                
+                // Clear cache for this lesson and its topic
+                invalidateLessonCache(lessonId)
+                invalidateTopicCache(response.lesson.topicId)
+                
                 Result.success(response.lesson)
             } catch (e: Exception) {
                 println("[LessonContentRepo] Error updating lesson: ${e.message}")
@@ -186,7 +278,16 @@ class LessonContentRepositoryImpl(
     override suspend fun deleteLesson(lessonId: String): Result<Unit> =
         withContext(Dispatchers.IO) {
             try {
+                // First get the lesson to know its topic for cache invalidation
+                val lessonResponse: LessonDetailResponse = 
+                    client.get("$baseUrl/api/lessons/$lessonId").body()
+                
                 client.delete("$baseUrl/api/lessons/$lessonId")
+                
+                // Clear cache for this lesson and its topic
+                invalidateLessonCache(lessonId)
+                invalidateTopicCache(lessonResponse.lesson.topicId)
+                
                 Result.success(Unit)
             } catch (e: Exception) {
                 println("[LessonContentRepo] Error deleting lesson: ${e.message}")
@@ -288,11 +389,29 @@ class LessonContentRepositoryImpl(
     ): Result<UserLessonProgress?> =
         withContext(Dispatchers.IO) {
             try {
+                val cacheKey = "${userId}_$lessonId"
+                val currentTime = System.currentTimeMillis()
+                
+                // Check cache first (shorter TTL for progress)
+                val cached = userProgressCache[cacheKey]
+                if (cached != null && (currentTime - cached.second) < SHORT_CACHE_DURATION_MS) {
+                    println("[LessonContent] ✅ User progress cache hit for lesson $lessonId")
+                    return@withContext Result.success(cached.first)
+                }
+                
+                println("[LessonContent] 🔄 Fetching user progress for lesson $lessonId...")
                 val response: UserLessonProgress = client.get("$baseUrl/api/lessons/progress/$userId/$lessonId").body()
+                
+                // Cache the result
+                userProgressCache[cacheKey] = Pair(response, currentTime)
+                println("[LessonContent] ✅ Cached user progress for lesson $lessonId")
+                
                 Result.success(response)
             } catch (e: Exception) {
                 // 404 means no progress yet, which is OK
                 if (e.message?.contains("404") == true) {
+                    val cacheKey = "${userId}_$lessonId"
+                    userProgressCache[cacheKey] = Pair(null, System.currentTimeMillis())
                     Result.success(null)
                 } else {
                     println("[LessonContentRepo] Error fetching progress: ${e.message}")
@@ -360,15 +479,30 @@ class LessonContentRepositoryImpl(
                         put("is_completed", true)
                         put("score", score)
                         put("time_spent_seconds", 0) // Could be calculated from actual time
+                        put("completed_at", kotlinx.datetime.Clock.System.now().toString())
                     }
 
-                supabase.from("user_lesson_progress")
+                // First try to update existing record, if no rows affected then insert new one
+                val updateResult = supabase.from("user_lesson_progress")
                     .update(progressData) {
                         filter {
                             eq("user_id", request.userId)
                             eq("lesson_id", request.lessonId)
                         }
                     }
+                
+                // Check if update affected any rows by looking at the response data
+                // If update returned data, it means a record was updated
+                // If update returned empty data, it means no record was found to update
+                val updateAffectedRows = updateResult.data?.isNotEmpty() == true
+                
+                if (!updateAffectedRows) {
+                    println("[LessonContentRepo] No existing record found, inserting new progress record")
+                    supabase.from("user_lesson_progress")
+                        .insert(progressData)
+                } else {
+                    println("[LessonContentRepo] Existing record updated successfully")
+                }
 
                 println("[LessonContentRepo] Lesson progress updated successfully")
 
@@ -440,4 +574,83 @@ class LessonContentRepositoryImpl(
                 Result.failure(e)
             }
         }
+    
+    // ============================================
+    // CACHE MANAGEMENT
+    // ============================================
+    
+    /**
+     * Clear all caches - call this when user logs out or when manual refresh is needed
+     */
+    fun clearCache() {
+        lessonsCache.clear()
+        lessonDetailsCache.clear()
+        userProgressCache.clear()
+        
+        // Clear persistent cache
+        runCatching {
+            kotlinx.coroutines.runBlocking {
+                localStorageCache.clear()
+            }
+        }.onFailure { e ->
+            println("[LessonContent] Failed to clear persistent cache: ${e.message}")
+        }
+        
+        println("[LessonContent] 🗑️ All caches cleared")
+    }
+    
+    /**
+     * Clear cache for specific user - call this when user completes a lesson
+     */
+    fun clearUserCache(userId: String) {
+        userProgressCache.keys.removeAll { it.startsWith("${userId}_") }
+        
+        // Clear user-specific persistent cache
+        runCatching {
+            kotlinx.coroutines.runBlocking {
+                localStorageCache.clear()
+            }
+        }.onFailure { e ->
+            println("[LessonContent] Failed to clear persistent cache for user: ${e.message}")
+        }
+        
+        println("[LessonContent] 🗑️ User cache cleared for $userId")
+    }
+    
+    /**
+     * Invalidate cache for specific topic - call this when lessons are updated
+     */
+    fun invalidateTopicCache(topicId: String) {
+        lessonsCache.keys.removeAll { it.startsWith("${topicId}_") }
+        
+        // Clear topic-specific persistent cache
+        runCatching {
+            kotlinx.coroutines.runBlocking {
+                localStorageCache.delete("lessons_${topicId}_true")
+                localStorageCache.delete("lessons_${topicId}_false")
+            }
+        }.onFailure { e ->
+            println("[LessonContent] Failed to clear persistent cache for topic $topicId: ${e.message}")
+        }
+        
+        println("[LessonContent] 🗑️ Topic cache cleared for $topicId")
+    }
+    
+    /**
+     * Invalidate cache for specific lesson - call this when lesson is updated
+     */
+    fun invalidateLessonCache(lessonId: String) {
+        lessonDetailsCache.remove(lessonId)
+        
+        // Clear lesson-specific persistent cache
+        runCatching {
+            kotlinx.coroutines.runBlocking {
+                localStorageCache.delete("lesson_$lessonId")
+            }
+        }.onFailure { e ->
+            println("[LessonContent] Failed to clear persistent cache for lesson $lessonId: ${e.message}")
+        }
+        
+        println("[LessonContent] 🗑️ Lesson cache cleared for $lessonId")
+    }
 }

@@ -5,7 +5,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 from typing import Dict, Optional
 import asyncio
 import json
-from conversation_service_simple import ConversationAgent, get_greeting_for_scenario
+from conversation_service_simple import ConversationAgent, get_greeting_for_scenario, create_conversation_agent
 
 router = APIRouter(prefix="/conversation", tags=["conversation"])
 
@@ -49,6 +49,15 @@ async def conversation_websocket(websocket: WebSocket, session_id: str):
                 "role": "assistant"
             })
         
+        async def send_audio_generated(audio_url: str, text: str):
+            """Send generated audio URL to client (for Edge TTS)."""
+            await websocket.send_json({
+                "type": "audio_generated",
+                "audio_url": audio_url,
+                "text": text,
+                "role": "assistant"
+            })
+        
         while True:
             # Receive message from client
             data = await websocket.receive_json()
@@ -59,16 +68,19 @@ async def conversation_websocket(websocket: WebSocket, session_id: str):
                 language = data.get("language", "fr")
                 level = data.get("level", "intermediate")
                 scenario = data.get("scenario", "daily_conversation")
+                provider = data.get("provider", "gemini")
                 
-                print(f"[WS] Starting conversation: {language}/{level}/{scenario}")
+                print(f"[WS] Starting conversation: {language}/{level}/{scenario} (provider: {provider})")
                 
-                # Create conversation agent
-                agent = ConversationAgent(
+                # Create conversation agent with Edge TTS support
+                agent = create_conversation_agent(
                     language=language,
                     level=level,
                     scenario=scenario,
                     on_transcript=send_transcript,
                     on_agent_response=send_agent_response,
+                    on_audio_generated=send_audio_generated,
+                    provider=provider
                 )
                 
                 # Start the agent
@@ -82,7 +94,9 @@ async def conversation_websocket(websocket: WebSocket, session_id: str):
                 await websocket.send_json({
                     "type": "started",
                     "message": "Conversation started",
-                    "greeting": greeting
+                    "greeting": greeting,
+                    "uses_edge_tts": agent.use_edge_tts,
+                    "provider": agent.provider
                 })
             
             elif msg_type == "audio":
@@ -154,11 +168,65 @@ async def conversation_websocket(websocket: WebSocket, session_id: str):
 
 @router.get("/sessions")
 async def get_active_sessions():
-    """Get list of active conversation sessions."""
+    """Get list of active conversation sessions with details."""
+    sessions = []
+    for session_id, agent in active_sessions.items():
+        sessions.append({
+            "session_id": session_id,
+            "language": agent.language,
+            "level": agent.level,
+            "scenario": agent.scenario,
+            "provider": agent.provider,
+            "uses_edge_tts": agent.use_edge_tts,
+            "history_length": len(agent.get_conversation_history())
+        })
+    
     return {
-        "active_sessions": list(active_sessions.keys()),
-        "count": len(active_sessions)
+        "active_sessions": sessions,
+        "count": len(sessions)
     }
+
+
+@router.post("/sessions/{session_id}/generate-audio")
+async def generate_audio_for_text(session_id: str, text: str):
+    """
+    Generate audio for specific text using Edge TTS (Chinese/Korean only).
+    
+    Args:
+        session_id: Session identifier
+        text: Text to convert to speech
+    
+    Returns:
+        Audio URL
+    """
+    if session_id not in active_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    agent = active_sessions[session_id]
+    
+    if not agent.use_edge_tts:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Edge TTS not available for language: {agent.language}"
+        )
+    
+    try:
+        # Generate audio
+        audio_url = await agent.get_audio_url_for_text(text)
+        
+        if audio_url:
+            return {
+                "session_id": session_id,
+                "text": text,
+                "audio_url": audio_url,
+                "language": agent.language,
+                "status": "audio_generated"
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Audio generation failed")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Audio generation failed: {str(e)}")
 
 
 @router.post("/sessions/{session_id}/stop")

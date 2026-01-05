@@ -1,6 +1,6 @@
 package org.example.project.ui.screens
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -8,7 +8,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -17,17 +18,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.compose.viewModel
-import org.example.project.models.PracticeLanguage
-import org.example.project.models.PracticeFeedback
-import org.example.project.domain.model.VocabularyWord
+import org.example.project.domain.model.PracticeFeedback
+import org.example.project.domain.model.PracticeLanguage
 import org.example.project.presentation.viewmodel.SpeakingViewModel
-import org.example.project.ui.components.LanguageSelectionDialog
-import org.example.project.ui.components.SpeakingEmptyState
-import org.example.project.ui.components.UserAvatar
-import org.example.project.ui.components.VoiceTutorSelectionFlow
-import org.example.project.ui.components.ConversationModeCard
+import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
+import kotlin.reflect.KClass
 import org.example.project.core.auth.User as AuthUser
 
 /**
@@ -39,9 +39,19 @@ fun SpeakingScreen(
     authenticatedUser: AuthUser? = null,
     onUserAvatarClick: (() -> Unit)? = null,
     onBackClick: (() -> Unit)? = null, // Optional back navigation
-    viewModel: SpeakingViewModel = viewModel(),
     modifier: Modifier = Modifier,
 ) {
+    // Create ViewModel with user ID
+    val viewModel: SpeakingViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: KClass<T>, extras: CreationExtras): T {
+                @Suppress("UNCHECKED_CAST")
+                return SpeakingViewModel(
+                    userId = authenticatedUser?.id ?: "current_user"
+                ) as T
+            }
+        }
+    )
     val currentWord by viewModel.currentWord
     val selectedLanguage by viewModel.selectedLanguage
     val isRecording by viewModel.isRecording
@@ -56,6 +66,7 @@ fun SpeakingScreen(
     val voiceTutorLevel by viewModel.voiceTutorLevel
     val voiceTutorScenario by viewModel.voiceTutorScenario
     val currentPrompt by viewModel.currentPrompt
+    val conversationError by viewModel.conversationError
 
     // Show language selection dialog
     if (showLanguageDialog && currentWord != null) {
@@ -80,7 +91,7 @@ fun SpeakingScreen(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(WordBridgeColors.BackgroundLight)
+                .background(WordBridgeColors.BackgroundMain)
                 .padding(24.dp)
                 .verticalScroll(rememberScrollState()),
     ) {
@@ -95,7 +106,7 @@ fun SpeakingScreen(
                 TextButton(onClick = onBackClick) {
                     Text(
                         text = "← Back to Vocabulary",
-                        color = WordBridgeColors.TextPrimary,
+                        color = WordBridgeColors.TextPrimaryDark,
                     )
                 }
             } else {
@@ -106,7 +117,7 @@ fun SpeakingScreen(
                         MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Bold,
                         ),
-                    color = WordBridgeColors.TextPrimary,
+                    color = WordBridgeColors.TextPrimaryDark,
                 )
             }
 
@@ -132,7 +143,7 @@ fun SpeakingScreen(
                 TextButton(
                     onClick = viewModel::exitVoiceTutorPractice,
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = WordBridgeColors.TextPrimary
+                        contentColor = WordBridgeColors.TextPrimaryDark
                     )
                 ) {
                     Text("← Back to Selection")
@@ -150,7 +161,7 @@ fun SpeakingScreen(
             ) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = WordBridgeColors.BackgroundWhite,
+                    color = WordBridgeColors.CardBackgroundDark,
                     shadowElevation = 2.dp
                 ) {
                     Row(
@@ -160,7 +171,7 @@ fun SpeakingScreen(
                             onClick = { viewModel.exitConversationMode() },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = if (!isConversationMode) WordBridgeColors.PrimaryPurple else Color.Transparent,
-                                contentColor = if (!isConversationMode) Color.White else WordBridgeColors.TextPrimary
+                                contentColor = if (!isConversationMode) Color.White else WordBridgeColors.TextPrimaryDark
                             ),
                             elevation = if (!isConversationMode) ButtonDefaults.buttonElevation(2.dp) else ButtonDefaults.buttonElevation(0.dp),
                             shape = RoundedCornerShape(8.dp)
@@ -169,10 +180,10 @@ fun SpeakingScreen(
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
-                            onClick = { viewModel.enterConversationMode() },
+                            onClick = { viewModel.startConversationMode(autoStartAgent = false) },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = if (isConversationMode) WordBridgeColors.PrimaryPurple else Color.Transparent,
-                                contentColor = if (isConversationMode) Color.White else WordBridgeColors.TextPrimary
+                                contentColor = if (isConversationMode) Color.White else WordBridgeColors.TextPrimaryDark
                             ),
                             elevation = if (isConversationMode) ButtonDefaults.buttonElevation(2.dp) else ButtonDefaults.buttonElevation(0.dp),
                             shape = RoundedCornerShape(8.dp)
@@ -190,6 +201,7 @@ fun SpeakingScreen(
                 // Conversation Mode UI
                 val conversationTurns = viewModel.conversationTurns.value
                 val isAgentSpeaking = viewModel.isAgentSpeaking.value
+                val isAgentThinking = viewModel.isAgentThinking.value
                 val isConversationRecording = viewModel.isConversationRecording.value
                 val isConversationActive = viewModel.isConversationActive.value
                 
@@ -199,12 +211,16 @@ fun SpeakingScreen(
                     scenario = voiceTutorScenario!!,
                     conversationTurns = conversationTurns,
                     isAgentSpeaking = isAgentSpeaking,
+                    isAgentThinking = isAgentThinking,
                     isRecording = isConversationRecording,
                     isConversationActive = isConversationActive,
-                    onStartConversation = viewModel::startConversationMode,
+                    audioLevel = viewModel.audioLevel.value,
+                    onStartConversation = viewModel::startAgentConnection,
                     onStopConversation = viewModel::stopConversationMode,
                     onStartRecording = viewModel::startConversationRecording,
-                    onStopRecording = viewModel::stopConversationRecording
+                    onStopRecording = viewModel::stopConversationRecording,
+                    onRetryConnection = viewModel::retryConversationConnection,
+                    conversationError = conversationError
                 )
             } else {
                 // Practice Mode UI
@@ -316,7 +332,7 @@ private fun VoiceTutorPracticeCard(
         shape = RoundedCornerShape(16.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = WordBridgeColors.BackgroundWhite,
+                containerColor = WordBridgeColors.CardBackgroundDark,
             ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
@@ -400,12 +416,12 @@ private fun VoiceTutorPracticeCard(
 
             // Practice prompt section
             Text(
-                text = "Practice Prompt",
+                text = "Practice Phrase",
                 style =
                     MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.SemiBold,
                     ),
-                color = WordBridgeColors.TextPrimary,
+                color = WordBridgeColors.TextPrimaryDark,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -413,7 +429,7 @@ private fun VoiceTutorPracticeCard(
             // Prominent prompt display
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = WordBridgeColors.BackgroundLight,
+                color = WordBridgeColors.BackgroundDark,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
@@ -422,7 +438,7 @@ private fun VoiceTutorPracticeCard(
                         fontWeight = FontWeight.Medium,
                         lineHeight = 28.sp
                     ),
-                    color = WordBridgeColors.TextPrimary,
+                    color = WordBridgeColors.TextPrimaryDark,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(16.dp)
                 )
@@ -434,7 +450,7 @@ private fun VoiceTutorPracticeCard(
             Text(
                 text = "Speak this phrase clearly in ${language.displayName}. The AI will analyze your pronunciation, fluency, and accuracy.",
                 style = MaterialTheme.typography.bodySmall,
-                color = WordBridgeColors.TextSecondary,
+                color = WordBridgeColors.TextSecondaryDark,
                 lineHeight = 18.sp
             )
         }
@@ -458,7 +474,7 @@ private fun WordInfoCard(
         shape = RoundedCornerShape(16.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = WordBridgeColors.BackgroundWhite,
+                containerColor = WordBridgeColors.CardBackgroundDark,
             ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
@@ -491,7 +507,7 @@ private fun WordInfoCard(
                     MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
                     ),
-                color = WordBridgeColors.TextPrimary,
+                color = WordBridgeColors.TextPrimaryDark,
             )
 
             if (pronunciation.isNotBlank()) {
@@ -499,7 +515,7 @@ private fun WordInfoCard(
                 Text(
                     text = pronunciation,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = WordBridgeColors.TextSecondary,
+                    color = WordBridgeColors.TextSecondaryDark,
                 )
             }
 
@@ -515,7 +531,7 @@ private fun WordInfoCard(
                     MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.SemiBold,
                     ),
-                color = WordBridgeColors.TextPrimary,
+                color = WordBridgeColors.TextPrimaryDark,
             )
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -523,7 +539,7 @@ private fun WordInfoCard(
             Text(
                 text = definition,
                 style = MaterialTheme.typography.bodyMedium,
-                color = WordBridgeColors.TextSecondary,
+                color = WordBridgeColors.TextSecondaryDark,
                 lineHeight = 20.sp
             )
 
@@ -535,19 +551,19 @@ private fun WordInfoCard(
                     MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.SemiBold,
                     ),
-                color = WordBridgeColors.TextPrimary,
+                color = WordBridgeColors.TextPrimaryDark,
             )
 
             Spacer(modifier = Modifier.height(6.dp))
 
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = WordBridgeColors.BackgroundLight,
+                color = WordBridgeColors.BackgroundDark,
             ) {
                 Text(
                     text = "\"$example\"",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = WordBridgeColors.TextPrimary,
+                    color = WordBridgeColors.TextPrimaryDark,
                     modifier = Modifier.padding(12.dp),
                     lineHeight = 20.sp
                 )
@@ -574,7 +590,7 @@ private fun RecordingControlsCard(
         shape = RoundedCornerShape(16.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = if (isRecording) WordBridgeColors.AccentRed.copy(alpha = 0.05f) else WordBridgeColors.BackgroundWhite,
+                containerColor = if (isRecording) WordBridgeColors.AccentRed.copy(alpha = 0.05f) else WordBridgeColors.CardBackgroundDark,
             ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
@@ -591,7 +607,7 @@ private fun RecordingControlsCard(
                     MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                     ),
-                color = WordBridgeColors.TextPrimary,
+                color = WordBridgeColors.TextPrimaryDark,
             )
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -606,7 +622,7 @@ private fun RecordingControlsCard(
                         "Press the microphone button to start recording"
                     },
                 style = MaterialTheme.typography.bodySmall,
-                color = WordBridgeColors.TextSecondary,
+                color = WordBridgeColors.TextSecondaryDark,
                 textAlign = TextAlign.Center,
             )
 
@@ -721,7 +737,7 @@ private fun RecordingControlsCard(
                         MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = FontWeight.Medium,
                         ),
-                    color = if (isRecording) WordBridgeColors.AccentRed else WordBridgeColors.TextPrimary,
+                    color = if (isRecording) WordBridgeColors.AccentRed else WordBridgeColors.TextPrimaryDark,
                 )
             }
 
@@ -785,13 +801,13 @@ private fun AnalyzingIndicator(modifier: Modifier = Modifier) {
                         MaterialTheme.typography.titleSmall.copy(
                             fontWeight = FontWeight.SemiBold,
                         ),
-                    color = WordBridgeColors.TextPrimary,
+                    color = WordBridgeColors.TextPrimaryDark,
                 )
 
                 Text(
                     text = "AI is processing your recording",
                     style = MaterialTheme.typography.bodySmall,
-                    color = WordBridgeColors.TextSecondary,
+                    color = WordBridgeColors.TextSecondaryDark,
                 )
             }
         }
@@ -820,7 +836,7 @@ private fun FeedbackCard(
         shape = RoundedCornerShape(16.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = WordBridgeColors.BackgroundWhite,
+                containerColor = WordBridgeColors.CardBackgroundDark,
             ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
@@ -836,7 +852,7 @@ private fun FeedbackCard(
                     MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                     ),
-                color = WordBridgeColors.TextPrimary,
+                color = WordBridgeColors.TextPrimaryDark,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -905,7 +921,7 @@ private fun FeedbackCard(
                     MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.SemiBold,
                     ),
-                color = WordBridgeColors.TextPrimary,
+                color = WordBridgeColors.TextPrimaryDark,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -917,12 +933,12 @@ private fun FeedbackCard(
                     Text(
                         text = "• ",
                         style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextSecondary,
+                        color = WordBridgeColors.TextSecondaryDark,
                     )
                     Text(
                         text = message,
                         style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextSecondary,
+                        color = WordBridgeColors.TextSecondaryDark,
                         lineHeight = 18.sp
                     )
                 }
@@ -937,7 +953,7 @@ private fun FeedbackCard(
                     MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.SemiBold,
                     ),
-                color = WordBridgeColors.TextPrimary,
+                color = WordBridgeColors.TextPrimaryDark,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -945,7 +961,7 @@ private fun FeedbackCard(
             feedback.suggestions.forEach { suggestion ->
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = WordBridgeColors.BackgroundLight,
+                    color = WordBridgeColors.BackgroundDark,
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -954,7 +970,7 @@ private fun FeedbackCard(
                     Text(
                         text = suggestion,
                         style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextPrimary,
+                        color = WordBridgeColors.TextPrimaryDark,
                         modifier = Modifier.padding(12.dp),
                         lineHeight = 18.sp
                     )
@@ -1030,7 +1046,7 @@ private fun ScoreItem(
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = WordBridgeColors.TextSecondary,
+            color = WordBridgeColors.TextSecondaryDark,
         )
     }
 }

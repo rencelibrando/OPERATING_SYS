@@ -1,5 +1,120 @@
 package org.example.project.domain.model
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
+
+enum class PracticeLanguage(
+    val displayName: String,
+    val flag: String,
+    val description: String,
+) {
+    ENGLISH(
+        displayName = "English",
+        flag = "🇬🇧",
+        description = "Practice English pronunciation",
+    ),
+    FRENCH(
+        displayName = "French",
+        flag = "🇫🇷",
+        description = "Practice French pronunciation",
+    ),
+    GERMAN(
+        displayName = "German",
+        flag = "🇩🇪",
+        description = "Practice German pronunciation",
+    ),
+    HANGEUL(
+        displayName = "Korean (Hangeul)",
+        flag = "🇰🇷",
+        description = "Practice Korean pronunciation",
+    ),
+    MANDARIN(
+        displayName = "Mandarin Chinese",
+        flag = "🇨🇳",
+        description = "Practice Mandarin pronunciation with tones",
+    ),
+    SPANISH(
+        displayName = "Spanish",
+        flag = "🇪🇸",
+        description = "Practice Spanish pronunciation",
+    ),
+}
+
+data class PracticeFeedback(
+    val overallScore: Int,
+    val pronunciationScore: Int,
+    val clarityScore: Int,
+    val fluencyScore: Int,
+    val messages: List<String>,
+    val suggestions: List<String>,
+)
+
+data class SpeakingFeature(
+    val id: String,
+    val title: String,
+    val description: String,
+    val icon: String,
+    val color: String,
+)
+
+data class SpeakingScenario(
+    val id: String,
+    val title: String,
+    val language: String,
+    val difficultyLevel: String,
+    val scenarioType: String,
+    val prompts: List<String>,
+    val description: String = "",
+)
+
+@Serializable
+data class ConversationRecording(
+    @SerialName("id")
+    val id: String,
+    @SerialName("sessionId")
+    val sessionId: String,
+    @SerialName("userId")
+    val userId: String,
+    @SerialName("language")
+    val language: String,
+    @SerialName("audioUrl")
+    val audioUrl: String?,
+    @SerialName("transcript")
+    val transcript: String,
+    @SerialName("turnCount")
+    val turnCount: Int,
+    @SerialName("duration")
+    val duration: Float,
+    @SerialName("createdAt")
+    val createdAt: String,
+)
+
+@Serializable
+data class ConversationSession(
+    @SerialName("sessionId")
+    val sessionId: String,
+    @SerialName("userId")
+    val userId: String,
+    @SerialName("language")
+    val language: String,
+    @SerialName("level")
+    val level: String,
+    @SerialName("scenario")
+    val scenario: String,
+    @SerialName("transcript")
+    val transcript: String,
+    @SerialName("audioUrl")
+    val audioUrl: String? = null,
+    @SerialName("turnCount")
+    val turnCount: Int,
+    @SerialName("duration")
+    val duration: Float,
+    @SerialName("createdAt")
+    val createdAt: String,
+    @SerialName("feedback")
+    val feedback: kotlinx.serialization.json.JsonObject? = null
+)
+
 data class SpeakingExercise(
     val id: String,
     val title: String,
@@ -14,7 +129,7 @@ data class SpeakingExercise(
     val lastAttempt: Long? = null,
 ) {
     companion object {
-        /** Returns an empty list for initial state. */
+        /** Returns an empty list for the initial state. */
         fun getSampleExercises(): List<SpeakingExercise> = emptyList()
     }
 }
@@ -41,7 +156,7 @@ data class SpeakingSession(
     val recordingPath: String?,
 ) {
     companion object {
-        /** Returns an empty list for initial state. */
+        /** Returns an empty list for the initial state. */
         fun getSampleSessions(): List<SpeakingSession> = emptyList()
     }
 }

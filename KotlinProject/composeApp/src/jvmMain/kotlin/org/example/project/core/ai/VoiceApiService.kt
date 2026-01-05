@@ -178,7 +178,7 @@ class VoiceApiService {
         scenario: String,
         transcript: String,
         audioUrl: String? = null,
-        feedback: Map<String, Any>,
+        feedback: kotlinx.serialization.json.JsonObject,
         sessionDuration: Float
     ): Result<VoiceSessionSaveResponse> = runCatching {
         val url = AIBackendConfig.getEndpointUrl("/voice/session/save")
@@ -194,7 +194,7 @@ class VoiceApiService {
                         append("scenario", scenario)
                         append("transcript", transcript)
                         audioUrl?.let { append("audio_url", it) }
-                        append("feedback", Json.encodeToString(feedback))
+                        append("feedback", feedback.toString())
                         append("session_duration", sessionDuration.toString())
                     }
                 )
@@ -283,6 +283,136 @@ class VoiceApiService {
         }
     }.onFailure { error ->
         ErrorLogger.logException(LOG_TAG, error, "Languages retrieval failed")
+    }
+
+    suspend fun getLessonScenarios(
+        lessonId: String,
+        language: String?
+    ): Result<List<org.example.project.domain.model.SpeakingScenario>> = runCatching {
+        val baseUrl = "/voice/lesson/$lessonId/scenarios"
+        val url = if (language != null) {
+            AIBackendConfig.getEndpointUrl("$baseUrl?language=$language")
+        } else {
+            AIBackendConfig.getEndpointUrl(baseUrl)
+        }
+        println("Getting lesson scenarios for lesson: $lessonId, language: $language")
+
+        val response = client.get(url)
+
+        if (response.status.value in 200..299) {
+            val scenarios = response.body<List<org.example.project.domain.model.SpeakingScenario>>()
+            println("Lesson scenarios retrieved: ${scenarios.size} scenarios")
+            scenarios
+        } else {
+            val errorBody = response.body<String>()
+            throw Exception("Lesson scenarios retrieval failed with status: ${response.status}, body: $errorBody")
+        }
+    }.onFailure { error ->
+        ErrorLogger.logException(LOG_TAG, error, "Lesson scenarios retrieval failed")
+    }
+
+    suspend fun getConversationSessions(
+        userId: String
+    ): Result<List<org.example.project.domain.model.ConversationSession>> = runCatching {
+        val url = AIBackendConfig.getEndpointUrl("/voice/conversation/sessions/$userId")
+        println("Getting conversation sessions for user: $userId")
+
+        val response = client.get(url)
+
+        if (response.status.value in 200..299) {
+            val sessions = response.body<List<org.example.project.domain.model.ConversationSession>>()
+            println("Conversation sessions retrieved: ${sessions.size} sessions")
+            sessions
+        } else {
+            val errorBody = response.body<String>()
+            throw Exception("Conversation sessions retrieval failed with status: ${response.status}, body: $errorBody")
+        }
+    }.onFailure { error ->
+        ErrorLogger.logException(LOG_TAG, error, "Conversation sessions retrieval failed")
+    }
+
+    suspend fun getConversationRecording(
+        sessionId: String
+    ): Result<org.example.project.domain.model.ConversationRecording> = runCatching {
+        val url = AIBackendConfig.getEndpointUrl("/voice/conversation/recording/$sessionId")
+        println("Getting conversation recording for session: $sessionId")
+
+        val response = client.get(url)
+
+        if (response.status.value in 200..299) {
+            val recording = response.body<org.example.project.domain.model.ConversationRecording>()
+            println("Conversation recording retrieved successfully")
+            recording
+        } else {
+            val errorBody = response.body<String>()
+            throw Exception("Conversation recording retrieval failed with status: ${response.status}, body: $errorBody")
+        }
+    }.onFailure { error ->
+        ErrorLogger.logException(LOG_TAG, error, "Conversation recording retrieval failed")
+    }
+
+    suspend fun saveConversationRecording(
+        sessionId: String,
+        userId: String,
+        language: String,
+        audioFile: File?,
+        transcript: String,
+        turnCount: Int,
+        duration: Float
+    ): Result<org.example.project.domain.model.ConversationRecording> = runCatching {
+        val url = AIBackendConfig.getEndpointUrl("/voice/conversation/recording/save")
+        println("Saving conversation recording for session: $sessionId")
+
+        val response = client.post(url) {
+            setBody(
+                MultiPartFormDataContent(
+                    formData {
+                        append("session_id", sessionId)
+                        append("user_id", userId)
+                        append("language", language)
+                        append("transcript", transcript)
+                        append("turn_count", turnCount.toString())
+                        append("duration", duration.toString())
+                        audioFile?.let {
+                            append("audio_file", it.readBytes(), Headers.build {
+                                append(HttpHeaders.ContentType, "audio/wav")
+                                append(HttpHeaders.ContentDisposition, "filename=\"${it.name}\"")
+                            })
+                        }
+                    }
+                )
+            )
+        }
+
+        if (response.status.value in 200..299) {
+            val recording = response.body<org.example.project.domain.model.ConversationRecording>()
+            println("Conversation recording saved successfully")
+            recording
+        } else {
+            val errorBody = response.body<String>()
+            throw Exception("Conversation recording save failed with status: ${response.status}, body: $errorBody")
+        }
+    }.onFailure { error ->
+        ErrorLogger.logException(LOG_TAG, error, "Conversation recording save failed")
+    }
+
+    suspend fun deleteConversationSession(
+        sessionId: String
+    ): Result<Boolean> = runCatching {
+        val url = AIBackendConfig.getEndpointUrl("/voice/conversation/session/delete/$sessionId")
+        println("Deleting conversation session: $sessionId")
+
+        val response = client.post(url)
+
+        if (response.status.value in 200..299) {
+            println("Conversation session deleted successfully")
+            true
+        } else {
+            val errorBody = response.body<String>()
+            throw Exception("Session delete failed with status: ${response.status}, body: $errorBody")
+        }
+    }.onFailure { error ->
+        ErrorLogger.logException(LOG_TAG, error, "Conversation session delete failed")
     }
 
     fun close() {

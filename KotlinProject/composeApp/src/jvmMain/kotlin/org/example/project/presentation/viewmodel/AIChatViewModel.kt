@@ -27,9 +27,9 @@ class AIChatViewModel(
     private val _isBackendStarting = mutableStateOf(false)
     private val _backendStatusMessage = mutableStateOf<String?>(null)
 
-    private val _chatMessages = mutableStateOf(ChatMessage.getSampleMessages())
-    private val _chatSessions = mutableStateOf(ChatSession.getSampleSessions())
-    private val _availableBots = mutableStateOf(ChatBot.getAvailableBots())
+    private val _chatMessages = mutableStateOf<List<ChatMessage>>(emptyList())
+    private val _chatSessions = mutableStateOf<List<ChatSession>>(emptyList())
+    private val _availableBots = mutableStateOf<List<ChatBot>>(emptyList())
     private val _chatFeatures = mutableStateOf(ChatFeature.getChatFeatures())
     private val _selectedBot = mutableStateOf<ChatBot?>(null)
     private val _currentMessage = mutableStateOf("")
@@ -208,9 +208,21 @@ class AIChatViewModel(
             return
         }
 
-        val defaultBot = _availableBots.value.firstOrNull()
+        val defaultBot = _selectedBot.value ?: _availableBots.value.firstOrNull()
         if (defaultBot != null) {
             onBotSelected(defaultBot)
+        } else {
+            // Try to load bots first
+            viewModelScope.launch {
+                val bots = repository.getAvailableBots().getOrNull()
+                if (bots != null && bots.isNotEmpty()) {
+                    _availableBots.value = bots
+                    _selectedBot.value = bots.first()
+                    onBotSelected(bots.first())
+                } else {
+                    _error.value = "No chat bots available. Please check your connection."
+                }
+            }
         }
     }
 
@@ -278,15 +290,25 @@ class AIChatViewModel(
             return
         }
 
-        val defaultBot = _availableBots.value.firstOrNull()
+        val defaultBot = _selectedBot.value ?: _availableBots.value.firstOrNull()
         if (defaultBot != null) {
             onBotSelected(defaultBot)
         } else {
-            // Fallback: just clear current session
-            _chatMessages.value = emptyList()
-            _currentSession.value = null
-            _selectedBot.value = null
-            _error.value = null
+            // Fallback: try to load bots and create session
+            viewModelScope.launch {
+                val bots = repository.getAvailableBots().getOrNull()
+                if (bots != null && bots.isNotEmpty()) {
+                    _availableBots.value = bots
+                    _selectedBot.value = bots.first()
+                    onBotSelected(bots.first())
+                } else {
+                    // Ultimate fallback: clear current state and show error
+                    _chatMessages.value = emptyList()
+                    _currentSession.value = null
+                    _selectedBot.value = null
+                    _error.value = "No chat bots available. Please check your connection."
+                }
+            }
         }
     }
 
@@ -329,6 +351,8 @@ class AIChatViewModel(
 
     fun refreshChatData(force: Boolean = false) {
         if (!_isChatInitialized.value && !force) {
+            // Auto-initialize if not already done
+            initializeChat()
             return
         }
 
@@ -345,6 +369,13 @@ class AIChatViewModel(
                         _selectedBot.value = bots.first()
                     }
                     println("Loaded ${bots.size} available bots")
+                } else {
+                    // Fallback to default bots if repository fails
+                    _availableBots.value = ChatBot.getAvailableBots()
+                    if (_selectedBot.value == null) {
+                        _selectedBot.value = _availableBots.value.firstOrNull()
+                    }
+                    println("Using fallback bots: ${_availableBots.value.size}")
                 }
 
                 // Load user's chat sessions from repository
@@ -362,6 +393,10 @@ class AIChatViewModel(
                         val mostRecentSession = sessions.sortedByDescending { it.startTime }.first()
                         onSessionSelected(mostRecentSession.id)
                     }
+                } else {
+                    // No sessions from repository, start with empty state
+                    _chatSessions.value = emptyList()
+                    println("No previous sessions found")
                 }
 
                 // If there's a current session, reload its messages
@@ -370,11 +405,26 @@ class AIChatViewModel(
                     if (messages != null && messages.isNotEmpty()) {
                         _chatMessages.value = messages
                         println("Reloaded ${messages.size} messages for current session")
+                    } else {
+                        // Show welcome message if no messages
+                        val selectedBot = _selectedBot.value
+                        if (selectedBot != null) {
+                            val welcomeMessage =
+                                ChatMessage(
+                                    id = "welcome_${System.currentTimeMillis()}",
+                                    content = getWelcomeMessage(selectedBot),
+                                    sender = MessageSender.AI,
+                                    timestamp = System.currentTimeMillis(),
+                                    type = MessageType.TEXT,
+                                )
+                            _chatMessages.value = listOf(welcomeMessage)
+                        }
                     }
                 }
             } catch (e: Exception) {
                 println("Failed to refresh chat data: ${e.message}")
                 e.printStackTrace()
+                _error.value = "Failed to load chat data: ${e.message}"
             } finally {
                 _isLoading.value = false
             }

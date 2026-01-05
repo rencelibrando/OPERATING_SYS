@@ -8,6 +8,7 @@ from enum import Enum
 
 class AIProvider(str, Enum):
     GEMINI = "gemini"
+    DEEPSEEK = "deepseek"
 
 class MessageRole(str, Enum):
     USER = "user"

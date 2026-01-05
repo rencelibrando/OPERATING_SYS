@@ -87,6 +87,19 @@ async def start_conversation(request: AgentStartRequest):
         # Generate unique session ID
         session_id = str(uuid.uuid4())
         
+        # Select language-specific voice model if not provided
+        voice_model = request.voice_model.value
+        if request.voice_model == AgentVoice.THALIA:  # Default voice, use language-specific
+            language_voice_mapping = {
+                "english": "aura-2-thalia-en",
+                "french": "aura-2-asteria-en",
+                "german": "aura-2-athena-en",
+                "korean": "aura-2-luna-en",
+                "mandarin": "aura-2-orion-en",
+                "spanish": "aura-2-sirio-es"
+            }
+            voice_model = language_voice_mapping.get(request.language.value, "aura-2-thalia-en")
+        
         # Define message callback for WebSocket events
         def on_message(message_data: Dict[str, Any]):
             # This will be handled by WebSocket connections
@@ -102,7 +115,8 @@ async def start_conversation(request: AgentStartRequest):
             user_id=request.user_id,
             language=request.language.value,
             scenario=request.scenario.value,
-            voice_model=request.voice_model.value,
+            level=request.level.value,
+            voice_model=voice_model,
             temperature=request.temperature,
             custom_prompt=request.custom_prompt,
             on_message=on_message,
@@ -419,6 +433,7 @@ async def get_available_voices():
     """
     try:
         voices = [
+            # English voices
             {
                 "value": AgentVoice.THALIA,
                 "name": "Thalia",
@@ -454,6 +469,55 @@ async def get_available_voices():
                 "name": "Helena",
                 "description": "Natural female voice, sophisticated and elegant",
                 "language": "English"
+            },
+            {
+                "value": AgentVoice.ASTERIA,
+                "name": "Asteria",
+                "description": "Natural female voice, perfect for French tutoring",
+                "language": "English (French Tutoring)"
+            },
+            {
+                "value": AgentVoice.ATHENA,
+                "name": "Athena",
+                "description": "Natural female voice, ideal for German tutoring",
+                "language": "English (German Tutoring)"
+            },
+            {
+                "value": AgentVoice.LUNA,
+                "name": "Luna",
+                "description": "Natural female voice, great for Korean tutoring",
+                "language": "English (Korean Tutoring)"
+            },
+            {
+                "value": AgentVoice.ORION,
+                "name": "Orion",
+                "description": "Natural male voice, excellent for Mandarin tutoring",
+                "language": "English (Mandarin Tutoring)"
+            },
+            # Spanish voices
+            {
+                "value": AgentVoice.SIRIO,
+                "name": "Sirio",
+                "description": "Natural male voice, native Spanish speaker",
+                "language": "Spanish"
+            },
+            {
+                "value": AgentVoice.NESTOR,
+                "name": "Nestor",
+                "description": "Natural male voice, warm Spanish accent",
+                "language": "Spanish"
+            },
+            {
+                "value": AgentVoice.CARINA,
+                "name": "Carina",
+                "description": "Natural female voice, clear Spanish pronunciation",
+                "language": "Spanish"
+            },
+            {
+                "value": AgentVoice.CELESTE,
+                "name": "Celeste",
+                "description": "Natural female voice, elegant Spanish speaker",
+                "language": "Spanish"
             }
         ]
         

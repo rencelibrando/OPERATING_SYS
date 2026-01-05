@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from deepgram import DeepgramClient
+from providers.deepseek import DeepSeekProvider
 from providers.gemini import GeminiProvider
 from supabase_client import SupabaseManager
 from voice_models import (
@@ -30,7 +31,8 @@ class VoiceService:
         # Initialize Deepgram client
         self.deepgram_client = DeepgramClient(api_key=settings.deepgram_api_key)
         
-        # Initialize Gemini provider for AI feedback
+        # Initialize AI providers - DeepSeek as primary, Gemini as fallback
+        self.deepseek_provider = DeepSeekProvider()
         self.gemini_provider = GeminiProvider()
         
         # Initialize Supabase manager
@@ -256,7 +258,7 @@ class VoiceService:
             if not expected_text:
                 expected_text = self._get_expected_text(request.scenario, request.level)
             
-            # Prepare feedback prompt for Gemini
+            # Prepare feedback prompt for AI
             prompt = self._create_feedback_prompt(
                 transcript=request.transcript,
                 expected_text=expected_text,
@@ -265,18 +267,46 @@ class VoiceService:
                 scenario=request.scenario.value
             )
             
-            # Get AI feedback from Gemini
-            response = await self.gemini_provider.generate_response(
-                message=request.transcript,
-                system_prompt=prompt,
-                conversation_history=[],
-                temperature=0.7,
-                max_tokens=1000
-            )
-            ai_response = response.message
+            # Try DeepSeek first, then fall back to Gemini
+            ai_response = None
+            provider_used = "unknown"
+            
+            try:
+                print("Attempting to generate feedback with DeepSeek...")
+                response = await self.deepseek_provider.generate_response(
+                    message=request.transcript,
+                    system_prompt=prompt,
+                    conversation_history=[],
+                    temperature=0.7,
+                    max_tokens=1000
+                )
+                ai_response = response.message
+                provider_used = "deepseek"
+                print(f"✅ DeepSeek feedback generated successfully")
+            except Exception as deepseek_error:
+                print(f"❌ DeepSeek failed: {str(deepseek_error)}")
+                print("🔄 Falling back to Gemini...")
+                
+                try:
+                    response = await self.gemini_provider.generate_response(
+                        message=request.transcript,
+                        system_prompt=prompt,
+                        conversation_history=[],
+                        temperature=0.7,
+                        max_tokens=1000
+                    )
+                    ai_response = response.message
+                    provider_used = "gemini"
+                    print(f"✅ Gemini fallback successful")
+                except Exception as gemini_error:
+                    print(f"❌ Gemini fallback also failed: {str(gemini_error)}")
+                    raise Exception("Both DeepSeek and Gemini providers failed")
             
             # Parse AI response to extract structured feedback
             feedback_data = self._parse_ai_feedback(ai_response)
+            
+            # Add provider info for debugging
+            feedback_data["provider_used"] = provider_used
             
             return VoiceFeedbackResponse(
                 success=True,
@@ -319,7 +349,11 @@ class VoiceService:
             }
             
             # Save to Supabase
-            self.supabase_manager.client.table("voice_sessions").insert(session_data).execute()
+            client = self.supabase_manager.get_client()
+            if client:
+                client.table("voice_sessions").insert(session_data).execute()
+            else:
+                raise Exception("Failed to get Supabase client")
             
             # Update progress tracking
             await self._update_progress(request.user_id, request.language.value, request.feedback.get("scores", {}))
@@ -342,7 +376,10 @@ class VoiceService:
         """Get user's voice learning progress."""
         try:
             # Query recent sessions
-            query = self.supabase_manager.client.table("voice_sessions").select("*").eq("user_id", request.user_id)
+            client = self.supabase_manager.get_client()
+            if not client:
+                raise Exception("Failed to get Supabase client")
+            query = client.table("voice_sessions").select("*").eq("user_id", request.user_id)
             
             if request.language:
                 query = query.eq("language", request.language.value)
@@ -496,7 +533,10 @@ class VoiceService:
         """Update user progress tracking."""
         try:
             # Check if progress record exists
-            response = self.supabase_manager.client.table("voice_progress").select("*").eq("user_id", user_id).eq("language", language).execute()
+            client = self.supabase_manager.get_client()
+            if not client:
+                raise Exception("Failed to get Supabase client")
+            response = client.table("voice_progress").select("*").eq("user_id", user_id).eq("language", language).execute()
             
             if response.data:
                 # Update existing record
@@ -513,7 +553,9 @@ class VoiceService:
                     "last_session_date": datetime.utcnow().isoformat()
                 }
                 
-                self.supabase_manager.client.table("voice_progress").update(update_data).eq("user_id", user_id).eq("language", language).execute()
+                client = self.supabase_manager.get_client()
+                if client:
+                    client.table("voice_progress").update(update_data).eq("user_id", user_id).eq("language", language).execute()
             else:
                 # Create new record
                 progress_data = {
@@ -529,7 +571,9 @@ class VoiceService:
                     "improvement_percentage": 0.0
                 }
                 
-                self.supabase_manager.client.table("voice_progress").insert(progress_data).execute()
+                client = self.supabase_manager.get_client()
+                if client:
+                    client.table("voice_progress").insert(progress_data).execute()
                 
         except Exception as e:
             print(f"Error updating progress: {str(e)}")
