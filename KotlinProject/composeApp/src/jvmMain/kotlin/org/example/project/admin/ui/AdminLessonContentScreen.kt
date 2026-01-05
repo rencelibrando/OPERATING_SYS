@@ -431,12 +431,12 @@ private fun LessonCreationDialog(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "Enable Narration",
+                                "Enable Narration (Optional)",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = Color.White,
                             )
                             Text(
-                                "Auto-generates audio for questions using Edge TTS",
+                                "Auto-generates audio for questions using Edge TTS • You can save without audio",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color(0xFF6B6B7B),
                             )
@@ -677,9 +677,7 @@ private fun LessonCreationDialog(
 
                     Spacer(modifier = Modifier.width(12.dp))
 
-                    val enableNarration by viewModel.enableLessonNarration
-                    val allNarrationsReady = viewModel.allNarrationsReady()
-                    val canSave = lessonTitle.isNotBlank() && questions.isNotEmpty() && (!enableNarration || allNarrationsReady)
+                    val canSave = lessonTitle.isNotBlank() && questions.isNotEmpty()
 
                     Button(
                         onClick = onSave,
@@ -692,13 +690,20 @@ private fun LessonCreationDialog(
                         Text(if (isEditing) "Save Changes" else "Create Lesson")
                     }
 
-                    if (!canSave && enableNarration && !allNarrationsReady) {
-                        Text(
-                            "Generate all narrations before saving",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFFEF4444),
-                            modifier = Modifier.padding(start = 12.dp),
-                        )
+                    if (!canSave) {
+                        val reason = when {
+                            lessonTitle.isBlank() -> "Lesson title is required"
+                            questions.isEmpty() -> "At least one question is required"
+                            else -> ""
+                        }
+                        if (reason.isNotEmpty()) {
+                            Text(
+                                reason,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFFEF4444),
+                                modifier = Modifier.padding(start = 12.dp),
+                            )
+                        }
                     }
                 }
             }

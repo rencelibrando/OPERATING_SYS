@@ -188,10 +188,10 @@ class AgentApiService : Closeable {
             )
             val info = DataLine.Info(SourceDataLine::class.java, audioFormat)
             sourceDataLine = AudioSystem.getLine(info) as SourceDataLine
-            // Use much larger buffer for smoother streaming and reduce underruns
-            sourceDataLine?.open(audioFormat, 131072) // 128KB buffer for optimal streaming
+            // Use larger buffer for smoother streaming and reduce underruns
+            sourceDataLine?.open(audioFormat, 262144) // 256KB buffer for optimal streaming
             sourceDataLine?.start()
-            println("[AgentService] Audio playback initialized with 128KB buffer at 16000Hz for slower speech")
+            println("[AgentService] Audio playback initialized with 256KB buffer at 16000Hz for smoother speech")
             
             // Reset audio state for new conversation
             resetAudioState()
@@ -291,7 +291,9 @@ class AgentApiService : Closeable {
                             is Frame.Binary -> {
                                 // Handle audio frames immediately for real-time playback
                                 val audioData = frame.readBytes()
-                                handleBinaryAudio(audioData)
+                                scope.launch(Dispatchers.IO) {
+                                    handleBinaryAudio(audioData)
+                                }
                             }
                             else -> {}
                         }
@@ -365,14 +367,15 @@ class AgentApiService : Closeable {
             
             while (connectionState.get() == ConnectionState.READY || connectionState.get() == ConnectionState.CONNECTED) {
                 try {
-                    // Only send keep-alive when completely idle to avoid audio interference
-                    if (!isUserSpeaking.get() && !isAgentPlayingAudio.get()) {
+                    // Only send keep-alive when completely idle and no audio is playing to prevent interference
+                    if (!isUserSpeaking.get() && !isAgentPlayingAudio.get() && totalAudioChunks == 0) {
                         currentSession?.send(Frame.Binary(true, silentAudio))
+                        println("[AgentService] Sent keep-alive silent audio")
                     }
-                    delay(1000) // Further reduced frequency to minimize network overhead
+                    delay(2000) // Reduced frequency to minimize network overhead and audio interference
                 } catch (e: Exception) {
                     if (e !is kotlinx.coroutines.CancellationException) {
-                        // Silent fail to reduce log noise
+                        println("[AgentService] Keep-alive error: ${e.message}")
                     }
                     break
                 }
@@ -403,36 +406,51 @@ class AgentApiService : Closeable {
             val line = targetDataLine ?: return@launch
             var audioBytesSent = 0L
             
-            while (isUserSpeaking.get() && line.isOpen) {
-                try {
-                    val bytesRead = line.read(buffer, 0, buffer.size)
-                    if (bytesRead > 0) {
-                        audioBytesSent += bytesRead
-                        currentSession?.send(Frame.Binary(true, buffer.copyOf(bytesRead)))
-                        
-                        // Log every 5 seconds of audio
-                        if (audioBytesSent % 120000 == 0L) {
-                            println("[AgentService] Sent ${audioBytesSent / 1000}KB of audio to Deepgram Agent")
+            try {
+                while (isUserSpeaking.get() && line.isOpen) {
+                    try {
+                        val bytesRead = line.read(buffer, 0, buffer.size)
+                        if (bytesRead > 0) {
+                            audioBytesSent += bytesRead
+                            currentSession?.send(Frame.Binary(true, buffer.copyOf(bytesRead)))
+                            
+                            // Log every 5 seconds of audio
+                            if (audioBytesSent % 120000 == 0L) {
+                                println("[AgentService] Sent ${audioBytesSent / 1000}KB of audio to Deepgram Agent")
+                            }
                         }
+                        // Optimized delay for balance between responsiveness and performance
+                        kotlinx.coroutines.delay(10)
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        // Gracefully handle coroutine cancellation when user stops speaking
+                        println("[AgentService] Audio capture coroutine cancelled normally")
+                        break
+                    } catch (e: Exception) {
+                        println("[AgentService] Error sending audio: ${e.message}")
+                        break
                     }
-                    // Optimized delay for balance between responsiveness and performance
-                    kotlinx.coroutines.delay(10)
-                } catch (e: Exception) {
-                    println("[AgentService] Error sending audio: ${e.message}")
-                    break
                 }
+                println("[AgentService] Audio capture ended. Total sent: ${audioBytesSent / 1000}KB")
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                // Top-level cancellation - expected when user stops speaking
+                println("[AgentService] Audio capture job cancelled - this is normal")
             }
-            println("[AgentService] Audio capture ended. Total sent: ${audioBytesSent / 1000}KB")
         }
     }
     
     fun stopManualAudioCapture() {
         println("[AgentService] User stopped speaking")
         isUserSpeaking.set(false)
+        
+        // Cancel the capture job gracefully
         audioCaptureJob?.cancel()
         audioCaptureJob = null
+        
+        // Stop and flush the microphone line
         targetDataLine?.stop()
         targetDataLine?.flush()
+        
+        println("[AgentService] Audio capture stopped cleanly")
     }
     
     private fun stopAudioCapture() {
@@ -645,9 +663,8 @@ class AgentApiService : Closeable {
                     ))
                 }
                 "AgentStartedSpeaking" -> {
-                    println("[AgentService] Agent started speaking - resetting audio state and setting playback flag")
-                    // Reset audio state for new response to ensure clean playback
-                    resetAudioState()
+                    println("[AgentService] Agent started speaking - setting playback flag")
+                    // Don't reset audio state - let current playback continue smoothly
                     isAgentPlayingAudio.set(true)
                     onMessageCallback?.invoke(AgentMessage(
                         type = "agent_message",
@@ -700,9 +717,10 @@ class AgentApiService : Closeable {
     // Audio processing state for streaming
     private var audioPrebuffer = mutableListOf<ByteArray>()
     private var isPrebuffering = true
-    private val prebufferSize = 3 // Reduced prebuffer size for lower latency (3 chunks ~150ms)
+    private val prebufferSize = 1 // Start playback immediately with first chunk to reduce latency
+    private var totalAudioChunks = 0
     
-    private fun handleBinaryAudio(audioData: ByteArray) {
+    private suspend fun handleBinaryAudio(audioData: ByteArray) {
         try {
             // Don't process audio if conversation is stopped or not ready
             if (connectionState.get() != ConnectionState.READY && connectionState.get() != ConnectionState.CONNECTED) {
@@ -718,26 +736,18 @@ class AgentApiService : Closeable {
             onAudioReceivedCallback?.invoke(audioData)
             
             val line = sourceDataLine
-            if (line == null) {
-                // Silently return instead of logging errors when conversation is stopped
-                return
-            }
-            if (!line.isOpen) {
-                // Silently return instead of logging errors when conversation is stopped
+            if (line == null || !line.isOpen) {
                 return
             }
             
-            // Deepgram Agent API sends raw linear16 PCM audio chunks
-            // Java's SourceDataLine can handle raw PCM directly - no headers needed
-            // Pass the audio data directly without any processing
+            totalAudioChunks++
             
-            // Prebuffer initial chunks to smooth playback start and reduce underruns
+            // Start playback immediately with first chunk, then maintain smooth streaming
             if (isPrebuffering) {
                 audioPrebuffer.add(audioData)
                 if (audioPrebuffer.size >= prebufferSize) {
-                    // Start playback with prebuffered audio
                     isPrebuffering = false
-                    println("[AgentService] Starting playback with ${audioPrebuffer.size} prebuffered chunks")
+                    println("[AgentService] Starting immediate playback with ${audioPrebuffer.size} chunks")
                     
                     // Ensure continuous playback without interruption
                     if (!line.isActive) {
@@ -750,42 +760,59 @@ class AgentApiService : Closeable {
                         writeAudioChunk(line, chunk)
                     }
                     audioPrebuffer.clear()
-                } else {
-                    return // Still prebuffering
                 }
+            } else {
+                // Write audio chunk directly to maintain smooth streaming
+                writeAudioChunk(line, audioData)
             }
-            
-            // Write audio chunk directly to the audio line
-            writeAudioChunk(line, audioData)
         } catch (e: Exception) {
             println("[AgentService] ERROR in handleBinaryAudio: ${e.message}")
-            e.printStackTrace()
         }
     }
     
-    private fun writeAudioChunk(line: SourceDataLine, audioData: ByteArray) {
+    private suspend fun writeAudioChunk(line: SourceDataLine, audioData: ByteArray) {
         try {
-            // Use blocking write - SourceDataLine.write() will block if buffer is full
-            // This ensures all audio is played without skipping chunks
-            // The 128KB buffer provides enough space to handle network jitter
+            // Use non-blocking write with retry mechanism for smoother playback
             var bytesWritten = 0
-            while (bytesWritten < audioData.size) {
-                val written = line.write(audioData, bytesWritten, audioData.size - bytesWritten)
-                if (written < 0) {
-                    println("[AgentService] WARNING: Write returned negative value: $written")
-                    break
+            val maxRetries = 3
+            var retryCount = 0
+            
+            while (bytesWritten < audioData.size && retryCount < maxRetries) {
+                try {
+                    val available = line.available()
+                    if (available >= audioData.size - bytesWritten) {
+                        // Enough buffer space available, write the chunk
+                        val written = line.write(audioData, bytesWritten, audioData.size - bytesWritten)
+                        if (written > 0) {
+                            bytesWritten += written
+                        } else {
+                            retryCount++
+                            kotlinx.coroutines.delay(1) // Brief delay before retry
+                        }
+                    } else {
+                        // Buffer nearly full, wait a moment then retry
+                        retryCount++
+                        delay(2) // Slightly longer delay for buffer to clear
+                    }
+                } catch (e: Exception) {
+                    retryCount++
+                    if (retryCount >= maxRetries) {
+                        println("[AgentService] WARNING: Failed to write audio chunk after $maxRetries retries")
+                        break
+                    }
+                    kotlinx.coroutines.delay(1)
                 }
-                bytesWritten += written
             }
         } catch (e: Exception) {
             println("[AgentService] ERROR writing audio chunk: ${e.message}")
-            // Log error but don't throw - allows audio stream to continue
         }
     }
     
     private fun resetAudioState() {
         audioPrebuffer.clear()
         isPrebuffering = true
+        totalAudioChunks = 0
+        println("[AgentService] Audio state reset - ready for new audio stream")
     }
     suspend fun sendAudio(audioData: ByteArray): Result<Unit> {
         return try {

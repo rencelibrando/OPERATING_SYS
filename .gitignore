@@ -198,3 +198,4 @@ backend/models/
 docs/_build/
 docs/build/
 .md/
+.windsurf/

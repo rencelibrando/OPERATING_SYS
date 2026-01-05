@@ -72,19 +72,29 @@ class AdminLessonContentViewModel : ViewModel() {
     val isGeneratingNarration: State<Boolean> = _isGeneratingNarration
 
     // ============================================
+    // CACHE MANAGEMENT
+    // ============================================
+
+    fun clearCache() {
+        println("[AdminLesson] 🗑️ Clearing all caches...")
+        (repository as? LessonContentRepositoryImpl)?.clearCache()
+        println("[AdminLesson] ✅ All caches cleared")
+    }
+
+    // ============================================
     // LESSON OPERATIONS
     // ============================================
 
-    fun loadLessonsForTopic(topicId: String) {
-        println("[AdminLesson] Loading lessons for topic: $topicId")
+    fun loadLessonsForTopic(topicId: String, forceRefresh: Boolean = false) {
+        println("[AdminLesson] Loading lessons for topic: $topicId${if (forceRefresh) " (force refresh)" else ""}")
         _selectedTopicId.value = topicId
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
 
             try {
-                println("[AdminLesson] Repository call: getLessonsByTopic(topicId=$topicId, publishedOnly=false)")
-                repository.getLessonsByTopic(topicId, publishedOnly = false)
+                println("[AdminLesson] Repository call: getLessonsByTopic(topicId=$topicId, publishedOnly=false, forceRefresh=$forceRefresh)")
+                repository.getLessonsByTopic(topicId, publishedOnly = false, forceRefresh = forceRefresh)
                     .onSuccess { lessonList ->
                         println("[AdminLesson] ✓ Successfully loaded ${lessonList.size} lessons for topic $topicId")
                         _lessons.value = lessonList
@@ -243,8 +253,8 @@ class AdminLessonContentViewModel : ViewModel() {
                         println("[AdminLesson] Created lesson ID: ${createdLesson.id}")
                         _successMessage.value = "Lesson '${_lessonTitle.value}' created successfully with ${_questions.value.size} questions"
                         clearForm()
-                        println("[AdminLesson] Reloading lessons list...")
-                        loadLessonsForTopic(topicId)
+                        println("[AdminLesson] Reloading lessons list with force refresh...")
+                        loadLessonsForTopic(topicId, forceRefresh = true)
                     }
                     .onFailure { error ->
                         val errorMsg = "Failed to create lesson '${_lessonTitle.value}': ${error.message}"
@@ -344,8 +354,8 @@ class AdminLessonContentViewModel : ViewModel() {
 
                         _successMessage.value = "Lesson '${_lessonTitle.value}' updated successfully with $createdCount questions"
                         _selectedTopicId.value?.let {
-                            println("[AdminLesson] Reloading lessons list...")
-                            loadLessonsForTopic(it)
+                            println("[AdminLesson] Reloading lessons list with force refresh...")
+                            loadLessonsForTopic(it, forceRefresh = true)
                         }
                         clearForm()
                     }
@@ -381,8 +391,8 @@ class AdminLessonContentViewModel : ViewModel() {
                         println("[AdminLesson] ✓ Lesson deleted successfully!")
                         _successMessage.value = "Lesson deleted successfully"
                         _selectedTopicId.value?.let {
-                            println("[AdminLesson] Reloading lessons list...")
-                            loadLessonsForTopic(it)
+                            println("[AdminLesson] Reloading lessons list with force refresh...")
+                            loadLessonsForTopic(it, forceRefresh = true)
                         }
                     }
                     .onFailure { error ->
@@ -1094,7 +1104,7 @@ class AdminLessonContentViewModel : ViewModel() {
     fun allNarrationsReady(): Boolean {
         if (!_enableLessonNarration.value) return true
 
-        return _questions.value.all { question ->
+        val result = _questions.value.all { question ->
             // Check question audio
             val hasQuestionAudio = question.questionAudioUrl?.isNotEmpty() == true
 
@@ -1132,6 +1142,19 @@ class AdminLessonContentViewModel : ViewModel() {
                 matchingReady &&
                 (!needsExplanationAudio || hasExplanationAudio)
         }
+
+        // Debug: log the result and first question's audio URLs
+        if (!result && _questions.value.isNotEmpty()) {
+            val firstQ = _questions.value[0]
+            println("[AdminLesson] allNarrationsReady = $result")
+            println("[AdminLesson] First question audio URL: ${firstQ.questionAudioUrl?.take(50) ?: "NULL"}")
+            println("[AdminLesson] First question has answer text: ${firstQ.answerText.isNotBlank()}")
+            println("[AdminLesson] First question answer audio URL: ${firstQ.answerAudioUrl?.take(50) ?: "NULL"}")
+            println("[AdminLesson] First question has explanation: ${firstQ.explanation.isNotBlank()}")
+            println("[AdminLesson] First question explanation audio URL: ${firstQ.explanationAudioUrl?.take(50) ?: "NULL"}")
+        }
+
+        return result
     }
 }
 

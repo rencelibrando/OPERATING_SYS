@@ -73,7 +73,7 @@ fun ProfileScreen(
             Text(
                 text = "Profile",
                 style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFF1E293B), // slate-800
+                color = MaterialTheme.colorScheme.onBackground,
             )
 
             // User Avatar Circle (top right)
@@ -154,26 +154,7 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Account & Security
-            AccountSecuritySection(
-                userProfile = userProfile,
-                onManageSubscription = viewModel::onManageSubscription,
-                onToggleTwoFactor = viewModel::onToggleTwoFactor,
-                onChangePassword = viewModel::onChangePassword,
-                onVerifyPhone = viewModel::onVerifyPhone,
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Statistics with Gradient
-            StatisticsGradientSection(stats = userProfile.profileStats)
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Profile Customization
-            ProfileCustomizationSection()
-
-            Spacer(modifier = Modifier.height(32.dp))
+            // Remove Account & Security section
         }
     }
 }
@@ -201,19 +182,11 @@ private fun ProfileHeaderGradient(
                 Modifier
                     .fillMaxWidth()
                     .background(
-                        brush =
-                            Brush.linearGradient(
-                                colors =
-                                    listOf(
-                                        Color(0xFFEFF6FF), // blue-50
-                                        Color(0xFFF5F3FF), // purple-50
-                                        Color(0xFFFCE7F3), // pink-50
-                                    ),
-                            ),
+                        color = MaterialTheme.colorScheme.surface,
                     )
                     .border(
                         width = 2.dp,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.outline,
                         shape = RoundedCornerShape(24.dp),
                     ),
         ) {
@@ -315,7 +288,7 @@ private fun ProfileHeaderGradient(
                             profile.personalInfo.fullName
                         },
                     style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF1E293B), // slate-800
+                    color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
                 )
 
@@ -324,7 +297,7 @@ private fun ProfileHeaderGradient(
                 Text(
                     text = profile.personalInfo.email.ifBlank { "No email set" },
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color(0xFF64748B), // slate-500
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -340,12 +313,12 @@ private fun ProfileHeaderGradient(
                         Text(
                             text = "Profile Completion",
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = Color(0xFF334155), // slate-700
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
                             text = "${completion.completionPercentage}%",
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                            color = Color(0xFF2563EB), // blue-600
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
 
@@ -357,7 +330,7 @@ private fun ProfileHeaderGradient(
                                 .fillMaxWidth()
                                 .height(12.dp)
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(Color.White),
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
                     ) {
                         Box(
                             modifier =
@@ -388,8 +361,8 @@ private fun ProfileHeaderGradient(
                             onClick = onCancelEditPhoto,
                             colors =
                                 ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFFF1F5F9), // slate-100
-                                    contentColor = Color(0xFF64748B), // slate-500
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                 ),
                         ) {
                             Text("Cancel")
@@ -447,7 +420,7 @@ private fun PersonalInformationSection(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(32.dp)) {
@@ -483,14 +456,14 @@ private fun PersonalInformationSection(
                     Text(
                         text = "Personal Information",
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF1E293B), // slate-800
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
 
                 if (isEditing) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick = onCancel) {
-                            Text("Cancel", color = Color(0xFF64748B))
+                            Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Button(
                             onClick = onSave,
@@ -516,7 +489,7 @@ private fun PersonalInformationSection(
                     }
                 } else {
                     TextButton(onClick = onEdit) {
-                        Text("✏️ Edit", color = Color(0xFFA855F7))
+                        Text("✏️ Edit", color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -621,7 +594,7 @@ private fun InfoFieldDisplay(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = Color(0xFF64748B), // slate-600
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -630,8 +603,8 @@ private fun InfoFieldDisplay(
                 Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFF8FAFC)) // slate-50
-                    .border(2.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp)) // slate-200
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .border(2.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
                     .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
@@ -639,7 +612,7 @@ private fun InfoFieldDisplay(
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (value.contains("YYYY") || value.contains("City")) Color(0xFF94A3B8) else Color(0xFF1E293B),
+                color = if (value.contains("YYYY") || value.contains("City")) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
             trailingContent?.invoke()
@@ -668,17 +641,9 @@ private fun LearningProfileGradientSection(
                 Modifier
                     .fillMaxWidth()
                     .background(
-                        brush =
-                            Brush.linearGradient(
-                                colors =
-                                    listOf(
-                                        Color(0xFFF5F3FF), // purple-50
-                                        Color(0xFFEFF6FF), // blue-50
-                                        Color(0xFFECFEFF), // cyan-50
-                                    ),
-                            ),
+                        color = MaterialTheme.colorScheme.surface,
                     )
-                    .border(2.dp, Color.White, RoundedCornerShape(24.dp)),
+                    .border(2.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(24.dp)),
         ) {
             // Decorative blur circle
             Box(
@@ -733,14 +698,14 @@ private fun LearningProfileGradientSection(
                         Text(
                             text = "Learning Profile",
                             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                            color = Color(0xFF1E293B),
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
 
                     if (isEditing) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             TextButton(onClick = onCancel) {
-                                Text("Cancel", color = Color(0xFF64748B))
+                                Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Button(
                                 onClick = onSave,
@@ -759,7 +724,7 @@ private fun LearningProfileGradientSection(
                         }
                     } else {
                         TextButton(onClick = onEdit) {
-                            Text("✏️ Edit", color = Color(0xFFA855F7))
+                            Text("✏️ Edit", color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
@@ -859,499 +824,26 @@ private fun LearningFieldCard(
         shape = RoundedCornerShape(16.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = Color(0x99FFFFFF), // white/60 with backdrop blur effect
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
             ),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE9D5FF)), // purple-100
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = Color(0xFF64748B), // slate-600
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFF1E293B), // slate-800
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
 }
 
-@Composable
-private fun AccountSecuritySection(
-    userProfile: UserProfile,
-    onManageSubscription: () -> Unit,
-    onToggleTwoFactor: (Boolean) -> Unit,
-    onChangePassword: () -> Unit,
-    onVerifyPhone: () -> Unit,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-    ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(32.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                brush =
-                                    Brush.linearGradient(
-                                        colors =
-                                            listOf(
-                                                Color(0xFFFBBF24), // amber-400
-                                                Color(0xFFF97316), // orange-500
-                                            ),
-                                    ),
-                            ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(text = "🔒", style = MaterialTheme.typography.headlineMedium)
-                }
-
-                Text(
-                    text = "Account & Security",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF1E293B),
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // Subscription
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-                    border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF1F5F9)),
-                ) {
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column {
-                            Text(
-                                text = "Subscription",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                                color = Color(0xFF1E293B),
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "${userProfile.accountInfo.subscriptionType} (${userProfile.accountInfo.subscriptionStatus})",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFF64748B),
-                            )
-                        }
-
-                        Button(
-                            onClick = onManageSubscription,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                            modifier =
-                                Modifier.background(
-                                    brush =
-                                        Brush.horizontalGradient(
-                                            colors = listOf(Color(0xFFA855F7), Color(0xFF3B82F6)),
-                                        ),
-                                    shape = RoundedCornerShape(8.dp),
-                                ),
-                        ) {
-                            Text("Upgrade", color = Color.White)
-                        }
-                    }
-                }
-
-                // Two-Factor Authentication
-                SecurityToggleCard(
-                    label = "Two-Factor Authentication",
-                    description = "Add an extra layer of security",
-                    isEnabled = userProfile.accountInfo.twoFactorEnabled,
-                    onToggle = onToggleTwoFactor,
-                )
-
-                // Change Password
-                SecurityActionCard(
-                    label = "Change Password",
-                    description = "Update your account password",
-                    onClick = onChangePassword,
-                )
-
-                // Verify Phone
-                if (!userProfile.accountInfo.isPhoneVerified) {
-                    SecurityActionCard(
-                        label = "Verify Phone Number",
-                        description = "Secure your account with phone verification",
-                        onClick = onVerifyPhone,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SecurityToggleCard(
-    label: String,
-    description: String,
-    isEnabled: Boolean,
-    onToggle: (Boolean) -> Unit,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-        border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF1F5F9)),
-    ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color(0xFF1E293B),
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF64748B),
-                )
-            }
-            Switch(checked = isEnabled, onCheckedChange = onToggle)
-        }
-    }
-}
-
-@Composable
-private fun SecurityActionCard(
-    label: String,
-    description: String,
-    onClick: () -> Unit,
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-        border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF1F5F9)),
-    ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color(0xFF1E293B),
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF64748B),
-                )
-            }
-            Text(text = "›", style = MaterialTheme.typography.headlineMedium, color = Color(0xFF94A3B8))
-        }
-    }
-}
-
-@Composable
-private fun StatisticsGradientSection(stats: ProfileStats) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .background(
-                        brush =
-                            Brush.linearGradient(
-                                colors =
-                                    listOf(
-                                        Color(0xFFECFDF5), // emerald-50
-                                        Color(0xFFECFEFF), // cyan-50
-                                        Color(0xFFEFF6FF), // blue-50
-                                    ),
-                            ),
-                    )
-                    .border(2.dp, Color.White, RoundedCornerShape(24.dp)),
-        ) {
-            // Decorative blur circle
-            Box(
-                modifier =
-                    Modifier
-                        .size(384.dp)
-                        .align(Alignment.BottomEnd)
-                        .offset(x = 100.dp, y = 100.dp)
-                        .background(
-                            brush =
-                                Brush.radialGradient(
-                                    colors =
-                                        listOf(
-                                            Color(0x3334D399), // emerald-400/20
-                                            Color(0x3306B6D4), // cyan-400/20
-                                            Color.Transparent,
-                                        ),
-                                ),
-                            shape = CircleShape,
-                        ),
-            )
-
-            Column(modifier = Modifier.fillMaxWidth().padding(32.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    brush =
-                                        Brush.linearGradient(
-                                            colors =
-                                                listOf(
-                                                    Color(0xFF34D399), // emerald-400
-                                                    Color(0xFF06B6D4), // cyan-500
-                                                ),
-                                        ),
-                                ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(text = "📊", style = MaterialTheme.typography.headlineMedium)
-                    }
-
-                    Text(
-                        text = "Your Statistics",
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF1E293B),
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    StatCard(
-                        icon = "⏰",
-                        value = "${stats.totalStudyTime / 60}h",
-                        label = "Study Time",
-                        gradient = listOf(Color(0xFF60A5FA), Color(0xFF06B6D4)),
-                        modifier = Modifier.weight(1f),
-                    )
-                    StatCard(
-                        icon = "📚",
-                        value = "${stats.lessonsCompleted}",
-                        label = "Lessons",
-                        gradient = listOf(Color(0xFFA855F7), Color(0xFFEC4899)),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    StatCard(
-                        icon = "💬",
-                        value = "${stats.wordsLearned}",
-                        label = "Words Learned",
-                        gradient = listOf(Color(0xFF34D399), Color(0xFF14B8A6)),
-                        modifier = Modifier.weight(1f),
-                    )
-                    StatCard(
-                        icon = "🏆",
-                        value = "${stats.achievementsUnlocked}",
-                        label = "Achievements",
-                        gradient = listOf(Color(0xFFFBBF24), Color(0xFFF97316)),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatCard(
-    icon: String,
-    value: String,
-    label: String,
-    gradient: List<Color>,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0x99FFFFFF)),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(56.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(brush = Brush.linearGradient(colors = gradient)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(text = icon, style = MaterialTheme.typography.headlineMedium.copy(color = Color.White))
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = value,
-                style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                color = gradient.first(), // Use gradient start color
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                color = Color(0xFF64748B),
-            )
-        }
-    }
-}
-
-@Composable
-private fun ProfileCustomizationSection() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-    ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(32.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                brush =
-                                    Brush.linearGradient(
-                                        colors =
-                                            listOf(
-                                                Color(0xFFF472B6), // pink-400
-                                                Color(0xFFF43F5E), // rose-500
-                                            ),
-                                    ),
-                            ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(text = "🎨", style = MaterialTheme.typography.headlineMedium)
-                }
-
-                Text(
-                    text = "Profile Customization",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF1E293B),
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                CustomizationCard(
-                    label = "App Theme",
-                    currentValue = "Light Mode",
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CustomizationCard(
-    label: String,
-    currentValue: String,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-        border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF1F5F9)),
-    ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color(0xFF1E293B),
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = currentValue,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF64748B),
-                )
-            }
-
-            Button(
-                onClick = { },
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFE2E8F0),
-                        contentColor = Color(0xFF334155),
-                    ),
-            ) {
-                Text("Change")
-            }
-        }
-    }
-}
 
 @Composable
 private fun PersonalInfoEditForm(

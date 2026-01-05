@@ -70,6 +70,13 @@ class NarrationService(
                     },
                 )
             }
+            engine {
+                requestTimeout = 120_000 // 2 minutes timeout for TTS generation
+                endpoint {
+                    connectTimeout = 30_000 // 30 seconds connection timeout
+                    socketTimeout = 120_000 // 2 minutes socket timeout for long-running requests
+                }
+            }
         }
 
     suspend fun generateNarration(

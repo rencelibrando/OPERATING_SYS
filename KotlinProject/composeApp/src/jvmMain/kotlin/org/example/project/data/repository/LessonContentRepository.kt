@@ -35,6 +35,7 @@ interface LessonContentRepository {
     suspend fun getLessonsByTopic(
         topicId: String,
         publishedOnly: Boolean = true,
+        forceRefresh: Boolean = false,
     ): Result<List<LessonSummary>>
 
     suspend fun getLessonById(
@@ -115,9 +116,9 @@ class LessonContentRepositoryImpl(
     )
     
     // Multi-layer caching with TTL
-    private val CACHE_DURATION_MS = 10 * 60 * 1000L // 10 minutes
-    private val SHORT_CACHE_DURATION_MS = 2 * 60 * 1000L // 2 minutes for user progress
-    private val PERSISTENT_CACHE_TTL_MS = 60 * 60 * 1000L // 1 hour for persistent cache
+    private val CACHE_DURATION_MS = 2 * 60 * 1000L // 2 minutes
+    private val SHORT_CACHE_DURATION_MS = 30 * 1000L // 30 seconds for user progress
+    private val PERSISTENT_CACHE_TTL_MS = 30 * 1000L // 30 seconds for persistent cache (auto-expires quickly)
     
     // Cache for lessons by topic
     private val lessonsCache = mutableMapOf<String, Pair<List<LessonSummary>, Long>>()
@@ -139,39 +140,45 @@ class LessonContentRepositoryImpl(
     override suspend fun getLessonsByTopic(
         topicId: String,
         publishedOnly: Boolean,
+        forceRefresh: Boolean,
     ): Result<List<LessonSummary>> =
         withContext(Dispatchers.IO) {
             try {
                 val cacheKey = "${topicId}_$publishedOnly"
                 val currentTime = System.currentTimeMillis()
-                
-                // Check persistent cache first
-                val persistentCacheResult = localStorageCache.retrieve("lessons_$cacheKey")
-                
-                @Suppress("UNCHECKED_CAST")
-                val cachedLessonList = persistentCacheResult.getOrNull() as? CachedLessonSummaryList
-                if (cachedLessonList != null) {
-                    println("[LessonContent] ✅ Persistent cache hit for topic $topicId (${cachedLessonList.lessons.size} lessons)")
-                    return@withContext Result.success(cachedLessonList.lessons.map { it.toDomain() })
+
+                // Skip cache if forceRefresh is true
+                if (!forceRefresh) {
+                    // Check persistent cache first
+                    val persistentCacheResult = localStorageCache.retrieve("lessons_$cacheKey")
+
+                    @Suppress("UNCHECKED_CAST")
+                    val cachedLessonList = persistentCacheResult.getOrNull() as? CachedLessonSummaryList
+                    if (cachedLessonList != null) {
+                        println("[LessonContent] ✅ Persistent cache hit for topic $topicId (${cachedLessonList.lessons.size} lessons)")
+                        return@withContext Result.success(cachedLessonList.lessons.map { it.toDomain() })
+                    }
+
+                    // Check in-memory cache second
+                    val cached = lessonsCache[cacheKey]
+                    if (cached != null && (currentTime - cached.second) < CACHE_DURATION_MS) {
+                        println("[LessonContent] ✅ Memory cache hit for topic $topicId (${cached.first.size} lessons)")
+                        return@withContext Result.success(cached.first)
+                    }
+                } else {
+                    println("[LessonContent] 🔄 Force refresh requested - skipping cache for topic $topicId")
                 }
-                
-                // Check in-memory cache second
-                val cached = lessonsCache[cacheKey]
-                if (cached != null && (currentTime - cached.second) < CACHE_DURATION_MS) {
-                    println("[LessonContent] ✅ Memory cache hit for topic $topicId (${cached.first.size} lessons)")
-                    return@withContext Result.success(cached.first)
-                }
-                
+
                 println("[LessonContent] 🔄 Fetching lessons for topic $topicId from API...")
                 val response: LessonListResponse =
                     client.get("$baseUrl/api/lessons/topic/$topicId") {
                         parameter("published_only", publishedOnly)
                     }.body()
-                
+
                 // Cache the result in memory
                 lessonsCache[cacheKey] = Pair(response.lessons, currentTime)
                 println("[LessonContent] ✅ Memory cached ${response.lessons.size} lessons for topic $topicId")
-                
+
                 // Cache the result in persistent storage
                 val cachedLessons = response.lessons.map { CachedLessonSummary.fromDomain(it) }
                 val lessonListWrapper = CachedLessonSummaryList(cachedLessons)
@@ -181,7 +188,7 @@ class LessonContentRepositoryImpl(
                     ttlMs = PERSISTENT_CACHE_TTL_MS
                 )
                 println("[LessonContent] ✅ Persistent cached ${response.lessons.size} lessons for topic $topicId")
-                
+
                 Result.success(response.lessons)
             } catch (e: Exception) {
                 ErrorLogger.logException(LOG_TAG, e, "Error fetching lessons")

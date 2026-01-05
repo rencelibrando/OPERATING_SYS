@@ -151,14 +151,7 @@ fun AIChatScreen(
                             .weight(1f)
                             .fillMaxWidth()
                             .background(
-                                brush =
-                                    Brush.verticalGradient(
-                                        colors =
-                                            listOf(
-                                                Color(0xFFF8FAFC), // slate-50
-                                                Color.White,
-                                            ),
-                                    ),
+                                color = MaterialTheme.colorScheme.background,
                             ),
                 ) {
                     val listState = rememberLazyListState()
@@ -235,7 +228,7 @@ private fun ChatHeader(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         shadowElevation = 2.dp,
     ) {
         Row(
@@ -261,7 +254,7 @@ private fun ChatHeader(
                     Text(
                         text = "←",
                         style = MaterialTheme.typography.titleLarge,
-                        color = WordBridgeColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
 
@@ -297,12 +290,12 @@ private fun ChatHeader(
                                 MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                 ),
-                            color = WordBridgeColors.TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
                             text = bot.description,
                             style = MaterialTheme.typography.bodySmall,
-                            color = WordBridgeColors.TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -323,7 +316,7 @@ private fun ChatHeader(
                     Text(
                         text = "⋮",
                         style = MaterialTheme.typography.titleLarge,
-                        color = WordBridgeColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
 
@@ -440,12 +433,12 @@ private fun ChatMessageBubble(
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
                             ),
-                        color = WordBridgeColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         text = formattedTime,
                         style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -461,12 +454,12 @@ private fun ChatMessageBubble(
                         ),
                     colors =
                         CardDefaults.cardColors(
-                            containerColor = Color.Transparent,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
                         ),
                     border =
                         androidx.compose.foundation.BorderStroke(
                             1.dp,
-                            Color(0xFFE9D5FF), // purple-100
+                            MaterialTheme.colorScheme.outline,
                         ),
                     elevation =
                         CardDefaults.cardElevation(
@@ -477,14 +470,7 @@ private fun ChatMessageBubble(
                         modifier =
                             Modifier
                                 .background(
-                                    brush =
-                                        Brush.linearGradient(
-                                            colors =
-                                                listOf(
-                                                    Color(0xFFF3E5F5), // purple-50
-                                                    Color(0xFFEFF6FF), // blue-50
-                                                ),
-                                        ),
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
                                     shape =
                                         RoundedCornerShape(
                                             topStart = 16.dp,
@@ -498,7 +484,7 @@ private fun ChatMessageBubble(
                         Text(
                             text = message,
                             style = MaterialTheme.typography.bodyLarge,
-                            color = WordBridgeColors.TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -549,7 +535,7 @@ private fun TypingIndicator(
                     MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Medium,
                     ),
-                color = WordBridgeColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -558,7 +544,7 @@ private fun TypingIndicator(
                 shape = RoundedCornerShape(12.dp),
                 colors =
                     CardDefaults.cardColors(
-                        containerColor = Color(0xFFF3F4F6), // gray-100
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
                     ),
             ) {
                 Row(
@@ -571,7 +557,7 @@ private fun TypingIndicator(
                                 Modifier
                                     .size(8.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFF9CA3AF)), // gray-400
+                                    .background(MaterialTheme.colorScheme.onSurfaceVariant),
                         )
                     }
                 }
@@ -603,7 +589,7 @@ private fun QuickReplies(onReplyClick: (String) -> Unit) {
                 MaterialTheme.typography.bodySmall.copy(
                     fontWeight = FontWeight.Medium,
                 ),
-            color = WordBridgeColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -657,15 +643,15 @@ private fun QuickReplyButton(
             CardDefaults.cardColors(
                 containerColor =
                     if (isHovered) {
-                        Color(0xFFF3E5F5) // purple-50
+                        MaterialTheme.colorScheme.surfaceVariant
                     } else {
-                        Color.White
+                        MaterialTheme.colorScheme.surface
                     },
             ),
         border =
             androidx.compose.foundation.BorderStroke(
                 2.dp,
-                if (isHovered) Color(0xFFC084FC) else Color(0xFFE2E8F0), // purple-300 : slate-200
+                if (isHovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
             ),
         elevation =
             CardDefaults.cardElevation(
@@ -682,7 +668,7 @@ private fun QuickReplyButton(
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (isHovered) Color(0xFF9333EA) else WordBridgeColors.TextPrimary, // purple-700
+                color = if (isHovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -699,7 +685,7 @@ private fun ModernChatInput(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         shadowElevation = 8.dp,
     ) {
         Column(
@@ -720,7 +706,7 @@ private fun ModernChatInput(
                     placeholder = {
                         Text(
                             text = "Type your message...",
-                            color = WordBridgeColors.TextMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     },
                     modifier = Modifier.weight(1f),
@@ -728,9 +714,9 @@ private fun ModernChatInput(
                     enabled = enabled,
                     colors =
                         OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = Color(0xFFF1F5F9), // slate-100
-                            focusedContainerColor = Color.White,
-                            focusedBorderColor = Color(0xFFA855F7), // purple-500
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = Color.Transparent,
                         ),
                     maxLines = 3,
@@ -794,12 +780,12 @@ private fun ModernChatInput(
                                 Modifier
                                     .size(8.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFF10B981)), // green-500
+                                    .background(MaterialTheme.colorScheme.primary),
                         )
                         Text(
                             text = "$botName is online",
                             style = MaterialTheme.typography.bodySmall,
-                            color = WordBridgeColors.TextMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
