@@ -4,9 +4,17 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.jan.supabase.storage.storage
+import io.github.jan.supabase.storage.upload
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -23,7 +31,17 @@ import org.example.project.domain.model.SpeakingScenario
 import org.example.project.domain.model.ConversationRecording
 import org.example.project.models.ConversationTurnUI
 import java.io.File
+import java.io.FileOutputStream
 import java.util.concurrent.atomic.AtomicBoolean
+import org.example.project.core.config.SupabaseConfig
+import org.example.project.presentation.viewmodel.speaking.BoundedAudioBuffer
+import org.example.project.presentation.viewmodel.speaking.Debouncer
+import org.example.project.presentation.viewmodel.speaking.SpeakingConfig
+import org.example.project.presentation.viewmodel.speaking.SpeakingLogger
+import org.example.project.presentation.viewmodel.speaking.TempFileManager
+import org.example.project.presentation.viewmodel.speaking.calculateAudioLevel
+import org.example.project.presentation.viewmodel.speaking.intToByteArray
+import org.example.project.presentation.viewmodel.speaking.shortToByteArray
 
 class SpeakingViewModel(private val userId: String = "current_user") : ViewModel() {
     private val voiceApiService = VoiceApiService()
@@ -111,11 +129,13 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
     private val _conversationError = mutableStateOf<String?>(null)
     val conversationError: State<String?> = _conversationError
     
-    // Session recording for playback (optimized)
+    // Session recording for playback (optimized with bounded buffer)
     private var currentSessionId: String? = null
     private var sessionStartTime: Long = 0L
-    private val sessionAudioChunks = mutableListOf<ByteArray>()
-    private val maxAudioChunks = 1000 // Limit memory usage
+    private val sessionAudioChunks = BoundedAudioBuffer(
+        maxChunks = SpeakingConfig.MAX_AUDIO_CHUNKS,
+        maxBytes = SpeakingConfig.MAX_AUDIO_BYTES
+    )
     
     // Push-to-talk microphone state
     private val _isConversationRecording = mutableStateOf(false)
@@ -134,14 +154,55 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
     private val conversationMutex = Mutex()
     
     // Debouncing for API calls
-    private var lastConversationStartTime = 0L
-    private val conversationStartDebounceMs = 500L
+    private val conversationDebouncer = Debouncer(SpeakingConfig.CONVERSATION_DEBOUNCE_MS)
     
     // Recording job reference for cancellation
     private var recordingStreamJob: Job? = null
+    
+    // Structured coroutine scope for recording operations (cancellable)
+    private val recordingJob = SupervisorJob()
+    private val recordingScope = CoroutineScope(Dispatchers.IO + recordingJob)
+    
+    // Audio processing channel for background offloading
+    private val audioProcessingChannel = Channel<ByteArray>(Channel.UNLIMITED)
+    
+    // Temp file manager for automatic cleanup
+    private val tempFileManager = TempFileManager()
 
     init {
         _speakingFeatures.value = getSpeakingFeatures()
+        
+        // Start audio processing worker for background offloading
+        startAudioProcessingWorker()
+    }
+    
+    /**
+     * Background worker for processing audio chunks without blocking the main thread.
+     */
+    private fun startAudioProcessingWorker() {
+        viewModelScope.launch(Dispatchers.Default) {
+            for (audioData in audioProcessingChannel) {
+                try {
+                    // Add to bounded buffer (thread-safe)
+                    sessionAudioChunks.add(audioData)
+                    
+                    // Calculate audio level for visualization
+                    val level = calculateAudioLevel(audioData)
+                    withContext(Dispatchers.Main) {
+                        _audioLevel.value = level
+                    }
+                    
+                    // Log periodically
+                    if (sessionAudioChunks.size() % SpeakingConfig.AUDIO_CHUNK_LOG_INTERVAL == 0) {
+                        SpeakingLogger.debug { "Audio buffer: ${sessionAudioChunks.stats()}" }
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    SpeakingLogger.error("AudioWorker") { "Error processing chunk: ${e.message}" }
+                }
+            }
+        }
     }
 
     fun startPracticeSession(word: VocabularyWord) {
@@ -197,18 +258,18 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
             try {
                 val result = voiceRecorder.startRecording()
                 if (result.isSuccess) {
-                    println("[PracticeRecording] Started recording")
+                    SpeakingLogger.debug { "Started recording" }
                     
                     while (_isRecording.value) {
                         delay(100)
                         _recordingDuration.value += 0.1f
                     }
                 } else {
-                    println("[PracticeRecording] Failed to start: ${result.exceptionOrNull()?.message}")
+                    SpeakingLogger.error("Recording") { "Failed to start: ${result.exceptionOrNull()?.message}" }
                     _isRecording.value = false
                 }
             } catch (e: Exception) {
-                println("[PracticeRecording] Error starting: ${e.message}")
+                SpeakingLogger.error("Recording") { "Error starting: ${e.message}" }
                 _isRecording.value = false
             }
         }
@@ -227,16 +288,16 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                     currentRecordingFile = if (filePath != null) File(filePath) else null
                     _hasRecording.value = currentRecordingFile != null
                     
-                    println("[PracticeRecording] Stopped - duration: ${_recordingDuration.value}s")
+                    SpeakingLogger.debug { "Recording stopped - duration: ${_recordingDuration.value}s" }
                     
                     if (currentRecordingFile != null) {
                         analyzeRecording()
                     }
                 } else {
-                    println("[PracticeRecording] Failed to stop: ${result.exceptionOrNull()?.message}")
+                    SpeakingLogger.error("Recording") { "Failed to stop: ${result.exceptionOrNull()?.message}" }
                 }
             } catch (e: Exception) {
-                println("[PracticeRecording] Error stopping: ${e.message}")
+                SpeakingLogger.error("Recording") { "Error stopping: ${e.message}" }
             }
         }
     }
@@ -248,13 +309,13 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
 
         viewModelScope.launch {
             try {
-                println("[PracticePlayback] Playing recording")
+                SpeakingLogger.debug { "Playing recording" }
                 audioPlayer.playFile(currentRecordingFile!!) {
                     _isPlayingRecording.value = false
-                    println("[PracticePlayback] Finished")
+                    SpeakingLogger.debug { "Playback finished" }
                 }
             } catch (e: Exception) {
-                println("[PracticePlayback] Error: ${e.message}")
+                SpeakingLogger.error("Playback") { "Error: ${e.message}" }
                 _isPlayingRecording.value = false
             }
         }
@@ -265,7 +326,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
             try {
                 // Validation: Check if a recording file exists
                 if (currentRecordingFile == null) {
-                    println("[PracticeAnalysis] No recording file available")
+                    SpeakingLogger.warn("Analysis") { "No recording file available" }
                     _feedback.value = PracticeFeedback(
                         overallScore = 0,
                         pronunciationScore = 0,
@@ -279,7 +340,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
 
                 // Validation: Check if recording duration is sufficient (at least 0.5 seconds)
                 if (_recordingDuration.value < 0.5f) {
-                    println("[PracticeAnalysis] Recording too short: ${_recordingDuration.value}s")
+                    SpeakingLogger.warn("Analysis") { "Recording too short: ${_recordingDuration.value}s" }
                     _feedback.value = PracticeFeedback(
                         overallScore = 0,
                         pronunciationScore = 0,
@@ -293,7 +354,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
 
                 // Validation: Check if a file exists and has content
                 if (!currentRecordingFile!!.exists() || currentRecordingFile!!.length() < 1000) {
-                    println("[PracticeAnalysis] Invalid file: size=${currentRecordingFile!!.length()} bytes")
+                    SpeakingLogger.warn("Analysis") { "Invalid file: size=${currentRecordingFile!!.length()} bytes" }
                     _feedback.value = PracticeFeedback(
                         overallScore = 0,
                         pronunciationScore = 0,
@@ -306,8 +367,8 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                 }
 
                 // All validations passed - now call Deepgram API
-                println("[PracticeAnalysis] Recording validated: ${_recordingDuration.value}s, ${currentRecordingFile!!.length()} bytes")
-                println("[PracticeAnalysis] Calling Deepgram API for transcription")
+                SpeakingLogger.debug { "Recording validated: ${_recordingDuration.value}s, ${currentRecordingFile!!.length()} bytes" }
+                SpeakingLogger.debug { "Calling Deepgram API for transcription" }
                 _isAnalyzing.value = true
                 
                 // Step 1: Transcribe audio using Deepgram
@@ -331,12 +392,12 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                 if (transcriptionResult.isSuccess) {
                     val transcript = transcriptionResult.getOrNull()
                     if (transcript != null && transcript.success) {
-                        println("[PracticeAnalysis] Transcription: ${transcript.transcript}")
-                        println("[PracticeAnalysis] Confidence: ${transcript.confidence}")
+                        SpeakingLogger.debug { "Transcription: ${transcript.transcript}" }
+                        SpeakingLogger.debug { "Confidence: ${transcript.confidence}" }
                         
                         // Validate transcription has actual content
                         if (transcript.transcript.isBlank() || transcript.confidence < 0.1f) {
-                            println("[PracticeAnalysis] Empty or low-confidence transcription")
+                            SpeakingLogger.warn("Analysis") { "Empty or low-confidence transcription" }
                             _feedback.value = PracticeFeedback(
                                 overallScore = 0,
                                 pronunciationScore = 0,
@@ -362,7 +423,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                         val scenario = _voiceTutorScenario.value ?: "daily_conversation"
                         val langCode = languageCode ?: "en-US"
                         
-                        println("[PracticeAnalysis] Generating AI feedback")
+                        SpeakingLogger.debug { "Generating AI feedback" }
                         val feedbackResult = voiceApiService.generateFeedback(
                             transcript = transcript.transcript,
                             expectedText = expectedText,
@@ -386,23 +447,23 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                                 )
                                 
                                 _feedback.value = practiceFeedback
-                                println("[PracticeAnalysis] Complete - score: ${practiceFeedback.overallScore}%")
+                                SpeakingLogger.info("Analysis") { "Complete - score: ${practiceFeedback.overallScore}%" }
                                 
                                 // Step 3: Save session (optional)
                                 saveSessionToDatabase(transcript.transcript, feedback.scores, langCode)
                             }
                         } else {
-                            println("[PracticeAnalysis] Failed to generate feedback")
+                            SpeakingLogger.error("Analysis") { "Failed to generate feedback" }
                             _feedback.value = generateErrorFeedback("Failed to generate feedback")
                         }
                     }
                 } else {
-                    println("[PracticeAnalysis] Failed to transcribe audio")
+                    SpeakingLogger.error("Analysis") { "Failed to transcribe audio" }
                     _feedback.value = generateErrorFeedback("Failed to transcribe audio")
                 }
                 
             } catch (e: Exception) {
-                println("[PracticeAnalysis] Error: ${e.message}")
+                SpeakingLogger.error("Analysis") { "Error: ${e.message}" }
                 _feedback.value = generateErrorFeedback("Error: ${e.message}")
             } finally {
                 _isAnalyzing.value = false
@@ -442,12 +503,12 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                 )
                 
                 if (saveResult.isSuccess) {
-                    println("[PracticeSession] Saved successfully")
+                    SpeakingLogger.debug { "Session saved successfully" }
                 } else {
-                    println("[PracticeSession] Failed to save")
+                    SpeakingLogger.error("Session") { "Failed to save" }
                 }
             } catch (e: Exception) {
-                println("[PracticeSession] Error saving: ${e.message}")
+                SpeakingLogger.error("Session") { "Error saving: ${e.message}" }
             }
         }
     }
@@ -468,12 +529,25 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
     
     override fun onCleared() {
         super.onCleared()
+        
+        // Cancel structured coroutine scopes
+        recordingJob.cancel()
+        audioProcessingChannel.close()
+        
+        // Clean up temp files
+        tempFileManager.cleanup()
+        
+        // Clear audio buffer
+        sessionAudioChunks.clear()
+        
         // Stop any active recording
         voiceRecorder.cancelRecording()
         voiceRecorder.dispose()
         voiceApiService.close()
         agentService.close()
         audioPlayer.dispose()
+        
+        SpeakingLogger.debug { "SpeakingViewModel cleared - all resources released" }
     }
 
     fun completePractice() {
@@ -484,7 +558,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
         _voiceTutorLevel.value = null
         _voiceTutorScenario.value = null
         _currentPrompt.value = null
-        println("[Practice] Session completed")
+        SpeakingLogger.info("Practice") { "Session completed" }
     }
 
     fun exitVoiceTutorPractice() {
@@ -502,29 +576,27 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
         _conversationTurns.value = emptyList()
         _conversationError.value = null
         
-        // Clear any residual audio chunks
-        synchronized(sessionAudioChunks) {
-            if (sessionAudioChunks.isNotEmpty()) {
-                println("[VoiceTutor] Clearing ${sessionAudioChunks.size} residual audio chunks")
-                sessionAudioChunks.clear()
-            }
+        // Clear any residual audio chunks (BoundedAudioBuffer is thread-safe)
+        if (sessionAudioChunks.isNotEmpty()) {
+            SpeakingLogger.debug { "Clearing ${sessionAudioChunks.size()} residual audio chunks" }
+            sessionAudioChunks.clear()
         }
         
         // Reset session tracking
         currentSessionId = null
         sessionStartTime = 0L
         
-        println("[VoiceTutor] Exited practice - all buffers cleared")
+        SpeakingLogger.info("VoiceTutor") { "Exited practice - all buffers cleared" }
     }
 
     fun onStartFirstPracticeClicked() {
         _showVoiceTutorSelection.value = true
-        println("[VoiceTutor] Starting selection flow")
+        SpeakingLogger.debug { "Starting selection flow" }
     }
 
     fun onExploreExercisesClicked() {
         _showVoiceTutorSelection.value = true
-        println("[VoiceTutor] Showing scenarios")
+        SpeakingLogger.debug { "Showing scenarios" }
     }
 
     fun onStartConversationClicked() {
@@ -543,7 +615,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
         _isConversationMode.value = true
         startConversationMode(autoStartAgent = true)
         
-        println("[VoiceTutor] Started conversation mode with default settings")
+        SpeakingLogger.info("VoiceTutor") { "Started conversation mode with default settings" }
     }
 
     fun startVoiceTutorPractice(language: PracticeLanguage, level: String, scenario: String) {
@@ -560,8 +632,8 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
         // Start in practice mode by default (not conversation mode)
         _isConversationMode.value = false
         
-        println("[VoiceTutor] Started practice: language=$language, level=$level, scenario=$scenario")
-        println("[VoiceTutor] Prompt: $prompt")
+        SpeakingLogger.info("VoiceTutor") { "Started practice: language=$language, level=$level, scenario=$scenario" }
+        SpeakingLogger.debug { "Prompt: $prompt" }
     }
 
     fun hideVoiceTutorSelection() {
@@ -587,41 +659,38 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
     fun startConversationMode(autoStartAgent: Boolean = true, preserveData: Boolean = false) {
         // Validate required parameters
         if (_voiceTutorLanguage.value == null || _voiceTutorLevel.value == null || _voiceTutorScenario.value == null) {
-            println("[Conversation] Cannot start - missing parameters")
+            SpeakingLogger.warn("Conversation") { "Cannot start - missing parameters" }
             return
         }
         
         // Atomic guard to prevent duplicate starts
         if (!isStartingConversation.compareAndSet(false, true)) {
-            println("[Conversation] ⚠️ Start already in progress - ignoring")
+            SpeakingLogger.warn("Conversation") { "Start already in progress - ignoring" }
             return
         }
         
         // Prevent duplicate calls from debouncing
-        val currentTime = System.currentTimeMillis()
-        if (currentTime - lastConversationStartTime < conversationStartDebounceMs) {
-            println("[Conversation] ⚠️ Ignoring rapid call (debounced)")
+        if (!conversationDebouncer.shouldProceed()) {
+            SpeakingLogger.warn("Conversation") { "Ignoring rapid call (debounced)" }
             isStartingConversation.set(false)
             return
         }
         
         // Check if already active
         if (_isConversationActive.value) {
-            println("[Conversation] ⚠️ Already active - ignoring duplicate call")
+            SpeakingLogger.warn("Conversation") { "Already active - ignoring duplicate call" }
             isStartingConversation.set(false)
             return
         }
         
         // Check if agent service is already connecting
         if (autoStartAgent && agentService.connectionState.get() != AgentApiService.ConnectionState.DISCONNECTED) {
-            println("[Conversation] ⚠️ Agent service already connecting/connected - ignoring")
+            SpeakingLogger.warn("Conversation") { "Agent service already connecting/connected - ignoring" }
             isStartingConversation.set(false)
             return
         }
         
-        lastConversationStartTime = currentTime
-
-        println("[Conversation] Starting conversation mode${if (autoStartAgent) " with agent" else " (UI only)"}${if (preserveData) " (preserving data)" else ""}")
+        SpeakingLogger.info("Conversation") { "Starting conversation mode${if (autoStartAgent) " with agent" else " (UI only)"}${if (preserveData) " (preserving data)" else ""}" }
         
         // Set up conversation UI state
         _isConversationMode.value = true
@@ -634,14 +703,12 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
             // Initialize session recording only for fresh starts
             currentSessionId = java.util.UUID.randomUUID().toString()
             sessionStartTime = System.currentTimeMillis()
-            synchronized(sessionAudioChunks) {
-                sessionAudioChunks.clear()
-            }
-            println("[Conversation] NEW session started with ID: $currentSessionId")
+            sessionAudioChunks.clear()
+            SpeakingLogger.info("Conversation") { "NEW session started with ID: $currentSessionId" }
         } else {
             // Preserve data but clear error for retry
             _conversationError.value = null
-            println("[Conversation] Preserving existing session data for retry")
+            SpeakingLogger.debug { "Preserving existing session data for retry" }
         }
 
         if (autoStartAgent) {
@@ -656,7 +723,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
      * Used when connection fails but we want to keep the conversation context.
      */
     fun retryConversationConnection() {
-        println("[Conversation] Retrying connection with data preservation")
+        SpeakingLogger.info("Conversation") { "Retrying connection with data preservation" }
         // Always preserve data when retrying - this is specifically for connection failures
         startConversationMode(autoStartAgent = true, preserveData = true)
     }
@@ -690,7 +757,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                     if (apiKey == null) {
                         _conversationError.value = "DEEPGRAM_API_KEY not set in environment"
                         // Don't reset conversation mode - keep UI stable
-                        println("[Conversation] DEEPGRAM_API_KEY not found in environment")
+                        SpeakingLogger.error("Conversation") { "DEEPGRAM_API_KEY not found in environment" }
                         isStartingConversation.set(false)
                         return@withLock
                     }
@@ -706,12 +773,12 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                             when (message.type) {
                                 "connection" -> {
                                     if (message.event == "opened") {
-                                        println("[Conversation] Agent connection established")
+                                        SpeakingLogger.info("Conversation") { "Agent connection established" }
                                         _isConversationActive.value = true
                                     }
                                 }
                                 "ConversationText" -> {
-                                    println("[Conversation] Text - role=${message.role}, content=${message.content?.take(50)}...")
+                                    SpeakingLogger.debug { "Text - role=${message.role}, content=${message.content?.take(50)}..." }
                                     message.content?.let { content ->
                                         val currentTurns = _conversationTurns.value
                                         val role = message.role ?: "assistant"
@@ -739,11 +806,11 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                                 "agent_message" -> {
                                     when (message.event) {
                                         "Welcome" -> {
-                                            println("[Conversation] Agent ready - activating UI")
+                                            SpeakingLogger.info("Conversation") { "Agent ready - activating UI" }
                                             _isConversationActive.value = true
                                         }
                                         "ConversationText" -> {
-                                            println("[Conversation] Text - role=${message.role}, content=${message.content?.take(50)}...")
+                                            SpeakingLogger.debug { "Text - role=${message.role}, content=${message.content?.take(50)}..." }
                                             message.content?.let { content ->
                                                 val currentTurns = _conversationTurns.value
                                                 val role = message.role ?: "assistant"
@@ -769,7 +836,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                                             }
                                         }
                                         "AgentThinking" -> {
-                                            println("[Conversation] Agent is thinking")
+                                            SpeakingLogger.debug { "Agent is thinking" }
                                             _isAgentThinking.value = true
                                             _isAgentSpeaking.value = false
                                             
@@ -780,12 +847,12 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                                             )
                                         }
                                         "AgentStartedSpeaking" -> {
-                                            println("[Conversation] Agent started speaking")
+                                            SpeakingLogger.debug { "Agent started speaking" }
                                             _isAgentThinking.value = false
                                             _isAgentSpeaking.value = true
                                         }
                                         "UserStartedSpeaking" -> {
-                                            println("[Conversation] User started speaking detected")
+                                            SpeakingLogger.debug { "User started speaking detected" }
                                             _isAgentThinking.value = false
                                             _isAgentSpeaking.value = false
                                             
@@ -798,36 +865,26 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                                             }
                                         }
                                         "AgentAudioDone" -> {
-                                            println("[Conversation] Agent finished speaking")
+                                            SpeakingLogger.debug { "Agent finished speaking" }
                                             _isAgentThinking.value = false
                                             _isAgentSpeaking.value = false
                                         }
                                         "error" -> {
-                                            println("[Conversation] Error: ${message.error}")
+                                            SpeakingLogger.error("Conversation") { "Error: ${message.error}" }
                                             _conversationError.value = message.error
                                         }
                                     }
                                 }
                                 "error" -> {
-                                    println("[Conversation] Error: ${message.error}")
+                                    SpeakingLogger.error("Conversation") { "Error: ${message.error}" }
                                     _conversationError.value = message.error
                                 }
                             }
                         }
                     },
                     onAudioReceived = { audioData ->
-                        // Capture audio chunks for recording (optimized)
-                        synchronized(sessionAudioChunks) {
-                            // Limit memory usage by removing oldest chunks
-                            if (sessionAudioChunks.size >= maxAudioChunks) {
-                                sessionAudioChunks.removeFirst()
-                            }
-                            sessionAudioChunks.add(audioData)
-                            // Only log every 500 chunks to reduce noise
-                            if (sessionAudioChunks.size % 500 == 0) {
-                                println("[Conversation] Audio: ${sessionAudioChunks.size} chunks")
-                            }
-                        }
+                        // Offload audio processing to background channel (non-blocking)
+                        audioProcessingChannel.trySend(audioData)
                     })
 
                     if (result.isFailure) {
@@ -845,15 +902,15 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                         _conversationError.value = errorMsg
                         // Keep conversation mode active to show error and allow retry
                         // Don't revert to practice mode on connection failure
-                        println("[Conversation] ❌ Failed to start: $errorMsg")
-                        println("[Conversation] Original error: ${error?.message}")
+                        SpeakingLogger.error("Conversation") { "Failed to start: $errorMsg" }
+                        SpeakingLogger.error("Conversation") { "Original error: ${error?.message}" }
                     }
                 }
             } catch (e: Exception) {
                 _conversationError.value = e.message
                 // Keep conversation mode active to show error and allow retry
                 // Don't revert to practice mode on exception
-                println("[Conversation] Error: ${e.message}")
+                SpeakingLogger.error("Conversation") { "Error: ${e.message}" }
             } finally {
                 isStartingConversation.set(false)
             }
@@ -866,7 +923,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
      * Also stops any active conversation.
      */
     fun exitConversationMode(preserveHistory: Boolean = false) {
-        println("[Conversation] Exiting conversation mode${if (preserveHistory) " (preserving history)" else ""}")
+        SpeakingLogger.info("Conversation") { "Exiting conversation mode${if (preserveHistory) " (preserving history)" else ""}" }
         
         // If conversation is active, stop it first
         if (_isConversationActive.value || agentService.isActive()) {
@@ -880,12 +937,10 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                 _conversationTurns.value = emptyList()
                 _conversationError.value = null
                 
-                // Clear audio chunks if any remain
-                synchronized(sessionAudioChunks) {
-                    if (sessionAudioChunks.isNotEmpty()) {
-                        println("[Conversation] Clearing ${sessionAudioChunks.size} residual audio chunks")
-                        sessionAudioChunks.clear()
-                    }
+                // Clear audio chunks if any remain (BoundedAudioBuffer is thread-safe)
+                if (sessionAudioChunks.isNotEmpty()) {
+                    SpeakingLogger.debug { "Clearing ${sessionAudioChunks.size()} residual audio chunks" }
+                    sessionAudioChunks.clear()
                 }
                 
                 // Reset session tracking
@@ -894,7 +949,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
             } else {
                 // Preserve conversation history but clear error state
                 _conversationError.value = null
-                println("[Conversation] Preserving conversation history for quick re-entry")
+                SpeakingLogger.debug { "Preserving conversation history for quick re-entry" }
             }
         }
     }
@@ -906,7 +961,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
     fun stopConversationMode() {
         // Atomic guard to prevent duplicate stops
         if (!isStoppingConversation.compareAndSet(false, true)) {
-            println("[Conversation] Stop already in progress - ignoring")
+            SpeakingLogger.warn("Conversation") { "Stop already in progress - ignoring" }
             return
         }
         
@@ -919,69 +974,99 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
 
         viewModelScope.launch(Dispatchers.Main) {
             try {
-                println("[Conversation] Stopping conversation agent")
+                SpeakingLogger.info("Conversation") { "Stopping conversation agent" }
                 
-                // Stop recording first if active
-                if (_isConversationRecording.value || isRecordingLocked.get()) {
-                    println("[Conversation] Stopping active recording first")
-                    recordingStreamJob?.cancel()
-                    recordingStreamJob = null
-                    voiceRecorder.cancelRecording()
-                    _isConversationRecording.value = false
-                    isRecordingLocked.set(false)
-                }
+                // Save conversation audio before stopping
+                saveConversationAudio()
                 
-                conversationMutex.withLock {
-                    val result = agentService.stopConversation()
-                    if (result.isSuccess) {
-                        println("[Conversation] Agent stopped successfully - all buffers cleared")
-                    } else {
-                        println("[Conversation] Failed to stop agent: ${result.exceptionOrNull()?.message}")
-                    }
-                }
-                
-                // Save conversation recording to Supabase with audio
-                withContext(Dispatchers.IO) {
-                    saveConversationAsRecording()
-                }
-                
-                // Clear audio chunks after saving
-                synchronized(sessionAudioChunks) {
-                    println("[Conversation] Clearing ${sessionAudioChunks.size} audio chunks from memory")
-                    sessionAudioChunks.clear()
-                }
-                
-            } catch (e: Exception) {
-                println("[Conversation] Error stopping: ${e.message}")
-                e.printStackTrace()
-            } finally {
-                // Reset the conversation state but stay in conversation mode
+                agentService.stopConversation()
                 _isConversationActive.value = false
+                _isConversationRecording.value = false
                 _isAgentSpeaking.value = false
                 _isAgentThinking.value = false
-                _isConversationRecording.value = false
-                isRecordingLocked.set(false)
-                isStoppingConversation.set(false)
+                recordingStreamJob?.cancel()
                 
-                // Clear session ID for next conversation
-                currentSessionId = null
-                sessionStartTime = 0L
-                
-                println("[Conversation] Agent stopped - ready to restart with clean slate")
+                SpeakingLogger.info("Conversation") { "Stopped" }
+            } catch (e: Exception) {
+                SpeakingLogger.error("Conversation") { "Error stopping: ${e.message}" }
             }
         }
     }
-
+    
+    /**
+     * Save conversation audio to file and Supabase storage
+     */
+    private suspend fun saveConversationAudio() {
+        if (sessionAudioChunks.isEmpty()) return
+        
+        try {
+            // Create WAV file from audio chunks using temp file manager
+            val tempFile = tempFileManager.createTempFile("conversation_", ".wav")
+            val outputStream = FileOutputStream(tempFile)
+            
+            // Get combined audio data from bounded buffer
+            val audioData = sessionAudioChunks.combine() ?: return
+            val totalSize = audioData.size + 44
+            outputStream.write(byteArrayOf(
+                'R'.code.toByte(), 'I'.code.toByte(), 'F'.code.toByte(), 'F'.code.toByte(),
+                (totalSize and 0xFF).toByte(), ((totalSize shr 8) and 0xFF).toByte(),
+                ((totalSize shr 16) and 0xFF).toByte(), ((totalSize shr 24) and 0xFF).toByte(),
+                'W'.code.toByte(), 'A'.code.toByte(), 'V'.code.toByte(), 'E'.code.toByte(),
+                'f'.code.toByte(), 'm'.code.toByte(), 't'.code.toByte(), ' '.code.toByte(),
+                16, 0, 0, 0, // Subchunk size
+                1, 0, // Audio format (PCM)
+                1, 0, // Channels
+                0x44, 0xAC.toByte(), 0, 0, // Sample rate (44100)
+                0x88.toByte(), 0x58, 0x01, 0, // Byte rate
+                2, 0, // Block align
+                16, 0, // Bits per sample
+                'd'.code.toByte(), 'a'.code.toByte(), 't'.code.toByte(), 'a'.code.toByte(),
+                (audioData.size and 0xFF).toByte(),
+                ((audioData.size shr 8) and 0xFF).toByte(),
+                ((audioData.size shr 16) and 0xFF).toByte(),
+                ((audioData.size shr 24) and 0xFF).toByte()
+            ))
+            
+            // Write audio data
+            outputStream.write(audioData)
+            outputStream.close()
+            
+            // Upload to Supabase storage
+            val storage = SupabaseConfig.client.storage.from("conversations")
+            val path = "${userId}/${currentSessionId}.wav"
+            storage.upload(path, tempFile, upsert = true)
+            
+            // Save metadata
+            voiceApiService.saveSession(
+                userId = userId, // Use actual user ID
+                language = _voiceTutorLanguage.value?.name ?: "en",
+                level = _voiceTutorLevel.value ?: "intermediate",
+                scenario = _voiceTutorScenario.value ?: "daily_conversation",
+                transcript = _conversationTurns.value.joinToString("\n") { "${it.role}: ${it.text}" },
+                audioUrl = "${SupabaseConfig.client.supabaseUrl}/object/public/conversations/$path",
+                feedback = kotlinx.serialization.json.buildJsonObject { /* existing feedback */ },
+                sessionDuration = (System.currentTimeMillis() - sessionStartTime) / 1000f
+            )
+            
+            SpeakingLogger.info("Conversation") { "Audio saved: ${tempFile.absolutePath}" }
+            
+            // Clean up temp file after upload
+            tempFileManager.remove(tempFile)
+        } catch (e: Exception) {
+            SpeakingLogger.error("Conversation") { "Error saving audio: ${e.message}" }
+        }
+    }
+    
     fun sendConversationAudio(audioFile: File) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val audioBytes = audioFile.readBytes()
                 val result = agentService.sendAudio(audioBytes)
                 if (result.isFailure) {
-                    println("[ConversationAudio] Failed to send audio: ${result.exceptionOrNull()?.message}")
+                    SpeakingLogger.error("ConversationAudio") { "Failed to send audio: ${result.exceptionOrNull()?.message}" }
                 }
             } catch (e: Exception) {
-                println("[ConversationAudio] Error sending audio: ${e.message}")
+                SpeakingLogger.error("ConversationAudio") { "Error sending audio: ${e.message}" }
             }
         }
     }
@@ -992,21 +1077,21 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
      */
     fun startConversationRecording() {
         if (!_isConversationActive.value) {
-            println("[ConversationRecording] Cannot record - conversation not active")
+            SpeakingLogger.warn("ConversationRecording") { "Cannot record - conversation not active" }
             return
         }
         
         if (_isConversationRecording.value) {
-            println("[ConversationRecording] Already recording")
+            SpeakingLogger.warn("ConversationRecording") { "Already recording" }
             return
         }
         
         if (!isRecordingLocked.compareAndSet(false, true)) {
-            println("[ConversationRecording] Recording lock held - ignoring")
+            SpeakingLogger.warn("ConversationRecording") { "Recording lock held - ignoring" }
             return
         }
         
-        println("[ConversationRecording] Starting push-to-talk recording")
+        SpeakingLogger.debug { "Starting push-to-talk recording" }
         _isConversationRecording.value = true
         
         viewModelScope.launch(Dispatchers.IO) {
@@ -1017,9 +1102,9 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                 } else {
                     agentService.startManualAudioCapture()
                 }
-                println("[ConversationRecording] Microphone active - recording started")
+                SpeakingLogger.debug { "Microphone active - recording started" }
             } catch (e: Exception) {
-                println("[ConversationRecording] Failed to start: ${e.message}")
+                SpeakingLogger.error("ConversationRecording") { "Failed to start: ${e.message}" }
                 _isConversationRecording.value = false
                 isRecordingLocked.set(false)
             }
@@ -1032,11 +1117,11 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
      */
     fun stopConversationRecording() {
         if (!_isConversationRecording.value) {
-            println("[ConversationRecording] Not currently recording")
+            SpeakingLogger.warn("ConversationRecording") { "Not currently recording" }
             return
         }
         
-        println("[ConversationRecording] Stopping push-to-talk recording")
+        SpeakingLogger.debug { "Stopping push-to-talk recording" }
         _isConversationRecording.value = false
         
         viewModelScope.launch(Dispatchers.IO) {
@@ -1047,9 +1132,9 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                 } else {
                     agentService.stopManualAudioCapture()
                 }
-                println("[ConversationRecording] Microphone released - recording stopped")
+                SpeakingLogger.debug { "Microphone released - recording stopped" }
             } catch (e: Exception) {
-                println("[ConversationRecording] Error stopping: ${e.message}")
+                SpeakingLogger.error("ConversationRecording") { "Error stopping: ${e.message}" }
             } finally {
                 isRecordingLocked.set(false)
             }
@@ -1074,31 +1159,18 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
         
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                println("[SessionSave] Saving conversation session: $sessionId")
+                SpeakingLogger.info("SessionSave") { "Saving conversation session: $sessionId" }
                 
                 // Calculate session duration
                 val duration = (System.currentTimeMillis() - sessionStartTime) / 1000f
                 
-                // Combine audio chunks into single file
+                // Combine audio chunks into single file using BoundedAudioBuffer
                 val audioFile = withContext(Dispatchers.IO) {
-                    val audioData = synchronized(sessionAudioChunks) {
-                        if (sessionAudioChunks.isEmpty()) {
-                            null
-                        } else {
-                            val totalSize = sessionAudioChunks.sumOf { it.size }
-                            ByteArray(totalSize).also { combined ->
-                                var offset = 0
-                                for (chunk in sessionAudioChunks) {
-                                    chunk.copyInto(combined, offset)
-                                    offset += chunk.size
-                                }
-                            }
-                        }
-                    }
+                    val audioData = sessionAudioChunks.combine()
                     
                     if (audioData != null && audioData.isNotEmpty()) {
-                        // Save to temporary WAV file
-                        val tempFile = File.createTempFile("session_${sessionId}", ".wav")
+                        // Save to temporary WAV file using temp file manager
+                        val tempFile = tempFileManager.createTempFile("session_${sessionId}", ".wav")
                         val audioFormat = javax.sound.sampled.AudioFormat(24000f, 16, 1, true, false)
                         val audioInputStream = javax.sound.sampled.AudioInputStream(
                             java.io.ByteArrayInputStream(audioData),
@@ -1110,7 +1182,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                             javax.sound.sampled.AudioFileFormat.Type.WAVE,
                             tempFile
                         )
-                        println("[SessionSave] Created audio file: ${tempFile.length()} bytes")
+                        SpeakingLogger.debug { "Created audio file: ${tempFile.length()} bytes" }
                         tempFile
                     } else {
                         null
@@ -1146,23 +1218,22 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                 )
                 
                 if (saveResult.isSuccess) {
-                    println("[SessionSave] Session saved successfully")
+                    val recordingData = saveResult.getOrNull()
+                    SpeakingLogger.info("SessionSave") { "Session saved successfully" }
                     
                     // TODO: Upload audio file to Supabase Storage
                     // This would be done through a backend endpoint to get signed URL
-                    audioFile?.delete()
+                    audioFile?.let { tempFileManager.remove(it) }
                 } else {
-                    println("[SessionSave] Failed to save session: ${saveResult.exceptionOrNull()?.message}")
-                    audioFile?.delete()
+                    SpeakingLogger.error("SessionSave") { "Failed to save session: ${saveResult.exceptionOrNull()?.message}" }
+                    audioFile?.let { tempFileManager.remove(it) }
                 }
                 
-                // Clear session data
-                synchronized(sessionAudioChunks) {
-                    sessionAudioChunks.clear()
-                }
+                // Clear session data (BoundedAudioBuffer is thread-safe)
+                sessionAudioChunks.clear()
                 
             } catch (e: Exception) {
-                println("[SessionSave] Error saving session: ${e.message}")
+                SpeakingLogger.error("SessionSave") { "Error saving session: ${e.message}" }
                 e.printStackTrace()
             }
         }
@@ -1174,7 +1245,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
     fun loadLessonScenarios(lessonId: String, language: String? = null) {
         viewModelScope.launch {
             try {
-                println("[SpeakingVM] Loading scenarios for lesson: $lessonId")
+                SpeakingLogger.info("SpeakingVM") { "Loading scenarios for lesson: $lessonId" }
                 
                 val languageParam = language ?: _voiceTutorLanguage.value?.name?.lowercase()
                 val result = voiceApiService.getLessonScenarios(lessonId, languageParam)
@@ -1183,17 +1254,17 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                     val scenarios = result.getOrNull()
                     if (scenarios != null && scenarios.isNotEmpty()) {
                         _lessonScenarios.value = scenarios
-                        println("[SpeakingVM] Loaded ${scenarios.size} scenarios")
+                        SpeakingLogger.debug { "Loaded ${scenarios.size} scenarios" }
                     } else {
-                        println("[SpeakingVM] No scenarios found for lesson")
+                        SpeakingLogger.warn("SpeakingVM") { "No scenarios found for lesson" }
                         _lessonScenarios.value = emptyList()
                     }
                 } else {
-                    println("[SpeakingVM] Failed to load scenarios: ${result.exceptionOrNull()?.message}")
+                    SpeakingLogger.error("SpeakingVM") { "Failed to load scenarios: ${result.exceptionOrNull()?.message}" }
                     _lessonScenarios.value = emptyList()
                 }
             } catch (e: Exception) {
-                println("[SpeakingVM] Error loading scenarios: ${e.message}")
+                SpeakingLogger.error("SpeakingVM") { "Error loading scenarios: ${e.message}" }
                 _lessonScenarios.value = emptyList()
             }
         }
@@ -1223,7 +1294,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
         // Use first prompt from scenario
         _currentPrompt.value = scenario.prompts.firstOrNull() ?: "Let's practice speaking"
         
-        println("[SpeakingVM] Started practice with scenario: ${scenario.title}")
+        SpeakingLogger.info("SpeakingVM") { "Started practice with scenario: ${scenario.title}" }
     }
     
     /**
@@ -1233,19 +1304,19 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
         viewModelScope.launch {
             try {
                 _isLoadingRecording.value = true
-                println("[SpeakingVM] Loading recording for session: $sessionId")
+                SpeakingLogger.info("SpeakingVM") { "Loading recording for session: $sessionId" }
                 
                 val result = voiceApiService.getConversationRecording(sessionId)
                 
                 if (result.isSuccess) {
                     _conversationRecording.value = result.getOrNull()
-                    println("[SpeakingVM] Recording loaded: ${_conversationRecording.value?.audioUrl}")
+                    SpeakingLogger.debug { "Recording loaded: ${_conversationRecording.value?.audioUrl}" }
                 } else {
-                    println("[SpeakingVM] Failed to load recording: ${result.exceptionOrNull()?.message}")
+                    SpeakingLogger.error("SpeakingVM") { "Failed to load recording: ${result.exceptionOrNull()?.message}" }
                     _conversationRecording.value = null
                 }
             } catch (e: Exception) {
-                println("[SpeakingVM] Error loading recording: ${e.message}")
+                SpeakingLogger.error("SpeakingVM") { "Error loading recording: ${e.message}" }
                 _conversationRecording.value = null
             } finally {
                 _isLoadingRecording.value = false
@@ -1259,18 +1330,18 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
     fun playConversationRecording() {
         val recording = _conversationRecording.value
         if (recording == null || recording.audioUrl.isNullOrEmpty()) {
-            println("[SpeakingVM] No recording available to play")
+            SpeakingLogger.warn("SpeakingVM") { "No recording available to play" }
             return
         }
         
         viewModelScope.launch {
             try {
-                println("[SpeakingVM] Playing recording: ${recording.audioUrl}")
+                SpeakingLogger.debug { "Playing recording: ${recording.audioUrl}" }
                 // TODO: Implement audio streaming from URL
                 // This would download the audio file and play it
                 // audioPlayer.playFromUrl(recording.audioUrl)
             } catch (e: Exception) {
-                println("[SpeakingVM] Error playing recording: ${e.message}")
+                SpeakingLogger.error("SpeakingVM") { "Error playing recording: ${e.message}" }
             }
         }
     }
@@ -1280,7 +1351,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
      */
     private suspend fun saveConversationAsRecording() {
         if (currentSessionId == null) {
-            println("[SpeakingVM] Cannot save - no session ID")
+            SpeakingLogger.warn("SpeakingVM") { "Cannot save - no session ID" }
             return
         }
         
@@ -1292,18 +1363,18 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
             val duration = (System.currentTimeMillis() - sessionStartTime) / 1000f
             val turnCount = _conversationTurns.value.size
             
-            println("[SpeakingVM] ========================================")
-            println("[SpeakingVM] SAVING CONVERSATION RECORDING")
-            println("[SpeakingVM] Session ID: $currentSessionId")
-            println("[SpeakingVM] User ID: $userId")
-            println("[SpeakingVM] Language: ${_voiceTutorLanguage.value?.name?.lowercase()}")
-            println("[SpeakingVM] Turn count: $turnCount")
-            println("[SpeakingVM] Duration: ${duration}s")
-            println("[SpeakingVM] Transcript length: ${transcript.length} chars")
-            println("[SpeakingVM] ========================================")
+            SpeakingLogger.info("SpeakingVM") { "========================================" }
+            SpeakingLogger.info("SpeakingVM") { "SAVING CONVERSATION RECORDING" }
+            SpeakingLogger.info("SpeakingVM") { "Session ID: $currentSessionId" }
+            SpeakingLogger.info("SpeakingVM") { "User ID: $userId" }
+            SpeakingLogger.info("SpeakingVM") { "Language: ${_voiceTutorLanguage.value?.name?.lowercase()}" }
+            SpeakingLogger.info("SpeakingVM") { "Turn count: $turnCount" }
+            SpeakingLogger.info("SpeakingVM") { "Duration: ${duration}s" }
+            SpeakingLogger.info("SpeakingVM") { "Transcript length: ${transcript.length} chars" }
+            SpeakingLogger.info("SpeakingVM") { "========================================" }
             
             if (turnCount == 0) {
-                println("[SpeakingVM] WARNING: No conversation turns to save")
+                SpeakingLogger.warn("SpeakingVM") { "WARNING: No conversation turns to save" }
                 return
             }
             
@@ -1324,48 +1395,38 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
             
             if (result.isSuccess) {
                 val recordingData = result.getOrNull()
-                println("[SpeakingVM] ✅ Recording saved successfully!")
-                println("[SpeakingVM] Recording ID: ${recordingData?.id}")
+                SpeakingLogger.info("SpeakingVM") { "✅ Recording saved successfully!" }
+                SpeakingLogger.info("SpeakingVM") { "Recording ID: ${recordingData?.id}" }
                 if (recordingData != null) {
                     _conversationRecording.value = recordingData
                 }
             } else {
-                println("[SpeakingVM] ❌ Failed to save recording")
-                println("[SpeakingVM] Error: ${result.exceptionOrNull()?.message}")
+                SpeakingLogger.error("SpeakingVM") { "❌ Failed to save recording" }
+                SpeakingLogger.error("SpeakingVM") { "Error: ${result.exceptionOrNull()?.message}" }
                 result.exceptionOrNull()?.printStackTrace()
             }
             
-            audioFile?.delete()
+            audioFile?.let { tempFileManager.remove(it) }
         } catch (e: Exception) {
-            println("[SpeakingVM] ❌ Exception saving recording: ${e.message}")
+            SpeakingLogger.error("SpeakingVM") { "❌ Exception saving recording: ${e.message}" }
             e.printStackTrace()
         }
     }
     
     private fun createAudioFileFromChunks(): File? {
         return try {
-            val audioData = synchronized(sessionAudioChunks) {
-                if (sessionAudioChunks.isEmpty()) return null
-                
-                val totalSize = sessionAudioChunks.sumOf { it.size }
-                ByteArray(totalSize).also { combined ->
-                    var offset = 0
-                    for (chunk in sessionAudioChunks) {
-                        chunk.copyInto(combined, offset)
-                        offset += chunk.size
-                    }
-                }
-            }
+            // Use BoundedAudioBuffer.combine() for thread-safe audio data retrieval
+            val audioData = sessionAudioChunks.combine() ?: return null
             
-            // Create proper WAV file with RIFF header
-            val tempFile = File.createTempFile("conversation_", ".wav")
+            // Create proper WAV file with RIFF header using TempFileManager
+            val tempFile = tempFileManager.createTempFile("conversation_", ".wav")
             
-            // Define audio format (24kHz, 16-bit, mono, PCM)
-            val sampleRate = 24000
-            val channels = 1
-            val bitsPerSample = 16
-            val byteRate = sampleRate * channels * bitsPerSample / 8
-            val blockAlign = channels * bitsPerSample / 8
+            // Define audio format using centralized config
+            val sampleRate = SpeakingConfig.SAMPLE_RATE
+            val channels = SpeakingConfig.CHANNELS
+            val bitsPerSample = SpeakingConfig.BITS_PER_SAMPLE
+            val byteRate = SpeakingConfig.BYTE_RATE
+            val blockAlign = SpeakingConfig.BLOCK_ALIGN
             
             // Calculate file sizes
             val dataSize = audioData.size
@@ -1395,29 +1456,15 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                 output.write(audioData) // Actual audio data
             }
             
-            println("[SpeakingVM] Created WAV file: ${tempFile.absolutePath} (${tempFile.length()} bytes)")
+            SpeakingLogger.debug { "Created WAV file: ${tempFile.absolutePath} (${tempFile.length()} bytes)" }
             tempFile
         } catch (e: Exception) {
-            println("[SpeakingVM] Error creating audio file: ${e.message}")
+            SpeakingLogger.error("AudioFile") { "Error creating audio file: ${e.message}" }
             null
         }
     }
     
-    private fun intToByteArray(value: Int): ByteArray {
-        return byteArrayOf(
-            (value and 0xFF).toByte(),
-            ((value shr 8) and 0xFF).toByte(),
-            ((value shr 16) and 0xFF).toByte(),
-            ((value shr 24) and 0xFF).toByte()
-        )
-    }
-    
-    private fun shortToByteArray(value: Int): ByteArray {
-        return byteArrayOf(
-            (value and 0xFF).toByte(),
-            ((value shr 8) and 0xFF).toByte()
-        )
-    }
+    // intToByteArray and shortToByteArray are now imported from SpeakingUtils
     
     private fun getSpeakingFeatures(): List<SpeakingFeature> {
         return listOf(

@@ -144,16 +144,16 @@ object ApiKeyConfig {
     }
     
     fun getGeminiApiKey(): String? {
-        System.getenv("GEMINI_API_KEY")?.let { 
+        System.getenv("GEMINI_API_KEY")?.let {
             println("Using GEMINI_API_KEY from system environment")
-            return it 
+            return it
         }
-        
-        properties.getProperty("GEMINI_API_KEY")?.let { 
+
+        properties.getProperty("GEMINI_API_KEY")?.let {
             println("Using GEMINI_API_KEY from config file")
-            return it 
+            return it
         }
-        
+
         println("GEMINI_API_KEY not found in any configuration source")
         println("   Please set it in one of these locations:")
         println("   1. System environment variable: GEMINI_API_KEY")
@@ -161,7 +161,24 @@ object ApiKeyConfig {
         println("   3. File: composeApp/config.properties")
         return null
     }
-    
-    // Edge TTS is now handled by the Python backend
-    // No Edge TTS API key needed in the Kotlin client
+
+    fun getDeepSeekApiKey(): String? {
+        System.getenv("DEEPSEEK_API_KEY")?.let {
+            println("Using DEEPSEEK_API_KEY from system environment")
+            return it
+        }
+
+        properties.getProperty("DEEPSEEK_API_KEY")?.let {
+            println("Using DEEPSEEK_API_KEY from config file")
+            return it
+        }
+
+        println("    DEEPSEEK_API_KEY not found in any configuration source")
+        println("   Please set it in one of these locations:")
+        println("   1. System environment variable: DEEPSEEK_API_KEY")
+        println("   2. File: composeApp/.env")
+        println("   3. File: composeApp/config.properties")
+        return null
+    }
+
 }

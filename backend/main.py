@@ -282,7 +282,7 @@ async def list_providers():
     
     return {
         "providers": provider_info,
-        "default": AIProvider.GEMINI.value,
+        "default": AIProvider.DEEPSEEK.value,
     }
 
 

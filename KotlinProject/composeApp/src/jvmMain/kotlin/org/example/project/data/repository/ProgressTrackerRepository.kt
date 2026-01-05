@@ -288,7 +288,7 @@ class ProgressTrackerRepositoryImpl : ProgressTrackerRepository {
                     filter {
                         eq("user_id", userId)
                     }
-                }.decodeList<UserVocabularyDTO>()
+                }.decodeList<ProgressUserVocabularyDTO>()
 
                 if (userVocab.isEmpty()) return@withContext 0
 
@@ -298,7 +298,7 @@ class ProgressTrackerRepositoryImpl : ProgressTrackerRepository {
                         isIn("id", wordIds)
                         eq("language", languageName)
                     }
-                }.decodeList<VocabularyWordDTO>()
+                }.decodeList<ProgressVocabularyWordDTO>()
 
                 words.size
             }
@@ -671,6 +671,20 @@ private data class ConversationFeedbackWithSessionDTO(
     @SerialName("pronunciation_score") val pronunciationScore: Int?,
     @SerialName("vocabulary_score") val vocabularyScore: Int?,
     @SerialName("fluency_score") val fluencyScore: Int?,
+)
+
+@Serializable
+private data class ProgressUserVocabularyDTO(
+    @SerialName("id") val id: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("word_id") val wordId: String,
+)
+
+@Serializable
+private data class ProgressVocabularyWordDTO(
+    @SerialName("id") val id: String,
+    @SerialName("word") val word: String,
+    @SerialName("language") val language: String,
 )
 
 // Extension for safe average calculation

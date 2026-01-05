@@ -21,8 +21,8 @@ import org.example.project.core.auth.User as AuthUser
 
 class LessonsViewModel : ViewModel() {
     private val profileService = ProfileService()
-    private val lessonTopicsRepository: LessonTopicsRepository = LessonTopicsRepositoryImpl()
-    private val lessonContentRepository: LessonContentRepository = LessonContentRepositoryImpl()
+    private val lessonTopicsRepository: LessonTopicsRepository = LessonTopicsRepositoryImpl.getInstance()
+    private val lessonContentRepository: LessonContentRepository = LessonContentRepositoryImpl.getInstance()
     
     // Track last loaded state to avoid redundant API calls
     private var lastLoadedCategory: LessonDifficulty? = null

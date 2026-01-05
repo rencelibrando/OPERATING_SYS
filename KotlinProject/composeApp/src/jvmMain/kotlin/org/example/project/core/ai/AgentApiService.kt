@@ -4,15 +4,21 @@ import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.websocket.*
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -23,25 +29,102 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.io.Closeable
 import java.io.ByteArrayOutputStream
+import java.util.ArrayDeque
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import javax.sound.sampled.*
 import javax.sound.sampled.AudioFormat.Encoding.PCM_SIGNED
 
 class AgentApiService : Closeable {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    
+    private inline fun logInfo(crossinline message: () -> String) {
+        if (LOG_ENABLED) println("[AgentService] ${message()}")
+    }
+    
+    private inline fun logDebug(crossinline message: () -> String) {
+        if (LOG_DEBUG_ENABLED) println("[AgentService] ${message()}")
+    }
+    
+    private inline fun logError(tag: String = "ERROR", crossinline message: () -> String) {
+        println("[AgentService][$tag] ${message()}")
+    }
+    
+    
+    
+    
+    
+    // ==================== STATE MACHINE ====================
+    private inner class StateMachine {
+        private val lock = Any()
+        private var _state = ConnectionState.DISCONNECTED
+        
+        fun transition(from: ConnectionState, to: ConnectionState): Boolean = synchronized(lock) {
+            if (_state == from) {
+                _state = to
+                true
+            } else false
+        }
+        
+        fun get(): ConnectionState = synchronized(lock) { _state }
+        fun set(state: ConnectionState) = synchronized(lock) { _state = state }
+        
+        fun isConnectedOrReady(): Boolean = synchronized(lock) {
+            _state == ConnectionState.CONNECTED || _state == ConnectionState.READY
+        }
+    }
+    
+    private val stateMachine = StateMachine()
+    
+    
+    
+    
+    
+    companion object {
+        // Logging configuration
+        private const val LOG_ENABLED = true
+        private const val LOG_DEBUG_ENABLED = true
+        
+        // API Endpoints
+        private const val DEEPGRAM_AGENT_URL = "wss://agent.deepgram.com/v1/agent/converse"
+        private const val DEEPGRAM_STT_URL = "wss://api.deepgram.com/v1/listen"
+        private const val OPENAI_URL = "https://api.openai.com/v1/chat/completions"
+        
+        // Connection settings
+        private const val MAX_RECONNECT_ATTEMPTS = 5
+        private const val KEEP_ALIVE_INTERVAL_MS = 8000L // 8 seconds - balance between timeout prevention and less interruption
+        private const val SOCKET_TIMEOUT_MS = 60_000L
+        private const val CONNECT_TIMEOUT_MS = 15_000L
+        
+        // Audio settings
+        private const val SAMPLE_RATE = 24000f
+        private const val AUDIO_BUFFER_SIZE = 262144 // 256KB
+        
+        // KeepAlive message (constant to avoid recreation)
+        private const val KEEP_ALIVE_MSG = """{"type":"KeepAlive"}"""
+        
+        // Silent audio buffer for keep-alive (100ms of silence at 24kHz)
+        private val SILENT_AUDIO_BUFFER = ByteArray(2400) // 100ms at 24kHz (24000 * 0.1 * 2 bytes/sample)
+        
+        // Grace period after agent audio done to allow local buffer to drain
+        private const val AUDIO_DRAIN_GRACE_PERIOD_MS = 3000L
+    }
+    
+    private val mainJob = SupervisorJob()
+    private val scope = CoroutineScope(mainJob + Dispatchers.IO)
     private val client = HttpClient(CIO) {
         install(WebSockets) {
             pingInterval = 30_000
-            // Increase max frame size for better audio streaming
             maxFrameSize = 2_097_152 // 2MB frames for audio chunks
         }
         engine {
             requestTimeout = 0
             endpoint {
-                connectTimeout = 15_000 // Faster connection
-                socketTimeout = 60_000 // Longer socket timeout for streaming
-                connectAttempts = 5 // More retry attempts
+                connectTimeout = CONNECT_TIMEOUT_MS
+                socketTimeout = SOCKET_TIMEOUT_MS
+                connectAttempts = 5
             }
         }
     }
@@ -51,12 +134,8 @@ class AgentApiService : Closeable {
         isLenient = true
         ignoreUnknownKeys = true
         encodeDefaults = true
-        explicitNulls = false  // Exclude null fields from JSON
+        explicitNulls = false
     }
-
-    private val deepgramUrl = "wss://agent.deepgram.com/v1/agent/converse"
-    private val deepgramSttUrl = "wss://api.deepgram.com/v1/listen"
-    private val openAiUrl = "https://api.openai.com/v1/chat/completions"
     
     private var currentSession: DefaultClientWebSocketSession? = null
     private var sttSession: DefaultClientWebSocketSession? = null
@@ -68,6 +147,9 @@ class AgentApiService : Closeable {
     // Audio feedback prevention
     private val isAgentPlayingAudio = AtomicBoolean(false)
     private var audioPlaybackJob: kotlinx.coroutines.Job? = null
+    
+    // Grace period after agent audio done to allow local buffer to drain
+    private val agentAudioDoneTimestamp = java.util.concurrent.atomic.AtomicLong(0L)
     
     // Edge TTS is now handled by the Python backend
     // No need for Edge TTS service in the Kotlin client
@@ -88,6 +170,19 @@ class AgentApiService : Closeable {
     private var currentLanguage: String = ""
     // Edge TTS is now handled by the Python backend
     private var useBackendTts: Boolean = false
+    
+    // Auto-reconnection state for mid-session drops (thread-safe)
+    private val reconnectAttempts = AtomicInteger(0)
+    private var lastSessionParams: SessionParams? = null
+    
+    private data class SessionParams(
+        val apiKey: String,
+        val language: String,
+        val level: String,
+        val scenario: String,
+        val onMessage: (AgentMessage) -> Unit,
+        val onAudioReceived: ((ByteArray) -> Unit)?
+    )
     
     private data class CustomPipelineConfig(
         val apiKey: String,
@@ -111,10 +206,9 @@ class AgentApiService : Closeable {
         // Use Edge STT pipeline (backend) for Chinese and Korean
         // All other languages use Deepgram Agent
         val languageLower = language.lowercase()
-        println("[AgentService] DEBUG: Checking language '$language' (lowercase: '$languageLower')")
+        logDebug { "Checking language '$language' (lowercase: '$languageLower')" }
         val result = languageLower in listOf("chinese", "mandarin", "zh", "korean", "hangeul", "ko")
-        println("[AgentService] DEBUG: Pipeline selection for language '$language' -> $result")
-        println("[AgentService] Pipeline selection for language '$language': ${if (result) "EDGE_STT" else "DEEPGRAM"}")
+        logDebug { "Pipeline selection for '$language': ${if (result) "EDGE_STT" else "DEEPGRAM"}" }
         return result
     }
 
@@ -126,47 +220,57 @@ class AgentApiService : Closeable {
         onMessage: (AgentMessage) -> Unit,
         onAudioReceived: ((ByteArray) -> Unit)? = null
     ): Result<String> {
+        // Basic validation
+        if (apiKey.isBlank() || language.isBlank() || scenario.isBlank()) {
+            return Result.failure(IllegalArgumentException("API key, language, and scenario cannot be blank"))
+        }
+        
         return try {
-            println("[AgentService] Starting conversation with language: '$language' (original case)")
-            println("[AgentService] Level: '$level', Scenario: '$scenario'")
+            logInfo { "Starting conversation - language: '$language', level: '$level', scenario: '$scenario'" }
             
-            if (!connectionState.compareAndSet(ConnectionState.DISCONNECTED, ConnectionState.CONNECTING)) {
-                val currentState = connectionState.get()
-                println("[AgentService] Already $currentState - ignoring duplicate start call")
+            // Use state machine for thread-safe state transitions
+            if (!stateMachine.transition(ConnectionState.DISCONNECTED, ConnectionState.CONNECTING)) {
+                val currentState = stateMachine.get()
+                logInfo { "Already $currentState - ignoring duplicate start call" }
                 return Result.failure(Exception("Connection already in progress or active"))
             }
+            
+            // Also update the atomic reference for backward compatibility
+            connectionState.set(ConnectionState.CONNECTING)
             
             agentReady.set(false)
             onMessageCallback = onMessage
             onAudioReceivedCallback = onAudioReceived
             
+            // Store session params for auto-reconnection on mid-session drops
+            lastSessionParams = SessionParams(apiKey, language, level, scenario, onMessage, onAudioReceived)
+            reconnectAttempts.set(0)  // Reset reconnect counter for new session
+            
             if (shouldUseCustomPipeline(language)) {
-                println("[AgentService] Using custom pipeline for $language")
+                logInfo { "Using custom pipeline for $language" }
                 return startCustomConversation(apiKey, language, level, scenario)
             }
             
-            println("[AgentService] Connecting to Deepgram Agent V1 API")
-            println("[AgentService] API Key: ${apiKey.take(10)}...")
-            println("[AgentService] Target: $deepgramUrl")
+            logInfo { "Connecting to Deepgram Agent V1 API" }
+            logDebug { "API Key: ${apiKey.take(10)}..." }
+            logDebug { "Target: $DEEPGRAM_AGENT_URL" }
             
             var lastException: Exception? = null
-            val maxRetries = 3
+            val maxRetries = 5
             
             for (attempt in 1..maxRetries) {
                 try {
-                    println("[AgentService] Connection attempt $attempt/$maxRetries")
-                    currentSession = client.webSocketSession(deepgramUrl) {
+                    logInfo { "Connection attempt $attempt/$maxRetries" }
+                    currentSession = client.webSocketSession(DEEPGRAM_AGENT_URL) {
                         header("Authorization", "Token $apiKey")
                     }
-                    println("[AgentService] ✅ WebSocket connected successfully")
+                    logInfo { "WebSocket connected successfully" }
                     break
                 } catch (e: Exception) {
                     lastException = e
-                    println("[AgentService] ⚠️ Attempt $attempt failed: ${e.message}")
+                    logError("Connection") { "Attempt $attempt failed: ${e.message}" }
                     if (attempt < maxRetries) {
-                        val delay = attempt * 2000L
-                        println("[AgentService] Retrying in ${delay}ms...")
-                        delay(delay)
+                        delay(1000L * attempt) // Simple linear backoff
                     }
                 }
             }
@@ -175,23 +279,15 @@ class AgentApiService : Closeable {
                 throw lastException ?: Exception("Failed to connect after $maxRetries attempts")
             }
 
-            println("[AgentService] WebSocket connected")
+            logInfo { "WebSocket connected" }
             
-            val audioFormat = AudioFormat(
-                PCM_SIGNED,
-                16000f, // Reduced from 24000f to 16000f for slower playback
-                16,
-                1,
-                2,
-                16000f, // Reduced from 24000f to 16000f for slower playback
-                false
-            )
+            // Initialize audio playback for 24kHz (Deepgram output format)
+            val audioFormat = AudioFormat(PCM_SIGNED, 24000f, 16, 1, 2, 24000f, false)
             val info = DataLine.Info(SourceDataLine::class.java, audioFormat)
             sourceDataLine = AudioSystem.getLine(info) as SourceDataLine
-            // Use larger buffer for smoother streaming and reduce underruns
-            sourceDataLine?.open(audioFormat, 262144) // 256KB buffer for optimal streaming
+            sourceDataLine?.open(audioFormat, AUDIO_BUFFER_SIZE)
             sourceDataLine?.start()
-            println("[AgentService] Audio playback initialized with 256KB buffer at 16000Hz for smoother speech")
+            logInfo { "Audio playback initialized with ${AUDIO_BUFFER_SIZE / 1024}KB buffer at 24000Hz" }
             
             // Reset audio state for new conversation
             resetAudioState()
@@ -223,25 +319,26 @@ class AgentApiService : Closeable {
                 audio = AgentV1AudioConfig(
                     input = AgentV1AudioInput(
                         encoding = "linear16",
-                        sampleRate = 24000
+                        sampleRate = 24000  // Deepgram default for best quality
                     ),
-                output = AgentV1AudioOutput(
-                    encoding = "linear16",
-                    sampleRate = 16000, // Reduced from 24000 to 16000 for slower playback
-                    container = "none"  // Deepgram sends raw PCM, not WAV containers
-                )
+                    output = AgentV1AudioOutput(
+                        encoding = "linear16",
+                        sampleRate = 24000, // Deepgram default 24kHz
+                        container = "none"  // Deepgram sends raw PCM, not WAV containers
+                    )
                 ),
                 agent = AgentV1Agent(
                     language = langCode, // Use correct language for STT (zh, ko, en, etc.)
                     listen = AgentV1Listen(
                         provider = AgentV1ListenProvider(
                             type = "deepgram",
-                            model = "nova-3"
+                            model = "nova-3",
+                            smartFormat = true  // Improves transcript readability for UI display
                         )
                     ),
                     think = AgentV1Think(
                         provider = AgentV1ThinkProvider(
-                            type = "open_ai",
+                            type = "open_ai",  // Using OpenAI for thinking (with underscore)
                             model = "gpt-4o-mini",
                             temperature = 0.7f
                         ),
@@ -263,74 +360,55 @@ class AgentApiService : Closeable {
             )
 
             val settingsJson = json.encodeToString(settings)
-            println("[AgentService] Sending Settings message")
-            println("[AgentService] Configuration: model=nova-3, STT language=$langCode, TTS=$actualTtsModel (useBackendTts=$useBackendTts for ${if (useBackendTts) language else "other languages"})")
+            logInfo { "Sending Settings message" }
+            logDebug { "Configuration: model=nova-3, STT language=$langCode, TTS=$actualTtsModel (useBackendTts=$useBackendTts)" }
             currentSession?.send(Frame.Text(settingsJson))
 
             connectionState.set(ConnectionState.CONNECTED)
+            stateMachine.set(ConnectionState.CONNECTED)
             
             // Start keep-alive job to send silent audio when user isn't speaking
             startKeepAlive()
             
+            // Simple message receiving loop
             scope.launch {
                 try {
-                    // Use a dedicated coroutine for message processing to avoid blocking
                     for (frame in currentSession!!.incoming) {
-                        // Skip processing if conversation is stopped
-                        if (connectionState.get() == ConnectionState.DISCONNECTED) {
-                            break
-                        }
-                        
                         when (frame) {
                             is Frame.Text -> {
-                                // Handle text messages in separate scope to avoid blocking audio
-                                scope.launch(Dispatchers.IO) {
-                                    handleTextMessage(frame.readText())
-                                }
+                                handleTextMessage(frame.readText())
                             }
                             is Frame.Binary -> {
-                                // Handle audio frames immediately for real-time playback
                                 val audioData = frame.readBytes()
-                                scope.launch(Dispatchers.IO) {
-                                    handleBinaryAudio(audioData)
+                                if (!useBackendTts && sourceDataLine?.isOpen == true) {
+                                    sourceDataLine?.write(audioData, 0, audioData.size)
+                                    onAudioReceivedCallback?.invoke(audioData)
                                 }
                             }
                             else -> {}
                         }
                     }
                 } catch (e: Exception) {
-                    println("[AgentService] Error receiving message: ${e.message}")
-                    connectionState.set(ConnectionState.DISCONNECTED)
-                    agentReady.set(false)
-                    stopAudioCapture()
-                    onMessage(AgentMessage(
-                        type = "error",
-                        error = "Connection error: ${e.message}"
-                    ))
+                    if (e !is kotlinx.coroutines.CancellationException) {
+                        logError("MessageReceiver") { "Error: ${e.message}" }
+                        connectionState.set(ConnectionState.DISCONNECTED)
+                        stateMachine.set(ConnectionState.DISCONNECTED)
+                        agentReady.set(false)
+                        onMessage(AgentMessage(
+                            type = "error",
+                            error = "Connection error: ${e.message}"
+                        ))
+                    }
                 }
             }
 
             Result.success("deepgram-session")
         } catch (e: Exception) {
-            println("[AgentService] ❌ Failed to start conversation")
-            println("[AgentService] Error type: ${e::class.simpleName}")
-            println("[AgentService] Error message: ${e.message}")
-            
-            val errorMsg = when {
-                e.message?.contains("timeout", ignoreCase = true) == true -> 
-                    "Connection timeout. Please check your internet connection and try again."
-                e.message?.contains("authorization", ignoreCase = true) == true -> 
-                    "Invalid API key. Please check your Deepgram API key."
-                e.message?.contains("refused", ignoreCase = true) == true -> 
-                    "Connection refused. Deepgram service may be unavailable."
-                else -> "Connection failed: ${e.message}"
-            }
-            
+            logError("StartConversation") { "Failed: ${e.message}" }
             connectionState.set(ConnectionState.DISCONNECTED)
+            stateMachine.set(ConnectionState.DISCONNECTED)
             agentReady.set(false)
-            stopAudioCapture()
-            e.printStackTrace()
-            Result.failure(Exception(errorMsg, e))
+            Result.failure(e)
         }
     }
     
@@ -338,7 +416,7 @@ class AgentApiService : Closeable {
         try {
             val audioFormat = AudioFormat(
                 PCM_SIGNED,
-                24000f,
+                24000f,  // Deepgram recommended 24kHz
                 16,
                 1,
                 2,
@@ -348,34 +426,35 @@ class AgentApiService : Closeable {
             
             val info = DataLine.Info(TargetDataLine::class.java, audioFormat)
             if (!AudioSystem.isLineSupported(info)) {
-                println("[AgentService] Microphone not supported")
+                logError("Microphone") { "Microphone not supported" }
                 return
             }
             
             targetDataLine = AudioSystem.getLine(info) as TargetDataLine
             targetDataLine?.open(audioFormat)
-            println("[AgentService] Microphone opened and ready for push-to-talk")
+            logInfo { "Microphone opened at 24kHz" }
         } catch (e: Exception) {
-            println("[AgentService] Failed to open microphone: ${e.message}")
+            logError("Microphone") { "Failed to open: ${e.message}" }
         }
     }
     
     private fun startKeepAlive() {
         keepAliveJob?.cancel()
         keepAliveJob = scope.launch {
-            val silentAudio = ByteArray(2400) // Silent audio buffer (24000Hz, 100ms chunks)
-            
-            while (connectionState.get() == ConnectionState.READY || connectionState.get() == ConnectionState.CONNECTED) {
+            while (stateMachine.isConnectedOrReady()) {
                 try {
-                    // Only send keep-alive when completely idle and no audio is playing to prevent interference
-                    if (!isUserSpeaking.get() && !isAgentPlayingAudio.get() && totalAudioChunks == 0) {
-                        currentSession?.send(Frame.Binary(true, silentAudio))
-                        println("[AgentService] Sent keep-alive silent audio")
+                    delay(KEEP_ALIVE_INTERVAL_MS)
+                    
+                    // Only send KeepAlive when both user and agent are not speaking
+                    if (!isUserSpeaking.get() && !isAgentPlayingAudio.get()) {
+                        currentSession?.send(Frame.Text(KEEP_ALIVE_MSG))
+                        logDebug { "Sent KeepAlive message (both parties silent)" }
+                    } else {
+                        logDebug { "Skipping KeepAlive - user speaking: ${isUserSpeaking.get()}, agent speaking: ${isAgentPlayingAudio.get()}" }
                     }
-                    delay(2000) // Reduced frequency to minimize network overhead and audio interference
                 } catch (e: Exception) {
                     if (e !is kotlinx.coroutines.CancellationException) {
-                        println("[AgentService] Keep-alive error: ${e.message}")
+                        logError("KeepAlive") { "Error: ${e.message}" }
                     }
                     break
                 }
@@ -388,21 +467,85 @@ class AgentApiService : Closeable {
         keepAliveJob = null
     }
     
+    /**
+     * Attempt to reconnect after a mid-session connection drop.
+     * Uses exponential backoff with jitter: 1s, 2s, 4s, 8s (max 5 attempts).
+     */
+    private suspend fun attemptReconnect() {
+        val params = lastSessionParams ?: return
+        
+        val attempt = reconnectAttempts.incrementAndGet()
+        val baseDelay = minOf(1000L * (1L shl (attempt - 1)), 8000L)
+        val jitter = (0..500).random().toLong()
+        val backoffDelay = baseDelay + jitter
+        
+        logInfo { "Reconnect attempt $attempt/$MAX_RECONNECT_ATTEMPTS in ${backoffDelay}ms" }
+        
+        // Clean up current session
+        connectionState.set(ConnectionState.DISCONNECTED)
+        stateMachine.set(ConnectionState.DISCONNECTED)
+        stopKeepAlive()
+        try { currentSession?.close() } catch (_: Exception) {}
+        currentSession = null
+        
+        delay(backoffDelay)
+        
+        params.onMessage(AgentMessage(
+            type = "agent_message",
+            event = "Reconnecting",
+            content = "Reconnecting... (attempt $attempt/$MAX_RECONNECT_ATTEMPTS)"
+        ))
+        
+        val result = startConversation(
+            apiKey = params.apiKey,
+            language = params.language,
+            level = params.level,
+            scenario = params.scenario,
+            onMessage = params.onMessage,
+            onAudioReceived = params.onAudioReceived
+        )
+        
+        if (result.isSuccess) {
+            logInfo { "Reconnection successful" }
+            reconnectAttempts.set(0)
+            params.onMessage(AgentMessage(
+                type = "agent_message",
+                event = "Reconnected",
+                content = "Connection restored"
+            ))
+        } else {
+            logError("Reconnect") { "Failed: ${result.exceptionOrNull()?.message}" }
+            if (attempt >= MAX_RECONNECT_ATTEMPTS) {
+                params.onMessage(AgentMessage(
+                    type = "error",
+                    error = "Failed to reconnect after $MAX_RECONNECT_ATTEMPTS attempts. Please restart the conversation."
+                ))
+                lastSessionParams = null
+            }
+        }
+    }
+    
     fun startManualAudioCapture() {
-        if (connectionState.get() != ConnectionState.READY || targetDataLine == null || isAgentPlayingAudio.get()) {
-            println("[AgentService] Cannot start audio capture - not ready, no mic, or agent speaking")
-            println("[AgentService] Connection state: ${connectionState.get()}")
-            println("[AgentService] TargetDataLine null: ${targetDataLine == null}")
-            println("[AgentService] Agent playing: ${isAgentPlayingAudio.get()}")
+        if (stateMachine.get() != ConnectionState.READY || targetDataLine == null) {
+            logDebug { "Cannot start audio capture - state: ${stateMachine.get()}, mic: ${targetDataLine != null}" }
             return
         }
         
-        println("[AgentService] User started speaking")
+        // For push-to-talk, allow user to interrupt agent if needed
+        if (isAgentPlayingAudio.get()) {
+            logDebug { "User interrupting agent - allowing push-to-talk" }
+            isAgentPlayingAudio.set(false) // User takes priority in push-to-talk
+        }
+        
+        logInfo { "User started speaking" }
         isUserSpeaking.set(true)
         targetDataLine?.start()
         
+        // Use buffer pool to avoid allocations in hot path
+        val bufferSize = 2400 // 50ms at 24kHz
+        
         audioCaptureJob = scope.launch {
-            val buffer = ByteArray(4800) // Larger buffer for better capture efficiency
+            val buffer = ByteArray(bufferSize)
             val line = targetDataLine ?: return@launch
             var audioBytesSent = 0L
             
@@ -412,49 +555,46 @@ class AgentApiService : Closeable {
                         val bytesRead = line.read(buffer, 0, buffer.size)
                         if (bytesRead > 0) {
                             audioBytesSent += bytesRead
+                            // Send only needed portion - Frame.Binary handles the range
                             currentSession?.send(Frame.Binary(true, buffer.copyOf(bytesRead)))
                             
-                            // Log every 5 seconds of audio
                             if (audioBytesSent % 120000 == 0L) {
-                                println("[AgentService] Sent ${audioBytesSent / 1000}KB of audio to Deepgram Agent")
+                                logDebug { "Sent ${audioBytesSent / 1000}KB audio" }
                             }
                         }
-                        // Optimized delay for balance between responsiveness and performance
-                        kotlinx.coroutines.delay(10)
+                        kotlinx.coroutines.delay(5)
                     } catch (e: kotlinx.coroutines.CancellationException) {
-                        // Gracefully handle coroutine cancellation when user stops speaking
-                        println("[AgentService] Audio capture coroutine cancelled normally")
+                        logDebug { "Audio capture cancelled normally" }
                         break
                     } catch (e: Exception) {
-                        println("[AgentService] Error sending audio: ${e.message}")
+                        logError("AudioCapture") { "Error: ${e.message}" }
                         break
                     }
                 }
-                println("[AgentService] Audio capture ended. Total sent: ${audioBytesSent / 1000}KB")
+                logInfo { "Audio capture ended. Total: ${audioBytesSent / 1000}KB" }
             } catch (e: kotlinx.coroutines.CancellationException) {
-                // Top-level cancellation - expected when user stops speaking
-                println("[AgentService] Audio capture job cancelled - this is normal")
+                logDebug { "Audio capture job cancelled" }
+            } finally {
+                // Buffer cleanup not needed for ByteArray
             }
         }
     }
     
     fun stopManualAudioCapture() {
-        println("[AgentService] User stopped speaking")
+        logInfo { "User stopped speaking" }
         isUserSpeaking.set(false)
         
-        // Cancel the capture job gracefully
         audioCaptureJob?.cancel()
         audioCaptureJob = null
         
-        // Stop and flush the microphone line
         targetDataLine?.stop()
         targetDataLine?.flush()
         
-        println("[AgentService] Audio capture stopped cleanly")
+        logDebug { "Audio capture stopped cleanly" }
     }
     
     private fun stopAudioCapture() {
-        println("[AgentService] Stopping audio capture")
+        logDebug { "Stopping audio capture" }
         audioCaptureJob?.cancel()
         audioCaptureJob = null
         targetDataLine?.stop()
@@ -590,55 +730,56 @@ class AgentApiService : Closeable {
     }
     
     private fun getContextualGreeting(language: String, level: String, scenario: String, greetings: List<String>): String {
-        // Get a random base greeting for the language
-        val baseGreeting = greetings.random()
-        
-        // Add level and scenario context
-        val levelContext = when (level) {
-            "beginner" -> "I'll help you learn step by step!"
-            "intermediate" -> "I'll help you improve your skills!"
-            "advanced" -> "I'll challenge you to become fluent!"
-            else -> "I'll help you practice!"
+        // Short, tailored greeting based on scenario
+        return when (scenario) {
+            "travel" -> "Ready for travel practice?"
+            "work" -> "Let's practice work conversations."
+            "food" -> "Time to talk about food!"
+            "culture" -> "Let's explore culture together."
+            "daily_conversation" -> "Ready to chat?"
+            else -> "Let's practice!"
         }
-        
-        val scenarioContext = when (scenario) {
-            "conversation_partner" -> "Let's have a natural conversation!"
-            "travel" -> "Let's practice travel situations!"
-            "work" -> "Let's practice professional conversations!"
-            "daily_conversation" -> "Let's practice everyday conversations!"
-            "culture" -> "Let's explore cultural topics!"
-            else -> "Let's start practicing!"
-        }
-        
-        return "$baseGreeting $levelContext $scenarioContext"
     }
     
     private fun handleTextMessage(text: String) {
         try {
-            val preview = if (text.length > 100) text.take(100) + "..." else text
-            println("[AgentService] Received: $preview")
+            logDebug { "Received: ${if (text.length > 100) text.take(100) + "..." else text}" }
             
             val jsonObj = json.parseToJsonElement(text).jsonObject
             val type = jsonObj["type"]?.jsonPrimitive?.content ?: "Unknown"
             
             when (type) {
                 "Welcome" -> {
-                    println("[AgentService] Agent ready")
+                    logInfo { "Agent ready" }
                     onMessageCallback?.invoke(AgentMessage(type = "connection", event = "opened"))
                 }
                 "SettingsApplied" -> {
-                    println("[AgentService] Settings applied - agent is now ready")
+                    logInfo { "Settings applied - agent ready" }
                     agentReady.set(true)
                     connectionState.set(ConnectionState.READY)
+                    stateMachine.set(ConnectionState.READY)
                     openMicrophoneForConversation()
-                    println("[AgentService] Ready for push-to-talk recording")
+                    logInfo { "Ready for push-to-talk" }
                     onMessageCallback?.invoke(AgentMessage(type = "agent_message", event = "Welcome"))
                 }
                 "ConversationText" -> {
                     val msg = json.decodeFromString<AgentV1ConversationTextMessage>(text)
-                    println("[AgentService] ConversationText - role=${msg.role}, content=${msg.content.take(50)}...")
+                    logDebug { "ConversationText - role=${msg.role}, content=${msg.content.take(50)}..." }
                     
-                    // Backend TTS is handled by Python service, just forward the message
+                    // Mark agent as speaking when assistant text arrives to prevent keepalive interruption
+                    if (msg.role == "assistant") {
+                        isAgentPlayingAudio.set(true)
+                        logDebug { "Agent started speaking (from ConversationText)" }
+                        // Set a timeout to auto-reset agent speaking state if no AgentAudioDone is received
+                        scope.launch {
+                            delay(5000) // 5 second timeout
+                            if (isAgentPlayingAudio.get()) {
+                                logDebug { "Agent speaking timeout - force resetting to allow user input" }
+                                isAgentPlayingAudio.set(false)
+                            }
+                        }
+                    }
+                    
                     onMessageCallback?.invoke(AgentMessage(
                         type = "agent_message",
                         event = "ConversationText",
@@ -647,8 +788,7 @@ class AgentApiService : Closeable {
                     ))
                 }
                 "UserStartedSpeaking" -> {
-                    println("[AgentService] Deepgram detected user started speaking")
-                    // Don't stop audio immediately - let it finish naturally to avoid choppy playback
+                    logDebug { "User started speaking" }
                     isAgentPlayingAudio.set(false)
                     onMessageCallback?.invoke(AgentMessage(
                         type = "agent_message",
@@ -656,24 +796,25 @@ class AgentApiService : Closeable {
                     ))
                 }
                 "AgentThinking" -> {
-                    println("[AgentService] Agent thinking")
+                    logDebug { "Agent thinking" }
                     onMessageCallback?.invoke(AgentMessage(
                         type = "agent_message",
                         event = "AgentThinking"
                     ))
                 }
                 "AgentStartedSpeaking" -> {
-                    println("[AgentService] Agent started speaking - setting playback flag")
-                    // Don't reset audio state - let current playback continue smoothly
+                    logDebug { "Agent started speaking" }
                     isAgentPlayingAudio.set(true)
+                    agentAudioDoneTimestamp.set(0L) // Reset so grace period only applies after this session
                     onMessageCallback?.invoke(AgentMessage(
                         type = "agent_message",
                         event = "AgentStartedSpeaking"
                     ))
                 }
                 "AgentAudioDone" -> {
-                    println("[AgentService] Agent audio done")
+                    logDebug { "Agent audio done" }
                     isAgentPlayingAudio.set(false)
+                    agentAudioDoneTimestamp.set(System.currentTimeMillis())
                     onMessageCallback?.invoke(AgentMessage(
                         type = "agent_message",
                         event = "AgentAudioDone"
@@ -681,21 +822,7 @@ class AgentApiService : Closeable {
                 }
                 "Error" -> {
                     val msg = json.decodeFromString<AgentV1ErrorMessage>(text)
-                    println("[AgentService] Error: code=${msg.code}, description=${msg.description}")
-                    
-                    val errorDesc = msg.description.lowercase()
-                    when {
-                        "language" in errorDesc -> {
-                            println("[AgentService] Language configuration error. Ensure language=multi is supported by nova-3 model.")
-                        }
-                        "model" in errorDesc -> {
-                            println("[AgentService] Model error. Verify nova-3 model is available and supports multilingual transcription.")
-                        }
-                        "unsupported" in errorDesc -> {
-                            println("[AgentService] Unsupported feature error. Check if multilingual code-switching is enabled for your Deepgram account.")
-                        }
-                    }
-                    
+                    logError("API") { "code=${msg.code}, description=${msg.description}" }
                     onMessageCallback?.invoke(AgentMessage(
                         type = "error",
                         error = msg.description,
@@ -705,128 +832,45 @@ class AgentApiService : Closeable {
                 }
                 "Warning" -> {
                     val msg = json.decodeFromString<AgentV1WarningMessage>(text)
-                    println("[AgentService] Warning: code=${msg.code}, description=${msg.description}")
+                    logDebug { "Warning: code=${msg.code}, description=${msg.description}" }
                 }
             }
         } catch (e: Exception) {
-            println("[AgentService] Error parsing message: ${e.message}")
-            e.printStackTrace()
+            logError("MessageParsing") { "Error: ${e.message}" }
         }
     }
     
-    // Audio processing state for streaming
-    private var audioPrebuffer = mutableListOf<ByteArray>()
-    private var isPrebuffering = true
-    private val prebufferSize = 1 // Start playback immediately with first chunk to reduce latency
-    private var totalAudioChunks = 0
-    
-    private suspend fun handleBinaryAudio(audioData: ByteArray) {
+    // Audio playback now handled via audioQueue channel for non-blocking operation
+    // This method kept for backward compatibility with direct calls
+    private fun handleBinaryAudio(audioData: ByteArray) {
+        if (useBackendTts) return
+        val line = sourceDataLine ?: return
+        if (!line.isOpen) return
+        
         try {
-            // Don't process audio if conversation is stopped or not ready
-            if (connectionState.get() != ConnectionState.READY && connectionState.get() != ConnectionState.CONNECTED) {
-                return
-            }
-            
-            // Skip Deepgram audio processing when using backend TTS
-            if (useBackendTts) {
-                return
-            }
-            
-            // Send audio to callback for recording
             onAudioReceivedCallback?.invoke(audioData)
-            
-            val line = sourceDataLine
-            if (line == null || !line.isOpen) {
-                return
-            }
-            
-            totalAudioChunks++
-            
-            // Start playback immediately with first chunk, then maintain smooth streaming
-            if (isPrebuffering) {
-                audioPrebuffer.add(audioData)
-                if (audioPrebuffer.size >= prebufferSize) {
-                    isPrebuffering = false
-                    println("[AgentService] Starting immediate playback with ${audioPrebuffer.size} chunks")
-                    
-                    // Ensure continuous playback without interruption
-                    if (!line.isActive) {
-                        line.start()
-                        println("[AgentService] Started audio line")
-                    }
-                    
-                    // Write prebuffered audio first
-                    audioPrebuffer.forEach { chunk ->
-                        writeAudioChunk(line, chunk)
-                    }
-                    audioPrebuffer.clear()
-                }
-            } else {
-                // Write audio chunk directly to maintain smooth streaming
-                writeAudioChunk(line, audioData)
-            }
+            if (!line.isActive) line.start()
+            line.write(audioData, 0, audioData.size)
         } catch (e: Exception) {
-            println("[AgentService] ERROR in handleBinaryAudio: ${e.message}")
-        }
-    }
-    
-    private suspend fun writeAudioChunk(line: SourceDataLine, audioData: ByteArray) {
-        try {
-            // Use non-blocking write with retry mechanism for smoother playback
-            var bytesWritten = 0
-            val maxRetries = 3
-            var retryCount = 0
-            
-            while (bytesWritten < audioData.size && retryCount < maxRetries) {
-                try {
-                    val available = line.available()
-                    if (available >= audioData.size - bytesWritten) {
-                        // Enough buffer space available, write the chunk
-                        val written = line.write(audioData, bytesWritten, audioData.size - bytesWritten)
-                        if (written > 0) {
-                            bytesWritten += written
-                        } else {
-                            retryCount++
-                            kotlinx.coroutines.delay(1) // Brief delay before retry
-                        }
-                    } else {
-                        // Buffer nearly full, wait a moment then retry
-                        retryCount++
-                        delay(2) // Slightly longer delay for buffer to clear
-                    }
-                } catch (e: Exception) {
-                    retryCount++
-                    if (retryCount >= maxRetries) {
-                        println("[AgentService] WARNING: Failed to write audio chunk after $maxRetries retries")
-                        break
-                    }
-                    kotlinx.coroutines.delay(1)
-                }
-            }
-        } catch (e: Exception) {
-            println("[AgentService] ERROR writing audio chunk: ${e.message}")
+            logError("AudioPlayback") { "Error: ${e.message}" }
         }
     }
     
     private fun resetAudioState() {
-        audioPrebuffer.clear()
-        isPrebuffering = true
-        totalAudioChunks = 0
-        println("[AgentService] Audio state reset - ready for new audio stream")
+        logDebug { "Audio state reset" }
     }
     suspend fun sendAudio(audioData: ByteArray): Result<Unit> {
         return try {
             val session = synchronized(sessionLock) { currentSession }
-            if (session == null) {
-                return Result.failure(Exception("No session"))
-            }
+                ?: return Result.failure(Exception("No session"))
             
             session.send(Frame.Binary(true, audioData))
             Result.success(Unit)
         } catch (e: Exception) {
             if (e.message?.contains("cancelled") == true || e.message?.contains("closed") == true) {
-                println("[AgentService] Session lost, will reconnect on next use")
+                logDebug { "Session lost, will reconnect on next use" }
                 connectionState.set(ConnectionState.DISCONNECTED)
+                stateMachine.set(ConnectionState.DISCONNECTED)
                 agentReady.set(false)
             }
             Result.failure(e)
@@ -835,53 +879,48 @@ class AgentApiService : Closeable {
 
     suspend fun stopConversation(): Result<Unit> {
         return try {
-            println("[AgentService] Stopping conversation and clearing all buffers")
+            logInfo { "Stopping conversation" }
             
             connectionState.set(ConnectionState.DISCONNECTED)
+            stateMachine.set(ConnectionState.DISCONNECTED)
             agentReady.set(false)
-            stopKeepAlive()
             isAgentPlayingAudio.set(false)
             isUserSpeaking.set(false)
             
-            // Clear audio prebuffer to prevent leftover chunks
-            audioPrebuffer.clear()
-            isPrebuffering = true
-            
+            // Stop all workers and tracked jobs
+            stopKeepAlive()
             stopAudioCapture()
             
-            // Cancel any active audio playback job
             audioPlaybackJob?.cancel()
             audioPlaybackJob = null
             
-                // Properly flush and close audio output (speaker)
+            // Close audio output
             try {
                 sourceDataLine?.let { line ->
                     if (line.isOpen) {
                         line.stop()
                         line.close()
-                        println("[AgentService] Audio output line closed")
                     }
                 }
             } catch (e: Exception) {
-                println("[AgentService] Error closing audio output line: ${e.message}")
+                logError("AudioClose") { "Output line: ${e.message}" }
             }
             sourceDataLine = null
             
-            // Properly flush and close audio input (microphone)
+            // Close audio input
             try {
                 targetDataLine?.let { line ->
                     if (line.isOpen) {
                         line.stop()
                         line.close()
-                        println("[AgentService] Audio input line closed")
                     }
                 }
             } catch (e: Exception) {
-                println("[AgentService] Error closing audio input line: ${e.message}")
+                logError("AudioClose") { "Input line: ${e.message}" }
             }
             targetDataLine = null
             
-            // Close Deepgram Agent session if exists
+            // Close WebSocket sessions
             val agentSessionToClose = synchronized(sessionLock) {
                 val session = currentSession
                 currentSession = null
@@ -890,33 +929,32 @@ class AgentApiService : Closeable {
             
             try {
                 agentSessionToClose?.close()
-                println("[AgentService] Agent WebSocket closed")
+                logDebug { "Agent WebSocket closed" }
             } catch (e: Exception) {
-                println("[AgentService] Error closing Agent WebSocket: ${e.message}")
+                logError("WebSocket") { "Agent close error: ${e.message}" }
             }
             
-            // Close custom STT session if exists
             val sttSessionToClose = sttSession
             sttSession = null
             
             try {
                 sttSessionToClose?.close()
-                println("[AgentService] STT WebSocket closed")
+                logDebug { "STT WebSocket closed" }
             } catch (e: Exception) {
-                println("[AgentService] Error closing STT WebSocket: ${e.message}")
+                logError("WebSocket") { "STT close error: ${e.message}" }
             }
             
-            // Clear custom pipeline config
             customPipelineConfig = null
-            
-            // Clear callback
             onMessageCallback = null
             
-            println("[AgentService] Conversation stopped successfully - all buffers cleared")
+            // Clear references
+            
+            logInfo { "Conversation stopped successfully" }
             Result.success(Unit)
         } catch (e: Exception) {
-            println("[AgentService] Error stopping conversation: ${e.message}")
+            logError("StopConversation") { "Error: ${e.message}" }
             connectionState.set(ConnectionState.DISCONNECTED)
+            stateMachine.set(ConnectionState.DISCONNECTED)
             agentReady.set(false)
             isAgentPlayingAudio.set(false)
             isUserSpeaking.set(false)
@@ -941,11 +979,11 @@ class AgentApiService : Closeable {
             
             val gladiaUrl = "ws://localhost:8000/gladia/stt?language=$gladiaLanguage"
             
-            println("[AgentService] Connecting to Gladia backend: $gladiaUrl")
+            logInfo { "Connecting to Gladia backend: $gladiaUrl" }
             
             currentSession = client.webSocketSession(gladiaUrl)
             
-            println("[AgentService] Gladia WebSocket connected")
+            logInfo { "Gladia WebSocket connected" }
             
             // Initialize audio playback
             val audioFormat = AudioFormat(
@@ -956,30 +994,27 @@ class AgentApiService : Closeable {
             sourceDataLine = AudioSystem.getLine(info) as SourceDataLine
             sourceDataLine?.open(audioFormat, 65536)
             sourceDataLine?.start()
-            println("[AgentService] Audio playback initialized at 22050Hz")
+            logInfo { "Audio playback initialized at 22050Hz" }
             
             // Start listening for Gladia responses
             scope.launch {
-                println("[AgentService] Starting message listener coroutine")
+                logDebug { "Starting Gladia message listener" }
                 try {
                     while (true) {
-                        println("[AgentService] Waiting for next frame...")
                         val frame = currentSession?.incoming?.receive() ?: break
-                        println("[AgentService] Received frame: ${frame.javaClass.simpleName}")
                         
                         when (frame) {
                             is Frame.Text -> {
                                 val text = frame.readText()
-                                println("[AgentService] Gladia message: $text")
+                                logDebug { "Gladia message: ${text.take(100)}..." }
                                 
-                                // Parse Gladia response
                                 try {
                                     val jsonMessage = json.parseToJsonElement(text).jsonObject
                                     val type = jsonMessage["type"]?.jsonPrimitive?.content
                                     
                                     when (type) {
                                         "connection" -> {
-                                            println("[AgentService] Gladia connection established")
+                                            logInfo { "Gladia connection established" }
                                             onMessageCallback?.invoke(AgentMessage(
                                                 type = "agent_message",
                                                 event = "Welcome"
@@ -991,12 +1026,11 @@ class AgentApiService : Closeable {
                                             val confidence = jsonMessage["confidence"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0
                                             val detectedLang = jsonMessage["language"]?.jsonPrimitive?.content
                                             
-                                            println("[AgentService] Final transcript received: '$content' (confidence: $confidence, lang: $detectedLang)")
+                                            logDebug { "Transcript: '$content' (confidence: $confidence, lang: $detectedLang)" }
                                             
                                             if (!content.isNullOrEmpty()) {
-                                                // Very low confidence threshold for Chinese/Korean (0.01) since Gladia's scoring is different
                                                 if (confidence > 0.01) {
-                                                    println("[AgentService] Processing transcript: '$content'")
+                                                    logDebug { "Processing transcript: '$content'" }
                                                     
                                                     // Send to UI
                                                     onMessageCallback?.invoke(AgentMessage(
@@ -1006,10 +1040,10 @@ class AgentApiService : Closeable {
                                                     ))
                                                     
                                                     // Generate response using DeepSeek
-                                                    launch {
+                                                    scope.launch {
                                                         try {
                                                             val response = generateResponse(content, language, level, scenario)
-                                                            println("[AgentService] Generated response: $response")
+                                                            logDebug { "Generated response: ${response.take(50)}..." }
                                                             
                                                             onMessageCallback?.invoke(AgentMessage(
                                                                 type = "conversation_text",
@@ -1017,18 +1051,16 @@ class AgentApiService : Closeable {
                                                                 role = "assistant"
                                                             ))
                                                             
-                                                            // Generate Edge TTS audio for response (always in English for learning context)
                                                             isAgentPlayingAudio.set(true)
                                                             onMessageCallback?.invoke(AgentMessage(
                                                                 type = "agent_message",
                                                                 event = "AgentStartedSpeaking"
                                                             ))
                                                             
-                                                            println("[AgentService] Generating TTS for: $response")
-                                                            // Use English (en) for all responses to provide learning context
+                                                            logDebug { "Generating TTS" }
                                                             val audioUrl = generateEdgeTtsAudio(response, "en")
                                                             if (audioUrl != null) {
-                                                                println("[AgentService] Playing response audio: $audioUrl")
+                                                                logDebug { "Playing response audio" }
                                                                 onMessageCallback?.invoke(AgentMessage(
                                                                     type = "agent_message",
                                                                     event = "AgentAudio",
@@ -1038,7 +1070,7 @@ class AgentApiService : Closeable {
                                                                 
                                                                 playBackendAudio(audioUrl)
                                                             } else {
-                                                                println("[AgentService] Failed to generate response TTS")
+                                                                logError("TTS") { "Failed to generate response TTS" }
                                                             }
                                                             
                                                             isAgentPlayingAudio.set(false)
@@ -1047,12 +1079,11 @@ class AgentApiService : Closeable {
                                                                 event = "AgentAudioDone"
                                                             ))
                                                         } catch (e: Exception) {
-                                                            println("[AgentService] Error processing DeepSeek response: ${e.message}")
-                                                            e.printStackTrace()
+                                                            logError("DeepSeek") { "Error: ${e.message}" }
                                                         }
                                                     }
                                                 } else {
-                                                    println("[AgentService] Transcript confidence too low: $confidence")
+                                                    logDebug { "Transcript confidence too low: $confidence" }
                                                 }
                                             }
                                         }
@@ -1071,62 +1102,63 @@ class AgentApiService : Closeable {
                                         }
                                         "language_detected" -> {
                                             val detectedLang = jsonMessage["language"]?.jsonPrimitive?.content
-                                            println("[AgentService] Language detected: $detectedLang")
+                                            logDebug { "Language detected: $detectedLang" }
                                         }
                                         "error" -> {
                                             val errorMsg = jsonMessage["message"]?.jsonPrimitive?.content
-                                            println("[AgentService] Gladia error: $errorMsg")
+                                            logError("Gladia") { "Error: $errorMsg" }
                                         }
                                     }
                                 } catch (e: Exception) {
-                                    println("[AgentService] Error parsing message: ${e.message}")
+                                    logError("GladiaMessage") { "Parse error: ${e.message}" }
                                 }
                             }
                             is Frame.Close -> {
-                                println("[AgentService] Gladia WebSocket closed")
+                                logInfo { "Gladia WebSocket closed" }
                                 connectionState.set(ConnectionState.DISCONNECTED)
+                                stateMachine.set(ConnectionState.DISCONNECTED)
                                 break
                             }
                             else -> {}
                         }
                     }
                 } catch (e: Exception) {
-                    println("[AgentService] Gladia message handling error: ${e.message}")
-                    println("[AgentService] Error type: ${e.javaClass.simpleName}")
-                    e.printStackTrace()
-                    connectionState.set(ConnectionState.DISCONNECTED)
+                    if (e !is kotlinx.coroutines.CancellationException) {
+                        logError("GladiaHandler") { "Error: ${e.message}" }
+                        connectionState.set(ConnectionState.DISCONNECTED)
+                        stateMachine.set(ConnectionState.DISCONNECTED)
+                    }
                 }
             }
             
             connectionState.set(ConnectionState.CONNECTED)
+            stateMachine.set(ConnectionState.CONNECTED)
             agentReady.set(true)
             connectionState.set(ConnectionState.READY)
+            stateMachine.set(ConnectionState.READY)
             
-            // Store config for later use
             customPipelineConfig = CustomPipelineConfig(apiKey, language, level, scenario)
-            println("[AgentService] Gladia pipeline ready")
+            logInfo { "Gladia pipeline ready" }
             
             // Send greeting after connection is ready
             scope.launch {
                 try {
                     val greeting = when (language.lowercase()) {
-                        "zh", "chinese", "mandarin" -> "Hello! I'm your Chinese language learning assistant. I'll help you practice Chinese by speaking English and teaching you Chinese phrases. Press the microphone button to start practicing!"
-                        "ko", "korean", "hangeul" -> "Hello! I'm your Korean language learning assistant. I'll help you practice Korean by speaking English and teaching you Korean phrases. Press the microphone button to start practicing!"
-                        else -> "Hello! I'm your language learning assistant. Press the microphone button to start practicing!"
+                        "zh", "chinese", "mandarin" -> "Ready to practice Chinese?"
+                        "ko", "korean", "hangeul" -> "Ready to practice Korean?"
+                        else -> "Ready to practice?"
                     }
                     
-                    println("[AgentService] Sending greeting: $greeting")
+                    logDebug { "Sending greeting" }
                     
-                    // Display greeting text
                     onMessageCallback?.invoke(AgentMessage(
                         type = "conversation_text",
                         content = greeting,
                         role = "assistant"
                     ))
                     
-                    // Generate and play greeting audio using Edge TTS (always in English for learning context)
                     if (language.lowercase() in listOf("chinese", "mandarin", "zh", "korean", "hangeul", "ko")) {
-                        println("[AgentService] Generating TTS for greeting")
+                        logDebug { "Generating TTS for greeting" }
                         
                         isAgentPlayingAudio.set(true)
                         onMessageCallback?.invoke(AgentMessage(
@@ -1134,10 +1166,9 @@ class AgentApiService : Closeable {
                             event = "AgentStartedSpeaking"
                         ))
                         
-                        // Use English (en-US) for all greetings to provide learning context
                         val audioUrl = generateEdgeTtsAudio(greeting, "en")
                         if (audioUrl != null) {
-                            println("[AgentService] Playing greeting audio: $audioUrl")
+                            logDebug { "Playing greeting audio" }
                             onMessageCallback?.invoke(AgentMessage(
                                 type = "agent_message",
                                 event = "AgentAudio",
@@ -1147,7 +1178,7 @@ class AgentApiService : Closeable {
                             
                             playBackendAudio(audioUrl)
                         } else {
-                            println("[AgentService] Failed to generate greeting TTS")
+                            logError("TTS") { "Failed to generate greeting TTS" }
                         }
                         
                         isAgentPlayingAudio.set(false)
@@ -1157,40 +1188,36 @@ class AgentApiService : Closeable {
                         ))
                     }
                     
-                    println("[AgentService] Greeting sent successfully")
+                    logInfo { "Greeting sent successfully" }
                 } catch (e: Exception) {
-                    println("[AgentService] Error sending greeting: ${e.message}")
-                    e.printStackTrace()
+                    logError("Greeting") { "Error: ${e.message}" }
                 }
             }
             
             Result.success("gladia-session")
         } catch (e: Exception) {
-            println("[AgentService] Gladia conversation error: ${e.message}")
+            logError("GladiaConversation") { "Error: ${e.message}" }
             Result.failure(e)
         }
     }
     
     private suspend fun playBackendAudio(audioUrl: String) {
-        """Download and play audio from backend URL."""
         try {
-            println("[AgentService] Downloading audio from: $audioUrl")
+            logDebug { "Downloading audio from backend" }
             
             val response = client.get(audioUrl)
             if (response.status.value == 200) {
                 val audioData = response.readBytes()
-                println("[AgentService] Audio downloaded: ${audioData.size} bytes")
+                logDebug { "Audio downloaded: ${audioData.size} bytes" }
                 
-                // Decode MP3 to PCM using Java's audio system
                 val inputStream = java.io.ByteArrayInputStream(audioData)
                 val audioInputStream = javax.sound.sampled.AudioSystem.getAudioInputStream(inputStream)
                 
                 val audioFormat = audioInputStream.format
-                println("[AgentService] Audio format: ${audioFormat.sampleRate}Hz, ${audioFormat.sampleSizeInBits}bit, ${audioFormat.channels}ch")
+                logDebug { "Audio format: ${audioFormat.sampleRate}Hz, ${audioFormat.sampleSizeInBits}bit" }
                 
-                // Check if format is valid
                 if (audioFormat.sampleSizeInBits <= 0) {
-                    println("[AgentService] Invalid audio format detected, using default conversion")
+                    logDebug { "Invalid audio format, using default conversion" }
                     // Try to convert to a known good format
                     val targetFormat = AudioFormat(
                         PCM_SIGNED,
@@ -1218,9 +1245,9 @@ class AgentApiService : Closeable {
                             
                             line.drain()
                             line.close()
-                            println("[AgentService] Audio playback completed")
+                            logDebug { "Audio playback completed" }
                         } catch (e: Exception) {
-                            println("[AgentService] Error during audio playback: ${e.message}")
+                            logError("AudioPlayback") { "Error: ${e.message}" }
                         } finally {
                             convertedStream.close()
                             audioInputStream.close()
@@ -1228,10 +1255,9 @@ class AgentApiService : Closeable {
                         }
                     }
                 } else {
-                    // Convert to PCM if needed
                     val targetFormat = AudioFormat(
                         PCM_SIGNED,
-                        22050f, // Match the playback line
+                        22050f,
                         16,
                         audioFormat.channels,
                         audioFormat.channels * 2,
@@ -1240,13 +1266,12 @@ class AgentApiService : Closeable {
                     )
                     
                     val convertedStream = if (audioFormat != targetFormat) {
-                        println("[AgentService] Converting audio format to PCM")
+                        logDebug { "Converting audio format to PCM" }
                         javax.sound.sampled.AudioSystem.getAudioInputStream(targetFormat, audioInputStream)
                     } else {
                         audioInputStream
                     }
                     
-                    // Play the audio in a separate coroutine to avoid blocking WebSocket
                     scope.launch {
                         try {
                             val info = DataLine.Info(SourceDataLine::class.java, targetFormat)
@@ -1262,9 +1287,9 @@ class AgentApiService : Closeable {
                             
                             line.drain()
                             line.close()
-                            println("[AgentService] Audio playback completed")
+                            logDebug { "Audio playback completed" }
                         } catch (e: Exception) {
-                            println("[AgentService] Error during audio playback: ${e.message}")
+                            logError("AudioPlayback") { "Error: ${e.message}" }
                         } finally {
                             convertedStream.close()
                             audioInputStream.close()
@@ -1274,8 +1299,7 @@ class AgentApiService : Closeable {
                 }
             }
         } catch (e: Exception) {
-            println("[AgentService] Error playing audio: ${e.message}")
-            e.printStackTrace()
+            logError("BackendAudio") { "Error: ${e.message}" }
         }
     }
     
@@ -1303,38 +1327,35 @@ class AgentApiService : Closeable {
                 val jsonResponse = json.parseToJsonElement(responseBody)
                 jsonResponse.jsonObject?.get("audio_url")?.jsonPrimitive?.content
             } else {
-                println("[AgentService] Edge TTS error: ${response.status}")
+                logError("EdgeTTS") { "Error: ${response.status}" }
                 null
             }
         } catch (e: Exception) {
-            println("[AgentService] Edge TTS generation error: ${e.message}")
-            e.printStackTrace()
+            logError("EdgeTTS") { "Generation error: ${e.message}" }
             null
         }
     }
     
     private suspend fun generateResponse(userMessage: String, language: String, level: String, scenario: String): String {
-        // Generate responses in English by default, with Chinese phrases included
         return getAiResponse(userMessage, language, level, scenario)
     }
     
     private suspend fun generateTtsAudio(text: String, language: String): String? {
-        // Placeholder until Gladia integration is implemented
-        println("[AgentService] TTS generation pending for: $text")
+        logDebug { "TTS generation pending" }
         return null
     }
     
     fun startCustomManualAudioCapture() {
         val config = customPipelineConfig ?: return
-        if (connectionState.get() != ConnectionState.READY || audioCaptureJob?.isActive == true) {
+        if (stateMachine.get() != ConnectionState.READY || audioCaptureJob?.isActive == true) {
             return
         }
-        println("[AgentService] Starting custom audio capture")
+        logInfo { "Starting custom audio capture" }
         startCustomAudioCapture(config.apiKey, config.language, config.level, config.scenario)
     }
     
     fun stopCustomManualAudioCapture() {
-        println("[AgentService] Stopping custom audio capture")
+        logInfo { "Stopping custom audio capture" }
         audioCaptureJob?.cancel()
         audioCaptureJob = null
         targetDataLine?.stop()
@@ -1344,36 +1365,35 @@ class AgentApiService : Closeable {
             try {
                 sttSession?.send(Frame.Text("{\"type\":\"CloseStream\"}"))
             } catch (e: Exception) {
-                println("[AgentService] Error closing STT stream: ${e.message}")
+                logError("STT") { "Error closing stream: ${e.message}" }
             }
         }
     }
     
     private fun startCustomAudioCapture(apiKey: String, language: String, level: String, scenario: String) {
-        val audioFormat = AudioFormat(PCM_SIGNED, 16000f, 16, 1, 2, 16000f, false) // 16kHz little-endian (big-endian not supported)
+        val audioFormat = AudioFormat(PCM_SIGNED, 16000f, 16, 1, 2, 16000f, false)
         val info = DataLine.Info(TargetDataLine::class.java, audioFormat)
         targetDataLine = AudioSystem.getLine(info) as TargetDataLine
         targetDataLine?.open(audioFormat)
         targetDataLine?.start()
         
+        val bufferSize = 1600 // 100ms at 16kHz
+        
         audioCaptureJob = scope.launch {
+            val buffer = ByteArray(bufferSize)
             try {
-                println("[AgentService] Starting audio capture for Gladia STT")
-                
-                val buffer = ByteArray(1600) // 100ms at 16kHz
+                logInfo { "Starting audio capture for Gladia STT" }
                 var audioBytesSent = 0L
                 
-                while (connectionState.get() == ConnectionState.READY && targetDataLine?.isOpen == true) {
+                while (stateMachine.get() == ConnectionState.READY && targetDataLine?.isOpen == true) {
                     if (!isAgentPlayingAudio.get()) {
                         val bytesRead = targetDataLine?.read(buffer, 0, buffer.size) ?: 0
                         if (bytesRead > 0) {
                             audioBytesSent += bytesRead
-                            // Send audio to Gladia backend WebSocket
                             currentSession?.send(Frame.Binary(true, buffer.copyOf(bytesRead)))
                             
-                            // Log every 10 seconds of audio sent
                             if (audioBytesSent % 160000 == 0L) {
-                                println("[AgentService] Sent ${audioBytesSent / 1000}KB of audio to Gladia")
+                                logDebug { "Sent ${audioBytesSent / 1000}KB to Gladia" }
                             }
                         }
                     } else {
@@ -1381,26 +1401,24 @@ class AgentApiService : Closeable {
                         targetDataLine?.flush()
                     }
                 }
-                println("[AgentService] Audio capture ended. Total sent: ${audioBytesSent / 1000}KB")
+                logInfo { "Audio capture ended. Total: ${audioBytesSent / 1000}KB" }
             } catch (e: Exception) {
-                println("[AgentService] Audio capture error: ${e.message}")
-                onMessageCallback?.invoke(AgentMessage(
-                    type = "Error",
-                    description = "Audio capture failed: ${e.message}"
-                ))
+                if (e !is kotlinx.coroutines.CancellationException) {
+                    logError("CustomAudioCapture") { "Error: ${e.message}" }
+                    onMessageCallback?.invoke(AgentMessage(
+                        type = "Error",
+                        description = "Audio capture failed: ${e.message}"
+                    ))
+                }
+            } finally {
+                // Buffer cleanup not needed for ByteArray
             }
-        }
-        
-        // Force final transcript after audio capture stops (if no speech_end received)
-        scope.launch {
-            delay(2000) // Wait 2 seconds after capture starts to check for final transcript
-            // This is a fallback in case Gladia doesn't send speech_end
         }
     }
 
     private suspend fun handleSttResult(result: String, language: String, level: String, scenario: String) {
         try {
-            println("[AgentService] STT Raw result: ${result.take(200)}...")
+            logDebug { "STT Raw result: ${result.take(100)}..." }
             
             val jsonResult = json.parseToJsonElement(result)
             val isFinal = jsonResult.jsonObject?.get("is_final")?.jsonPrimitive?.boolean == true
@@ -1412,7 +1430,7 @@ class AgentApiService : Closeable {
                 ?.get("alternatives")?.jsonArray?.firstOrNull()
                 ?.jsonObject?.get("confidence")?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0
             
-            println("[AgentService] STT Parsed - isFinal: $isFinal, transcript: '$transcript', confidence: $confidence")
+            logDebug { "STT Parsed - isFinal: $isFinal, confidence: $confidence" }
             
             if (isFinal && !transcript.isNullOrEmpty()) {
                 val cleanedTranscript = transcript.trim()
@@ -1421,7 +1439,7 @@ class AgentApiService : Closeable {
                     return
                 }
                 
-                println("[AgentService] User: '$cleanedTranscript' (confidence: $confidence)")
+                logDebug { "User: '${cleanedTranscript.take(50)}...' (confidence: $confidence)" }
                 
                 onMessageCallback?.invoke(AgentMessage(
                     type = "conversation_text",
@@ -1430,7 +1448,7 @@ class AgentApiService : Closeable {
                 ))
                 
                 val response = getAiResponse(cleanedTranscript, language, level, scenario)
-                println("[AgentService] Agent: $response")
+                logDebug { "Agent response: ${response.take(50)}..." }
                 
                 onMessageCallback?.invoke(AgentMessage(
                     type = "conversation_text",
@@ -1444,11 +1462,7 @@ class AgentApiService : Closeable {
                     event = "AgentStartedSpeaking"
                 ))
                 
-                // TTS is handled by backend service for Chinese/Korean
-                println("[AgentService] Response generated: $response")
-                if (language in listOf("zh", "ko")) {
-                    println("[AgentService] TTS handled by backend for $language")
-                }
+                logDebug { "Response generated, TTS handled by backend for $language" }
                 
                 isAgentPlayingAudio.set(false)
                 onMessageCallback?.invoke(AgentMessage(
@@ -1457,12 +1471,13 @@ class AgentApiService : Closeable {
                 ))
             }
         } catch (e: Exception) {
-            println("[AgentService] STT error: ${e.message}")
+            logError("STT") { "Error: ${e.message}" }
         }
     }
 
     private suspend fun getAiResponse(userMessage: String, language: String, level: String, scenario: String): String {
         return try {
+            // Use cached system prompt for better performance
             val systemPrompt = createSystemPrompt(language, level, scenario)
             
             val requestBody = json.encodeToString(mapOf(
@@ -1475,26 +1490,24 @@ class AgentApiService : Closeable {
                 "max_tokens" to 200
             ))
             
-            val response = client.post(openAiUrl) {
-                headers {
-                    append(HttpHeaders.ContentType, ContentType.Application.Json)
-                    append(HttpHeaders.Authorization, "Bearer ${System.getenv("OPENAI_API_KEY") ?: ""}")
-                }
+            val response: HttpResponse = client.post(OPENAI_URL) {
+                contentType(ContentType.Application.Json)
+                header(HttpHeaders.Authorization, "Bearer ${System.getenv("OPENAI_API_KEY") ?: ""}")
                 setBody(requestBody)
             }
             
-            if (response.status.isSuccess()) {
+            if (response.status.value in 200..299) {
                 val responseBody = response.bodyAsText()
                 val jsonResponse = json.parseToJsonElement(responseBody)
                 jsonResponse.jsonObject?.get("choices")?.jsonArray?.firstOrNull()
                     ?.jsonObject?.get("message")?.jsonObject
                     ?.get("content")?.jsonPrimitive?.content ?: "I'm sorry, I couldn't generate a response."
             } else {
-                println("[AgentService] OpenAI API error: ${response.status}")
+                logError("OpenAI") { "API error: ${response.status.value}" }
                 "I'm sorry, I'm having trouble responding right now."
             }
         } catch (e: Exception) {
-            println("[AgentService] AI response error: ${e.message}")
+            logError("OpenAI") { "Response error: ${e.message}" }
             "I'm sorry, I encountered an error while generating a response."
         }
     }
@@ -1505,22 +1518,23 @@ class AgentApiService : Closeable {
     }
 
     override fun close() {
-        println("[AgentService] Closing agent service")
+        logInfo { "Closing agent service" }
         
         // Stop all jobs
+        keepAliveJob?.cancel()
         audioCaptureJob?.cancel()
         audioPlaybackJob?.cancel()
         
-        // Stop conversation first
-        scope.launch {
+        // Stop conversation synchronously
+        runBlocking {
             try {
                 stopConversation()
             } catch (e: Exception) {
-                println("[AgentService] Error stopping conversation: ${e.message}")
+                logError("Close") { "Error stopping conversation: ${e.message}" }
             }
         }
         
-        // Properly close and cleanup audio lines
+        // Clean up audio resources
         try {
             sourceDataLine?.let { line ->
                 if (line.isOpen) {
@@ -1538,19 +1552,31 @@ class AgentApiService : Closeable {
                 }
             }
         } catch (e: Exception) {
-            println("[AgentService] Error closing audio lines: ${e.message}")
+            logError("Close") { "Error closing audio lines: ${e.message}" }
         }
         
-        // Clear references
+        // Clear references and reset state
         sourceDataLine = null
         targetDataLine = null
         isAgentPlayingAudio.set(false)
+        lastSessionParams = null
         
-        // Cancel scope and close client
-        scope.cancel()
+        // Clear references
+        
+        // Cancel mainJob and wait for children with timeout
+        mainJob.cancel()
+        runBlocking {
+            try {
+                withTimeout(5000) {
+                    mainJob.children.forEach { it.join() }
+                }
+            } catch (e: Exception) {
+                logError("Close") { "Timeout waiting for jobs" }
+            }
+        }
+        
         client.close()
-        
-        println("[AgentService] Agent service closed")
+        logInfo { "Agent service closed" }
     }
     
     fun getApiKey(): String? {

@@ -274,6 +274,9 @@ object SupabaseConfig {
     private val SUPABASE_URL = dotenv["SUPABASE_URL"] ?: System.getenv("SUPABASE_URL") ?: ""
     private val SUPABASE_ANON_KEY = dotenv["SUPABASE_ANON_KEY"] ?: dotenv["SUPABASE_KEY"] ?: System.getenv("SUPABASE_ANON_KEY") ?: System.getenv("SUPABASE_KEY") ?: ""
 
+    // Public property for accessing the Supabase URL
+    val supabaseUrl: String = SUPABASE_URL
+
     init {
         val urlSource =
             if (dotenv["SUPABASE_URL"] != null) {

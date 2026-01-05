@@ -22,49 +22,52 @@ import org.example.project.domain.model.ConversationSession
 import org.example.project.domain.model.FeedbackExample
 
 @Serializable
-data class GeminiRequest(
-    val contents: List<Content>,
-    val generationConfig: GenerationConfig
+data class DeepSeekMessage(
+    val role: String,
+    val content: String
 )
 
 @Serializable
-data class Content(
-    val parts: List<Part>
-)
-
-@Serializable
-data class Part(
-    val text: String
-)
-
-@Serializable
-data class GenerationConfig(
+data class DeepSeekRequest(
+    val model: String,
+    val messages: List<DeepSeekMessage>,
     val temperature: Float,
-    val topK: Int,
-    val topP: Float,
-    val maxOutputTokens: Int
+    val max_tokens: Int
 )
 
 @Serializable
-data class GeminiResponse(
-    val candidates: List<Candidate>
+data class DeepSeekChoice(
+    val message: DeepSeekMessage,
+    val finish_reason: String
 )
 
 @Serializable
-data class Candidate(
-    val content: Content
+data class DeepSeekUsage(
+    val prompt_tokens: Int,
+    val completion_tokens: Int,
+    val total_tokens: Int
 )
 
 @Serializable
-data class GeminiErrorResponse(
-    val error: GeminiError
+data class DeepSeekResponse(
+    val id: String,
+    @SerialName("object") val objectType: String,
+    val created: Long,
+    val model: String,
+    val choices: List<DeepSeekChoice>,
+    val usage: DeepSeekUsage
 )
 
 @Serializable
-data class GeminiError(
-    val code: Int,
+data class DeepSeekErrorResponse(
+    val error: DeepSeekError
+)
+
+@Serializable
+data class DeepSeekError(
     val message: String,
-    val status: String
+    val type: String,
+    val code: String
 )
 
 @Serializable
@@ -132,11 +135,11 @@ class ConversationAnalysisService {
                     return@withContext Result.success(cachedFeedback)
                 }
                 
-                println("[ConversationAnalysis] No cache found, calling Gemini API")
-                val apiKey = ApiKeyConfig.getGeminiApiKey()
+                println("[ConversationAnalysis] No cache found, calling DeepSeek API")
+                val apiKey = ApiKeyConfig.getDeepSeekApiKey()
                 if (apiKey == null) {
                     return@withContext Result.failure(
-                        Exception("Gemini API key not configured. Please set GEMINI_API_KEY in your .env file.")
+                        Exception("DeepSeek API key not configured. Please set DEEPSEEK_API_KEY in your .env file.")
                     )
                 }
                 
@@ -151,23 +154,27 @@ class ConversationAnalysisService {
                     else -> 8192
                 }
                 
-                val request = GeminiRequest(
-                    contents = listOf(
-                        Content(
-                            parts = listOf(Part(text = prompt))
+                val request = DeepSeekRequest(
+                    model = "deepseek-chat",
+                    messages = listOf(
+                        DeepSeekMessage(
+                            role = "system",
+                            content = "You are an expert language learning assistant. Provide detailed, constructive feedback on language conversations. Always respond with valid JSON matching the requested structure."
+                        ),
+                        DeepSeekMessage(
+                            role = "user",
+                            content = prompt
                         )
                     ),
-                    generationConfig = GenerationConfig(
-                        temperature = 0.4f,
-                        topK = 40,
-                        topP = 0.95f,
-                        maxOutputTokens = maxTokens
-                    )
+                    temperature = 0.4f,
+                    max_tokens = maxTokens
                 )
                 
                 val startTime = System.currentTimeMillis()
-                val response = httpClient.post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent") {
-                    parameter("key", apiKey)
+                val response = httpClient.post("https://api.deepseek.com/v1/chat/completions") {
+                    headers {
+                        append("Authorization", "Bearer $apiKey")
+                    }
                     contentType(ContentType.Application.Json)
                     setBody(request)
                 }
@@ -180,14 +187,15 @@ class ConversationAnalysisService {
                 val rawResponse = response.body<String>()
                 println("[ConversationAnalysis] Raw response: $rawResponse")
                 
-                // Try to parse as GeminiResponse first
+                // Try to parse as DeepSeekResponse first
                 try {
-                    val geminiResponse = json.decodeFromString<GeminiResponse>(rawResponse)
-                    val responseText = geminiResponse.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: ""
+                    val deepseekResponse = json.decodeFromString<DeepSeekResponse>(rawResponse)
+                    val responseText = deepseekResponse.choices.firstOrNull()?.message?.content ?: ""
                     println("[ConversationAnalysis] Response length: ${responseText.length} characters")
+                    println("[ConversationAnalysis] Tokens used: ${deepseekResponse.usage.total_tokens}")
                     
                     if (responseText.isBlank()) {
-                        lastException = Exception("Empty response from Gemini API")
+                        lastException = Exception("Empty response from DeepSeek API")
                         if (attempt < maxRetries - 1) {
                             println("[ConversationAnalysis] Empty response, retrying...")
                             kotlinx.coroutines.delay(1000L * (attempt + 1)) // Exponential backoff
@@ -219,18 +227,18 @@ class ConversationAnalysisService {
                         return@withContext Result.success(fallbackFeedback)
                     }
                 } catch (e: Exception) {
-                    println("[ConversationAnalysis] Failed to parse Gemini response: ${e.message}")
+                    println("[ConversationAnalysis] Failed to parse DeepSeek response: ${e.message}")
                     println("[ConversationAnalysis] Response might be an error or different format")
                     lastException = e
-                    
+
                     // Check if it's an error response
                     try {
-                        val errorResponse = json.decodeFromString<GeminiErrorResponse>(rawResponse)
-                        lastException = Exception("Gemini API error: ${errorResponse.error.message}")
+                        val errorResponse = json.decodeFromString<DeepSeekErrorResponse>(rawResponse)
+                        lastException = Exception("DeepSeek API error: ${errorResponse.error.message}")
                     } catch (errorParse: Exception) {
-                        lastException = Exception("Failed to parse Gemini response: ${e.message}. Raw response: $rawResponse")
+                        lastException = Exception("Failed to parse DeepSeek response: ${e.message}. Raw response: $rawResponse")
                     }
-                    
+
                     // Don't retry on API errors (like invalid key), only on parsing/network issues
                     if (lastException?.message?.contains("API error") == true) {
                         return@withContext Result.failure(lastException!!)

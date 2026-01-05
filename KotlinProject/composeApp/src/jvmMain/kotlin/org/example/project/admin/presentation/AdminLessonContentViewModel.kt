@@ -19,7 +19,7 @@ private const val LOG_TAG = "AdminLessonContentViewModel.kt"
  * Handles lesson creation, editing, and question management with dynamic fields.
  */
 class AdminLessonContentViewModel : ViewModel() {
-    private val repository: LessonContentRepository = LessonContentRepositoryImpl()
+    private val repository: LessonContentRepository = LessonContentRepositoryImpl.getInstance()
     private val narrationService: NarrationService = NarrationService()
 
     // State

@@ -66,8 +66,18 @@ class EdgeSTTService:
             # Configure language and model
             deepgram_language = self.get_language_code(language)
             
-            # Build WebSocket URL with parameters
-            url = f"{self.deepgram_url}?language={deepgram_language}&encoding=linear16&sample_rate=16000"
+            # Build WebSocket URL with optimized Deepgram parameters
+            # - model: nova-3 for best multilingual accuracy
+            # - smart_format: auto punctuation and formatting
+            url = (
+                f"{self.deepgram_url}"
+                f"?model=nova-3"
+                f"&language={deepgram_language}"
+                f"&encoding=linear16"
+                f"&sample_rate=16000"
+                f"&channels=1"
+                f"&smart_format=true"
+            )
             
             logger.info(f"[EdgeSTT] Connecting to Deepgram: {url}")
             
@@ -141,8 +151,22 @@ class EdgeSTTService:
             # Configure language and model
             deepgram_language = self.get_language_code(language)
             
-            # Build WebSocket URL with parameters
-            url = f"{self.deepgram_url}?language={deepgram_language}&encoding=linear16&sample_rate=16000"
+            # Build WebSocket URL with optimized Deepgram streaming parameters
+            # - model: nova-3 for best multilingual accuracy
+            # - interim_results: show partial transcripts for responsive UI
+            # - smart_format: auto punctuation and formatting
+            # - endpointing: 300ms pause = sentence end
+            url = (
+                f"{self.deepgram_url}"
+                f"?model=nova-3"
+                f"&language={deepgram_language}"
+                f"&encoding=linear16"
+                f"&sample_rate=16000"
+                f"&channels=1"
+                f"&interim_results=true"
+                f"&smart_format=true"
+                f"&endpointing=300"
+            )
             
             logger.info(f"[EdgeSTT] Connecting to Deepgram streaming: {url}")
             

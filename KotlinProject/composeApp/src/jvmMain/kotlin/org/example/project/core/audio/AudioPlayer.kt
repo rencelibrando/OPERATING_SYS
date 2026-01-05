@@ -265,38 +265,34 @@ class AudioPlayer {
                 }
             }
             
-            // Get audio format
-            val audioFormat = audioInputStream.format
-            println("Audio format detected:")
-            println("  Encoding: ${audioFormat.encoding}")
-            println("  Sample rate: ${audioFormat.sampleRate}Hz")
-            println("  Channels: ${audioFormat.channels}")
-            println("  Sample size: ${audioFormat.sampleSizeInBits} bits")
-            println("  Frame size: ${audioFormat.frameSize} bytes")
-            println("  Frame rate: ${audioFormat.frameRate}Hz")
-            println("  Big endian: ${audioFormat.isBigEndian}")
-            
-            // If the format is not PCM, try to convert it
-            val targetFormat = if (audioFormat.encoding != AudioFormat.Encoding.PCM_SIGNED &&
-                audioFormat.encoding != AudioFormat.Encoding.PCM_UNSIGNED) {
-                println("Converting audio format to PCM...")
-                // Convert to PCM format
-                val pcmFormat = AudioFormat(
-                    AudioFormat.Encoding.PCM_SIGNED,
-                    audioFormat.sampleRate,
-                    16,  // 16-bit
-                    audioFormat.channels,
-                    audioFormat.channels * 2,  // 2 bytes per sample
-                    audioFormat.sampleRate,
-                    false  // Little endian
-                )
-                AudioSystem.getAudioInputStream(pcmFormat, audioInputStream)
-            } else {
+            // Define our target format: 16kHz, 16-bit, mono, PCM signed
+            val targetFormat = AudioFormat(
+                AudioFormat.Encoding.PCM_SIGNED,
+                16000f, // sample rate
+                16,     // sample size in bits
+                1,      // channels (mono)
+                2,      // frame size (channels * bytes per sample = 1 * 2)
+                16000f, // frame rate
+                false   // little endian
+            )
+
+            // Convert to target format regardless of original format
+            val convertedStream = try {
+                println("Converting audio to target format: 16000 Hz, 16-bit, mono")
+                AudioSystem.getAudioInputStream(targetFormat, audioInputStream)
+            } catch (e: Exception) {
+                println("Conversion failed: ${e.message}. Using original format")
                 audioInputStream
             }
+
+            val finalFormat = convertedStream.format
+            println("Final audio format:")
+            println("  Sample rate: ${finalFormat.sampleRate}Hz")
+            println("  Channels: ${finalFormat.channels}")
+            println("  Sample size: ${finalFormat.sampleSizeInBits} bits")
             
             // Create data line info with fallback formats
-            val dataLineInfo = DataLine.Info(Clip::class.java, targetFormat.format)
+            val dataLineInfo = DataLine.Info(Clip::class.java, finalFormat)
             val clip: Clip
             
             if (!AudioSystem.isLineSupported(dataLineInfo)) {
@@ -314,7 +310,7 @@ class AudioPlayer {
                 
                 for (fallbackFormat in fallbackFormats) {
                     try {
-                        fallbackStream = AudioSystem.getAudioInputStream(fallbackFormat, audioInputStream)
+                        fallbackStream = AudioSystem.getAudioInputStream(fallbackFormat, convertedStream)
                         val fallbackInfo = DataLine.Info(Clip::class.java, fallbackFormat)
                         if (AudioSystem.isLineSupported(fallbackInfo)) {
                             println("Using fallback format: ${fallbackFormat.sampleRate}Hz, ${fallbackFormat.sampleSizeInBits}bit, ${fallbackFormat.channels}ch")
@@ -329,14 +325,14 @@ class AudioPlayer {
                 }
                 
                 if (fallbackClip == null) {
-                    return Result.failure(Exception("No supported audio format found for: ${targetFormat.format}"))
+                    return Result.failure(Exception("No supported audio format found for: $finalFormat"))
                 }
                 
                 currentClip = fallbackClip
                 clip = fallbackClip
             } else {
                 clip = AudioSystem.getLine(dataLineInfo) as Clip
-                clip.open(targetFormat)
+                clip.open(convertedStream)
                 currentClip = clip
             }
             
@@ -599,4 +595,3 @@ class AudioPlayer {
         playbackFinishedCallback = null
     }
 }
-

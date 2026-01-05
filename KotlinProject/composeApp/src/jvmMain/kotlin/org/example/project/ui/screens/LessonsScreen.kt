@@ -30,12 +30,22 @@ fun LessonsScreen(
     authenticatedUser: AuthUser? = null,
     onUserAvatarClick: (() -> Unit)? = null,
     onLessonSelected: ((String) -> Unit)? = null,
+    refreshTrigger: Long = 0L,
     viewModel: LessonsViewModel = viewModel(),
     modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(authenticatedUser) {
         if (authenticatedUser != null) {
             viewModel.initializeWithAuthenticatedUser(authenticatedUser)
+        }
+    }
+    
+    // Reload data when refresh trigger changes (after lesson completion)
+    LaunchedEffect(refreshTrigger) {
+        if (refreshTrigger > 0L && authenticatedUser != null) {
+            println("[LessonsScreen] Refresh triggered (timestamp: $refreshTrigger) - invalidating caches and reloading")
+            viewModel.invalidateUserProgress(authenticatedUser.id)
+            viewModel.refreshLessons()
         }
     }
 

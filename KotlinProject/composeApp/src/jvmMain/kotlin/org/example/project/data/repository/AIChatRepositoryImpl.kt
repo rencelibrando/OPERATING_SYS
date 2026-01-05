@@ -292,7 +292,7 @@ class AIChatRepositoryImpl(
                         val messageDTO = ChatMessageDTO(
                             id = aiMessage.id,
                             sessionId = sessionId,
-                            senderType = "assistant",
+                            senderType = "bot",
                             messageText = aiMessage.content,
                             metadata = aiMessage.metadata,
                             createdAt = java.time.Instant.ofEpochMilli(aiMessage.timestamp).toString(),
@@ -323,7 +323,7 @@ class AIChatRepositoryImpl(
                         message = userMessage,
                         userContext = userContext,
                         conversationHistory = history,
-                        provider = AIProvider.GEMINI,
+                        provider = AIProvider.DEEPSEEK,
                         botId = botId,
                         temperature = 0.7f,
                         maxTokens = 1000,
@@ -368,10 +368,10 @@ class AIChatRepositoryImpl(
                     val messageDTO = ChatMessageDTO(
                         id = aiMessage.id,
                         sessionId = sessionId,
-                        senderType = "assistant", // Use senderType instead of role
-                        messageText = aiMessage.content, // Use messageText instead of content
+                        senderType = "bot",
+                        messageText = aiMessage.content,
                         metadata = aiMessage.metadata,
-                        createdAt = java.time.Instant.ofEpochMilli(aiMessage.timestamp).toString(), // Use createdAt instead of timestamp
+                        createdAt = java.time.Instant.ofEpochMilli(aiMessage.timestamp).toString(),
                     )
 
                     supabase.postgrest["chat_messages"]
@@ -644,13 +644,13 @@ class AIChatRepositoryImpl(
                 ChatMessageDTO(
                     id = msg.id,
                     sessionId = sessionId,
-                    senderType = when (msg.sender) { // Use senderType instead of role
+                    senderType = when (msg.sender) {
                         MessageSender.USER -> "user"
-                        MessageSender.AI -> "assistant"
+                        MessageSender.AI -> "bot"
                     },
-                    messageText = msg.content, // Use messageText instead of content
+                    messageText = msg.content,
                     metadata = msg.metadata,
-                    createdAt = java.time.Instant.ofEpochMilli(msg.timestamp).toString(), // Use createdAt instead of timestamp
+                    createdAt = java.time.Instant.ofEpochMilli(msg.timestamp).toString(),
                 )
             }
 

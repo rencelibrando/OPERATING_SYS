@@ -599,15 +599,15 @@ class VoiceAgentService:
             - Focus on {scenario.replace('_', ' ')} scenarios
             """
         
-        # Configure audio settings
+        # Configure audio settings - Deepgram default 24kHz for best quality
         audio_config = AgentV1AudioConfig(
             input=AgentV1AudioInput(
                 encoding="linear16",
-                sample_rate=24000,
+                sample_rate=24000,  # Deepgram recommended 24kHz
             ),
             output=AgentV1AudioOutput(
                 encoding="linear16",
-                sample_rate=24000,
+                sample_rate=24000,  # Deepgram default 24kHz
                 container="none",  # Use "none" for WebSocket connections to prevent audio artifacts
             ),
         )
@@ -623,8 +623,8 @@ class VoiceAgentService:
             ),
             think=AgentV1Think(
                 provider=AgentV1OpenAiThinkProvider(
-                    type="open_ai",
-                    model="gpt-4o-mini",
+                    type="groq",  # Groq is optimized for low-latency voice agents
+                    model="openai/gpt-oss-20b",
                     temperature=temperature,
                 ),
                 prompt=prompt,

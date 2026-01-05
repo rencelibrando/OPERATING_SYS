@@ -116,6 +116,7 @@ fun HomeScreen(
                         lessonId = selectedLessonId!!,
                         userId = authenticatedUser?.id ?: "",
                         onBack = viewModel::onCloseLessonPlayer,
+                        onLessonCompleted = viewModel::onLessonCompleted,
                     )
                 }
             }
@@ -192,10 +193,12 @@ fun HomeScreen(
                 }
             }
             selectedNavigationItem == "lessons" -> {
+                val refreshTrigger by viewModel.refreshTrigger
                 LessonsScreen(
                     authenticatedUser = authenticatedUser,
                     onUserAvatarClick = viewModel::onUserAvatarClicked,
                     onLessonSelected = viewModel::onLessonSelected,
+                    refreshTrigger = refreshTrigger,
                     modifier = Modifier.weight(1f),
                 )
             }

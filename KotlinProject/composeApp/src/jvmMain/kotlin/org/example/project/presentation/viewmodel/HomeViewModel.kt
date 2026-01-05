@@ -15,6 +15,7 @@ class HomeViewModel : ViewModel() {
     private val _isLoading = mutableStateOf(false)
     private val _showProfile = mutableStateOf(false)
     private val _selectedLessonId = mutableStateOf<String?>(null)
+    private val _refreshTrigger = mutableStateOf(0L)
 
     val user: State<User> = _user
     val navigationItems: State<List<NavigationItem>> = _navigationItems
@@ -23,6 +24,7 @@ class HomeViewModel : ViewModel() {
     val isLoading: State<Boolean> = _isLoading
     val showProfile: State<Boolean> = _showProfile
     val selectedLessonId: State<String?> = _selectedLessonId
+    val refreshTrigger: State<Long> = _refreshTrigger
 
     fun onNavigationItemSelected(itemId: String) {
         _showProfile.value = false
@@ -95,5 +97,11 @@ class HomeViewModel : ViewModel() {
         _selectedLessonId.value = null
         // Return to lessons screen
         onNavigationItemSelected("lessons")
+    }
+
+    fun onLessonCompleted(userId: String, lessonId: String) {
+        println("[HomeViewModel] Lesson completed: $lessonId for user: $userId")
+        // Trigger refresh by updating the timestamp
+        _refreshTrigger.value = System.currentTimeMillis()
     }
 }

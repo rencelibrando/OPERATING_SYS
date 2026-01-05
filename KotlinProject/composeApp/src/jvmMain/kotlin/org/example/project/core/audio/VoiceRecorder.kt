@@ -54,16 +54,16 @@ class VoiceRecorder {
                 }
                 lastStartTime = now
 
-                // Set up audio format (24kHz, 16-bit, mono) - matches Deepgram Agent API requirements
+                // Deepgram default: 24kHz, 16-bit, mono for best quality
                 val format =
                     AudioFormat(
                         AudioFormat.Encoding.PCM_SIGNED,
-                        24000f, // Sample rate (24kHz for Deepgram)
+                        24000f, // Sample rate (24kHz - Deepgram default)
                         16, // Bits per sample
                         1, // Mono
                         2, // Frame size
                         24000f, // Frame rate
-                        false, // Big endian
+                        false, // Little endian
                     )
 
                 // Get the default microphone
@@ -86,7 +86,7 @@ class VoiceRecorder {
 
                 // Start recording coroutine for proper lifecycle management
                 recordingJob = scope.launch {
-                    val buffer = ByteArray(2400) // 50ms chunks at 24kHz (smaller for lower latency)
+                    val buffer = ByteArray(2400) // 50ms chunks at 24kHz for smooth audio
                     val dataLine = targetDataLine
                     
                     while (isActive && isRecording.get() && dataLine?.isOpen == true) {
@@ -295,7 +295,7 @@ class VoiceRecorder {
          */
         fun isMicrophoneAvailable(): Boolean {
             return try {
-                val format = AudioFormat(24000f, 16, 1, true, false)
+                val format = AudioFormat(24000f, 16, 1, true, false) // 24kHz Deepgram default
                 val info = DataLine.Info(TargetDataLine::class.java, format)
                 AudioSystem.isLineSupported(info)
             } catch (e: Exception) {

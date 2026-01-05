@@ -48,7 +48,14 @@ data class AgentV1Listen(
 @Serializable
 data class AgentV1ListenProvider(
     val type: String = "deepgram",
-    val model: String
+    val model: String,
+    // Agent API supported options for Deepgram provider:
+    @SerialName("smart_format")
+    val smartFormat: Boolean? = null,  // Improves transcript readability (default: false)
+    val keyterms: List<String>? = null, // Keywords to boost recognition (nova-3 'en' only)
+    val endpointing: Int? = null,  // Milliseconds of silence to trigger end of speech (default: 10, recommended: 300)
+    @SerialName("interim_results")
+    val interimResults: Boolean? = null  // Enable partial transcripts for responsive UI
 )
 
 @Serializable

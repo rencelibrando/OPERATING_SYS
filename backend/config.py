@@ -52,10 +52,13 @@ class Settings(BaseSettings):
     eleven_labs_api_key: str = Field(..., env="ELEVEN_LABS_API_KEY")
     gladia_api_key: str = Field(default="", env="GLADIA_API_KEY")
     
-    # Deepgram Configuration
+    # Deepgram Configuration - Optimized for lower latency
     deepgram_model: str = Field(default="nova-3", env="DEEPGRAM_MODEL")
     deepgram_language: str = Field(default="multi", env="DEEPGRAM_LANGUAGE")
-    deepgram_endpointing: int = Field(default=100, env="DEEPGRAM_ENDPOINTING")
+    deepgram_endpointing: int = Field(default=300, env="DEEPGRAM_ENDPOINTING")  # 300ms for faster end-of-speech detection
+    deepgram_interim_results: bool = Field(default=True, env="DEEPGRAM_INTERIM_RESULTS")  # Enable real-time feedback
+    deepgram_utterance_end_ms: int = Field(default=300, env="DEEPGRAM_UTTERANCE_END_MS")  # Silence duration to trigger response
+    deepgram_smart_format: bool = Field(default=True, env="DEEPGRAM_SMART_FORMAT")  # Better formatting
     
     # Supabase Configuration
     # Accept both SUPABASE_KEY and SUPABASE_ANON_KEY

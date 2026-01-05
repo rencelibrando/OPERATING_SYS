@@ -81,6 +81,11 @@ interface LessonContentRepository {
         lessonId: String,
     ): Result<UserLessonProgress?>
 
+    suspend fun deleteUserProgress(
+        userId: String,
+        lessonId: String,
+    ): Result<Unit>
+
     suspend fun submitLessonAnswers(request: SubmitLessonAnswersRequest): Result<SubmitLessonAnswersResponse>
 
     // Media upload
@@ -92,7 +97,7 @@ interface LessonContentRepository {
     suspend fun deleteMedia(fileUrl: String): Result<Unit>
 }
 
-class LessonContentRepositoryImpl(
+class LessonContentRepositoryImpl private constructor(
     private val baseUrl: String = "http://localhost:8000",
 ) : LessonContentRepository {
     private val client =
@@ -128,6 +133,17 @@ class LessonContentRepositoryImpl(
     
     // Cache for user progress by (userId, lessonId)
     private val userProgressCache = mutableMapOf<String, Pair<UserLessonProgress?, Long>>()
+    
+    companion object {
+        @Volatile
+        private var instance: LessonContentRepositoryImpl? = null
+        
+        fun getInstance(): LessonContentRepositoryImpl {
+            return instance ?: synchronized(this) {
+                instance ?: LessonContentRepositoryImpl().also { instance = it }
+            }
+        }
+    }
 
     // ============================================
     // CACHE DATA CLASSES
@@ -427,6 +443,45 @@ class LessonContentRepositoryImpl(
             }
         }
 
+    override suspend fun deleteUserProgress(
+        userId: String,
+        lessonId: String,
+    ): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            try {
+                println("[LessonContentRepo] Deleting user progress for lesson $lessonId...")
+                
+                // Delete from user_lesson_progress
+                supabase.from("user_lesson_progress")
+                    .delete {
+                        filter {
+                            eq("user_id", userId)
+                            eq("lesson_id", lessonId)
+                        }
+                    }
+                
+                // Delete from user_question_answers
+                supabase.from("user_question_answers")
+                    .delete {
+                        filter {
+                            eq("user_id", userId)
+                            eq("lesson_id", lessonId)
+                        }
+                    }
+                
+                // Clear cache for this user/lesson
+                val cacheKey = "${userId}_$lessonId"
+                userProgressCache.remove(cacheKey)
+                
+                println("[LessonContentRepo] ✓ User progress deleted successfully")
+                Result.success(Unit)
+            } catch (e: Exception) {
+                println("[LessonContentRepo] ✗ Error deleting user progress: ${e.message}")
+                e.printStackTrace()
+                Result.failure(e)
+            }
+        }
+
     override suspend fun submitLessonAnswers(request: SubmitLessonAnswersRequest): Result<SubmitLessonAnswersResponse> =
         withContext(Dispatchers.IO) {
             try {
@@ -477,7 +532,7 @@ class LessonContentRepositoryImpl(
                 println("[LessonContentRepo] Score calculated: $correctCount/$totalQuestions = $score%")
                 println("[LessonContentRepo] Passed: $isPassed")
 
-                // Step 3: Update lesson progress
+                // Step 3: Update lesson progress using update with filter
                 println("[LessonContentRepo] Updating lesson progress...")
                 val progressData =
                     buildJsonObject {
@@ -489,26 +544,34 @@ class LessonContentRepositoryImpl(
                         put("completed_at", kotlinx.datetime.Clock.System.now().toString())
                     }
 
-                // First try to update existing record, if no rows affected then insert new one
-                val updateResult = supabase.from("user_lesson_progress")
+                // Use update with filter to handle existing records
+                supabase.from("user_lesson_progress")
                     .update(progressData) {
                         filter {
                             eq("user_id", request.userId)
                             eq("lesson_id", request.lessonId)
                         }
                     }
-                
-                // Check if update affected any rows by looking at the response data
-                // If update returned data, it means a record was updated
-                // If update returned empty data, it means no record was found to update
-                val updateAffectedRows = updateResult.data?.isNotEmpty() == true
-                
-                if (!updateAffectedRows) {
-                    println("[LessonContentRepo] No existing record found, inserting new progress record")
-                    supabase.from("user_lesson_progress")
-                        .insert(progressData)
-                } else {
-                    println("[LessonContentRepo] Existing record updated successfully")
+
+                // If no rows were updated, perform an insert
+                try {
+                    @Serializable
+                    data class UserLessonProgressDto(
+                        @SerialName("id") val id: String
+                    )
+                    val updateResult = supabase.from("user_lesson_progress").select {
+                        filter {
+                            eq("user_id", request.userId)
+                            eq("lesson_id", request.lessonId)
+                        }
+                    }.decodeList<UserLessonProgressDto>()
+                    
+                    if (updateResult.isEmpty()) {
+                        println("[LessonContentRepo] No existing progress found, inserting new record...")
+                        supabase.from("user_lesson_progress").insert(progressData)
+                    }
+                } catch (e: Exception) {
+                    println("[LessonContentRepo] Error checking update result, proceeding anyway: ${e.message}")
                 }
 
                 println("[LessonContentRepo] Lesson progress updated successfully")

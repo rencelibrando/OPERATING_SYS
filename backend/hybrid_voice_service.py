@@ -83,7 +83,7 @@ class HybridVoiceService:
 
             print(f"[HybridVoice] Transcribing with Deepgram: model={model}, language={language_code}")
 
-            # Prepare transcription options
+            # Prepare transcription options with optimized settings from config
             options = {
                 "model": model,
                 "language": language_code,
@@ -91,8 +91,9 @@ class HybridVoiceService:
                 "paragraphs": True,
                 "diarize": False,
                 "profanity_filter": True,
-                "smart_format": True,
-                "utterances": True  # Enable for better analysis
+                "smart_format": settings.deepgram_smart_format,  # From config
+                "utterances": True,  # Enable for better analysis
+                "interim_results": settings.deepgram_interim_results,  # Real-time feedback
             }
 
             # Transcribe the audio

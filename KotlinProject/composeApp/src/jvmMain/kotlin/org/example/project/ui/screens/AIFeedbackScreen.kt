@@ -2208,7 +2208,7 @@ private fun DeleteConfirmationDialog(
             }
         },
         shape = RoundedCornerShape(16.dp),
-        containerColor = WordBridgeColors.BackgroundWhite
+        containerColor = WordBridgeColors.CardBackgroundDark
     )
 }
 

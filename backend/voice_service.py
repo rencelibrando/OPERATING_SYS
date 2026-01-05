@@ -182,7 +182,7 @@ class VoiceService:
             if model not in ["nova-2", "nova-3"]:
                 print(f"Warning: Model '{model}' may not support multilingual code-switching. Recommended: nova-2 or nova-3")
             
-            # Prepare transcription options with multilingual support
+            # Prepare transcription options with multilingual support and optimizations
             options = {
                 "model": model,
                 "language": language_code,
@@ -190,7 +190,9 @@ class VoiceService:
                 "paragraphs": True,
                 "diarize": False,
                 "profanity_filter": True,
-                "smart_format": True
+                "smart_format": settings.deepgram_smart_format,  # From config
+                "utterances": True,  # Enable utterance detection for better sentence boundaries
+                "interim_results": settings.deepgram_interim_results,  # Real-time feedback if streaming
             }
             
             print(f"Transcribing with model={model}, language={language_code}")

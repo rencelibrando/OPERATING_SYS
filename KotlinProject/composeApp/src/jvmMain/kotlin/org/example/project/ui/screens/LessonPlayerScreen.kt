@@ -154,19 +154,23 @@ fun LessonPlayerScreen(
     lessonId: String,
     userId: String,
     onBack: () -> Unit,
-    viewModel: LessonPlayerViewModel = viewModel(),
+    onLessonCompleted: ((userId: String, lessonId: String) -> Unit)? = null,
+    viewModel: LessonPlayerViewModel = viewModel { 
+        LessonPlayerViewModel(onLessonCompleted = onLessonCompleted)
+    },
 ) {
     val currentLesson by viewModel.currentLesson
     val currentQuestion = viewModel.currentQuestion
     val currentQuestionIndex by viewModel.currentQuestionIndex
     val isLoading by viewModel.isLoading
     val errorMessage by viewModel.errorMessage
+    val isLessonAlreadyCompleted by viewModel.isLessonAlreadyCompleted
     val isSubmitted by viewModel.isSubmitted
     val submissionResult by viewModel.submissionResult
 
     LaunchedEffect(lessonId) {
         println("[LessonPlayerScreen] Screen initialized with lessonId: $lessonId")
-        viewModel.loadLesson(lessonId)
+        viewModel.loadLesson(lessonId, userId)
     }
 
     Surface(
@@ -176,13 +180,22 @@ fun LessonPlayerScreen(
         if (isLoading && currentLesson == null) {
             println("[LessonPlayerScreen] Showing loading screen...")
             LoadingScreen()
+        } else if (isLessonAlreadyCompleted) {
+            println("[LessonPlayerScreen] Showing completed lesson screen")
+            CompletedLessonScreen(
+                onRetake = {
+                    println("[LessonPlayerScreen] Retake button clicked")
+                    viewModel.retakeLesson(lessonId, userId)
+                },
+                onBack = onBack,
+            )
         } else if (errorMessage != null) {
             println("[LessonPlayerScreen] Showing error screen: $errorMessage")
             ErrorScreen(
                 message = errorMessage!!,
                 onRetry = {
                     println("[LessonPlayerScreen] Retry button clicked - reloading lesson")
-                    viewModel.loadLesson(lessonId)
+                    viewModel.loadLesson(lessonId, userId)
                 },
                 onBack = onBack,
             )
@@ -337,7 +350,7 @@ private fun LessonContent(
                         )
 
                         Text(
-                            text = question.questionType.displayName,
+                            question.questionType.displayName,
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color =
@@ -1968,8 +1981,8 @@ private fun MatchingItemCard(
                             },
                     ) {
                         Box(
-                            contentAlignment = Alignment.Center,
                             modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
                         ) {
                             Text(
                                 "$index",
@@ -2152,6 +2165,7 @@ private fun ParaphrasingQuestion(
             ) {
                 Column(
                     modifier = Modifier.padding(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
@@ -2761,6 +2775,129 @@ private fun LoadingScreen() {
 }
 
 @Composable
+private fun CompletedLessonScreen(
+    onRetake: () -> Unit,
+    onBack: () -> Unit,
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors =
+                                listOf(
+                                    Color(0xFF2D1B69).copy(alpha = 0.2f),
+                                    Color(0xFF1A0E2E).copy(alpha = 0.4f),
+                                ),
+                        ),
+                    ),
+        )
+
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .size(100.dp)
+                        .background(
+                            Color(0xFF10B981).copy(alpha = 0.15f),
+                            CircleShape,
+                        ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    modifier = Modifier.size(56.dp),
+                    tint = Color(0xFF10B981),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                "Lesson Already Completed",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                "Great job! You've already finished this lesson.",
+                style = MaterialTheme.typography.bodyLarge,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                "Would you like to retake it to practice again?",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center,
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.padding(horizontal = 16.dp),
+            ) {
+                OutlinedButton(
+                    onClick = onBack,
+                    modifier = Modifier.weight(1f),
+                    colors =
+                        ButtonDefaults.outlinedButtonColors(
+                            contentColor = WordBridgeColors.TextPrimaryDark,
+                        ),
+                    border = BorderStroke(1.dp, WordBridgeColors.TextSecondary.copy(alpha = 0.3f)),
+                ) {
+                    Icon(
+                        Icons.Default.ArrowBack,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Go Back")
+                }
+
+                Button(
+                    onClick = onRetake,
+                    modifier = Modifier.weight(1f),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = WordBridgeColors.PrimaryPurple,
+                            contentColor = Color.White,
+                        ),
+                ) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Retake Lesson")
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun ErrorScreen(
     message: String,
     onRetry: () -> Unit,
@@ -2785,13 +2922,13 @@ private fun ErrorScreen(
             "Error",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            color = WordBridgeColors.TextPrimary,
+            color = WordBridgeColors.TextPrimaryDark,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             message,
             style = MaterialTheme.typography.bodyLarge,
-            color = WordBridgeColors.TextSecondary,
+            color = WordBridgeColors.TextSecondaryDark,
             textAlign = TextAlign.Center,
         )
         Spacer(modifier = Modifier.height(24.dp))

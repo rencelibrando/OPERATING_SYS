@@ -59,6 +59,12 @@ interface LessonTopicsRepository {
         language: org.example.project.domain.model.LessonLanguage,
         sortOrder: Int,
     ): Result<Unit>
+
+    suspend fun getTopicsByLanguage(
+        languageId: String,
+        userId: String,
+        forceRefresh: Boolean = false
+    ): Result<List<LessonTopic>>
 }
 
 @Serializable
@@ -145,7 +151,7 @@ data class LessonTopicProgress(
     val timeSpent: Int,
 )
 
-class LessonTopicsRepositoryImpl : LessonTopicsRepository {
+class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository {
     private val supabase = SupabaseConfig.client
     private val baseUrl = "http://localhost:8000"
     private val httpClient = HttpClient {
@@ -179,6 +185,17 @@ class LessonTopicsRepositoryImpl : LessonTopicsRepository {
     
     // Cache for user lesson progress by (userId, topicIds hash)
     private val userLessonProgressCache = mutableMapOf<String, Pair<Map<String, TopicLessonProgress>, Long>>()
+    
+    companion object {
+        @Volatile
+        private var instance: LessonTopicsRepositoryImpl? = null
+        
+        fun getInstance(): LessonTopicsRepositoryImpl {
+            return instance ?: synchronized(this) {
+                instance ?: LessonTopicsRepositoryImpl().also { instance = it }
+            }
+        }
+    }
 
     override suspend fun getTopicsByDifficulty(
         difficulty: LessonDifficulty,
@@ -533,6 +550,142 @@ class LessonTopicsRepositoryImpl : LessonTopicsRepository {
             }
         }
 
+    override suspend fun getTopicsByLanguage(
+        languageId: String,
+        userId: String,
+        forceRefresh: Boolean,
+    ): Result<List<LessonTopic>> =
+        runCatching {
+            if (!SupabaseApiHelper.isReady()) {
+                throw Exception("Supabase not configured - will use local fallback")
+            }
+
+            val cacheKey = "language_${languageId}"
+            val currentTime = System.currentTimeMillis()
+
+            if (!forceRefresh) {
+                // Check persistent cache first
+                val persistentCacheResult = localStorageCache.retrieve("topics_$cacheKey")
+                
+                @Suppress("UNCHECKED_CAST")
+                val cachedTopicList = persistentCacheResult.getOrNull() as? CachedLessonTopicList
+                if (cachedTopicList != null) {
+                    println("[LessonTopics] Persistent cache hit for language $languageId (${cachedTopicList.topics.size} topics)")
+                    return@runCatching cachedTopicList.topics.map { it.toDomain() }
+                }
+                
+                // Check in-memory cache second
+                val cached = topicsCache[cacheKey]
+                if (cached != null && (currentTime - cached.second) < CACHE_DURATION_MS) {
+                    println("[LessonTopics]  Memory cache hit for language $languageId (${cached.first.size} topics)")
+                    return@runCatching cached.first
+                }
+            } else {
+                println("[LessonTopics] Force refresh requested - bypassing cache for language $languageId")
+            }
+
+            println("[LessonTopics] 🔄 Fetching topics for language $languageId from API...")
+
+            SupabaseApiHelper.executeWithRetry {
+                withContext(Dispatchers.IO) {
+                    if (!SupabaseApiHelper.ensureValidSession()) {
+                        println("[LessonTopics] No valid session, fetching topics without progress tracking")
+                    }
+
+                    println("[LessonTopics] Fetching topics for language: $languageId")
+
+                    val response =
+                        supabase.postgrest["lesson_topics"].select {
+                            filter {
+                                eq("language", languageId)
+                                eq("is_published", true)
+                            }
+                        }
+
+                    val topicDTOs =
+                        response.decodeList<LessonTopicDTO>()
+                            .sortedWith(compareBy({ it.sortOrder }, { it.lessonNumber ?: Int.MAX_VALUE }))
+
+                    println("[LessonTopics] Fetched ${topicDTOs.size} topics from database")
+
+                    // Fetch lesson counts and progress for all topics
+                    val topicIds = topicDTOs.map { it.id }
+                    val lessonCountsMap = getLessonCountsByTopics(topicIds)
+
+                    val topics =
+                        if (userId.isNotEmpty()) {
+                            val progressMap = getUserProgressMap(userId, topicIds)
+                            val lessonProgressMap = getUserLessonProgressByTopics(userId, topicIds)
+
+                            // Apply cascading sequential locking logic
+                            topicDTOs.mapIndexed { index, dto ->
+                                val topicProgress = progressMap[dto.id]
+                                val lessonCounts = lessonCountsMap[dto.id]
+                                val totalLessons = lessonCounts?.total ?: 0
+                                val completedLessons = lessonProgressMap[dto.id]?.completedCount ?: 0
+
+                                // Topic locking logic: 
+                                // - Topics with 0 lessons are always unlocked
+                                // - Topics with lessons are locked if any previous topic with lessons is incomplete
+                                val isLocked = if (totalLessons == 0) {
+                                    // Topics with no lessons are always unlocked
+                                    false
+                                } else if (index == 0) {
+                                    // First topic with lessons is never locked
+                                    false
+                                } else {
+                                    // Check if ANY previous topic with lessons is incomplete
+                                    topicDTOs.take(index).any { previousDto ->
+                                        val previousLessonCounts = lessonCountsMap[previousDto.id]
+                                        val previousTotalLessons = previousLessonCounts?.total ?: 0
+                                        val previousCompletedLessons = lessonProgressMap[previousDto.id]?.completedCount ?: 0
+                                        
+                                        // Only lock if previous topic has lessons (>0) but not all are completed
+                                        previousTotalLessons > 0 && previousCompletedLessons < previousTotalLessons
+                                    }
+                                }
+
+                                dto.toDomain(
+                                    isCompleted = topicProgress?.isCompleted ?: false,
+                                    completedLessonsCount = completedLessons,
+                                    totalLessonsCount = totalLessons,
+                                    isLockedOverride = isLocked
+                                )
+                            }
+                        } else {
+                            // No user, show all topics unlocked with zero progress
+                            topicDTOs.map { dto ->
+                                val lessonCounts = lessonCountsMap[dto.id]
+                                dto.toDomain(
+                                    totalLessonsCount = lessonCounts?.total ?: 0
+                                )
+                            }
+                        }
+
+                    // Cache the result in memory only if not forced refresh
+                    if (!forceRefresh) {
+                        topicsCache[cacheKey] = Pair(topics, currentTime)
+                        println("[LessonTopics] ✅ Memory cached ${topics.size} topics for language $languageId")
+                        
+                        // Cache the result in persistent storage
+                        val cachedTopics = topics.map { CachedLessonTopic.fromDomain(it) }
+                        val topicListWrapper = CachedLessonTopicList(cachedTopics)
+                        localStorageCache.store(
+                            key = "topics_$cacheKey",
+                            data = topicListWrapper,
+                            ttlMs = PERSISTENT_CACHE_TTL_MS
+                        )
+                        println("[LessonTopics] ✅ Persistent cached ${topics.size} topics for language $languageId")
+                    }
+                    
+                    topics
+                }
+            }.getOrElse { e ->
+                println("[LessonTopics] Failed to fetch topics for language $languageId: ${e.message}")
+                throw e
+            }
+        }
+
     private suspend fun getUserProgressMap(
         userId: String,
         topicIds: List<String>,
@@ -752,10 +905,15 @@ class LessonTopicsRepositoryImpl : LessonTopicsRepository {
      * Clear cache for specific user - call this when user completes a lesson
      */
     fun clearUserCache(userId: String) {
+        // Clear user progress caches
         userProgressCache.keys.removeAll { it.startsWith("${userId}_") }
         userLessonProgressCache.keys.removeAll { it.startsWith("${userId}_") }
         
-        // Clear user-specific persistent cache
+        // CRITICAL: Also clear topics cache since it contains computed locking status
+        topicsCache.clear()
+        lessonCountsCache.clear()
+        
+        // Clear persistent cache
         runCatching {
             kotlinx.coroutines.runBlocking {
                 localStorageCache.clear()
@@ -764,7 +922,7 @@ class LessonTopicsRepositoryImpl : LessonTopicsRepository {
             println("[LessonTopics] Failed to clear persistent cache for user: ${e.message}")
         }
         
-        println("[LessonTopics] 🗑️ User cache cleared for $userId")
+        println("[LessonTopics] 🗑️ User cache cleared for $userId (including topics cache)")
     }
     
     /**

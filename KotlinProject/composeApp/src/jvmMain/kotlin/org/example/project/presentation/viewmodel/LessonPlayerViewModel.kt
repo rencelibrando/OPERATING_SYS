@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import org.example.project.core.analytics.ProgressAnalyticsService
 import org.example.project.data.repository.LessonContentRepository
 import org.example.project.data.repository.LessonContentRepositoryImpl
+import org.example.project.data.repository.LessonTopicsRepositoryImpl
 import org.example.project.domain.model.*
 
 /**
@@ -17,7 +18,7 @@ import org.example.project.domain.model.*
 class LessonPlayerViewModel(
     private val onLessonCompleted: ((userId: String, lessonId: String) -> Unit)? = null
 ) : ViewModel() {
-    private val repository: LessonContentRepository = LessonContentRepositoryImpl()
+    private val repository: LessonContentRepository = LessonContentRepositoryImpl.getInstance()
 
     // State
     private val _currentLesson = mutableStateOf<LessonContent?>(null)
@@ -34,6 +35,9 @@ class LessonPlayerViewModel(
 
     private val _errorMessage = mutableStateOf<String?>(null)
     val errorMessage: State<String?> = _errorMessage
+
+    private val _isLessonAlreadyCompleted = mutableStateOf(false)
+    val isLessonAlreadyCompleted: State<Boolean> = _isLessonAlreadyCompleted
 
     private val _isSubmitted = mutableStateOf(false)
     val isSubmitted: State<Boolean> = _isSubmitted
@@ -103,14 +107,33 @@ class LessonPlayerViewModel(
     // LESSON LOADING
     // ============================================
 
-    fun loadLesson(lessonId: String) {
+    fun loadLesson(lessonId: String, userId: String, forceRetake: Boolean = false) {
         println("[LessonPlayer] ========== LOADING LESSON ==========")
         println("[LessonPlayer] Lesson ID: $lessonId")
+        println("[LessonPlayer] User ID: $userId")
+        println("[LessonPlayer] Force retake: $forceRetake")
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
+            _isLessonAlreadyCompleted.value = false
 
             try {
+                // Check if the user has already completed this lesson
+                println("[LessonPlayer] Checking if lesson is already completed...")
+                repository.getUserProgress(userId, lessonId)
+                    .onSuccess { progress ->
+                        if (progress?.isCompleted == true && !forceRetake) {
+                            println("[LessonPlayer] Lesson already completed by user")
+                            _isLessonAlreadyCompleted.value = true
+                            _isLoading.value = false
+                            return@launch
+                        }
+                    }
+                    .onFailure { error ->
+                        println("[LessonPlayer] Error checking progress: ${error.message}")
+                        // Proceed with loading anyway, don't block on progress check failure
+                    }
+
                 println("[LessonPlayer] Repository call: getLessonById(lessonId=$lessonId, includeQuestions=true)")
                 repository.getLessonById(lessonId, includeQuestions = true)
                     .onSuccess { lesson ->
@@ -505,16 +528,26 @@ class LessonPlayerViewModel(
                         
                         // Invalidate lesson topics cache to refresh topic unlocking
                         try {
-                            val topicsRepo = org.example.project.data.repository.LessonTopicsRepositoryImpl()
-                            topicsRepo.clearTopicsCache()
-                            println("[LessonPlayer] ✅ Lesson topics cache cleared")
+                            val topicsRepo = LessonTopicsRepositoryImpl.getInstance()
+                            topicsRepo.clearUserCache(userId)
+                            println("[LessonPlayer]  Lesson topics cache cleared for user")
                         } catch (e: Exception) {
-                            println("[LessonPlayer] ⚠️ Failed to clear topics cache: ${e.message}")
+                            println("[LessonPlayer]  Failed to clear topics cache: ${e.message}")
                         }
                         
                         // Invalidate progress analytics cache (all languages for this user)
                         ProgressAnalyticsService.invalidateCache(userId)
-                        println("[LessonPlayer] ✅ Progress analytics cache invalidated")
+                        println("[LessonPlayer]  Progress analytics cache invalidated")
+                        
+                        // Additional forced refresh to ensure immediate unlocking
+                        try {
+                            val topicsRepo = LessonTopicsRepositoryImpl.getInstance()
+                            // Clear all caches to force refresh on next load
+                            topicsRepo.clearCache()
+                            println("[LessonPlayer] Forced refresh of topics cache")
+                        } catch (e: Exception) {
+                            println("[LessonPlayer] Failed to force refresh topics: ${e.message}")
+                        }
                         
                         // Notify parent to invalidate caches
                         onLessonCompleted?.invoke(userId, lesson.id)
@@ -550,6 +583,45 @@ class LessonPlayerViewModel(
 
     fun clearError() {
         _errorMessage.value = null
+    }
+
+    fun retakeLesson(lessonId: String, userId: String) {
+        println("[LessonPlayer] ========== RETAKING LESSON ==========")
+        println("[LessonPlayer] Lesson ID: $lessonId")
+        println("[LessonPlayer] User ID: $userId")
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            _isLessonAlreadyCompleted.value = false
+
+            try {
+                // Delete user progress for this lesson to allow retake
+                println("[LessonPlayer] Deleting user progress to allow retake...")
+                repository.deleteUserProgress(userId, lessonId)
+                    .onSuccess {
+                        println("[LessonPlayer] ✓ User progress deleted successfully")
+                        
+                        // Clear caches
+                        (repository as? LessonContentRepositoryImpl)?.clearUserCache(userId)
+                        println("[LessonPlayer] ✓ Lesson content cache cleared")
+                        
+                        // Reload the lesson
+                        loadLesson(lessonId, userId, forceRetake = true)
+                    }
+                    .onFailure { error ->
+                        val errorMsg = "Failed to reset lesson progress: ${error.message}"
+                        println("[LessonPlayer] ✗ ERROR: $errorMsg")
+                        _errorMessage.value = errorMsg
+                        _isLoading.value = false
+                    }
+            } catch (e: Exception) {
+                val errorMsg = "Unexpected error retaking lesson: ${e.message}"
+                println("[LessonPlayer] ✗ EXCEPTION: $errorMsg")
+                _errorMessage.value = errorMsg
+                _isLoading.value = false
+            }
+            println("[LessonPlayer] ==========================================")
+        }
     }
 }
 

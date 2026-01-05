@@ -12,7 +12,7 @@ import org.example.project.domain.model.LessonLanguage
 import org.example.project.domain.model.LessonTopic
 
 class AdminLessonTopicsViewModel : ViewModel() {
-    private val lessonTopicsRepository: LessonTopicsRepository = LessonTopicsRepositoryImpl()
+    private val lessonTopicsRepository: LessonTopicsRepository = LessonTopicsRepositoryImpl.getInstance()
 
     private val _topics = mutableStateOf<List<LessonTopic>>(emptyList())
     val topics: State<List<LessonTopic>> = _topics
