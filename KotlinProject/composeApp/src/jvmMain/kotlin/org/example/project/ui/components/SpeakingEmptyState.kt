@@ -61,7 +61,7 @@ fun SpeakingEmptyState(
         // Mode selection buttons
         Row(
             modifier = Modifier.fillMaxWidth(0.8f),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Button(
                 onClick = onStartFirstPracticeClick,
@@ -73,7 +73,7 @@ fun SpeakingEmptyState(
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
             ) {
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
                         text = "Practice Mode",
@@ -96,7 +96,7 @@ fun SpeakingEmptyState(
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
             ) {
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
                         text = "Conversation",

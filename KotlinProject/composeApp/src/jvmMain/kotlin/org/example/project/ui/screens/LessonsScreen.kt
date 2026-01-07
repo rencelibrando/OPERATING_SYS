@@ -39,7 +39,7 @@ fun LessonsScreen(
             viewModel.initializeWithAuthenticatedUser(authenticatedUser)
         }
     }
-    
+
     // Reload data when refresh trigger changes (after lesson completion)
     LaunchedEffect(refreshTrigger) {
         if (refreshTrigger > 0L && authenticatedUser != null) {
@@ -356,7 +356,7 @@ fun LessonsScreen(
                 // Enhanced grid layout for better visual appeal
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
                     lessonCategories.forEach { category ->
                         LessonCategoryCard(

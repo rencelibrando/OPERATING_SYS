@@ -1,13 +1,13 @@
 package org.example.project.core.audio
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -26,7 +26,7 @@ class VoiceRecorder {
     private val audioData = mutableListOf<ByteArray>()
     private val audioDataLock = Any()
     private var onAudioChunkCallback: AtomicReference<((ByteArray) -> Unit)?> = AtomicReference(null)
-    
+
     // Debounce tracking to prevent rapid start/stop
     private var lastStartTime = 0L
     private val minRecordingIntervalMs = 200L
@@ -44,7 +44,7 @@ class VoiceRecorder {
                     println("[VoiceRecorder] Already recording - ignoring duplicate start")
                     return@withContext Result.failure(Exception("Already recording"))
                 }
-                
+
                 // Debounce check
                 val now = System.currentTimeMillis()
                 if (now - lastStartTime < minRecordingIntervalMs) {
@@ -85,33 +85,36 @@ class VoiceRecorder {
                 onAudioChunkCallback.set(onAudioChunk)
 
                 // Start recording coroutine for proper lifecycle management
-                recordingJob = scope.launch {
-                    val buffer = ByteArray(2400) // 50ms chunks at 24kHz for smooth audio
-                    val dataLine = targetDataLine
-                    
-                    while (isActive && isRecording.get() && dataLine?.isOpen == true) {
-                        try {
-                            val bytesRead = dataLine.read(buffer, 0, buffer.size)
-                            if (bytesRead > 0 && isRecording.get()) {
-                                val chunk = buffer.copyOf(bytesRead)
-                                synchronized(audioDataLock) {
-                                    audioData.add(chunk)
+                recordingJob =
+                    scope.launch {
+                        val buffer = ByteArray(2400) // 50ms chunks at 24kHz for smooth audio
+                        val dataLine = targetDataLine
+
+                        while (isActive && isRecording.get() && dataLine?.isOpen == true) {
+                            try {
+                                val bytesRead = dataLine.read(buffer, 0, buffer.size)
+                                if (bytesRead > 0 && isRecording.get()) {
+                                    val chunk = buffer.copyOf(bytesRead)
+                                    synchronized(audioDataLock) {
+                                        audioData.add(chunk)
+                                    }
+                                    // Stream chunk in real-time if callback provided
+                                    onAudioChunkCallback.get()?.invoke(chunk)
                                 }
-                                // Stream chunk in real-time if callback provided
-                                onAudioChunkCallback.get()?.invoke(chunk)
+                            } catch (e: Exception) {
+                                if (isRecording.get()) {
+                                    println("[VoiceRecorder] Error reading audio: ${e.message}")
+                                }
+                                break
                             }
-                        } catch (e: Exception) {
-                            if (isRecording.get()) {
-                                println("[VoiceRecorder] Error reading audio: ${e.message}")
-                            }
-                            break
                         }
+                        println("[VoiceRecorder] Recording loop ended")
                     }
-                    println("[VoiceRecorder] Recording loop ended")
-                }
 
                 val mode = if (onAudioChunk != null) "streaming" else "buffered"
-                println("[VoiceRecorder] Started recording ($mode mode) - format: ${format.sampleRate}Hz ${format.sampleSizeInBits}bit ${format.channels}ch")
+                println(
+                    "[VoiceRecorder] Started recording ($mode mode) - format: ${format.sampleRate}Hz ${format.sampleSizeInBits}bit ${format.channels}ch",
+                )
                 Result.success(Unit)
             } catch (e: Exception) {
                 isRecording.set(false)
@@ -132,7 +135,7 @@ class VoiceRecorder {
                 if (!isRecording.compareAndSet(true, false)) {
                     return@withContext Result.failure(Exception("Not currently recording"))
                 }
-                
+
                 // Clear callback immediately to prevent further chunk sends
                 onAudioChunkCallback.set(null)
 
@@ -153,22 +156,26 @@ class VoiceRecorder {
                 }
 
                 // Calculate total audio data size
-                val (totalSize, chunkCount, combinedData) = synchronized(audioDataLock) {
-                    val size = audioData.sumOf { it.size }
-                    val count = audioData.size
-                    val combined = if (size > 0) {
-                        ByteArray(size).also { arr ->
-                            var offset = 0
-                            for (chunk in audioData) {
-                                chunk.copyInto(arr, offset)
-                                offset += chunk.size
+                val (totalSize, chunkCount, combinedData) =
+                    synchronized(audioDataLock) {
+                        val size = audioData.sumOf { it.size }
+                        val count = audioData.size
+                        val combined =
+                            if (size > 0) {
+                                ByteArray(size).also { arr ->
+                                    var offset = 0
+                                    for (chunk in audioData) {
+                                        chunk.copyInto(arr, offset)
+                                        offset += chunk.size
+                                    }
+                                }
+                            } else {
+                                null
                             }
-                        }
-                    } else null
-                    audioData.clear()
-                    Triple(size, count, combined)
-                }
-                
+                        audioData.clear()
+                        Triple(size, count, combined)
+                    }
+
                 println("[VoiceRecorder] Captured $totalSize bytes of audio data in $chunkCount chunks")
 
                 if (totalSize == 0 || combinedData == null) {
@@ -177,11 +184,12 @@ class VoiceRecorder {
                 }
 
                 // Create audio input stream from captured data
-                val audioInputStream = AudioInputStream(
-                    java.io.ByteArrayInputStream(combinedData),
-                    audioFormat!!,
-                    (totalSize / audioFormat!!.frameSize).toLong()
-                )
+                val audioInputStream =
+                    AudioInputStream(
+                        java.io.ByteArrayInputStream(combinedData),
+                        audioFormat!!,
+                        (totalSize / audioFormat!!.frameSize).toLong(),
+                    )
 
                 // Write to WAV file
                 AudioSystem.write(
@@ -236,7 +244,7 @@ class VoiceRecorder {
                     println("[VoiceRecorder] stopRecordingNoSave called but not recording")
                     return@withContext Result.failure(Exception("Not currently recording"))
                 }
-                
+
                 // Clear callback immediately to prevent further chunk sends
                 onAudioChunkCallback.set(null)
                 println("[VoiceRecorder] Stopping recording (no save mode)")
@@ -258,13 +266,14 @@ class VoiceRecorder {
                 }
 
                 // Calculate total audio data size
-                val (totalSize, chunkCount) = synchronized(audioDataLock) {
-                    val size = audioData.sumOf { it.size }
-                    val count = audioData.size
-                    audioData.clear()
-                    Pair(size, count)
-                }
-                
+                val (totalSize, chunkCount) =
+                    synchronized(audioDataLock) {
+                        val size = audioData.sumOf { it.size }
+                        val count = audioData.size
+                        audioData.clear()
+                        Pair(size, count)
+                    }
+
                 println("[VoiceRecorder] Stopped recording - streamed $totalSize bytes in $chunkCount chunks")
 
                 targetDataLine = null
@@ -281,7 +290,7 @@ class VoiceRecorder {
      * Check if currently recording.
      */
     fun isCurrentlyRecording(): Boolean = isRecording.get()
-    
+
     /**
      * Clean up resources.
      */

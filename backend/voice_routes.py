@@ -41,7 +41,7 @@ async def transcribe_audio(
     model: str = Form(default="nova-3")
 ):
     """
-    Transcribe audio file using Deepgram API.
+    Transcribe an audio file using Deepgram API.
     
     Args:
         audio_file: Audio file in WAV format
@@ -52,7 +52,7 @@ async def transcribe_audio(
         Transcription result with confidence score
     """
     try:
-        # Validate file type
+        # Validate a file type
         if not audio_file.content_type.startswith("audio/"):
             raise HTTPException(status_code=400, detail="File must be an audio file")
         
@@ -99,7 +99,7 @@ async def generate_feedback(
         Structured feedback with scores and suggestions
     """
     try:
-        # Create feedback request
+        # Create a feedback request
         request = VoiceFeedbackRequest(
             transcript=transcript,
             expected_text=expected_text,
@@ -130,7 +130,7 @@ async def save_session(
     session_duration: float = Form(...)
 ):
     """
-    Save voice session to Supabase.
+    Save a voice session to Supabase.
     
     Args:
         user_id: User identifier
@@ -138,7 +138,7 @@ async def save_session(
         level: Proficiency level
         scenario: Practice scenario
         transcript: Transcribed speech
-        audio_url: URL to stored audio file (optional)
+        audio_url: URL to a stored audio file (optional)
         feedback: JSON string with AI feedback results
         session_duration: Session duration in seconds
     
@@ -149,7 +149,7 @@ async def save_session(
         # Parse feedback JSON
         feedback_data = json.loads(feedback)
         
-        # Create session save request
+        # Create a session save request
         request = VoiceSessionSaveRequest(
             user_id=user_id,
             language=language,
@@ -179,7 +179,7 @@ async def get_progress(
     days: int = Form(default=30)
 ):
     """
-    Get user's voice learning progress.
+    Get a user's voice learning progress.
     
     Args:
         user_id: User identifier
@@ -221,10 +221,10 @@ async def upload_audio(
         session_id: Session identifier (optional)
     
     Returns:
-        URL of uploaded file
+        URL of an uploaded file
     """
     try:
-        # Validate file type
+        # Validate a file type
         if not audio_file.content_type.startswith("audio/"):
             raise HTTPException(status_code=400, detail="File must be an audio file")
         
@@ -236,7 +236,7 @@ async def upload_audio(
         # Upload to Supabase storage
         file_data = await audio_file.read()
         
-        # Create storage bucket if it doesn't exist
+        # Create a storage bucket if it doesn't exist
         client = supabase_manager.get_client()
         if not client:
             raise HTTPException(status_code=500, detail="Failed to get Supabase client")
@@ -301,7 +301,7 @@ async def get_scenarios(
 @router.get("/languages")
 async def get_languages():
     """
-    Get list of supported languages.
+    Get a list of supported languages.
     
     Returns:
         List of supported languages with codes and names
@@ -325,7 +325,7 @@ async def get_languages():
 @router.get("/levels")
 async def get_levels():
     """
-    Get list of proficiency levels.
+    Get a list of proficiency levels.
     
     Returns:
         List of available levels
@@ -354,7 +354,7 @@ async def save_conversation_recording(
     audio_file: Optional[UploadFile] = File(None)
 ):
     """
-    Save conversation recording with audio file to Supabase.
+    Save a conversation recording with an audio file to Supabase.
     
     Args:
         session_id: Session identifier
@@ -387,7 +387,7 @@ async def save_conversation_recording(
                 # Read file data
                 file_data = await audio_file.read()
                 
-                # Create bucket if it doesn't exist
+                # Create a bucket if it doesn't exist
                 try:
                     client.storage.create_bucket("voice-recordings", options={"public": True})
                     logger.info("Created voice-recordings bucket as public")
@@ -424,7 +424,7 @@ async def save_conversation_recording(
                 logger.error(f"Failed to upload audio: {str(e)}")
                 # Continue without audio URL
         
-        # Create recording entry
+        # Create a recording entry
         recording_data = {
             "id": str(uuid.uuid4()),
             "session_id": session_id,
@@ -437,7 +437,7 @@ async def save_conversation_recording(
             "created_at": datetime.utcnow().isoformat()
         }
         
-        # Insert into conversation_recordings table
+        # Insert into the conversation_recordings table
         response = client.table("conversation_recordings").insert(recording_data).execute()
         
         if response.data:

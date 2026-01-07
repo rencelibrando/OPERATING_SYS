@@ -21,7 +21,7 @@ class LanguageDetectionService:
     _instance: Optional['LanguageDetectionService'] = None
     _model: Optional[fasttext.FastText._FastText] = None
     
-    # FastText language codes to full language names
+    # FastText language codes with full language names
     LANGUAGE_MAP = {
         '__label__ko': 'ko',  # Korean
         '__label__de': 'de',  # German
@@ -71,7 +71,7 @@ class LanguageDetectionService:
         try:
             model_path = self._get_model_path()
             
-            # Download model if it doesn't exist
+            # Download the model if it doesn't exist
             if not model_path.exists():
                 logger.warning(f"FastText model not found at {model_path}")
                 self._download_model(model_path)
@@ -138,7 +138,7 @@ class LanguageDetectionService:
             processed_text = ' '.join(text.strip().split())
             logger.info(f"[LANG_DETECT] After whitespace normalization: '{processed_text}'")
 
-            # If text is too short, try with original to preserve context
+            # If the text is too short, try with the original to preserve context
             if len(processed_text) < 10:
                 logger.info(f"[LANG_DETECT] Text too short ({len(processed_text)} chars), using original")
                 processed_text = text.strip()
@@ -173,7 +173,7 @@ class LanguageDetectionService:
                 logger.warning(f"[LANG_DETECT] Available language mappings: {list(self.LANGUAGE_MAP.keys())}")
                 return (fallback, 0.0)
 
-            # Check if language is in supported list
+            # Check if language is in a supported list
             logger.info(f"[LANG_DETECT] Checking if {language_code} is in supported languages...")
             if language_code not in self.SUPPORTED_LANGUAGES:
                 logger.warning(f"[LANG_DETECT] Language {language_code} not in supported list, using fallback {fallback}")

@@ -23,7 +23,7 @@ class LessonsViewModel : ViewModel() {
     private val profileService = ProfileService()
     private val lessonTopicsRepository: LessonTopicsRepository = LessonTopicsRepositoryImpl.getInstance()
     private val lessonContentRepository: LessonContentRepository = LessonContentRepositoryImpl.getInstance()
-    
+
     // Track last loaded state to avoid redundant API calls
     private var lastLoadedCategory: LessonDifficulty? = null
     private var lastLoadedLanguage: LessonLanguage? = null
@@ -133,44 +133,51 @@ class LessonsViewModel : ViewModel() {
         }
     }
 
-    private fun calculateLevelProgress(difficulty: LessonDifficulty, topics: List<org.example.project.domain.model.LessonTopic>): LessonCategoryInfo {
+    private fun calculateLevelProgress(
+        difficulty: LessonDifficulty,
+        topics: List<org.example.project.domain.model.LessonTopic>,
+    ): LessonCategoryInfo {
         val totalTopics = topics.size
         val totalLessons = topics.sumOf { it.totalLessonsCount }
         val completedLessons = topics.sumOf { it.completedLessonsCount }
-        val progressPercentage = if (totalLessons > 0) {
-            ((completedLessons.toFloat() / totalLessons.toFloat()) * 100).toInt()
-        } else {
-            0
-        }
+        val progressPercentage =
+            if (totalLessons > 0) {
+                ((completedLessons.toFloat() / totalLessons.toFloat()) * 100).toInt()
+            } else {
+                0
+            }
 
         return when (difficulty) {
-            LessonDifficulty.BEGINNER -> LessonCategoryInfo(
-                difficulty = LessonDifficulty.BEGINNER,
-                title = "Beginner",
-                description = "Start your language learning journey with foundational lessons",
-                totalLessons = totalTopics,
-                completedLessons = completedLessons,
-                isLocked = false,
-                progressPercentage = progressPercentage,
-            )
-            LessonDifficulty.INTERMEDIATE -> LessonCategoryInfo(
-                difficulty = LessonDifficulty.INTERMEDIATE,
-                title = "Intermediate",
-                description = "Build on your basics with more complex concepts and conversations",
-                totalLessons = totalTopics,
-                completedLessons = completedLessons,
-                isLocked = false,
-                progressPercentage = progressPercentage,
-            )
-            LessonDifficulty.ADVANCED -> LessonCategoryInfo(
-                difficulty = LessonDifficulty.ADVANCED,
-                title = "Advanced",
-                description = "Master advanced topics and achieve fluency in complex situations",
-                totalLessons = totalTopics,
-                completedLessons = completedLessons,
-                isLocked = false,
-                progressPercentage = progressPercentage,
-            )
+            LessonDifficulty.BEGINNER ->
+                LessonCategoryInfo(
+                    difficulty = LessonDifficulty.BEGINNER,
+                    title = "Beginner",
+                    description = "Start your language learning journey with foundational lessons",
+                    totalLessons = totalTopics,
+                    completedLessons = completedLessons,
+                    isLocked = false,
+                    progressPercentage = progressPercentage,
+                )
+            LessonDifficulty.INTERMEDIATE ->
+                LessonCategoryInfo(
+                    difficulty = LessonDifficulty.INTERMEDIATE,
+                    title = "Intermediate",
+                    description = "Build on your basics with more complex concepts and conversations",
+                    totalLessons = totalTopics,
+                    completedLessons = completedLessons,
+                    isLocked = false,
+                    progressPercentage = progressPercentage,
+                )
+            LessonDifficulty.ADVANCED ->
+                LessonCategoryInfo(
+                    difficulty = LessonDifficulty.ADVANCED,
+                    title = "Advanced",
+                    description = "Master advanced topics and achieve fluency in complex situations",
+                    totalLessons = totalTopics,
+                    completedLessons = completedLessons,
+                    isLocked = false,
+                    progressPercentage = progressPercentage,
+                )
         }
     }
 
@@ -289,7 +296,9 @@ class LessonsViewModel : ViewModel() {
                     onSuccess = { topics ->
                         val categoryInfo = calculateLevelProgress(difficulty, topics)
                         updatedCategories.add(categoryInfo)
-                        println("[LessonsViewModel] ${difficulty.displayName}: ${categoryInfo.completedLessons}/${categoryInfo.totalLessons} lessons (${categoryInfo.progressPercentage}%)")
+                        println(
+                            "[LessonsViewModel] ${difficulty.displayName}: ${categoryInfo.completedLessons}/${categoryInfo.totalLessons} lessons (${categoryInfo.progressPercentage}%)",
+                        )
                     },
                     onFailure = { e ->
                         println("[LessonsViewModel] Error loading ${difficulty.displayName} progress: ${e.message}")
@@ -303,9 +312,9 @@ class LessonsViewModel : ViewModel() {
                                 completedLessons = 0,
                                 isLocked = false,
                                 progressPercentage = 0,
-                            )
+                            ),
                         )
-                    }
+                    },
                 )
             }
 
@@ -500,7 +509,7 @@ class LessonsViewModel : ViewModel() {
                 // Clear repository caches to force fresh data
                 (lessonTopicsRepository as? LessonTopicsRepositoryImpl)?.clearCache()
                 (lessonContentRepository as? LessonContentRepositoryImpl)?.clearCache()
-                
+
                 // Reload current view
                 val currentCategory = _selectedCategory.value
                 if (currentCategory != null) {
@@ -508,7 +517,7 @@ class LessonsViewModel : ViewModel() {
                 } else {
                     refreshCategories()
                 }
-                
+
                 println("[LessonsViewModel] ✅ Refreshed lessons data")
             } catch (e: Exception) {
                 println("[LessonsViewModel] ❌ Error refreshing: ${e.message}")
@@ -517,7 +526,7 @@ class LessonsViewModel : ViewModel() {
             }
         }
     }
-    
+
     /**
      * Clear cache for the current user - call after completing a lesson
      */
@@ -525,7 +534,7 @@ class LessonsViewModel : ViewModel() {
         viewModelScope.launch {
             (lessonTopicsRepository as? LessonTopicsRepositoryImpl)?.clearUserCache(userId)
             (lessonContentRepository as? LessonContentRepositoryImpl)?.clearUserCache(userId)
-            
+
             // Reload current view to show updated progress
             val currentCategory = _selectedCategory.value
             if (currentCategory != null) {

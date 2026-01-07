@@ -26,7 +26,7 @@ import org.example.project.core.auth.User as AuthUser
 
 /**
  * New Progress Tracker Screen with comprehensive language-based analytics.
- * 
+ *
  * Features:
  * - Language selector tabs
  * - Per-language metrics (lessons, conversations, vocabulary, time, scores)
@@ -55,9 +55,10 @@ fun ProgressTrackerScreen(
     val isRealtimeConnected by viewModel.isRealtimeConnected
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(WordBridgeColors.BackgroundMain)
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(WordBridgeColors.BackgroundMain),
     ) {
         // Header
         ProgressTrackerHeader(
@@ -65,23 +66,24 @@ fun ProgressTrackerScreen(
             onUserAvatarClick = onUserAvatarClick,
             onRefresh = { viewModel.refreshProgress() },
             isRefreshing = isRefreshing,
-            isRealtimeConnected = isRealtimeConnected
+            isRealtimeConnected = isRealtimeConnected,
         )
 
         // Language Selector
         LanguageSelector(
             selectedLanguage = selectedLanguage,
             onLanguageSelected = { viewModel.selectLanguage(it) },
-            modifier = Modifier.padding(horizontal = 24.dp)
+            modifier = Modifier.padding(horizontal = 24.dp),
         )
 
         Spacer(modifier = Modifier.height(20.dp))
 
         // Content based on state
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp),
         ) {
             when (val state = progressState) {
                 is ProgressTrackerState.Loading -> {
@@ -89,29 +91,30 @@ fun ProgressTrackerScreen(
                 }
                 is ProgressTrackerState.Success -> {
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState()),
                     ) {
                         // Current Progress Card
                         LanguageProgressCard(progress = state.progress)
-                        
+
                         Spacer(modifier = Modifier.height(16.dp))
-                        
+
                         // Action Buttons
                         ActionButtons(
                             onShare = { viewModel.showShareDialog() },
-                            onCaptureSnapshot = { viewModel.captureCurrentSnapshot() }
+                            onCaptureSnapshot = { viewModel.captureCurrentSnapshot() },
                         )
-                        
+
                         Spacer(modifier = Modifier.height(24.dp))
-                        
+
                         // Historical Trends Chart
                         if (progressHistory.isNotEmpty() || isLoadingHistory) {
                             ProgressTrendsChart(
                                 history = progressHistory,
                                 selectedTimeRange = selectedTimeRange,
-                                onTimeRangeSelected = { viewModel.selectTimeRange(it) }
+                                onTimeRangeSelected = { viewModel.selectTimeRange(it) },
                             )
                             Spacer(modifier = Modifier.height(24.dp))
                         }
@@ -120,7 +123,7 @@ fun ProgressTrackerScreen(
                 is ProgressTrackerState.Error -> {
                     ErrorState(
                         message = state.message,
-                        onRetry = { viewModel.loadLanguageProgress(forceRefresh = true) }
+                        onRetry = { viewModel.loadLanguageProgress(forceRefresh = true) },
                     )
                 }
                 is ProgressTrackerState.Empty -> {
@@ -128,7 +131,7 @@ fun ProgressTrackerScreen(
                 }
             }
         }
-        
+
         // Share Dialog
         if (showShareDialog) {
             val state = progressState
@@ -139,18 +142,19 @@ fun ProgressTrackerScreen(
                     onExportPNG = { /* TODO: Implement screenshot capture */ },
                     onExportHTML = { viewModel.exportToHTML() },
                     onCopyText = { viewModel.copyProgressText() },
-                    onShareLink = { viewModel.shareLink() }
+                    onShareLink = { viewModel.shareLink() },
                 )
             }
         }
-        
+
         // Export Feedback Snackbar
         exportMessage?.let { message ->
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.BottomCenter
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                contentAlignment = Alignment.BottomCenter,
             ) {
                 Snackbar(
                     action = {
@@ -159,7 +163,7 @@ fun ProgressTrackerScreen(
                         }
                     },
                     containerColor = WordBridgeColors.PrimaryPurple,
-                    contentColor = Color.White
+                    contentColor = Color.White,
                 ) {
                     Text(message)
                 }
@@ -180,49 +184,51 @@ private fun ProgressTrackerHeader(
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = WordBridgeColors.CardBackgroundDark,
-        shadowElevation = 2.dp
+        shadowElevation = 2.dp,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
                 Text(
                     text = "Progress Tracker",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = WordBridgeColors.TextPrimaryDark
+                    style =
+                        MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    color = WordBridgeColors.TextPrimaryDark,
                 )
                 Text(
                     text = "Track your language learning journey",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = WordBridgeColors.TextSecondaryDark
+                    color = WordBridgeColors.TextSecondaryDark,
                 )
             }
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Real-time status indicator
                 if (isRealtimeConnected) {
                     Text(
                         text = "",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                
+
                 IconButton(
                     onClick = onRefresh,
-                    enabled = !isRefreshing
+                    enabled = !isRefreshing,
                 ) {
                     Text(
                         text = if (isRefreshing) "" else "",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
                     )
                 }
 
@@ -230,7 +236,7 @@ private fun ProgressTrackerHeader(
                     initials = authenticatedUser?.initials ?: "U",
                     profileImageUrl = authenticatedUser?.profileImageUrl,
                     size = 48.dp,
-                    onClick = onUserAvatarClick
+                    onClick = onUserAvatarClick,
                 )
             }
         }
@@ -249,47 +255,52 @@ private fun LanguageSelector(
         modifier = modifier.fillMaxWidth(),
         containerColor = Color.Transparent,
         edgePadding = 0.dp,
-        divider = {}
+        divider = {},
     ) {
         LessonLanguage.entries.forEach { language ->
             val isSelected = language == selectedLanguage
-            
+
             Tab(
                 selected = isSelected,
                 onClick = { onLanguageSelected(language) },
-                modifier = Modifier.padding(vertical = 8.dp)
+                modifier = Modifier.padding(vertical = 8.dp),
             ) {
                 Card(
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (isSelected) {
-                            WordBridgeColors.PrimaryPurple
-                        } else {
-                            WordBridgeColors.CardBackgroundDark
-                        }
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = if (isSelected) 4.dp else 2.dp
-                    )
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                if (isSelected) {
+                                    WordBridgeColors.PrimaryPurple
+                                } else {
+                                    WordBridgeColors.CardBackgroundDark
+                                },
+                        ),
+                    elevation =
+                        CardDefaults.cardElevation(
+                            defaultElevation = if (isSelected) 4.dp else 2.dp,
+                        ),
                 ) {
                     Row(
-                        modifier = Modifier.padding(
-                            horizontal = 16.dp,
-                            vertical = 12.dp
-                        ),
+                        modifier =
+                            Modifier.padding(
+                                horizontal = 16.dp,
+                                vertical = 12.dp,
+                            ),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
                             text = getLanguageFlag(language.code),
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
                         )
                         Text(
                             text = language.displayName,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                            ),
-                            color = if (isSelected) Color.White else WordBridgeColors.TextPrimaryDark
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                ),
+                            color = if (isSelected) Color.White else WordBridgeColors.TextPrimaryDark,
                         )
                     }
                 }
@@ -302,17 +313,17 @@ private fun LanguageSelector(
 private fun LoadingState(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             CircularProgressIndicator(color = WordBridgeColors.PrimaryPurple)
             Text(
                 text = "Loading your progress...",
                 style = MaterialTheme.typography.bodyLarge,
-                color = WordBridgeColors.TextSecondaryDark
+                color = WordBridgeColors.TextSecondaryDark,
             )
         }
     }
@@ -326,49 +337,52 @@ private fun ErrorState(
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Card(
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = WordBridgeColors.CardBackgroundDark
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = WordBridgeColors.CardBackgroundDark,
+                ),
         ) {
             Column(
                 modifier = Modifier.padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(
                     text = "⚠️",
-                    style = MaterialTheme.typography.displayMedium
+                    style = MaterialTheme.typography.displayMedium,
                 )
-                
+
                 Text(
                     text = "Oops! Something went wrong",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = WordBridgeColors.TextPrimaryDark
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    color = WordBridgeColors.TextPrimaryDark,
                 )
-                
+
                 Text(
                     text = message,
                     style = MaterialTheme.typography.bodyMedium,
                     color = WordBridgeColors.TextSecondaryDark,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
-                
+
                 Button(
                     onClick = onRetry,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = WordBridgeColors.PrimaryPurple
-                    ),
-                    shape = RoundedCornerShape(8.dp)
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = WordBridgeColors.PrimaryPurple,
+                        ),
+                    shape = RoundedCornerShape(8.dp),
                 ) {
                     Text(
                         text = "🔄 Try Again",
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     )
                 }
             }
@@ -383,78 +397,80 @@ private fun EmptyState(
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Card(
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = WordBridgeColors.CardBackgroundDark
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = WordBridgeColors.CardBackgroundDark,
+                ),
         ) {
             Column(
                 modifier = Modifier.padding(40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(
                     text = "📊",
-                    style = MaterialTheme.typography.displayLarge
+                    style = MaterialTheme.typography.displayLarge,
                 )
-                
+
                 Text(
                     text = "Start Your $language Journey",
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
+                    style =
+                        MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
                     color = WordBridgeColors.TextPrimaryDark,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
-                
+
                 Text(
                     text = "Begin learning $language to see your progress here! Complete lessons, practice conversations, and build your vocabulary.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = WordBridgeColors.TextSecondaryDark,
                     textAlign = TextAlign.Center,
-                    lineHeight = MaterialTheme.typography.bodyLarge.lineHeight
+                    lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.1f)
+                        color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.1f),
                     ) {
                         Row(
                             modifier = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             Text(text = "📚", style = MaterialTheme.typography.bodyMedium)
                             Text(
                                 text = "Take Lessons",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = WordBridgeColors.PrimaryPurple
+                                color = WordBridgeColors.PrimaryPurple,
                             )
                         }
                     }
-                    
+
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFF3B82F6).copy(alpha = 0.1f)
+                        color = Color(0xFF3B82F6).copy(alpha = 0.1f),
                     ) {
                         Row(
                             modifier = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             Text(text = "💬", style = MaterialTheme.typography.bodyMedium)
                             Text(
                                 text = "Practice Speaking",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFF3B82F6)
+                                color = Color(0xFF3B82F6),
                             )
                         }
                     }
@@ -472,26 +488,28 @@ private fun ActionButtons(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         OutlinedButton(
             onClick = onShare,
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = WordBridgeColors.PrimaryPurple
-            )
+            colors =
+                ButtonDefaults.outlinedButtonColors(
+                    contentColor = WordBridgeColors.PrimaryPurple,
+                ),
         ) {
             Text("📤 Share")
         }
-        
+
         OutlinedButton(
             onClick = onCaptureSnapshot,
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = WordBridgeColors.PrimaryPurple
-            )
+            colors =
+                ButtonDefaults.outlinedButtonColors(
+                    contentColor = WordBridgeColors.PrimaryPurple,
+                ),
         ) {
             Text("📸 Save Snapshot")
         }

@@ -27,7 +27,7 @@ class TTSService:
     VOICE_MAPPING = {
         'ko': 'ko-KR-SunHiNeural',      # Korean - Female
         'de': 'de-DE-KatjaNeural',      # German - Female
-        'zh': 'zh-CN-XiaoxiaoNeural',   # Chinese - Female
+        'zh': 'zh-CN-XiaoNeural',   # Chinese - Female
         'es': 'es-ES-ElviraNeural',     # Spanish - Female
         'fr': 'fr-FR-DeniseNeural',     # French - Female
         'en': 'en-US-JennyNeural',      # English - Female (Fallback)
@@ -43,7 +43,7 @@ class TTSService:
         self.language_service = get_language_detection_service()
         self.supabase = get_supabase()
         
-        # Ensure cache directory exists
+        # Ensure the cache directory exists
         self.CACHE_DIR.mkdir(parents=True, exist_ok=True)
     
     def _generate_audio_hash(self, text: str, voice: str) -> str:
@@ -61,7 +61,7 @@ class TTSService:
         return hashlib.sha256(content.encode('utf-8')).hexdigest()
     
     def _get_cache_path(self, audio_hash: str) -> Path:
-        """Get local cache file path for an audio hash."""
+        """Get a local cache file path for an audio hash."""
         return self.CACHE_DIR / f"{audio_hash}.mp3"
     
     def _get_storage_path(self, audio_hash: str) -> str:
@@ -70,22 +70,22 @@ class TTSService:
     
     async def _check_supabase_cache(self, storage_path: str) -> Optional[str]:
         """
-        Check if audio file exists in Supabase Storage.
+        Check if an audio file exists in Supabase Storage.
         
         Args:
             storage_path: Path in Supabase storage
             
         Returns:
-            Public URL if file exists, None otherwise
+            Public URL if a file exists, None otherwise
         """
         if not self.supabase:
             return None
         
         try:
-            # Try to get the public URL (this doesn't check if file exists)
+            # Try to get the public URL (this doesn't check if a file exists)
             public_url = self.supabase.storage.from_(self.STORAGE_BUCKET).get_public_url(storage_path)
             
-            # Verify file exists by listing
+            # Verify a file exists by listing
             # Note: This is a workaround since Supabase Python SDK doesn't have a direct "exists" method
             folder = os.path.dirname(storage_path)
             filename = os.path.basename(storage_path)
@@ -104,13 +104,13 @@ class TTSService:
     
     async def _delete_from_supabase(self, storage_path: str) -> bool:
         """
-        Delete audio file from Supabase Storage.
+        Delete an audio file from Supabase Storage.
         
         Args:
             storage_path: Path in Supabase storage to delete
             
         Returns:
-            True if successful or file doesn't exist, False on error
+            True if successful or a file doesn't exist, False on error
         """
         if not self.supabase:
             logger.warning("Supabase not configured, skipping deletion")
@@ -123,7 +123,7 @@ class TTSService:
             return True
             
         except Exception as e:
-            # If file doesn't exist, that's fine
+            # If the file doesn't exist, that's fine
             logger.info(f"Could not delete audio (may not exist): {storage_path} - {e}")
             return True
     
@@ -207,12 +207,12 @@ class TTSService:
         
         Args:
             text: Text to convert to speech
-            language_override: Override auto-detection with specific language
+            language_override: Override auto-detection with a specific language
             voice_override: Override voice selection
             use_cache: Whether to use cached audio if available
             
         Returns:
-            Public URL to audio file in Supabase Storage, or None if failed
+            Public URL to the audio file in Supabase Storage, or None if failed
         """
         if not text or not text.strip():
             logger.warning("Empty text provided, skipping audio generation")
@@ -221,7 +221,7 @@ class TTSService:
         try:
             logger.info(f"[TTS] Starting audio generation for text: '{text[:50]}...' (length: {len(text)})")
             
-            # Step 1: Detect or use specified language
+            # Step 1: Detect or use a specified language
             if language_override:
                 language_code = language_override
                 confidence = 1.0
@@ -236,7 +236,7 @@ class TTSService:
             voice = self.select_voice(language_code, voice_override)
             logger.info(f"[TTS] Selected voice: {voice}")
             
-            # Step 3: Generate cache key
+            # Step 3: Generate the cache key
             logger.info(f"[TTS] Generating cache key for text and voice")
             audio_hash = self._generate_audio_hash(text, voice)
             storage_path = self._get_storage_path(audio_hash)
@@ -252,7 +252,7 @@ class TTSService:
             else:
                 # If regenerating, delete existing audio first
                 await self._delete_from_supabase(storage_path)
-                # Also delete local cache
+                # Also delete the local cache
                 if cache_path.exists():
                     cache_path.unlink()
                     logger.info(f"Deleted local cache: {cache_path}")
@@ -271,7 +271,7 @@ class TTSService:
                 await communicate.save(str(cache_path))
                 logger.info(f"[TTS] Audio saved successfully to: {cache_path}")
                 
-                # Verify file was created
+                # Verify a file was created
                 if cache_path.exists():
                     file_size = cache_path.stat().st_size
                     logger.info(f"[TTS] Audio file verified - Size: {file_size} bytes")
@@ -299,7 +299,7 @@ class TTSService:
                 logger.info(f"[TTS] Audio generation completed successfully - URL: {public_url}")
                 return public_url
             else:
-                # If upload fails, return local path as fallback (for development)
+                # If upload fails, return the local path as fallback (for development)
                 logger.warning(f"[TTS] Supabase upload failed, audio only available locally at {cache_path}")
                 return str(cache_path)
             

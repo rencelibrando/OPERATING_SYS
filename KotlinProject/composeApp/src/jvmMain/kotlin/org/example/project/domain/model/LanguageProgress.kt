@@ -17,14 +17,16 @@ data class LanguageProgress(
     val totalTimeSeconds: Double = 0.0,
 ) {
     val lessonsProgressPercentage: Int
-        get() = if (totalLessons > 0) {
-            ((lessonsCompleted.toFloat() / totalLessons.toFloat()) * 100).toInt()
-        } else {
-            0
-        }
+        get() =
+            if (totalLessons > 0) {
+                ((lessonsCompleted.toFloat() / totalLessons.toFloat()) * 100).toInt()
+            } else {
+                0
+            }
 
     val hasData: Boolean
-        get() = lessonsCompleted > 0 || conversationSessions > 0 || 
+        get() =
+            lessonsCompleted > 0 || conversationSessions > 0 ||
                 vocabularyWords > 0 || totalTimeSeconds > 0
 
     val formattedTime: String
@@ -71,19 +73,21 @@ data class VoiceAnalysisScores(
     val accuracy: Double = 0.0,
 ) {
     val hasScores: Boolean
-        get() = overall > 0 || grammar > 0 || pronunciation > 0 || 
+        get() =
+            overall > 0 || grammar > 0 || pronunciation > 0 ||
                 vocabulary > 0 || fluency > 0 || accuracy > 0
 
     val averageScore: Double
         get() {
-            val scores = listOfNotNull(
-                overall.takeIf { it > 0 },
-                grammar.takeIf { it > 0 },
-                pronunciation.takeIf { it > 0 },
-                vocabulary.takeIf { it > 0 },
-                fluency.takeIf { it > 0 },
-                accuracy.takeIf { it > 0 }
-            )
+            val scores =
+                listOfNotNull(
+                    overall.takeIf { it > 0 },
+                    grammar.takeIf { it > 0 },
+                    pronunciation.takeIf { it > 0 },
+                    vocabulary.takeIf { it > 0 },
+                    fluency.takeIf { it > 0 },
+                    accuracy.takeIf { it > 0 },
+                )
             return if (scores.isNotEmpty()) {
                 scores.average()
             } else {
@@ -91,14 +95,15 @@ data class VoiceAnalysisScores(
             }
         }
 
-    fun clampedScores() = VoiceAnalysisScores(
-        overall = overall.coerceIn(0.0, 100.0),
-        grammar = grammar.coerceIn(0.0, 100.0),
-        pronunciation = pronunciation.coerceIn(0.0, 100.0),
-        vocabulary = vocabulary.coerceIn(0.0, 100.0),
-        fluency = fluency.coerceIn(0.0, 100.0),
-        accuracy = accuracy.coerceIn(0.0, 100.0)
-    )
+    fun clampedScores() =
+        VoiceAnalysisScores(
+            overall = overall.coerceIn(0.0, 100.0),
+            grammar = grammar.coerceIn(0.0, 100.0),
+            pronunciation = pronunciation.coerceIn(0.0, 100.0),
+            vocabulary = vocabulary.coerceIn(0.0, 100.0),
+            fluency = fluency.coerceIn(0.0, 100.0),
+            accuracy = accuracy.coerceIn(0.0, 100.0),
+        )
 }
 
 /**
@@ -106,7 +111,10 @@ data class VoiceAnalysisScores(
  */
 sealed class ProgressTrackerState {
     data object Loading : ProgressTrackerState()
+
     data class Success(val progress: LanguageProgress) : ProgressTrackerState()
+
     data class Error(val message: String) : ProgressTrackerState()
+
     data object Empty : ProgressTrackerState()
 }

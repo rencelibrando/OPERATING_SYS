@@ -39,7 +39,6 @@ class AdminLessonTopicsViewModel : ViewModel() {
     val selectedTopics: State<Set<String>> = _selectedTopics
 
     private val _sortOrder = mutableStateOf<SortOrder>(SortOrder.SORT_ORDER)
-    val sortOrder: State<SortOrder> = _sortOrder
 
     enum class SortOrder(val displayName: String) {
         SORT_ORDER("Sort Order"),
@@ -315,15 +314,4 @@ class AdminLessonTopicsViewModel : ViewModel() {
         _successMessage.value = null
     }
 
-    fun togglePublishStatus(topicId: String) {
-        viewModelScope.launch {
-            val topic = _topics.value.find { it.id == topicId } ?: return@launch
-            val difficulty = _selectedDifficulty.value ?: return@launch
-            val language = _selectedLanguage.value ?: return@launch
-
-            // Note: This requires adding isPublished to LessonTopic model and repository
-            // For now, we'll just reload after update
-            loadTopics(language, difficulty)
-        }
-    }
 }

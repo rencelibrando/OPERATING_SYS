@@ -94,14 +94,14 @@ def ensure_dependencies() -> None:
     if not install_pyaudio():
         logger.warning("Failed to install PyAudio. Audio features may be limited.")
     
-    # Upgrade pip to latest version for better compatibility
+    # Upgrade pip to the latest version for better compatibility
     logger.info("Upgrading pip...")
     run_pip_command(["install", "--upgrade", "pip"])
     
     logger.info("Dependency installation process completed")
 
 def check_python_version() -> bool:
-    """Check if Python version is compatible."""
+    """Check if a Python version is compatible."""
     version = sys.version_info
     if version.major < 3 or (version.major == 3 and version.minor < 8):
         logger.error(f"Python {version.major}.{version.minor} is not supported. Please use Python 3.8 or higher.")

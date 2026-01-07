@@ -420,7 +420,7 @@ private fun PersonalInformationSection(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(32.dp)) {
@@ -843,7 +843,6 @@ private fun LearningFieldCard(
         }
     }
 }
-
 
 @Composable
 private fun PersonalInfoEditForm(

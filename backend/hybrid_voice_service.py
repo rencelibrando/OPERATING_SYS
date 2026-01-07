@@ -1,7 +1,13 @@
 """
-Hybrid Voice Service - Routes voice API calls to correct provider
-- Deepgram: English, Spanish, German, French
-- ElevenLabs: Korean, Mandarin Chinese
+Hybrid Voice Service - Routes voice API calls to the correct provider
+
+Voice Agent Routing:
+- ElevenLabs Agent: All languages (English, Spanish, German, French, Korean, Mandarin Chinese)
+  Full conversational AI with native language support
+
+TTS-Only Routing:
+- Deepgram TTS: English, Spanish, German, French (fallback)
+- ElevenLabs TTS: Korean, Mandarin Chinese, and all languages via Agent
 """
 import os
 import json
@@ -18,12 +24,23 @@ from config import settings
 
 class HybridVoiceService:
     """
-    Manages voice transcription and synthesis using appropriate provider per language.
+    Manages voice transcription and synthesis using the appropriate provider per language.
 
     Routing Rules:
-    - Deepgram: english, spanish, german, french
-    - ElevenLabs: korean, mandarin
+    - ElevenLabs Agent: All languages (full conversational AI via ElevenLabs Platform)
+    
+    Clients should use the /elevenlabs-agent/* endpoints which provide 
+    full conversational AI with native language support for all languages.
     """
+
+    # Languages that use ElevenLabs Agent Platform (now includes all supported languages)
+    ELEVENLABS_AGENT_LANGUAGES = {
+        "korean", "mandarin", "chinese", "ko", "zh",
+        "english", "en",
+        "french", "fr",
+        "german", "de",
+        "spanish", "es"
+    }
 
     def __init__(self):
         # Initialize Deepgram client for transcription
@@ -48,8 +65,8 @@ class HybridVoiceService:
 
         # ElevenLabs voice IDs for different languages
         self.elevenlabs_voices = {
-            VoiceLanguage.KOREAN: "mWWuFxksGqN2ufDOCo92",  # Configure in dashboard
-            VoiceLanguage.MANDARIN: "mWWuFxksGqN2ufDOCo92"  # Configure in dashboard
+            VoiceLanguage.KOREAN: "mWWuFlaksGqN2ufDOCo92",  # Configure in dashboard
+            VoiceLanguage.MANDARIN: "mWWuFlaksGqN2ufDOCo92"  # Configure in dashboard
         }
 
         print("[HybridVoice] Initialized with routing:")
@@ -66,6 +83,43 @@ class HybridVoiceService:
             # Default to Deepgram for unknown languages
             print(f"[HybridVoice] WARNING: Unknown language {language}, defaulting to Deepgram")
             return "deepgram"
+    
+    @classmethod
+    def should_use_elevenlabs_agent(cls, language: str) -> bool:
+        """
+        Check if a language should use ElevenLabs Agent Platform.
+        
+        ElevenLabs Agent provides full conversational AI for Chinese and Korean,
+        including native STT, LLM, and TTS in a single integrated pipeline.
+        
+        Args:
+            language: Language string (e.g., "korean", "mandarin", "zh", "ko")
+            
+        Returns:
+            True if ElevenLabs Agent should be used, False for Deepgram Agent
+        """
+        return language.lower() in cls.ELEVENLABS_AGENT_LANGUAGES
+    
+    @classmethod
+    def get_voice_provider_info(cls) -> dict:
+        """Get information about voice provider routing."""
+        return {
+            "elevenlabs_agent_languages": list(cls.ELEVENLABS_AGENT_LANGUAGES),
+            "deepgram_agent_languages": [],  # All languages now use ElevenLabs Agent
+            "routing_rules": {
+                "korean": "elevenlabs_agent",
+                "mandarin": "elevenlabs_agent", 
+                "chinese": "elevenlabs_agent",
+                "english": "elevenlabs_agent",
+                "spanish": "elevenlabs_agent",
+                "german": "elevenlabs_agent",
+                "french": "elevenlabs_agent"
+            },
+            "endpoints": {
+                "elevenlabs_agent": "/elevenlabs-agent/start",
+                "deepgram_agent": "/agent/start"  # Kept for backward compatibility
+            }
+        }
 
     async def transcribe_audio(self, request: VoiceTranscribeRequest) -> VoiceTranscribeResponse:
         """
@@ -78,7 +132,7 @@ class HybridVoiceService:
             # Always use Deepgram for transcription (it supports all languages)
             model = request.model if request.model else settings.deepgram_model
 
-            # Use multilingual model for best results
+            # Use a multilingual model for best results
             language_code = settings.deepgram_language  # "multi"
 
             print(f"[HybridVoice] Transcribing with Deepgram: model={model}, language={language_code}")

@@ -144,11 +144,12 @@ data class LessonTopic(
     val totalLessonsCount: Int = 0,
 ) {
     val progressPercentage: Int
-        get() = if (totalLessonsCount > 0) {
-            ((completedLessonsCount.toFloat() / totalLessonsCount.toFloat()) * 100).toInt()
-        } else {
-            0
-        }
+        get() =
+            if (totalLessonsCount > 0) {
+                ((completedLessonsCount.toFloat() / totalLessonsCount.toFloat()) * 100).toInt()
+            } else {
+                0
+            }
 
     val isFullyCompleted: Boolean
         get() = totalLessonsCount > 0 && completedLessonsCount >= totalLessonsCount

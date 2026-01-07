@@ -21,7 +21,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.LessonTopic
 import org.example.project.ui.theme.WordBridgeColors
-import androidx.compose.ui.draw.alpha
 
 @Composable
 fun LessonTopicCard(
@@ -194,19 +193,21 @@ fun LessonTopicCard(
                             )
                             Text(
                                 text = "${topic.progressPercentage}%",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                ),
+                                style =
+                                    MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                    ),
                                 color = WordBridgeColors.AccentGreen,
                             )
                         }
                         Spacer(modifier = Modifier.height(6.dp))
                         LinearProgressIndicator(
                             progress = topic.progressPercentage / 100f,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(6.dp)
-                                .clip(RoundedCornerShape(3.dp)),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp)),
                             color = WordBridgeColors.AccentGreen,
                             trackColor = Color(0xFF334155),
                         )
@@ -223,9 +224,10 @@ fun LessonTopicCard(
                         )
                         Text(
                             text = "Complete previous topic to unlock",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.Medium,
-                            ),
+                            style =
+                                MaterialTheme.typography.bodySmall.copy(
+                                    fontWeight = FontWeight.Medium,
+                                ),
                             color = Color(0xFF94A3B8),
                         )
                     }

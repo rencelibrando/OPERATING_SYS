@@ -31,20 +31,22 @@ fun ProgressShareDialog(
         Card(
             modifier = modifier.width(400.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = WordBridgeColors.CardBackgroundDark
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = WordBridgeColors.CardBackgroundDark,
+                ),
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     text = "📤 Share Progress",
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = WordBridgeColors.TextPrimary
+                    style =
+                        MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    color = WordBridgeColors.TextPrimary,
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -53,7 +55,7 @@ fun ProgressShareDialog(
                     text = "Share your ${progress.language.displayName} learning achievements",
                     style = MaterialTheme.typography.bodyMedium,
                     color = WordBridgeColors.TextSecondary,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -66,7 +68,7 @@ fun ProgressShareDialog(
                     onClick = {
                         onExportPNG()
                         onDismiss()
-                    }
+                    },
                 )
 
                 ShareOption(
@@ -76,7 +78,7 @@ fun ProgressShareDialog(
                     onClick = {
                         onExportHTML()
                         onDismiss()
-                    }
+                    },
                 )
 
                 ShareOption(
@@ -86,7 +88,7 @@ fun ProgressShareDialog(
                     onClick = {
                         onCopyText()
                         onDismiss()
-                    }
+                    },
                 )
 
                 ShareOption(
@@ -96,14 +98,14 @@ fun ProgressShareDialog(
                     onClick = {
                         onShareLink()
                         onDismiss()
-                    }
+                    },
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 TextButton(
                     onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Cancel")
                 }
@@ -121,24 +123,27 @@ private fun ShareOption(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
         onClick = onClick,
-        colors = CardDefaults.cardColors(
-            containerColor = WordBridgeColors.CardBackgroundDark
-        ),
-        shape = RoundedCornerShape(12.dp)
+        colors =
+            CardDefaults.cardColors(
+                containerColor = WordBridgeColors.CardBackgroundDark,
+            ),
+        shape = RoundedCornerShape(12.dp),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = icon,
-                style = MaterialTheme.typography.headlineMedium
+                style = MaterialTheme.typography.headlineMedium,
             )
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -146,22 +151,23 @@ private fun ShareOption(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    color = WordBridgeColors.TextPrimary
+                    style =
+                        MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                    color = WordBridgeColors.TextPrimary,
                 )
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = WordBridgeColors.TextSecondary
+                    color = WordBridgeColors.TextSecondary,
                 )
             }
 
             Text(
                 text = "→",
                 style = MaterialTheme.typography.titleMedium,
-                color = WordBridgeColors.TextSecondary
+                color = WordBridgeColors.TextSecondary,
             )
         }
     }
@@ -184,7 +190,7 @@ fun ExportFeedbackSnackbar(
             }
         },
         containerColor = WordBridgeColors.PrimaryPurple,
-        contentColor = Color.White
+        contentColor = Color.White,
     ) {
         Text(message)
     }

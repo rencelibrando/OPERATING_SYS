@@ -21,13 +21,14 @@ data class ProgressHistorySnapshot(
 ) {
     val formattedDate: String
         get() = date.format(DateTimeFormatter.ofPattern("MMM dd"))
-    
+
     val lessonsProgressPercentage: Int
-        get() = if (totalLessons > 0) {
-            ((lessonsCompleted.toFloat() / totalLessons.toFloat()) * 100).toInt()
-        } else {
-            0
-        }
+        get() =
+            if (totalLessons > 0) {
+                ((lessonsCompleted.toFloat() / totalLessons.toFloat()) * 100).toInt()
+            } else {
+                0
+            }
 }
 
 /**
@@ -37,7 +38,7 @@ enum class HistoryTimeRange(val displayName: String, val days: Int) {
     WEEK("Last 7 Days", 7),
     MONTH("Last 30 Days", 30),
     QUARTER("Last 90 Days", 90),
-    YEAR("Last Year", 365);
+    YEAR("Last Year", 365),
 }
 
 /**
@@ -46,7 +47,7 @@ enum class HistoryTimeRange(val displayName: String, val days: Int) {
 data class ChartDataPoint(
     val date: LocalDate,
     val value: Double,
-    val label: String = ""
+    val label: String = "",
 )
 
 /**
@@ -55,14 +56,16 @@ data class ChartDataPoint(
 enum class TrendDirection {
     UP,
     DOWN,
-    STABLE;
-    
+    STABLE,
+    ;
+
     val emoji: String
-        get() = when (this) {
-            UP -> "📈"
-            DOWN -> "📉"
-            STABLE -> "➡️"
-        }
+        get() =
+            when (this) {
+                UP -> "📈"
+                DOWN -> "📉"
+                STABLE -> "➡️"
+            }
 }
 
 /**
@@ -74,36 +77,38 @@ data class MetricTrend(
     val previousValue: Double,
     val changeAmount: Double,
     val changePercentage: Double,
-    val direction: TrendDirection
+    val direction: TrendDirection,
 ) {
     companion object {
         fun calculate(
             metricName: String,
             current: Double,
-            previous: Double
+            previous: Double,
         ): MetricTrend {
             val change = current - previous
-            val changePercent = if (previous > 0) {
-                (change / previous) * 100
-            } else if (current > 0) {
-                100.0
-            } else {
-                0.0
-            }
-            
-            val direction = when {
-                changePercent > 2.0 -> TrendDirection.UP
-                changePercent < -2.0 -> TrendDirection.DOWN
-                else -> TrendDirection.STABLE
-            }
-            
+            val changePercent =
+                if (previous > 0) {
+                    (change / previous) * 100
+                } else if (current > 0) {
+                    100.0
+                } else {
+                    0.0
+                }
+
+            val direction =
+                when {
+                    changePercent > 2.0 -> TrendDirection.UP
+                    changePercent < -2.0 -> TrendDirection.DOWN
+                    else -> TrendDirection.STABLE
+                }
+
             return MetricTrend(
                 metricName = metricName,
                 currentValue = current,
                 previousValue = previous,
                 changeAmount = change,
                 changePercentage = changePercent,
-                direction = direction
+                direction = direction,
             )
         }
     }
@@ -113,15 +118,19 @@ data class MetricTrend(
  * Custom LocalDate serializer for kotlinx.serialization.
  */
 object LocalDateSerializer : kotlinx.serialization.KSerializer<LocalDate> {
-    override val descriptor = kotlinx.serialization.descriptors.PrimitiveSerialDescriptor(
-        "LocalDate",
-        kotlinx.serialization.descriptors.PrimitiveKind.STRING
-    )
-    
-    override fun serialize(encoder: kotlinx.serialization.encoding.Encoder, value: LocalDate) {
+    override val descriptor =
+        kotlinx.serialization.descriptors.PrimitiveSerialDescriptor(
+            "LocalDate",
+            kotlinx.serialization.descriptors.PrimitiveKind.STRING,
+        )
+
+    override fun serialize(
+        encoder: kotlinx.serialization.encoding.Encoder,
+        value: LocalDate,
+    ) {
         encoder.encodeString(value.toString())
     }
-    
+
     override fun deserialize(decoder: kotlinx.serialization.encoding.Decoder): LocalDate {
         return LocalDate.parse(decoder.decodeString())
     }

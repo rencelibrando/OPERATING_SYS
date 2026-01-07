@@ -16,7 +16,7 @@ import org.example.project.domain.model.*
  * Handles lesson display, question answering, and progress tracking.
  */
 class LessonPlayerViewModel(
-    private val onLessonCompleted: ((userId: String, lessonId: String) -> Unit)? = null
+    private val onLessonCompleted: ((userId: String, lessonId: String) -> Unit)? = null,
 ) : ViewModel() {
     private val repository: LessonContentRepository = LessonContentRepositoryImpl.getInstance()
 
@@ -107,7 +107,11 @@ class LessonPlayerViewModel(
     // LESSON LOADING
     // ============================================
 
-    fun loadLesson(lessonId: String, userId: String, forceRetake: Boolean = false) {
+    fun loadLesson(
+        lessonId: String,
+        userId: String,
+        forceRetake: Boolean = false,
+    ) {
         println("[LessonPlayer] ========== LOADING LESSON ==========")
         println("[LessonPlayer] Lesson ID: $lessonId")
         println("[LessonPlayer] User ID: $userId")
@@ -521,11 +525,11 @@ class LessonPlayerViewModel(
                         _submissionResult.value = result
                         _isSubmitted.value = true
                         _errorMessage.value = null
-                        
+
                         // Invalidate lesson content cache
                         (repository as? LessonContentRepositoryImpl)?.clearUserCache(userId)
                         println("[LessonPlayer] ✅ Lesson content cache cleared")
-                        
+
                         // Invalidate lesson topics cache to refresh topic unlocking
                         try {
                             val topicsRepo = LessonTopicsRepositoryImpl.getInstance()
@@ -534,11 +538,11 @@ class LessonPlayerViewModel(
                         } catch (e: Exception) {
                             println("[LessonPlayer]  Failed to clear topics cache: ${e.message}")
                         }
-                        
+
                         // Invalidate progress analytics cache (all languages for this user)
                         ProgressAnalyticsService.invalidateCache(userId)
                         println("[LessonPlayer]  Progress analytics cache invalidated")
-                        
+
                         // Additional forced refresh to ensure immediate unlocking
                         try {
                             val topicsRepo = LessonTopicsRepositoryImpl.getInstance()
@@ -548,7 +552,7 @@ class LessonPlayerViewModel(
                         } catch (e: Exception) {
                             println("[LessonPlayer] Failed to force refresh topics: ${e.message}")
                         }
-                        
+
                         // Notify parent to invalidate caches
                         onLessonCompleted?.invoke(userId, lesson.id)
                     }
@@ -585,7 +589,10 @@ class LessonPlayerViewModel(
         _errorMessage.value = null
     }
 
-    fun retakeLesson(lessonId: String, userId: String) {
+    fun retakeLesson(
+        lessonId: String,
+        userId: String,
+    ) {
         println("[LessonPlayer] ========== RETAKING LESSON ==========")
         println("[LessonPlayer] Lesson ID: $lessonId")
         println("[LessonPlayer] User ID: $userId")
@@ -600,11 +607,11 @@ class LessonPlayerViewModel(
                 repository.deleteUserProgress(userId, lessonId)
                     .onSuccess {
                         println("[LessonPlayer] ✓ User progress deleted successfully")
-                        
+
                         // Clear caches
                         (repository as? LessonContentRepositoryImpl)?.clearUserCache(userId)
                         println("[LessonPlayer] ✓ Lesson content cache cleared")
-                        
+
                         // Reload the lesson
                         loadLesson(lessonId, userId, forceRetake = true)
                     }

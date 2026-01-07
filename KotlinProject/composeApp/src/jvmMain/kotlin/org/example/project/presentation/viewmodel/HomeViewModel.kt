@@ -99,7 +99,10 @@ class HomeViewModel : ViewModel() {
         onNavigationItemSelected("lessons")
     }
 
-    fun onLessonCompleted(userId: String, lessonId: String) {
+    fun onLessonCompleted(
+        userId: String,
+        lessonId: String,
+    ) {
         println("[HomeViewModel] Lesson completed: $lessonId for user: $userId")
         // Trigger refresh by updating the timestamp
         _refreshTrigger.value = System.currentTimeMillis()

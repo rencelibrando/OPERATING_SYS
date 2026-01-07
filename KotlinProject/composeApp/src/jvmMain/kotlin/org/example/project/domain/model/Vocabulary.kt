@@ -12,7 +12,7 @@ data class VocabularyWord(
     val status: VocabularyStatus,
     val dateAdded: Long,
     val lastReviewed: Long?,
-    val language: String = "en" // ISO 639-1 language code (e.g., "en", "ko", "zh", "fr", "de", "es")
+    val language: String = "en", // ISO 639-1 language code (e.g., "en", "ko", "zh", "fr", "de", "es")
 )
 
 enum class VocabularyStatus(val displayName: String) {

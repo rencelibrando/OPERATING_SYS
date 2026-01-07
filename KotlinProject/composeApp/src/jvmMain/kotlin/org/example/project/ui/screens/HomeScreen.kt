@@ -255,11 +255,6 @@ fun HomeScreen(
                     modifier = Modifier.weight(1f),
                 )
             }
-            selectedNavigationItem == "settings" -> {
-                SettingsScreen(
-                    modifier = Modifier.weight(1f),
-                )
-            }
             else -> {
                 Column(
                     modifier =

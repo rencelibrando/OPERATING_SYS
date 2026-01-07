@@ -13,7 +13,7 @@ data class ConversationFeedback(
     val strengths: List<String>,
     val areasForImprovement: List<String>,
     val specificExamples: List<FeedbackExample>,
-    val suggestions: List<String>
+    val suggestions: List<String>,
 ) {
     fun getScoreColor(): String {
         return when {
@@ -23,7 +23,7 @@ data class ConversationFeedback(
             else -> "#EF4444"
         }
     }
-    
+
     fun getScoreLabel(): String {
         return when {
             overallScore >= 80 -> "Excellent"
@@ -39,5 +39,5 @@ data class FeedbackExample(
     val userUtterance: String,
     val issue: String,
     val correction: String,
-    val explanation: String
+    val explanation: String,
 )

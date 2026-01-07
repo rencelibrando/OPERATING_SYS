@@ -32,21 +32,23 @@ fun LanguageProgressCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = WordBridgeColors.CardBackgroundDark
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 20.dp)
+        colors =
+            CardDefaults.cardColors(
+                containerColor = WordBridgeColors.CardBackgroundDark,
+            ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 20.dp),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
         ) {
             // Header with language and overall score
             ProgressHeader(
                 language = progress.language.displayName,
                 languageEmoji = getLanguageEmoji(progress.language.code),
-                overallScore = progress.voiceAnalysis.averageScore
+                overallScore = progress.voiceAnalysis.averageScore,
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -54,40 +56,40 @@ fun LanguageProgressCard(
             // Metrics Grid (2x2)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     MetricCard(
                         icon = "📚",
                         label = "Lessons",
                         value = "${progress.lessonsCompleted}/${progress.totalLessons}",
-                        percentage = progress.lessonsProgressPercentage
+                        percentage = progress.lessonsProgressPercentage,
                     )
-                    
+
                     MetricCard(
                         icon = "💬",
                         label = "Sessions",
-                        value = progress.conversationSessions.toString()
+                        value = progress.conversationSessions.toString(),
                     )
                 }
 
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     MetricCard(
                         icon = "📖",
                         label = "Vocabulary",
-                        value = "${progress.vocabularyWords} words"
+                        value = "${progress.vocabularyWords} words",
                     )
-                    
+
                     MetricCard(
                         icon = "⏱️",
                         label = "Practice Time",
-                        value = progress.formattedTime
+                        value = progress.formattedTime,
                     )
                 }
             }
@@ -111,20 +113,21 @@ private fun ProgressHeader(
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = languageEmoji,
-                style = MaterialTheme.typography.headlineMedium
+                style = MaterialTheme.typography.headlineMedium,
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = language,
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = WordBridgeColors.TextPrimaryDark
+                style =
+                    MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
+                color = WordBridgeColors.TextPrimaryDark,
             )
         }
 
@@ -139,31 +142,34 @@ private fun ScoreBadge(
     score: Double,
     modifier: Modifier = Modifier,
 ) {
-    val backgroundColor = when {
-        score >= 80 -> Color(0xFF10B981)
-        score >= 60 -> Color(0xFFF59E0B)
-        score >= 40 -> Color(0xFFEF4444)
-        else -> Color(0xFF6B7280)
-    }
+    val backgroundColor =
+        when {
+            score >= 80 -> Color(0xFF10B981)
+            score >= 60 -> Color(0xFFF59E0B)
+            score >= 40 -> Color(0xFFEF4444)
+            else -> Color(0xFF6B7280)
+        }
 
     Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(backgroundColor.copy(alpha = 0.1f))
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(12.dp))
+                .background(backgroundColor.copy(alpha = 0.1f))
+                .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "⭐",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
                 text = "${score.toInt()}/100",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = backgroundColor
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
+                color = backgroundColor,
             )
         }
     }
@@ -180,33 +186,36 @@ private fun MetricCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF1E293B)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        colors =
+            CardDefaults.cardColors(
+                containerColor = Color(0xFF1E293B),
+            ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = icon,
-                    style = MaterialTheme.typography.titleLarge
+                    style = MaterialTheme.typography.titleLarge,
                 )
-                
+
                 if (percentage != null && percentage > 0) {
                     Text(
                         text = "$percentage%",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = WordBridgeColors.TextSecondaryDark
+                        style =
+                            MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.Medium,
+                            ),
+                        color = WordBridgeColors.TextSecondaryDark,
                     )
                 }
             }
@@ -215,16 +224,17 @@ private fun MetricCard(
 
             Text(
                 text = value,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = WordBridgeColors.TextPrimaryDark
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
+                color = WordBridgeColors.TextPrimaryDark,
             )
 
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
-                color = WordBridgeColors.TextSecondaryDark
+                color = WordBridgeColors.TextSecondaryDark,
             )
         }
     }
@@ -239,30 +249,31 @@ private fun VoiceAnalysisSection(
 
     Column(modifier = modifier.fillMaxWidth()) {
         Divider(color = Color(0xFFE5E7EB))
-        
+
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(
             onClick = { isExpanded = !isExpanded },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "🎤 Voice Analysis Scores",
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    color = WordBridgeColors.TextPrimaryDark
+                    style =
+                        MaterialTheme.typography.titleSmall.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                    color = WordBridgeColors.TextPrimaryDark,
                 )
-                
+
                 Text(
                     text = if (isExpanded) "▼" else "▶",
                     style = MaterialTheme.typography.bodySmall,
-                    color = WordBridgeColors.TextSecondaryDark
+                    color = WordBridgeColors.TextSecondaryDark,
                 )
             }
         }
@@ -270,11 +281,11 @@ private fun VoiceAnalysisSection(
         AnimatedVisibility(
             visible = isExpanded,
             enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut()
+            exit = shrinkVertically() + fadeOut(),
         ) {
             Column(
                 modifier = Modifier.padding(top = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 if (scores.pronunciation > 0) {
                     ScoreRow("Pronunciation", scores.pronunciation)
@@ -306,42 +317,46 @@ private fun ScoreRow(
     isOverall: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    val scoreColor = when {
-        score >= 80 -> Color(0xFF10B981)
-        score >= 60 -> Color(0xFFF59E0B)
-        score >= 40 -> Color(0xFFFF8C42)
-        else -> Color(0xFFEF4444)
-    }
+    val scoreColor =
+        when {
+            score >= 80 -> Color(0xFF10B981)
+            score >= 60 -> Color(0xFFF59E0B)
+            score >= 40 -> Color(0xFFFF8C42)
+            else -> Color(0xFFEF4444)
+        }
 
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
-            style = if (isOverall) {
-                MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-            } else {
-                MaterialTheme.typography.bodyMedium
-            },
-            color = WordBridgeColors.TextPrimaryDark
+            style =
+                if (isOverall) {
+                    MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                } else {
+                    MaterialTheme.typography.bodyMedium
+                },
+            color = WordBridgeColors.TextPrimaryDark,
         )
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             // Progress bar
             Box(
-                modifier = Modifier
-                    .width(100.dp)
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(Color(0xFFE5E7EB))
+                modifier =
+                    Modifier
+                        .width(100.dp)
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFFE5E7EB)),
             ) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth(fraction = (score / 100).toFloat())
-                        .fillMaxHeight()
-                        .background(scoreColor)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth(fraction = (score / 100).toFloat())
+                            .fillMaxHeight()
+                            .background(scoreColor),
                 )
             }
 
@@ -349,11 +364,12 @@ private fun ScoreRow(
 
             Text(
                 text = "${score.toInt()}",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = if (isOverall) FontWeight.Bold else FontWeight.Normal
-                ),
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = if (isOverall) FontWeight.Bold else FontWeight.Normal,
+                    ),
                 color = scoreColor,
-                modifier = Modifier.width(30.dp)
+                modifier = Modifier.width(30.dp),
             )
         }
     }

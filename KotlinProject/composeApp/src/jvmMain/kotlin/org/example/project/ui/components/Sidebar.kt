@@ -375,7 +375,6 @@ private fun NavigationIcon(
                 "speaking" -> "ic_speaking.png"
                 "ai_chat" -> "ic_ai_chat.png"
                 "progress" -> "ic_progress.png"
-                "settings" -> "ic_settings.png"
                 else -> "ic_home.png"
             }
         }
@@ -398,7 +397,6 @@ private fun NavigationIcon(
                 "speaking" -> "💬"
                 "ai_chat" -> "💬"
                 "progress" -> "📊"
-                "settings" -> "⚙️"
                 else -> "📱"
             }
         }

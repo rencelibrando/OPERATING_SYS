@@ -5,7 +5,7 @@ import logging
 import sys
 import os
 
-# Add parent directory to path to allow importing from deps_installer
+# Add a parent directory to a path to allow importing from deps_installer
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import settings
@@ -29,13 +29,9 @@ from supabase_client import SupabaseManager
 from lesson_routes import router as lesson_router
 from narration_routes import router as narration_router
 from voice_routes import router as voice_router
-from conversation_routes import router as conversation_router
-from agent_routes import router as agent_router
-from edge_conversation_routes import router as edge_conversation_router
 from error_logger import get_logger
-from gladia_stt_service import handle_gladia_websocket
-from fastapi import WebSocket
 from tts_service import get_tts_service
+from elevenlabs_agent_routes import router as elevenlabs_agent_router
 
 
 # Configure logging
@@ -45,7 +41,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize empty providers dict; will populate later when API key present
+# Initialize empty providers dict; will populate later when an API key present
 providers = {}
 
 # Initialize chat history service
@@ -64,13 +60,13 @@ async def lifespan(app: FastAPI):
     # Initialize AI providers
     gemini_key = None
     deepseek_key = None
-    # Try to fetch Gemini API key from settings (supports both cases)
+    # Try to fetch a Gemini API key from settings (supports both cases)
     if hasattr(settings, "GEMINI_API_KEY"):
         gemini_key = settings.GEMINI_API_KEY
     elif hasattr(settings, "gemini_api_key"):
         gemini_key = settings.gemini_api_key
     
-    # Try to fetch DeepSeek API key from settings
+    # Try to fetch the DeepSeek API key from settings
     if hasattr(settings, "deepseek_api_key"):
         deepseek_key = settings.deepseek_api_key
 
@@ -86,7 +82,7 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning("DeepSeek API key not configured; DeepSeek provider disabled")
     
-    # Initialize provider manager with available providers
+    # Initialize the provider manager with available providers
     global provider_manager
     provider_manager = ProviderManager(providers)
     logger.info(f"Provider manager initialized with {len(providers)} providers")
@@ -128,18 +124,7 @@ app.add_middleware(
 app.include_router(lesson_router)
 app.include_router(narration_router)
 app.include_router(voice_router)
-app.include_router(conversation_router)
-app.include_router(agent_router)
-app.include_router(edge_conversation_router)
-
-# Gladia WebSocket endpoint
-@app.websocket("/gladia/stt")
-async def gladia_stt_websocket(websocket: WebSocket, language: str = "auto"):
-    """
-    WebSocket endpoint for Gladia live speech-to-text
-    Supports automatic language detection for Chinese, Korean, and other languages
-    """
-    await handle_gladia_websocket(websocket, language)
+app.include_router(elevenlabs_agent_router)
 
 # TTS endpoint for generating audio
 @app.post("/tts/generate")
@@ -159,7 +144,7 @@ async def generate_tts_audio(request: dict):
         
         # Map language code to voice
         voice_mapping = {
-            "zh-CN": "zh-CN-XiaoxiaoNeural",
+            "zh-CN": "zh-CN-XiaoNeural",
             "ko-KR": "ko-KR-SunHiNeural",
             "en-US": "en-US-JennyNeural"
         }

@@ -228,7 +228,7 @@ async def delete_question(question_id: str):
 # CHOICE ENDPOINTS
 @router.post("/questions/{question_id}/choices", response_model=QuestionChoice, status_code=status.HTTP_201_CREATED)
 async def create_choice(question_id: str, choice_data: QuestionChoiceCreate):
-    """Create a new choice for a multiple choice question"""
+    """Create a new choice for a multiple-choice question"""
     try:
         choice = await lesson_service.create_choice(question_id, choice_data)
         return choice
@@ -293,7 +293,7 @@ async def update_user_progress(progress_data: UserLessonProgressCreate):
 @router.post("/submit-answers", response_model=SubmitLessonAnswersResponse)
 async def submit_lesson_answers(request: SubmitLessonAnswersRequest):
     """
-    Submit answers for a lesson and get score.
+    Submit answers for a lesson and get a score.
     
     This will:
     1. Save all user answers
@@ -334,7 +334,7 @@ async def upload_media(
     Upload media file (image, audio, video) to Supabase Storage.
     
     Supported formats:
-    - Images: jpg, jpeg, png, gif, webp
+    - Images: jpg, jpeg, png, GIF, webp
     - Audio: mp3, wav, m4a, mov (audio)
     - Video: mp4, mov, webm
     """
@@ -345,7 +345,7 @@ async def upload_media(
                 detail="Storage service not configured"
             )
         
-        # Validate file type
+        # Validate a file type
         allowed_extensions = {
             "image": [".jpg", ".jpeg", ".png", ".gif", ".webp"],
             "audio": [".mp3", ".wav", ".m4a", ".mov"],
@@ -425,7 +425,7 @@ async def delete_media(file_url: str):
         bucket_name = full_path.split("/")[0]
         file_path = "/".join(full_path.split("/")[1:])
         
-        # Delete file
+        # Delete a file
         supabase = SupabaseManager.get_client()
         supabase.storage.from_(bucket_name).remove([file_path])
         

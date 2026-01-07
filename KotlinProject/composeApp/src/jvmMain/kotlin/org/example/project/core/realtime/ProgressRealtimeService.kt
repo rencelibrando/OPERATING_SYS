@@ -1,7 +1,6 @@
 package org.example.project.core.realtime
 
 import io.github.jan.supabase.realtime.PostgresAction
-import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.decodeRecord
 import io.github.jan.supabase.realtime.postgresChangeFlow
@@ -21,10 +20,10 @@ import org.example.project.domain.model.LessonLanguage
 
 /**
  * Real-time progress update service using Supabase Realtime.
- * 
+ *
  * Listens to database changes and emits events when user progress is updated.
  * No polling required - instant updates via WebSocket.
- * 
+ *
  * Usage:
  * ```
  * progressRealtimeService.start(userId)
@@ -37,10 +36,10 @@ import org.example.project.domain.model.LessonLanguage
 class ProgressRealtimeService {
     private val supabase = SupabaseConfig.client
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    
+
     private val _progressUpdates = MutableSharedFlow<ProgressUpdateEvent>(replay = 0)
     val progressUpdates: SharedFlow<ProgressUpdateEvent> = _progressUpdates.asSharedFlow()
-    
+
     private var currentUserId: String? = null
     private val activeChannels = mutableMapOf<String, io.github.jan.supabase.realtime.RealtimeChannel>()
 
@@ -60,13 +59,13 @@ class ProgressRealtimeService {
 
         // Subscribe to lesson completions
         subscribeLessonProgress(userId)
-        
+
         // Subscribe to conversation sessions
         subscribeConversationSessions(userId)
-        
+
         // Subscribe to vocabulary additions
         subscribeVocabulary(userId)
-        
+
         // Subscribe to voice feedback
         subscribeVoiceFeedback(userId)
 
@@ -80,7 +79,7 @@ class ProgressRealtimeService {
         if (activeChannels.isEmpty()) return
 
         println("[ProgressRealtime] 🔌 Stopping ${activeChannels.size} real-time subscriptions")
-        
+
         activeChannels.forEach { (channelName, channel) ->
             try {
                 channel.unsubscribe()
@@ -89,10 +88,10 @@ class ProgressRealtimeService {
                 println("[ProgressRealtime] ⚠️ Failed to remove channel $channelName: ${e.message}")
             }
         }
-        
+
         activeChannels.clear()
         currentUserId = null
-        
+
         println("[ProgressRealtime] ✅ All subscriptions stopped")
     }
 
@@ -101,10 +100,10 @@ class ProgressRealtimeService {
      */
     private suspend fun subscribeLessonProgress(userId: String) {
         val channelName = "lesson-progress-$userId"
-        
+
         try {
             val channel = supabase.realtime.channel(channelName)
-            
+
             channel.postgresChangeFlow<PostgresAction>(schema = "public") {
                 table = "user_lesson_progress"
                 filter = "user_id=eq.$userId"
@@ -123,10 +122,10 @@ class ProgressRealtimeService {
                     else -> {} // Ignore delete
                 }
             }.launchIn(scope)
-            
+
             channel.subscribe()
             activeChannels[channelName] = channel
-            
+
             println("[ProgressRealtime] ✅ Subscribed to lesson progress updates")
         } catch (e: Exception) {
             println("[ProgressRealtime] ⚠️ Failed to subscribe to lesson progress: ${e.message}")
@@ -139,20 +138,20 @@ class ProgressRealtimeService {
     private suspend fun subscribeConversationSessions(userId: String) {
         // Subscribe to agent_sessions
         subscribeAgentSessions(userId)
-        
+
         // Subscribe to voice_sessions
         subscribeVoiceSessions(userId)
-        
+
         // Subscribe to conversation_recordings
         subscribeConversationRecordings(userId)
     }
 
     private suspend fun subscribeAgentSessions(userId: String) {
         val channelName = "agent-sessions-$userId"
-        
+
         try {
             val channel = supabase.realtime.channel(channelName)
-            
+
             channel.postgresChangeFlow<PostgresAction>(schema = "public") {
                 table = "agent_sessions"
                 filter = "user_id=eq.$userId"
@@ -168,10 +167,10 @@ class ProgressRealtimeService {
                     else -> {}
                 }
             }.launchIn(scope)
-            
+
             channel.subscribe()
             activeChannels[channelName] = channel
-            
+
             println("[ProgressRealtime] ✅ Subscribed to agent sessions")
         } catch (e: Exception) {
             println("[ProgressRealtime] ⚠️ Failed to subscribe to agent sessions: ${e.message}")
@@ -180,10 +179,10 @@ class ProgressRealtimeService {
 
     private suspend fun subscribeVoiceSessions(userId: String) {
         val channelName = "voice-sessions-$userId"
-        
+
         try {
             val channel = supabase.realtime.channel(channelName)
-            
+
             channel.postgresChangeFlow<PostgresAction>(schema = "public") {
                 table = "voice_sessions"
                 filter = "user_id=eq.$userId"
@@ -199,10 +198,10 @@ class ProgressRealtimeService {
                     else -> {}
                 }
             }.launchIn(scope)
-            
+
             channel.subscribe()
             activeChannels[channelName] = channel
-            
+
             println("[ProgressRealtime] ✅ Subscribed to voice sessions")
         } catch (e: Exception) {
             println("[ProgressRealtime] ⚠️ Failed to subscribe to voice sessions: ${e.message}")
@@ -211,10 +210,10 @@ class ProgressRealtimeService {
 
     private suspend fun subscribeConversationRecordings(userId: String) {
         val channelName = "conversation-recordings-$userId"
-        
+
         try {
             val channel = supabase.realtime.channel(channelName)
-            
+
             channel.postgresChangeFlow<PostgresAction>(schema = "public") {
                 table = "conversation_recordings"
                 filter = "user_id=eq.$userId"
@@ -230,10 +229,10 @@ class ProgressRealtimeService {
                     else -> {}
                 }
             }.launchIn(scope)
-            
+
             channel.subscribe()
             activeChannels[channelName] = channel
-            
+
             println("[ProgressRealtime] ✅ Subscribed to conversation recordings")
         } catch (e: Exception) {
             println("[ProgressRealtime] ⚠️ Failed to subscribe to conversation recordings: ${e.message}")
@@ -245,10 +244,10 @@ class ProgressRealtimeService {
      */
     private suspend fun subscribeVocabulary(userId: String) {
         val channelName = "vocabulary-$userId"
-        
+
         try {
             val channel = supabase.realtime.channel(channelName)
-            
+
             channel.postgresChangeFlow<PostgresAction>(schema = "public") {
                 table = "user_vocabulary"
                 filter = "user_id=eq.$userId"
@@ -261,10 +260,10 @@ class ProgressRealtimeService {
                     else -> {}
                 }
             }.launchIn(scope)
-            
+
             channel.subscribe()
             activeChannels[channelName] = channel
-            
+
             println("[ProgressRealtime] ✅ Subscribed to vocabulary updates")
         } catch (e: Exception) {
             println("[ProgressRealtime] ⚠️ Failed to subscribe to vocabulary: ${e.message}")
@@ -276,10 +275,10 @@ class ProgressRealtimeService {
      */
     private suspend fun subscribeVoiceFeedback(userId: String) {
         val channelName = "voice-feedback-$userId"
-        
+
         try {
             val channel = supabase.realtime.channel(channelName)
-            
+
             channel.postgresChangeFlow<PostgresAction>(schema = "public") {
                 table = "conversation_feedback"
                 filter = "user_id=eq.$userId"
@@ -292,10 +291,10 @@ class ProgressRealtimeService {
                     else -> {}
                 }
             }.launchIn(scope)
-            
+
             channel.subscribe()
             activeChannels[channelName] = channel
-            
+
             println("[ProgressRealtime] ✅ Subscribed to voice feedback")
         } catch (e: Exception) {
             println("[ProgressRealtime] ⚠️ Failed to subscribe to voice feedback: ${e.message}")
@@ -305,7 +304,10 @@ class ProgressRealtimeService {
     /**
      * Handle lesson progress update.
      */
-    private suspend fun handleLessonUpdate(userId: String, lessonId: String) {
+    private suspend fun handleLessonUpdate(
+        userId: String,
+        lessonId: String,
+    ) {
         // Need to look up lesson's language
         // For simplicity, emit a generic update that refreshes all languages
         // In production, you'd query the lesson to get its language
@@ -316,7 +318,10 @@ class ProgressRealtimeService {
     /**
      * Handle vocabulary update.
      */
-    private suspend fun handleVocabularyUpdate(userId: String, wordId: String) {
+    private suspend fun handleVocabularyUpdate(
+        userId: String,
+        wordId: String,
+    ) {
         println("[ProgressRealtime] 📖 Vocabulary added: $wordId")
         emitUpdate(ProgressUpdateEvent.VocabularyAdded(userId, null))
     }
@@ -324,7 +329,10 @@ class ProgressRealtimeService {
     /**
      * Handle feedback update.
      */
-    private suspend fun handleFeedbackUpdate(userId: String, sessionId: String) {
+    private suspend fun handleFeedbackUpdate(
+        userId: String,
+        sessionId: String,
+    ) {
         println("[ProgressRealtime] 🎤 Voice feedback recorded: $sessionId")
         emitUpdate(ProgressUpdateEvent.VoiceFeedbackAdded(userId, null))
     }
@@ -334,14 +342,20 @@ class ProgressRealtimeService {
     }
 
     private fun parseLanguage(languageName: String?): LessonLanguage? {
-        return LessonLanguage.entries.firstOrNull { 
-            it.displayName.equals(languageName, ignoreCase = true) 
+        return LessonLanguage.entries.firstOrNull {
+            it.displayName.equals(
+                languageName,
+                ignoreCase = true,
+            )
         }
     }
 
     private fun parseLanguageFromCode(code: String?): LessonLanguage? {
-        return LessonLanguage.entries.firstOrNull { 
-            it.code.equals(code, ignoreCase = true) 
+        return LessonLanguage.entries.firstOrNull {
+            it.code.equals(
+                code,
+                ignoreCase = true,
+            )
         }
     }
 }
@@ -351,26 +365,26 @@ class ProgressRealtimeService {
  */
 sealed class ProgressUpdateEvent(
     open val userId: String,
-    open val language: LessonLanguage?
+    open val language: LessonLanguage?,
 ) {
     data class LessonCompleted(
         override val userId: String,
-        override val language: LessonLanguage?
+        override val language: LessonLanguage?,
     ) : ProgressUpdateEvent(userId, language)
 
     data class ConversationSessionAdded(
         override val userId: String,
-        override val language: LessonLanguage?
+        override val language: LessonLanguage?,
     ) : ProgressUpdateEvent(userId, language)
 
     data class VocabularyAdded(
         override val userId: String,
-        override val language: LessonLanguage?
+        override val language: LessonLanguage?,
     ) : ProgressUpdateEvent(userId, language)
 
     data class VoiceFeedbackAdded(
         override val userId: String,
-        override val language: LessonLanguage?
+        override val language: LessonLanguage?,
     ) : ProgressUpdateEvent(userId, language)
 }
 
@@ -378,30 +392,30 @@ sealed class ProgressUpdateEvent(
 @Serializable
 private data class LessonProgressRecord(
     @SerialName("lesson_id") val lessonId: String,
-    @SerialName("is_completed") val isCompleted: Boolean = false
+    @SerialName("is_completed") val isCompleted: Boolean = false,
 )
 
 @Serializable
 private data class AgentSessionRecord(
-    @SerialName("language") val language: String
+    @SerialName("language") val language: String,
 )
 
 @Serializable
 private data class VoiceSessionRecord(
-    @SerialName("language") val language: String
+    @SerialName("language") val language: String,
 )
 
 @Serializable
 private data class ConversationRecordingRecord(
-    @SerialName("language") val language: String
+    @SerialName("language") val language: String,
 )
 
 @Serializable
 private data class UserVocabularyRecord(
-    @SerialName("word_id") val wordId: String
+    @SerialName("word_id") val wordId: String,
 )
 
 @Serializable
 private data class ConversationFeedbackRecord(
-    @SerialName("session_id") val sessionId: String
+    @SerialName("session_id") val sessionId: String,
 )

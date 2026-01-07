@@ -16,7 +16,7 @@ class SupabaseManager:
         if cls._client is not None:
             return cls._client
         
-        # Check for valid service role key (not placeholder)
+        # Check for a valid service role key (not placeholder)
         service_role_key = settings.supabase_service_role_key
         if service_role_key and "your_supabase_service_role_key" in service_role_key.lower():
             service_role_key = None  # Ignore placeholder

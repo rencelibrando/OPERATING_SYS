@@ -50,18 +50,26 @@ class Settings(BaseSettings):
     deepgram_api_key: str = Field(..., env="DEEPGRAM_API_KEY")
     deepseek_api_key: str = Field(..., env="DEEPSEEK_API_KEY")
     eleven_labs_api_key: str = Field(..., env="ELEVEN_LABS_API_KEY")
-    gladia_api_key: str = Field(default="", env="GLADIA_API_KEY")
+    
+    # ElevenLabs Agent Platform Configuration
+    # Agent IDs are created in ElevenLabs Dashboard and configured per language
+    elevenlabs_chinese_agent_id: str = Field(default="", env="ELEVENLABS_CHINESE_AGENT_ID")
+    elevenlabs_korean_agent_id: str = Field(default="", env="ELEVENLABS_KOREAN_AGENT_ID")
+    elevenlabs_english_agent_id: str = Field(default="", env="ELEVENLABS_ENGLISH_AGENT_ID")
+    elevenlabs_french_agent_id: str = Field(default="", env="ELEVENLABS_FRENCH_AGENT_ID")
+    elevenlabs_german_agent_id: str = Field(default="", env="ELEVENLABS_GERMAN_AGENT_ID")
+    elevenlabs_spanish_agent_id: str = Field(default="", env="ELEVENLABS_SPANISH_AGENT_ID")
     
     # Deepgram Configuration - Optimized for lower latency
     deepgram_model: str = Field(default="nova-3", env="DEEPGRAM_MODEL")
     deepgram_language: str = Field(default="multi", env="DEEPGRAM_LANGUAGE")
-    deepgram_endpointing: int = Field(default=300, env="DEEPGRAM_ENDPOINTING")  # 300ms for faster end-of-speech detection
+    deepgram_endpoint: int = Field(default=300, env="DEEPGRAM_ENDPOINT")  # 300ms for faster end-of-speech detection
     deepgram_interim_results: bool = Field(default=True, env="DEEPGRAM_INTERIM_RESULTS")  # Enable real-time feedback
     deepgram_utterance_end_ms: int = Field(default=300, env="DEEPGRAM_UTTERANCE_END_MS")  # Silence duration to trigger response
     deepgram_smart_format: bool = Field(default=True, env="DEEPGRAM_SMART_FORMAT")  # Better formatting
     
     # Supabase Configuration
-    # Accept both SUPABASE_KEY and SUPABASE_ANON_KEY
+    # Accepts both SUPABASE_KEY and SUPABASE_ANON_KEY
     supabase_url: str = ""
     supabase_key: str = ""
     supabase_anon_key: str = ""  # Alias for compatibility
@@ -82,7 +90,7 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Use SUPABASE_ANON_KEY as fallback if SUPABASE_KEY is not set
+# Use SUPABASE_ANON_KEY as a fallback if SUPABASE_KEY is not set
 if not settings.supabase_key and settings.supabase_anon_key:
     settings.supabase_key = settings.supabase_anon_key
     logger.info("Using SUPABASE_ANON_KEY as SUPABASE_KEY")
@@ -91,11 +99,6 @@ if not settings.supabase_key and settings.supabase_anon_key:
 logger.info(f"Supabase URL configured: {bool(settings.supabase_url)}")
 logger.info(f"Supabase Key configured: {bool(settings.supabase_key)}")
 logger.info(f"Supabase Service Role Key configured: {bool(settings.supabase_service_role_key)}")
-logger.info(f"Gladia API Key configured: {bool(settings.gladia_api_key)}")
-if settings.gladia_api_key:
-    logger.info(f"Gladia API Key: {settings.gladia_api_key[:10]}...")
-else:
-    logger.warning("Gladia API Key not found")
 if settings.supabase_url:
     logger.info(f"Supabase URL: {settings.supabase_url[:30]}...")
 if not settings.supabase_url and not settings.supabase_key:

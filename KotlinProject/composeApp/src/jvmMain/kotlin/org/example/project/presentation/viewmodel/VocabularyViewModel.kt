@@ -143,27 +143,33 @@ class VocabularyViewModel(
     /**
      * Update word status (e.g., mark as mastered, learning, etc.)
      */
-    fun updateWordStatus(wordId: String, status: org.example.project.domain.model.VocabularyStatus) {
+    fun updateWordStatus(
+        wordId: String,
+        status: org.example.project.domain.model.VocabularyStatus,
+    ) {
         viewModelScope.launch {
             val word = _vocabularyWords.value.find { it.id == wordId }
             word?.let {
-                val updatedWord = it.copy(
-                    status = status,
-                    lastReviewed = System.currentTimeMillis()
-                )
+                val updatedWord =
+                    it.copy(
+                        status = status,
+                        lastReviewed = System.currentTimeMillis(),
+                    )
                 repository.updateVocabularyWord(updatedWord).onSuccess {
-                    val updated = _vocabularyWords.value.map { w ->
-                        if (w.id == wordId) updatedWord else w
-                    }
+                    val updated =
+                        _vocabularyWords.value.map { w ->
+                            if (w.id == wordId) updatedWord else w
+                        }
                     _vocabularyWords.value = updated
-                    
+
                     // Recalculate stats for current language
                     val languageCode = _selectedLanguage.value?.code
-                    val wordsForLanguage = if (languageCode != null) {
-                        updated.filter { it.language == languageCode }
-                    } else {
-                        updated
-                    }
+                    val wordsForLanguage =
+                        if (languageCode != null) {
+                            updated.filter { it.language == languageCode }
+                        } else {
+                            updated
+                        }
                     _vocabularyStats.value = calculateStats(wordsForLanguage)
                     updateFilteredWords()
                 }
@@ -185,11 +191,11 @@ class VocabularyViewModel(
     ): List<VocabularyWord> {
         val query = _searchQuery.value.lowercase()
         val languageCode = _selectedLanguage.value?.code
-        
+
         return words.filter { word ->
             // Filter by language if a language is selected
             val matchesLanguage = languageCode == null || word.language == languageCode
-            
+
             val matchesFilter =
                 when (filter) {
                     VocabularyFilter.ALL -> true
@@ -223,15 +229,16 @@ class VocabularyViewModel(
         viewModelScope.launch {
             repository.getAllVocabularyWords().onSuccess { words ->
                 _vocabularyWords.value = words
-                
+
                 // Filter by selected language for stats
                 val languageCode = _selectedLanguage.value?.code
-                val wordsForLanguage = if (languageCode != null) {
-                    words.filter { it.language == languageCode }
-                } else {
-                    words
-                }
-                
+                val wordsForLanguage =
+                    if (languageCode != null) {
+                        words.filter { it.language == languageCode }
+                    } else {
+                        words
+                    }
+
                 _vocabularyStats.value = calculateStats(wordsForLanguage)
                 updateFilteredWords()
                 updateWordOfTheDay()
@@ -249,24 +256,26 @@ class VocabularyViewModel(
         _isLoading.value = true
         viewModelScope.launch {
             // Ensure the word has the correct language
-            val wordWithLanguage = if (newWord.language == "English" && _selectedLanguage.value != null) {
-                newWord.copy(language = _selectedLanguage.value!!.code)
-            } else {
-                newWord
-            }
-            
+            val wordWithLanguage =
+                if (newWord.language == "English" && _selectedLanguage.value != null) {
+                    newWord.copy(language = _selectedLanguage.value!!.code)
+                } else {
+                    newWord
+                }
+
             repository.addVocabularyWord(wordWithLanguage).onSuccess { saved ->
                 val updated = _vocabularyWords.value + saved
                 _vocabularyWords.value = updated
-                
+
                 // Filter by selected language for stats
                 val languageCode = _selectedLanguage.value?.code
-                val wordsForLanguage = if (languageCode != null) {
-                    updated.filter { it.language == languageCode }
-                } else {
-                    updated
-                }
-                
+                val wordsForLanguage =
+                    if (languageCode != null) {
+                        updated.filter { it.language == languageCode }
+                    } else {
+                        updated
+                    }
+
                 _vocabularyStats.value = calculateStats(wordsForLanguage)
                 updateFilteredWords()
                 markWordAsLearned()

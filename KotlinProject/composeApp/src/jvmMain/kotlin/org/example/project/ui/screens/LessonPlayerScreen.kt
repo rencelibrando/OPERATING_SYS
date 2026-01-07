@@ -155,9 +155,10 @@ fun LessonPlayerScreen(
     userId: String,
     onBack: () -> Unit,
     onLessonCompleted: ((userId: String, lessonId: String) -> Unit)? = null,
-    viewModel: LessonPlayerViewModel = viewModel { 
-        LessonPlayerViewModel(onLessonCompleted = onLessonCompleted)
-    },
+    viewModel: LessonPlayerViewModel =
+        viewModel {
+            LessonPlayerViewModel(onLessonCompleted = onLessonCompleted)
+        },
 ) {
     val currentLesson by viewModel.currentLesson
     val currentQuestion = viewModel.currentQuestion

@@ -2,10 +2,9 @@ package org.example.project.data.cache
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.example.project.domain.model.LessonDifficulty
 import org.example.project.domain.model.LessonLanguage
-import org.example.project.domain.model.LessonTopic
 import org.example.project.domain.model.LessonSummary
+import org.example.project.domain.model.LessonTopic
 
 /**
  * Base sealed interface for all cacheable data types.
@@ -19,7 +18,7 @@ sealed interface CacheableData
  */
 @Serializable
 data class CachedLessonTopicList(
-    val topics: List<CachedLessonTopic>
+    val topics: List<CachedLessonTopic>,
 ) : CacheableData
 
 /**
@@ -63,7 +62,7 @@ data class CachedLessonTopic(
             totalLessonsCount = totalLessonsCount,
         )
     }
-    
+
     companion object {
         fun fromDomain(topic: LessonTopic): CachedLessonTopic {
             return CachedLessonTopic(
@@ -87,7 +86,7 @@ data class CachedLessonTopic(
  */
 @Serializable
 data class CachedLessonSummaryList(
-    val lessons: List<CachedLessonSummary>
+    val lessons: List<CachedLessonSummary>,
 ) : CacheableData
 
 /**
@@ -118,7 +117,7 @@ data class CachedLessonSummary(
             updatedAt = updatedAt,
         )
     }
-    
+
     companion object {
         fun fromDomain(lesson: LessonSummary): CachedLessonSummary {
             return CachedLessonSummary(

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Helper script to create or update .env file in backend directory.
+Helper script to create or update .env file in the backend directory.
 This script helps set up the backend .env file with Supabase credentials.
 """
 import os
@@ -24,7 +24,7 @@ def main():
             print("Cancelled.")
             return
     
-    # Get values from user or environment
+    # Get values from the user or environment
     print("\nEnter Supabase credentials:")
     print("(Press Enter to use system environment variables if available)")
     print()

@@ -15,7 +15,6 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.example.project.core.api.SupabaseApiHelper
 import org.example.project.core.config.SupabaseConfig
-import org.example.project.data.cache.CacheableData
 import org.example.project.data.cache.CachedLessonTopic
 import org.example.project.data.cache.CachedLessonTopicList
 import org.example.project.data.cache.LocalStorageCache
@@ -63,7 +62,7 @@ interface LessonTopicsRepository {
     suspend fun getTopicsByLanguage(
         languageId: String,
         userId: String,
-        forceRefresh: Boolean = false
+        forceRefresh: Boolean = false,
     ): Result<List<LessonTopic>>
 }
 
@@ -94,7 +93,7 @@ data class LessonTopicDTO(
         isCompleted: Boolean = false,
         completedLessonsCount: Int = 0,
         totalLessonsCount: Int = 0,
-        isLockedOverride: Boolean? = null
+        isLockedOverride: Boolean? = null,
     ): LessonTopic {
         val lang = mapDatabaseLanguage(language)
         return LessonTopic(
@@ -154,42 +153,46 @@ data class LessonTopicProgress(
 class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository {
     private val supabase = SupabaseConfig.client
     private val baseUrl = "http://localhost:8000"
-    private val httpClient = HttpClient {
-        install(ContentNegotiation) {
-            json(Json {
-                prettyPrint = true
-                isLenient = true
-                ignoreUnknownKeys = true
-            })
+    private val httpClient =
+        HttpClient {
+            install(ContentNegotiation) {
+                json(
+                    Json {
+                        prettyPrint = true
+                        isLenient = true
+                        ignoreUnknownKeys = true
+                    },
+                )
+            }
         }
-    }
-    
+
     // Persistent local storage cache
-    private val localStorageCache = LocalStorageCache(
-        cacheDir = File(System.getProperty("user.home"), ".operating_sys_cache/lesson_topics")
-    )
-    
+    private val localStorageCache =
+        LocalStorageCache(
+            cacheDir = File(System.getProperty("user.home"), ".operating_sys_cache/lesson_topics"),
+        )
+
     // Multi-layer caching with TTL
     private val CACHE_DURATION_MS = 10 * 60 * 1000L // 10 minutes
     private val SHORT_CACHE_DURATION_MS = 30 * 1000L // 30 seconds for errors
     private val PERSISTENT_CACHE_TTL_MS = 60 * 60 * 1000L // 1 hour for persistent cache
-    
+
     // Cache for topics by (difficulty, language) key
     private val topicsCache = mutableMapOf<String, Pair<List<LessonTopic>, Long>>()
-    
+
     // Cache for lesson counts by topic ID
     private val lessonCountsCache = mutableMapOf<String, Pair<LessonCounts, Long>>()
-    
+
     // Cache for user progress by (userId, topicIds hash)
     private val userProgressCache = mutableMapOf<String, Pair<Map<String, LessonTopicProgress>, Long>>()
-    
+
     // Cache for user lesson progress by (userId, topicIds hash)
     private val userLessonProgressCache = mutableMapOf<String, Pair<Map<String, TopicLessonProgress>, Long>>()
-    
+
     companion object {
         @Volatile
         private var instance: LessonTopicsRepositoryImpl? = null
-        
+
         fun getInstance(): LessonTopicsRepositoryImpl {
             return instance ?: synchronized(this) {
                 instance ?: LessonTopicsRepositoryImpl().also { instance = it }
@@ -211,24 +214,24 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
             val cacheKey = "${difficultyString}_${languageString ?: "all"}"
             val currentTime = System.currentTimeMillis()
             val userId = SupabaseApiHelper.getCurrentUserId()
-            
+
             // Check persistent cache first
             val persistentCacheResult = localStorageCache.retrieve("topics_$cacheKey")
-            
+
             @Suppress("UNCHECKED_CAST")
             val cachedTopicList = persistentCacheResult.getOrNull() as? CachedLessonTopicList
             if (cachedTopicList != null) {
                 println("[LessonTopics] ✅ Persistent cache hit for $cacheKey (${cachedTopicList.topics.size} topics)")
                 return@runCatching cachedTopicList.topics.map { it.toDomain() }
             }
-            
+
             // Check in-memory cache second
             val cached = topicsCache[cacheKey]
             if (cached != null && (currentTime - cached.second) < CACHE_DURATION_MS) {
                 println("[LessonTopics] ✅ Memory cache hit for $cacheKey (${cached.first.size} topics)")
                 return@runCatching cached.first
             }
-            
+
             println("[LessonTopics] 🔄 Cache miss for $cacheKey, fetching from API...")
 
             SupabaseApiHelper.executeWithRetry {
@@ -272,32 +275,33 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
                                 val totalLessons = lessonCounts?.total ?: 0
                                 val completedLessons = lessonProgressMap[dto.id]?.completedCount ?: 0
 
-                                // Topic locking logic: 
+                                // Topic locking logic:
                                 // - Topics with 0 lessons are always unlocked
                                 // - Topics with lessons are locked if any previous topic with lessons is incomplete
-                                val isLocked = if (totalLessons == 0) {
-                                    // Topics with no lessons are always unlocked
-                                    false
-                                } else if (index == 0) {
-                                    // First topic with lessons is never locked
-                                    false
-                                } else {
-                                    // Check if ANY previous topic with lessons is incomplete
-                                    topicDTOs.take(index).any { previousDto ->
-                                        val previousLessonCounts = lessonCountsMap[previousDto.id]
-                                        val previousTotalLessons = previousLessonCounts?.total ?: 0
-                                        val previousCompletedLessons = lessonProgressMap[previousDto.id]?.completedCount ?: 0
-                                        
-                                        // Only lock if previous topic has lessons (>0) but not all are completed
-                                        previousTotalLessons > 0 && previousCompletedLessons < previousTotalLessons
+                                val isLocked =
+                                    if (totalLessons == 0) {
+                                        // Topics with no lessons are always unlocked
+                                        false
+                                    } else if (index == 0) {
+                                        // First topic with lessons is never locked
+                                        false
+                                    } else {
+                                        // Check if ANY previous topic with lessons is incomplete
+                                        topicDTOs.take(index).any { previousDto ->
+                                            val previousLessonCounts = lessonCountsMap[previousDto.id]
+                                            val previousTotalLessons = previousLessonCounts?.total ?: 0
+                                            val previousCompletedLessons = lessonProgressMap[previousDto.id]?.completedCount ?: 0
+
+                                            // Only lock if previous topic has lessons (>0) but not all are completed
+                                            previousTotalLessons > 0 && previousCompletedLessons < previousTotalLessons
+                                        }
                                     }
-                                }
 
                                 dto.toDomain(
                                     isCompleted = topicProgress?.isCompleted ?: false,
                                     completedLessonsCount = completedLessons,
                                     totalLessonsCount = totalLessons,
-                                    isLockedOverride = isLocked
+                                    isLockedOverride = isLocked,
                                 )
                             }
                         } else {
@@ -305,7 +309,7 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
                             topicDTOs.map { dto ->
                                 val lessonCounts = lessonCountsMap[dto.id]
                                 dto.toDomain(
-                                    totalLessonsCount = lessonCounts?.total ?: 0
+                                    totalLessonsCount = lessonCounts?.total ?: 0,
                                 )
                             }
                         }
@@ -313,17 +317,17 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
                     // Cache the result in memory
                     topicsCache[cacheKey] = Pair(topics, currentTime)
                     println("[LessonTopics] ✅ Memory cached ${topics.size} topics for $cacheKey")
-                    
+
                     // Cache the result in persistent storage
                     val cachedTopics = topics.map { CachedLessonTopic.fromDomain(it) }
                     val topicListWrapper = CachedLessonTopicList(cachedTopics)
                     localStorageCache.store(
                         key = "topics_$cacheKey",
                         data = topicListWrapper,
-                        ttlMs = PERSISTENT_CACHE_TTL_MS
+                        ttlMs = PERSISTENT_CACHE_TTL_MS,
                     )
                     println("[LessonTopics] ✅ Persistent cached ${topics.size} topics for $cacheKey")
-                    
+
                     topics
                 }
             }.getOrElse { e ->
@@ -466,10 +470,9 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
                     }
 
                     println("[LessonTopics] Updated topic: ${topic.id}")
-                    
+
                     // Clear cache for this topic
                     clearTopicsCache(difficulty, language)
-                    
                 } catch (e: Exception) {
                     println("[LessonTopics] Error updating topic: ${e.message}")
                     throw e
@@ -502,10 +505,9 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
                     }
 
                     println("[LessonTopics] Deleted topic: $topicId")
-                    
+
                     // Clear all cache since we don't know the difficulty/language of deleted topic
                     clearCache()
-                    
                 } catch (e: Exception) {
                     println("[LessonTopics] Error deleting topic: ${e.message}")
                     throw e
@@ -539,10 +541,9 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
                     supabase.postgrest["lesson_topics"].insert(payload)
 
                     println("[LessonTopics] Created topic: ${topic.id}")
-                    
+
                     // Clear cache for this difficulty/language combination
                     clearTopicsCache(difficulty, language)
-                    
                 } catch (e: Exception) {
                     println("[LessonTopics] Error creating topic: ${e.message}")
                     throw e
@@ -560,20 +561,20 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
                 throw Exception("Supabase not configured - will use local fallback")
             }
 
-            val cacheKey = "language_${languageId}"
+            val cacheKey = "language_$languageId"
             val currentTime = System.currentTimeMillis()
 
             if (!forceRefresh) {
                 // Check persistent cache first
                 val persistentCacheResult = localStorageCache.retrieve("topics_$cacheKey")
-                
+
                 @Suppress("UNCHECKED_CAST")
                 val cachedTopicList = persistentCacheResult.getOrNull() as? CachedLessonTopicList
                 if (cachedTopicList != null) {
                     println("[LessonTopics] Persistent cache hit for language $languageId (${cachedTopicList.topics.size} topics)")
                     return@runCatching cachedTopicList.topics.map { it.toDomain() }
                 }
-                
+
                 // Check in-memory cache second
                 val cached = topicsCache[cacheKey]
                 if (cached != null && (currentTime - cached.second) < CACHE_DURATION_MS) {
@@ -624,32 +625,33 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
                                 val totalLessons = lessonCounts?.total ?: 0
                                 val completedLessons = lessonProgressMap[dto.id]?.completedCount ?: 0
 
-                                // Topic locking logic: 
+                                // Topic locking logic:
                                 // - Topics with 0 lessons are always unlocked
                                 // - Topics with lessons are locked if any previous topic with lessons is incomplete
-                                val isLocked = if (totalLessons == 0) {
-                                    // Topics with no lessons are always unlocked
-                                    false
-                                } else if (index == 0) {
-                                    // First topic with lessons is never locked
-                                    false
-                                } else {
-                                    // Check if ANY previous topic with lessons is incomplete
-                                    topicDTOs.take(index).any { previousDto ->
-                                        val previousLessonCounts = lessonCountsMap[previousDto.id]
-                                        val previousTotalLessons = previousLessonCounts?.total ?: 0
-                                        val previousCompletedLessons = lessonProgressMap[previousDto.id]?.completedCount ?: 0
-                                        
-                                        // Only lock if previous topic has lessons (>0) but not all are completed
-                                        previousTotalLessons > 0 && previousCompletedLessons < previousTotalLessons
+                                val isLocked =
+                                    if (totalLessons == 0) {
+                                        // Topics with no lessons are always unlocked
+                                        false
+                                    } else if (index == 0) {
+                                        // First topic with lessons is never locked
+                                        false
+                                    } else {
+                                        // Check if ANY previous topic with lessons is incomplete
+                                        topicDTOs.take(index).any { previousDto ->
+                                            val previousLessonCounts = lessonCountsMap[previousDto.id]
+                                            val previousTotalLessons = previousLessonCounts?.total ?: 0
+                                            val previousCompletedLessons = lessonProgressMap[previousDto.id]?.completedCount ?: 0
+
+                                            // Only lock if previous topic has lessons (>0) but not all are completed
+                                            previousTotalLessons > 0 && previousCompletedLessons < previousTotalLessons
+                                        }
                                     }
-                                }
 
                                 dto.toDomain(
                                     isCompleted = topicProgress?.isCompleted ?: false,
                                     completedLessonsCount = completedLessons,
                                     totalLessonsCount = totalLessons,
-                                    isLockedOverride = isLocked
+                                    isLockedOverride = isLocked,
                                 )
                             }
                         } else {
@@ -657,7 +659,7 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
                             topicDTOs.map { dto ->
                                 val lessonCounts = lessonCountsMap[dto.id]
                                 dto.toDomain(
-                                    totalLessonsCount = lessonCounts?.total ?: 0
+                                    totalLessonsCount = lessonCounts?.total ?: 0,
                                 )
                             }
                         }
@@ -666,18 +668,18 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
                     if (!forceRefresh) {
                         topicsCache[cacheKey] = Pair(topics, currentTime)
                         println("[LessonTopics] ✅ Memory cached ${topics.size} topics for language $languageId")
-                        
+
                         // Cache the result in persistent storage
                         val cachedTopics = topics.map { CachedLessonTopic.fromDomain(it) }
                         val topicListWrapper = CachedLessonTopicList(cachedTopics)
                         localStorageCache.store(
                             key = "topics_$cacheKey",
                             data = topicListWrapper,
-                            ttlMs = PERSISTENT_CACHE_TTL_MS
+                            ttlMs = PERSISTENT_CACHE_TTL_MS,
                         )
                         println("[LessonTopics] ✅ Persistent cached ${topics.size} topics for language $languageId")
                     }
-                    
+
                     topics
                 }
             }.getOrElse { e ->
@@ -692,7 +694,7 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
     ): Map<String, LessonTopicProgress> {
         return try {
             if (topicIds.isEmpty()) return emptyMap()
-            
+
             // Check cache
             val cacheKey = "${userId}_${topicIds.sorted().hashCode()}"
             val currentTime = System.currentTimeMillis()
@@ -701,7 +703,7 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
                 println("[LessonTopics] ✅ User progress cache hit for user $userId")
                 return cached.first
             }
-            
+
             println("[LessonTopics] 🔄 Fetching user progress for ${topicIds.size} topics...")
 
             val response =
@@ -714,20 +716,21 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
 
             val progressDTOs = response.decodeList<LessonTopicProgressDTO>()
 
-            val progressMap = progressDTOs.associate { dto ->
-                dto.topicId to
-                    LessonTopicProgress(
-                        userId = dto.userId,
-                        topicId = dto.topicId,
-                        isCompleted = dto.isCompleted,
-                        timeSpent = dto.timeSpent,
-                    )
-            }
-            
+            val progressMap =
+                progressDTOs.associate { dto ->
+                    dto.topicId to
+                        LessonTopicProgress(
+                            userId = dto.userId,
+                            topicId = dto.topicId,
+                            isCompleted = dto.isCompleted,
+                            timeSpent = dto.timeSpent,
+                        )
+                }
+
             // Cache the result
             userProgressCache[cacheKey] = Pair(progressMap, currentTime)
             println("[LessonTopics] ✅ Cached progress for ${progressMap.size} topics")
-            
+
             progressMap
         } catch (e: Exception) {
             // Check if it's a "table not found" error - this is expected if migration hasn't been run
@@ -752,7 +755,7 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
             val currentTime = System.currentTimeMillis()
             val countsMap = mutableMapOf<String, LessonCounts>()
             val topicsToFetch = mutableListOf<String>()
-            
+
             // Check cache first
             topicIds.forEach { topicId ->
                 val cached = lessonCountsCache[topicId]
@@ -765,18 +768,19 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
                     topicsToFetch.add(topicId)
                 }
             }
-            
+
             // Fetch missing topics from API
             if (topicsToFetch.isNotEmpty()) {
                 println("[LessonTopics] Fetching lesson counts for ${topicsToFetch.size} topics from backend")
             }
-            
+
             topicsToFetch.forEach { topicId ->
                 try {
-                    val response: LessonListResponse = httpClient.get("$baseUrl/api/lessons/topic/$topicId") {
-                        parameter("published_only", true)
-                    }.body()
-                    
+                    val response: LessonListResponse =
+                        httpClient.get("$baseUrl/api/lessons/topic/$topicId") {
+                            parameter("published_only", true)
+                        }.body()
+
                     val count = LessonCounts(total = response.total)
                     countsMap[topicId] = count
                     // Store in cache
@@ -790,7 +794,7 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
                     lessonCountsCache[topicId] = Pair(emptyCount, currentTime - CACHE_DURATION_MS + SHORT_CACHE_DURATION_MS)
                 }
             }
-            
+
             countsMap
         } catch (e: Exception) {
             println("[LessonTopics] Error fetching lesson counts: ${e.message}")
@@ -800,11 +804,11 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
 
     private suspend fun getUserLessonProgressByTopics(
         userId: String,
-        topicIds: List<String>
+        topicIds: List<String>,
     ): Map<String, TopicLessonProgress> {
         return try {
             if (topicIds.isEmpty()) return emptyMap()
-            
+
             // Check cache
             val cacheKey = "${userId}_${topicIds.sorted().hashCode()}"
             val currentTime = System.currentTimeMillis()
@@ -813,19 +817,20 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
                 println("[LessonTopics] ✅ User lesson progress cache hit for user $userId")
                 return cached.first
             }
-            
+
             println("[LessonTopics] 🔄 Fetching user lesson progress...")
 
             // Build a map of lesson_id -> topic_id by fetching lessons via API
             val lessonToTopicMap = mutableMapOf<String, String>()
-            
+
             topicIds.forEach { topicId ->
                 try {
                     println("[LessonTopics] Fetching lessons for progress tracking, topic: $topicId")
-                    val response: LessonListResponse = httpClient.get("$baseUrl/api/lessons/topic/$topicId") {
-                        parameter("published_only", true)
-                    }.body()
-                    
+                    val response: LessonListResponse =
+                        httpClient.get("$baseUrl/api/lessons/topic/$topicId") {
+                            parameter("published_only", true)
+                        }.body()
+
                     println("[LessonTopics] Found ${response.lessons.size} lessons for topic $topicId")
                     response.lessons.forEach { lesson ->
                         lessonToTopicMap[lesson.id] = lesson.topicId
@@ -860,26 +865,28 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
             val completedProgress = progressResponse.decodeList<UserLessonProgressDTO>()
 
             // Count completed lessons per topic
-            val completedByTopic = completedProgress
-                .mapNotNull { progress -> lessonToTopicMap[progress.lessonId] }
-                .groupingBy { it }
-                .eachCount()
+            val completedByTopic =
+                completedProgress
+                    .mapNotNull { progress -> lessonToTopicMap[progress.lessonId] }
+                    .groupingBy { it }
+                    .eachCount()
 
-            val progressMap = topicIds.associateWith { topicId ->
-                TopicLessonProgress(completedCount = completedByTopic[topicId] ?: 0)
-            }
-            
+            val progressMap =
+                topicIds.associateWith { topicId ->
+                    TopicLessonProgress(completedCount = completedByTopic[topicId] ?: 0)
+                }
+
             // Cache the result
             userLessonProgressCache[cacheKey] = Pair(progressMap, currentTime)
             println("[LessonTopics] ✅ Cached lesson progress for ${progressMap.size} topics")
-            
+
             progressMap
         } catch (e: Exception) {
             println("[LessonTopics] Error fetching user lesson progress: ${e.message}")
             topicIds.associateWith { TopicLessonProgress(completedCount = 0) }
         }
     }
-    
+
     /**
      * Clear all caches - call this when user logs out or when manual refresh is needed
      */
@@ -888,7 +895,7 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
         lessonCountsCache.clear()
         userProgressCache.clear()
         userLessonProgressCache.clear()
-        
+
         // Clear persistent cache
         runCatching {
             kotlinx.coroutines.runBlocking {
@@ -897,10 +904,10 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
         }.onFailure { e ->
             println("[LessonTopics] Failed to clear persistent cache: ${e.message}")
         }
-        
+
         println("[LessonTopics] 🗑️ All caches cleared")
     }
-    
+
     /**
      * Clear cache for specific user - call this when user completes a lesson
      */
@@ -908,11 +915,11 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
         // Clear user progress caches
         userProgressCache.keys.removeAll { it.startsWith("${userId}_") }
         userLessonProgressCache.keys.removeAll { it.startsWith("${userId}_") }
-        
+
         // CRITICAL: Also clear topics cache since it contains computed locking status
         topicsCache.clear()
         lessonCountsCache.clear()
-        
+
         // Clear persistent cache
         runCatching {
             kotlinx.coroutines.runBlocking {
@@ -921,18 +928,21 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
         }.onFailure { e ->
             println("[LessonTopics] Failed to clear persistent cache for user: ${e.message}")
         }
-        
+
         println("[LessonTopics] 🗑️ User cache cleared for $userId (including topics cache)")
     }
-    
+
     /**
      * Clear cache for specific difficulty/language - call this when content is updated
      */
-    fun clearTopicsCache(difficulty: LessonDifficulty? = null, language: LessonLanguage? = null) {
+    fun clearTopicsCache(
+        difficulty: LessonDifficulty? = null,
+        language: LessonLanguage? = null,
+    ) {
         if (difficulty != null && language != null) {
             val cacheKey = "${difficulty.displayName}_${language.displayName}"
             topicsCache.remove(cacheKey)
-            
+
             // Clear specific persistent cache
             runCatching {
                 kotlinx.coroutines.runBlocking {
@@ -941,11 +951,11 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
             }.onFailure { e ->
                 println("[LessonTopics] Failed to clear persistent cache for $cacheKey: ${e.message}")
             }
-            
+
             println("[LessonTopics] 🗑️ Topics cache cleared for $cacheKey")
         } else {
             topicsCache.clear()
-            
+
             // Clear all topics persistent cache
             runCatching {
                 kotlinx.coroutines.runBlocking {
@@ -954,24 +964,24 @@ class LessonTopicsRepositoryImpl private constructor() : LessonTopicsRepository 
             }.onFailure { e ->
                 println("[LessonTopics] Failed to clear all persistent topics cache: ${e.message}")
             }
-            
+
             println("[LessonTopics] 🗑️ All topics cache cleared")
         }
     }
 }
 
 data class LessonCounts(
-    val total: Int
+    val total: Int,
 )
 
 data class TopicLessonProgress(
-    val completedCount: Int
+    val completedCount: Int,
 )
 
 @Serializable
 private data class LessonListResponse(
     @SerialName("lessons") val lessons: List<LessonSummaryDTO>,
-    @SerialName("total") val total: Int
+    @SerialName("total") val total: Int,
 )
 
 @Serializable
@@ -980,5 +990,5 @@ private data class LessonSummaryDTO(
     @SerialName("topic_id") val topicId: String,
     @SerialName("title") val title: String? = null,
     @SerialName("is_published") val isPublished: Boolean = false,
-    @SerialName("question_count") val questionCount: Int = 0
+    @SerialName("question_count") val questionCount: Int = 0,
 )

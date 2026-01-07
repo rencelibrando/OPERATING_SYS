@@ -49,7 +49,7 @@ async def create_recording(request: RecordingCreateRequest):
     """
     Create a new speaking recording entry.
 
-    This creates the database record. Audio file should be uploaded separately.
+    This creates the database record. Audio files should be uploaded separately.
     """
     try:
         recording_id = str(uuid.uuid4())
@@ -85,7 +85,7 @@ async def upload_recording_audio(
     user_id: str = Form(...)
 ):
     """
-    Upload audio file for an existing recording.
+    Upload an audio file for an existing recording.
 
     Args:
         recording_id: The recording ID to attach audio to
@@ -93,7 +93,7 @@ async def upload_recording_audio(
         user_id: User identifier for verification
     """
     try:
-        # Verify recording exists and belongs to user
+        # Verify the recording exists and belongs to a user
         response = supabase_manager.client.table("speaking_recordings").select("*").eq(
             "id", recording_id
         ).eq("user_id", user_id).execute()
@@ -158,7 +158,7 @@ async def save_audio_chunks(
     """
     Save audio chunk metadata for a recording.
 
-    This is useful for recordings that were captured in chunks during a conversation.
+    This is useful for recordings captured in chunks during a conversation.
 
     Args:
         recording_id: The recording ID
@@ -279,7 +279,7 @@ async def delete_recording(recording_id: str, user_id: str):
 
         audio_url = response.data[0].get("audio_url")
 
-        # Delete audio file from storage if exists
+        # Delete an audio file from storage if exists
         if audio_url:
             try:
                 # Extract filename from URL

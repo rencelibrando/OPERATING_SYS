@@ -32,18 +32,19 @@ class AIChatRepositoryImpl(
 
     private val sessions = mutableMapOf<String, ChatSession>()
     private val messages = mutableMapOf<String, MutableList<ChatMessage>>()
-    
+
     private var cachedUserContext: AIUserContext? = null
     private var cachedUserId: String? = null
     private var contextCacheTime: Long = 0
     private val cacheValidityDuration = 5 * 60 * 1000L
-    
+
     private data class CachedAIResponse(
         val response: String,
         val timestamp: Long,
         val provider: AIProvider,
-        val tokensUsed: Int?
+        val tokensUsed: Int?,
     )
+
     private val aiResponseCache = mutableMapOf<String, CachedAIResponse>()
     private val responseCacheValidityDuration = 2 * 60 * 1000L
 
@@ -208,14 +209,15 @@ class AIChatRepositoryImpl(
 
                 // Save to database
                 try {
-                    val messageDTO = ChatMessageDTO(
-                        id = message.id,
-                        sessionId = sessionId,
-                        senderType = "user", // Use senderType instead of role
-                        messageText = message.content, // Use messageText instead of content
-                        metadata = message.metadata,
-                        createdAt = java.time.Instant.ofEpochMilli(message.timestamp).toString(), // Use createdAt instead of timestamp
-                    )
+                    val messageDTO =
+                        ChatMessageDTO(
+                            id = message.id,
+                            sessionId = sessionId,
+                            senderType = "user", // Use senderType instead of role
+                            messageText = message.content, // Use messageText instead of content
+                            metadata = message.metadata,
+                            createdAt = java.time.Instant.ofEpochMilli(message.timestamp).toString(), // Use createdAt instead of timestamp
+                        )
 
                     supabase.postgrest["chat_messages"]
                         .insert(messageDTO)
@@ -264,47 +266,50 @@ class AIChatRepositoryImpl(
                 println("Generating AI response for session: $sessionId")
 
                 val userContext = buildUserContext()
-                
+
                 val cacheKey = generateCacheKey(userMessage, sessionId)
                 val cachedResponse = aiResponseCache[cacheKey]
                 val currentTime = System.currentTimeMillis()
-                
+
                 if (cachedResponse != null && (currentTime - cachedResponse.timestamp) < responseCacheValidityDuration) {
                     println("Using cached AI response for message")
-                    
+
                     val formattedResponse = formatAIResponse(cachedResponse.response)
-                    
-                    val aiMessage = ChatMessage(
-                        id = UUID.randomUUID().toString(),
-                        content = formattedResponse,
-                        sender = MessageSender.AI,
-                        timestamp = System.currentTimeMillis(),
-                        metadata = mapOf(
-                            "provider" to cachedResponse.provider.name,
-                            "tokens_used" to (cachedResponse.tokensUsed?.toString() ?: "0"),
-                            "cached" to "true"
-                        ),
-                    )
-                    
-                    messages.getOrPut(sessionId) { mutableListOf() }.add(aiMessage)
-                    
-                    try {
-                        val messageDTO = ChatMessageDTO(
-                            id = aiMessage.id,
-                            sessionId = sessionId,
-                            senderType = "bot",
-                            messageText = aiMessage.content,
-                            metadata = aiMessage.metadata,
-                            createdAt = java.time.Instant.ofEpochMilli(aiMessage.timestamp).toString(),
+
+                    val aiMessage =
+                        ChatMessage(
+                            id = UUID.randomUUID().toString(),
+                            content = formattedResponse,
+                            sender = MessageSender.AI,
+                            timestamp = System.currentTimeMillis(),
+                            metadata =
+                                mapOf(
+                                    "provider" to cachedResponse.provider.name,
+                                    "tokens_used" to (cachedResponse.tokensUsed?.toString() ?: "0"),
+                                    "cached" to "true",
+                                ),
                         )
+
+                    messages.getOrPut(sessionId) { mutableListOf() }.add(aiMessage)
+
+                    try {
+                        val messageDTO =
+                            ChatMessageDTO(
+                                id = aiMessage.id,
+                                sessionId = sessionId,
+                                senderType = "bot",
+                                messageText = aiMessage.content,
+                                metadata = aiMessage.metadata,
+                                createdAt = java.time.Instant.ofEpochMilli(aiMessage.timestamp).toString(),
+                            )
                         supabase.postgrest["chat_messages"].insert(messageDTO)
                     } catch (e: Exception) {
                         println("Failed to save cached AI message: ${e.message}")
                     }
-                    
+
                     return@runCatching cachedResponse.response
                 }
-                
+
                 println("Fetching new AI response from backend")
 
                 val history =
@@ -335,16 +340,17 @@ class AIChatRepositoryImpl(
                             throw Exception("AI backend request failed: ${error.message}")
                         }
 
-                aiResponseCache[cacheKey] = CachedAIResponse(
-                    response = response.message,
-                    timestamp = System.currentTimeMillis(),
-                    provider = response.provider,
-                    tokensUsed = response.tokensUsed
-                )
+                aiResponseCache[cacheKey] =
+                    CachedAIResponse(
+                        response = response.message,
+                        timestamp = System.currentTimeMillis(),
+                        provider = response.provider,
+                        tokensUsed = response.tokensUsed,
+                    )
                 println("AI response cached for future use")
-                
+
                 cleanupExpiredCache()
-                
+
                 val formattedResponse = formatAIResponse(response.message)
 
                 val aiMessage =
@@ -357,7 +363,7 @@ class AIChatRepositoryImpl(
                             mapOf(
                                 "provider" to response.provider.name,
                                 "tokens_used" to (response.tokensUsed?.toString() ?: "0"),
-                                "cached" to "false"
+                                "cached" to "false",
                             ),
                     )
 
@@ -365,14 +371,15 @@ class AIChatRepositoryImpl(
 
                 // Save AI message to database
                 try {
-                    val messageDTO = ChatMessageDTO(
-                        id = aiMessage.id,
-                        sessionId = sessionId,
-                        senderType = "bot",
-                        messageText = aiMessage.content,
-                        metadata = aiMessage.metadata,
-                        createdAt = java.time.Instant.ofEpochMilli(aiMessage.timestamp).toString(),
-                    )
+                    val messageDTO =
+                        ChatMessageDTO(
+                            id = aiMessage.id,
+                            sessionId = sessionId,
+                            senderType = "bot",
+                            messageText = aiMessage.content,
+                            metadata = aiMessage.metadata,
+                            createdAt = java.time.Instant.ofEpochMilli(aiMessage.timestamp).toString(),
+                        )
 
                     supabase.postgrest["chat_messages"]
                         .insert(messageDTO)
@@ -419,10 +426,11 @@ class AIChatRepositoryImpl(
                     ?: return AIUserContext(userId = "anonymous")
 
             val currentTime = System.currentTimeMillis()
-            val cacheValid = cachedUserContext != null && 
-                            cachedUserId == user.id && 
-                            (currentTime - contextCacheTime) < cacheValidityDuration
-            
+            val cacheValid =
+                cachedUserContext != null &&
+                    cachedUserId == user.id &&
+                    (currentTime - contextCacheTime) < cacheValidityDuration
+
             if (cacheValid) {
                 println("Using cached user context for: ${user.id}")
                 return cachedUserContext!!
@@ -487,101 +495,102 @@ class AIChatRepositoryImpl(
                     ?.filter { it.isNotBlank() }
                     ?: emptyList()
 
-            val userContext = AIUserContext(
-                userId = user.id,
-                firstName = comprehensiveData?.firstName,
-                lastName = comprehensiveData?.lastName,
-                nativeLanguage = nativeLanguage,
-                targetLanguages = targetLanguages,
-                currentLevel = currentLevel,
-                primaryGoal = primaryGoal,
-                learningStyle = learningStyle,
-                focusAreas = focusAreas,
-                motivations = motivations,
-                interests = interests,
-                aiProfile = profile?.aiProfile,
-                learningProgress =
-                    comprehensiveData?.learningProgress?.let {
-                        AILearningProgress(
-                            overallLevel = it.overallLevel,
-                            xpPoints = it.xpPoints,
-                            weeklyXp = it.weeklyXp,
-                            streakDays = it.streakDays,
-                            longestStreak = it.longestStreak,
-                            totalStudyTime = it.totalStudyTime,
-                            weeklyStudyTime = it.weeklyStudyTime,
-                        )
-                    },
-                skillProgress =
-                    comprehensiveData?.skillProgress?.map {
-                        AISkillProgress(
-                            skillArea = it.skillArea,
-                            level = it.level,
-                            xpPoints = it.xpPoints,
-                            accuracyPercentage = it.accuracyPercentage,
-                            timeSpent = it.timeSpent,
-                            exercisesCompleted = it.exercisesCompleted,
-                        )
-                    } ?: emptyList(),
-                vocabularyStats =
-                    comprehensiveData?.vocabularyStats?.let {
-                        AIVocabularyStats(
-                            totalWords = it.totalWords,
-                            newWords = it.newWords,
-                            learningWords = it.learningWords,
-                            reviewingWords = it.reviewingWords,
-                            masteredWords = it.masteredWords,
-                            averageCorrectRate = it.averageCorrectRate,
-                            words =
-                                it.words.map { word ->
-                                    AIVocabularyWord(
-                                        word = word.word,
-                                        definition = word.definition,
-                                        pronunciation = word.pronunciation,
-                                        exampleSentence = word.exampleSentence,
-                                        difficultyLevel = word.difficultyLevel,
-                                        category = word.category,
-                                        status = word.status,
-                                        reviewCount = word.reviewCount,
-                                        correctCount = word.correctCount,
-                                        lastReviewed = word.lastReviewed,
-                                        nextReview = word.nextReview,
-                                    )
-                                },
-                        )
-                    },
-                lessonProgress =
-                    comprehensiveData?.lessonProgress?.let {
-                        AILessonProgress(
-                            totalLessons = it.totalLessons,
-                            completedLessons = it.completedLessons,
-                            inProgressLessons = it.inProgressLessons,
-                            averageScore = it.averageScore,
-                            totalTimeSpent = it.totalTimeSpent,
-                        )
-                    },
-                chatHistory =
-                    comprehensiveData?.chatHistory?.let {
-                        AIChatHistory(
-                            totalSessions = it.totalSessions,
-                            totalMessages = it.totalMessages,
-                            totalDuration = it.totalDuration,
-                        )
-                    },
-                achievements = comprehensiveData?.achievements ?: emptyList(),
-                userSettings =
-                    comprehensiveData?.userSettings?.let {
-                        AIUserSettings(
-                            aiPreferences = it.aiPreferences,
-                        )
-                    },
-            )
-            
+            val userContext =
+                AIUserContext(
+                    userId = user.id,
+                    firstName = comprehensiveData?.firstName,
+                    lastName = comprehensiveData?.lastName,
+                    nativeLanguage = nativeLanguage,
+                    targetLanguages = targetLanguages,
+                    currentLevel = currentLevel,
+                    primaryGoal = primaryGoal,
+                    learningStyle = learningStyle,
+                    focusAreas = focusAreas,
+                    motivations = motivations,
+                    interests = interests,
+                    aiProfile = profile?.aiProfile,
+                    learningProgress =
+                        comprehensiveData?.learningProgress?.let {
+                            AILearningProgress(
+                                overallLevel = it.overallLevel,
+                                xpPoints = it.xpPoints,
+                                weeklyXp = it.weeklyXp,
+                                streakDays = it.streakDays,
+                                longestStreak = it.longestStreak,
+                                totalStudyTime = it.totalStudyTime,
+                                weeklyStudyTime = it.weeklyStudyTime,
+                            )
+                        },
+                    skillProgress =
+                        comprehensiveData?.skillProgress?.map {
+                            AISkillProgress(
+                                skillArea = it.skillArea,
+                                level = it.level,
+                                xpPoints = it.xpPoints,
+                                accuracyPercentage = it.accuracyPercentage,
+                                timeSpent = it.timeSpent,
+                                exercisesCompleted = it.exercisesCompleted,
+                            )
+                        } ?: emptyList(),
+                    vocabularyStats =
+                        comprehensiveData?.vocabularyStats?.let {
+                            AIVocabularyStats(
+                                totalWords = it.totalWords,
+                                newWords = it.newWords,
+                                learningWords = it.learningWords,
+                                reviewingWords = it.reviewingWords,
+                                masteredWords = it.masteredWords,
+                                averageCorrectRate = it.averageCorrectRate,
+                                words =
+                                    it.words.map { word ->
+                                        AIVocabularyWord(
+                                            word = word.word,
+                                            definition = word.definition,
+                                            pronunciation = word.pronunciation,
+                                            exampleSentence = word.exampleSentence,
+                                            difficultyLevel = word.difficultyLevel,
+                                            category = word.category,
+                                            status = word.status,
+                                            reviewCount = word.reviewCount,
+                                            correctCount = word.correctCount,
+                                            lastReviewed = word.lastReviewed,
+                                            nextReview = word.nextReview,
+                                        )
+                                    },
+                            )
+                        },
+                    lessonProgress =
+                        comprehensiveData?.lessonProgress?.let {
+                            AILessonProgress(
+                                totalLessons = it.totalLessons,
+                                completedLessons = it.completedLessons,
+                                inProgressLessons = it.inProgressLessons,
+                                averageScore = it.averageScore,
+                                totalTimeSpent = it.totalTimeSpent,
+                            )
+                        },
+                    chatHistory =
+                        comprehensiveData?.chatHistory?.let {
+                            AIChatHistory(
+                                totalSessions = it.totalSessions,
+                                totalMessages = it.totalMessages,
+                                totalDuration = it.totalDuration,
+                            )
+                        },
+                    achievements = comprehensiveData?.achievements ?: emptyList(),
+                    userSettings =
+                        comprehensiveData?.userSettings?.let {
+                            AIUserSettings(
+                                aiPreferences = it.aiPreferences,
+                            )
+                        },
+                )
+
             cachedUserContext = userContext
             cachedUserId = user.id
             contextCacheTime = System.currentTimeMillis()
             println("User context cached successfully for: ${user.id}")
-            
+
             userContext
         } catch (e: Exception) {
             println("Failed to build user context: ${e.message}")
@@ -590,41 +599,45 @@ class AIChatRepositoryImpl(
         }
     }
 
-    private fun generateCacheKey(message: String, sessionId: String): String {
+    private fun generateCacheKey(
+        message: String,
+        sessionId: String,
+    ): String {
         val normalizedMessage = message.trim().lowercase()
         return "${sessionId}_${normalizedMessage.hashCode()}"
     }
-    
+
     private fun cleanupExpiredCache() {
         val currentTime = System.currentTimeMillis()
-        val expiredKeys = aiResponseCache.filter { (_, cached) ->
-            (currentTime - cached.timestamp) >= responseCacheValidityDuration
-        }.keys
-        
+        val expiredKeys =
+            aiResponseCache.filter { (_, cached) ->
+                (currentTime - cached.timestamp) >= responseCacheValidityDuration
+            }.keys
+
         if (expiredKeys.isNotEmpty()) {
             expiredKeys.forEach { aiResponseCache.remove(it) }
             println("Cleaned up ${expiredKeys.size} expired AI response cache entries")
         }
     }
-    
+
     private fun formatAIResponse(response: String): String {
         var formatted = response
-        
+
         formatted = formatted.replace(Regex("""\*{3,}"""), "**")
-        
+
         formatted = formatted.replace(Regex("""\*\*([^*]+)\*\*:"""), "$1:")
-        
+
         formatted = formatted.replace(Regex("""\*\*"([^"]+)"\*\*"""), "\"$1\"")
-        
+
         formatted = formatted.replace(Regex("""\*\s+\*\*([^*]+)\*\*:"""), "• $1:")
-        
+
         formatted = formatted.replace(Regex("""^\*{2,3}([^*\n]+)\*{2,3}$""", RegexOption.MULTILINE), "**$1**")
-        
+
         formatted = formatted.trim()
-        
+
         return formatted
     }
-    
+
     fun clearAIResponseCache() {
         val count = aiResponseCache.size
         aiResponseCache.clear()
@@ -640,19 +653,21 @@ class AIChatRepositoryImpl(
             }
 
             // Save messages to chat_messages table
-            val messageDTOs = sessionMessages.map { msg ->
-                ChatMessageDTO(
-                    id = msg.id,
-                    sessionId = sessionId,
-                    senderType = when (msg.sender) {
-                        MessageSender.USER -> "user"
-                        MessageSender.AI -> "bot"
-                    },
-                    messageText = msg.content,
-                    metadata = msg.metadata,
-                    createdAt = java.time.Instant.ofEpochMilli(msg.timestamp).toString(),
-                )
-            }
+            val messageDTOs =
+                sessionMessages.map { msg ->
+                    ChatMessageDTO(
+                        id = msg.id,
+                        sessionId = sessionId,
+                        senderType =
+                            when (msg.sender) {
+                                MessageSender.USER -> "user"
+                                MessageSender.AI -> "bot"
+                            },
+                        messageText = msg.content,
+                        metadata = msg.metadata,
+                        createdAt = java.time.Instant.ofEpochMilli(msg.timestamp).toString(),
+                    )
+                }
 
             try {
                 supabase.postgrest["chat_messages"]
@@ -664,30 +679,33 @@ class AIChatRepositoryImpl(
             }
 
             // Also save to AI backend as backup
-            val aiMessages = sessionMessages.map { msg ->
-                AIChatMessage(
-                    role = if (msg.sender == MessageSender.USER) MessageRole.USER else MessageRole.ASSISTANT,
-                    content = msg.content,
-                    timestamp = msg.timestamp,
-                )
-            }
-
-            val request = SaveHistoryRequest(
-                sessionId = sessionId,
-                messages = aiMessages,
-                compress = true,
-            )
-
-            val result = aiService.saveChatHistory(request)
-                .onSuccess { response ->
-                    println("Saved ${response.messageCount} messages to AI backend")
-                    println(
-                        "   Compression: ${response.compressionRatio}% saved (${response.originalSize} -> ${response.compressedSize} bytes)",
+            val aiMessages =
+                sessionMessages.map { msg ->
+                    AIChatMessage(
+                        role = if (msg.sender == MessageSender.USER) MessageRole.USER else MessageRole.ASSISTANT,
+                        content = msg.content,
+                        timestamp = msg.timestamp,
                     )
                 }
-                .onFailure { error ->
-                    println("Failed to save chat history to AI backend: ${error.message}")
-                }
+
+            val request =
+                SaveHistoryRequest(
+                    sessionId = sessionId,
+                    messages = aiMessages,
+                    compress = true,
+                )
+
+            val result =
+                aiService.saveChatHistory(request)
+                    .onSuccess { response ->
+                        println("Saved ${response.messageCount} messages to AI backend")
+                        println(
+                            "   Compression: ${response.compressionRatio}% saved (${response.originalSize} -> ${response.compressedSize} bytes)",
+                        )
+                    }
+                    .onFailure { error ->
+                        println("Failed to save chat history to AI backend: ${error.message}")
+                    }
         } catch (e: Exception) {
             println("Error saving chat history: ${e.message}")
         }
@@ -696,30 +714,33 @@ class AIChatRepositoryImpl(
     private suspend fun loadChatHistoryFromSupabase(sessionId: String): List<ChatMessage> {
         return try {
             // Load messages from chat_messages table
-            val messageDTOs = supabase.postgrest["chat_messages"]
-                .select {
-                    filter {
-                        eq("session_id", sessionId)
+            val messageDTOs =
+                supabase.postgrest["chat_messages"]
+                    .select {
+                        filter {
+                            eq("session_id", sessionId)
+                        }
                     }
-                }
-                .decodeList<ChatMessageDTO>()
+                    .decodeList<ChatMessageDTO>()
 
             if (messageDTOs.isNotEmpty()) {
                 println("Loaded ${messageDTOs.size} messages from Supabase for session: $sessionId")
 
-                val chatMessages = messageDTOs.map { msgDTO ->
-                    ChatMessage(
-                        id = msgDTO.id,
-                        content = msgDTO.messageText, // Use messageText instead of content
-                        sender = when (msgDTO.senderType) { // Use senderType instead of role
-                            "user" -> MessageSender.USER
-                            "assistant" -> MessageSender.AI
-                            else -> MessageSender.AI
-                        },
-                        timestamp = msgDTO.createdAt?.let { parseTimestamp(it) } ?: System.currentTimeMillis(), // Use createdAt instead of timestamp
-                        metadata = msgDTO.metadata ?: emptyMap(),
-                    )
-                }
+                val chatMessages =
+                    messageDTOs.map { msgDTO ->
+                        ChatMessage(
+                            id = msgDTO.id,
+                            content = msgDTO.messageText, // Use messageText instead of content
+                            sender =
+                                when (msgDTO.senderType) { // Use senderType instead of role
+                                    "user" -> MessageSender.USER
+                                    "assistant" -> MessageSender.AI
+                                    else -> MessageSender.AI
+                                },
+                            timestamp = msgDTO.createdAt?.let { parseTimestamp(it) } ?: System.currentTimeMillis(), // Use createdAt instead of timestamp
+                            metadata = msgDTO.metadata ?: emptyMap(),
+                        )
+                    }
 
                 messages[sessionId] = chatMessages.toMutableList()
                 chatMessages
@@ -743,14 +764,15 @@ class AIChatRepositoryImpl(
             if (result != null && result.success) {
                 println("Loaded ${result.messageCount} messages from AI backend")
 
-                val chatMessages = result.messages.map { aiMsg ->
-                    ChatMessage(
-                        id = UUID.randomUUID().toString(),
-                        content = aiMsg.content,
-                        sender = if (aiMsg.role == MessageRole.USER) MessageSender.USER else MessageSender.AI,
-                        timestamp = aiMsg.timestamp ?: System.currentTimeMillis(),
-                    )
-                }
+                val chatMessages =
+                    result.messages.map { aiMsg ->
+                        ChatMessage(
+                            id = UUID.randomUUID().toString(),
+                            content = aiMsg.content,
+                            sender = if (aiMsg.role == MessageRole.USER) MessageSender.USER else MessageSender.AI,
+                            timestamp = aiMsg.timestamp ?: System.currentTimeMillis(),
+                        )
+                    }
 
                 messages[sessionId] = chatMessages.toMutableList()
                 chatMessages

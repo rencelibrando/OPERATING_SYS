@@ -53,12 +53,6 @@ data class NavigationItem(
                     icon = "progress",
                     route = "/progress",
                 ),
-                NavigationItem(
-                    id = "settings",
-                    title = "Settings",
-                    icon = "settings",
-                    route = "/settings",
-                ),
             )
     }
 }

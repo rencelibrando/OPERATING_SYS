@@ -375,7 +375,7 @@ class VoiceService:
             )
     
     async def get_progress(self, request: VoiceProgressRequest) -> VoiceProgressResponse:
-        """Get user's voice learning progress."""
+        """Get a user's voice learning progress."""
         try:
             # Query recent sessions
             client = self.supabase_manager.get_client()
@@ -534,7 +534,7 @@ class VoiceService:
     async def _update_progress(self, user_id: str, language: str, scores: Dict[str, float]):
         """Update user progress tracking."""
         try:
-            # Check if progress record exists
+            # Check if a progress record exists
             client = self.supabase_manager.get_client()
             if not client:
                 raise Exception("Failed to get Supabase client")
@@ -559,7 +559,7 @@ class VoiceService:
                 if client:
                     client.table("voice_progress").update(update_data).eq("user_id", user_id).eq("language", language).execute()
             else:
-                # Create new record
+                # Create a new record
                 progress_data = {
                     "id": str(uuid.uuid4()),
                     "user_id": user_id,

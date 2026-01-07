@@ -92,7 +92,7 @@ def build_system_prompt(user_context: UserContext, bot_id: str = None) -> str:
             words = vocab.get('words', [])
             if words:
                 vocab_list = ["**Current Vocabulary Words:**"]
-                for word_data in words[:20]:  # Limit to first 20 words to avoid too long prompts
+                for word_data in words[:20]:  # Limit to the first 20 words to avoid too long prompts
                     word = word_data.get('word', '')
                     definition = word_data.get('definition', '')
                     status = word_data.get('status', 'new')

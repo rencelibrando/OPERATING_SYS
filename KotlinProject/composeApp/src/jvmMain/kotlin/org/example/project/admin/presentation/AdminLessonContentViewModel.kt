@@ -30,7 +30,6 @@ class AdminLessonContentViewModel : ViewModel() {
     val currentLesson: State<LessonContent?> = _currentLesson
 
     private val _selectedTopicId = mutableStateOf<String?>(null)
-    val selectedTopicId: State<String?> = _selectedTopicId
 
     private val _isLoading = mutableStateOf(false)
     val isLoading: State<Boolean> = _isLoading
@@ -59,33 +58,20 @@ class AdminLessonContentViewModel : ViewModel() {
     val enableLessonNarration: State<Boolean> = _enableLessonNarration
 
     private val _narrationLanguage = mutableStateOf<String?>(null)
-    val narrationLanguage: State<String?> = _narrationLanguage
-
     private val _narrationVoice = mutableStateOf<String?>(null)
-    val narrationVoice: State<String?> = _narrationVoice
-
     // Narration generation state
     private val _narrationStatus = mutableStateOf<Map<String, NarrationStatus>>(emptyMap())
     val narrationStatus: State<Map<String, NarrationStatus>> = _narrationStatus
 
     private val _isGeneratingNarration = mutableStateOf(false)
-    val isGeneratingNarration: State<Boolean> = _isGeneratingNarration
-
-    // ============================================
-    // CACHE MANAGEMENT
-    // ============================================
-
-    fun clearCache() {
-        println("[AdminLesson] 🗑️ Clearing all caches...")
-        (repository as? LessonContentRepositoryImpl)?.clearCache()
-        println("[AdminLesson] ✅ All caches cleared")
-    }
-
     // ============================================
     // LESSON OPERATIONS
     // ============================================
 
-    fun loadLessonsForTopic(topicId: String, forceRefresh: Boolean = false) {
+    fun loadLessonsForTopic(
+        topicId: String,
+        forceRefresh: Boolean = false,
+    ) {
         println("[AdminLesson] Loading lessons for topic: $topicId${if (forceRefresh) " (force refresh)" else ""}")
         _selectedTopicId.value = topicId
         viewModelScope.launch {
@@ -93,7 +79,9 @@ class AdminLessonContentViewModel : ViewModel() {
             _errorMessage.value = null
 
             try {
-                println("[AdminLesson] Repository call: getLessonsByTopic(topicId=$topicId, publishedOnly=false, forceRefresh=$forceRefresh)")
+                println(
+                    "[AdminLesson] Repository call: getLessonsByTopic(topicId=$topicId, publishedOnly=false, forceRefresh=$forceRefresh)",
+                )
                 repository.getLessonsByTopic(topicId, publishedOnly = false, forceRefresh = forceRefresh)
                     .onSuccess { lessonList ->
                         println("[AdminLesson] ✓ Successfully loaded ${lessonList.size} lessons for topic $topicId")
@@ -631,36 +619,6 @@ class AdminLessonContentViewModel : ViewModel() {
             }
     }
 
-    fun updateQuestionWrongAnswerFeedback(
-        index: Int,
-        text: String,
-    ) {
-        _questions.value =
-            _questions.value.mapIndexed { i, q ->
-                if (i == index) q.copy(wrongAnswerFeedback = text) else q
-            }
-    }
-
-    fun updateChoiceMatchPairId(
-        questionIndex: Int,
-        choiceIndex: Int,
-        pairId: String?,
-    ) {
-        _questions.value =
-            _questions.value.mapIndexed { i, q ->
-                if (i == questionIndex) {
-                    q.copy(
-                        choices =
-                            q.choices.mapIndexed { ci, c ->
-                                if (ci == choiceIndex) c.copy(matchPairId = pairId) else c
-                            },
-                    )
-                } else {
-                    q
-                }
-            }
-    }
-
     // ============================================
     // CHOICE MANAGEMENT
     // ============================================
@@ -861,7 +819,7 @@ class AdminLessonContentViewModel : ViewModel() {
                         println("[AdminLesson] ✓ Media uploaded successfully!")
                         println("[AdminLesson] Uploaded URL: ${response.url}")
                         onSuccess(response.url)
-                        // Don't set success message here to avoid closing the dialog
+                        // Don't set a success message here to avoid closing the dialog
                     }
                     .onFailure { error ->
                         val errorMsg = "Failed to upload ${file.name} ($mediaType): ${error.message}"
@@ -899,14 +857,6 @@ class AdminLessonContentViewModel : ViewModel() {
 
     fun setEnableLessonNarration(enabled: Boolean) {
         _enableLessonNarration.value = enabled
-    }
-
-    fun setNarrationLanguage(language: String?) {
-        _narrationLanguage.value = language
-    }
-
-    fun setNarrationVoice(voice: String?) {
-        _narrationVoice.value = voice
     }
 
     fun clearForm() {
@@ -1055,109 +1005,7 @@ class AdminLessonContentViewModel : ViewModel() {
             _isGeneratingNarration.value = false
         }
     }
-
-    fun generateAllNarrations() {
-        if (!_enableLessonNarration.value) return
-
-        viewModelScope.launch {
-            _isGeneratingNarration.value = true
-
-            _questions.value.forEachIndexed { index, question ->
-                // Generate question audio
-                if (question.text.isNotBlank() && question.questionAudioUrl.isNullOrEmpty()) {
-                    generateQuestionNarration(index)
-                }
-                // Generate answer audio
-                if (question.answerText.isNotBlank() && question.answerAudioUrl.isNullOrEmpty()) {
-                    generateAnswerNarration(index)
-                }
-                // Generate choice audio for multiple choice questions
-                if (question.type == QuestionType.MULTIPLE_CHOICE) {
-                    question.choices.forEachIndexed { choiceIndex, choice ->
-                        if (choice.text.isNotBlank() && choice.audioUrl.isNullOrEmpty()) {
-                            generateChoiceNarration(index, choiceIndex)
-                        }
-                    }
-                }
-                // Generate choice audio for matching questions (both question and answer pairs)
-                if (question.type == QuestionType.MATCHING) {
-                    question.choices.forEachIndexed { choiceIndex, choice ->
-                        if (choice.text.isNotBlank() && choice.audioUrl.isNullOrEmpty()) {
-                            generateChoiceNarration(index, choiceIndex)
-                        }
-                    }
-                }
-                // Generate explanation audio
-                if (question.explanation.isNotBlank() && question.explanationAudioUrl.isNullOrEmpty()) {
-                    generateExplanationNarration(index)
-                }
-            }
-
-            _isGeneratingNarration.value = false
-        }
-    }
-
-    fun clearNarrationStatus() {
-        _narrationStatus.value = emptyMap()
-    }
-
-    fun allNarrationsReady(): Boolean {
-        if (!_enableLessonNarration.value) return true
-
-        val result = _questions.value.all { question ->
-            // Check question audio
-            val hasQuestionAudio = question.questionAudioUrl?.isNotEmpty() == true
-
-            // Check answer audio if answer text exists
-            val needsAnswerAudio = question.answerText.isNotBlank()
-            val hasAnswerAudio = question.answerAudioUrl?.isNotEmpty() == true
-
-            // Check choice audio for multiple choice questions
-            val choicesReady =
-                if (question.type == QuestionType.MULTIPLE_CHOICE) {
-                    question.choices.all { choice ->
-                        choice.text.isBlank() || choice.audioUrl?.isNotEmpty() == true
-                    }
-                } else {
-                    true
-                }
-
-            // Check choice audio for matching questions (all pairs need audio)
-            val matchingReady =
-                if (question.type == QuestionType.MATCHING) {
-                    question.choices.all { choice ->
-                        choice.text.isBlank() || choice.audioUrl?.isNotEmpty() == true
-                    }
-                } else {
-                    true
-                }
-
-            // Check explanation audio if explanation exists
-            val needsExplanationAudio = question.explanation.isNotBlank()
-            val hasExplanationAudio = question.explanationAudioUrl?.isNotEmpty() == true
-
-            hasQuestionAudio &&
-                (!needsAnswerAudio || hasAnswerAudio) &&
-                choicesReady &&
-                matchingReady &&
-                (!needsExplanationAudio || hasExplanationAudio)
-        }
-
-        // Debug: log the result and first question's audio URLs
-        if (!result && _questions.value.isNotEmpty()) {
-            val firstQ = _questions.value[0]
-            println("[AdminLesson] allNarrationsReady = $result")
-            println("[AdminLesson] First question audio URL: ${firstQ.questionAudioUrl?.take(50) ?: "NULL"}")
-            println("[AdminLesson] First question has answer text: ${firstQ.answerText.isNotBlank()}")
-            println("[AdminLesson] First question answer audio URL: ${firstQ.answerAudioUrl?.take(50) ?: "NULL"}")
-            println("[AdminLesson] First question has explanation: ${firstQ.explanation.isNotBlank()}")
-            println("[AdminLesson] First question explanation audio URL: ${firstQ.explanationAudioUrl?.take(50) ?: "NULL"}")
-        }
-
-        return result
-    }
 }
-
 // ============================================
 // NARRATION STATUS
 // ============================================

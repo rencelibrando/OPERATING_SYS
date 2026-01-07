@@ -8,7 +8,7 @@ import kotlinx.serialization.json.JsonObject
 enum class AIProvider {
     @SerialName("gemini")
     GEMINI,
-    
+
     @SerialName("deepseek")
     DEEPSEEK,
 }

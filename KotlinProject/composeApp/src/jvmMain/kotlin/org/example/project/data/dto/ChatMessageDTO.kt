@@ -2,9 +2,6 @@ package org.example.project.data.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import java.time.Instant
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
 @Serializable
 data class ChatMessageDTO(

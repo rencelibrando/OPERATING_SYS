@@ -28,7 +28,7 @@ class ScenarioSyncService:
         Sync speaking scenarios for a given language based on lesson topics.
 
         Args:
-            language: Language code (english, spanish, etc.)
+            language: Language code (English, Spanish, etc.)
 
         Returns:
             Dictionary with sync results
@@ -132,7 +132,7 @@ class ScenarioSyncService:
             True if created successfully
         """
         try:
-            # Check if scenario already exists
+            # Check if a scenario already exists
             existing = self.supabase_manager.client.table("speaking_scenarios").select("id").eq(
                 "lesson_topic_id", topic["id"]
             ).execute()
@@ -141,7 +141,7 @@ class ScenarioSyncService:
                 print(f"[ScenarioSync] Scenario already exists for topic {topic['id']}")
                 return False
 
-            # Generate practice prompts based on difficulty level
+            # Generate practice prompts based on the difficulty level
             prompts = self._generate_prompts(
                 scenario_type,
                 topic.get("difficulty_level", "Beginner"),
@@ -151,7 +151,7 @@ class ScenarioSyncService:
             # Extract expected vocabulary from lesson content
             expected_vocabulary = self._extract_vocabulary(topic)
 
-            # Create scenario
+            # Create a scenario
             scenario_data = {
                 "lesson_topic_id": topic["id"],
                 "language": language,
@@ -319,7 +319,7 @@ class ScenarioSyncService:
 
     def _extract_vocabulary(self, topic: Dict[str, Any]) -> List[str]:
         """
-        Extract key vocabulary from lesson topic.
+        Extract key vocabulary from a lesson topic.
 
         Args:
             topic: Lesson topic data

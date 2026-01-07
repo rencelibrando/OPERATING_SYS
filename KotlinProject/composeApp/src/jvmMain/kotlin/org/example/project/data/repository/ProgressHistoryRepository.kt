@@ -27,30 +27,32 @@ class ProgressHistoryRepository {
     suspend fun getProgressHistory(
         userId: String,
         language: LessonLanguage,
-        days: Int = 30
-    ): Result<List<ProgressHistorySnapshot>> = runCatching {
-        SupabaseApiHelper.executeWithRetry {
-            withContext(Dispatchers.IO) {
-                val startDate = LocalDate.now().minusDays(days.toLong())
-                val formattedDate = startDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+        days: Int = 30,
+    ): Result<List<ProgressHistorySnapshot>> =
+        runCatching {
+            SupabaseApiHelper.executeWithRetry {
+                withContext(Dispatchers.IO) {
+                    val startDate = LocalDate.now().minusDays(days.toLong())
+                    val formattedDate = startDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
 
-                val response = supabase.postgrest["user_progress_history"].select {
-                    filter {
-                        eq("user_id", userId)
-                        eq("language", language.displayName)
-                        gte("snapshot_date", formattedDate)
-                    }
-                    order("snapshot_date", order = io.github.jan.supabase.postgrest.query.Order.ASCENDING)
+                    val response =
+                        supabase.postgrest["user_progress_history"].select {
+                            filter {
+                                eq("user_id", userId)
+                                eq("language", language.displayName)
+                                gte("snapshot_date", formattedDate)
+                            }
+                            order("snapshot_date", order = io.github.jan.supabase.postgrest.query.Order.ASCENDING)
+                        }
+
+                    val dtos = response.decodeList<ProgressHistoryDTO>()
+
+                    println("[ProgressHistory] ✅ Fetched ${dtos.size} snapshots for ${language.displayName} (last $days days)")
+
+                    dtos.map { it.toDomain(language) }
                 }
-
-                val dtos = response.decodeList<ProgressHistoryDTO>()
-                
-                println("[ProgressHistory] ✅ Fetched ${dtos.size} snapshots for ${language.displayName} (last $days days)")
-                
-                dtos.map { it.toDomain(language) }
-            }
-        }.getOrThrow()
-    }
+            }.getOrThrow()
+        }
 
     /**
      * Captures current progress as a snapshot.
@@ -59,44 +61,46 @@ class ProgressHistoryRepository {
     suspend fun captureSnapshot(
         userId: String,
         language: LessonLanguage,
-        date: LocalDate = LocalDate.now()
-    ): Result<Unit> = runCatching {
-        withContext(Dispatchers.IO) {
-            try {
-                val formattedDate = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
-                
-                // Call database function to capture snapshot
-                val params = mapOf(
-                    "p_user_id" to userId,
-                    "p_language" to language.displayName,
-                    "p_snapshot_date" to formattedDate
-                )
-                supabase.postgrest.rpc("capture_progress_snapshot", params)
-                
-                println("[ProgressHistory]  Snapshot captured for ${language.displayName} on $formattedDate")
-            } catch (e: Exception) {
-                println("[ProgressHistory] ⚠ Failed to capture snapshot: ${e.message}")
-                throw e
+        date: LocalDate = LocalDate.now(),
+    ): Result<Unit> =
+        runCatching {
+            withContext(Dispatchers.IO) {
+                try {
+                    val formattedDate = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+
+                    // Call database function to capture snapshot
+                    val params =
+                        mapOf(
+                            "p_user_id" to userId,
+                            "p_language" to language.displayName,
+                            "p_snapshot_date" to formattedDate,
+                        )
+                    supabase.postgrest.rpc("capture_progress_snapshot", params)
+
+                    println("[ProgressHistory]  Snapshot captured for ${language.displayName} on $formattedDate")
+                } catch (e: Exception) {
+                    println("[ProgressHistory] ⚠ Failed to capture snapshot: ${e.message}")
+                    throw e
+                }
             }
         }
-    }
 
     /**
      * Gets pre-filtered views for common time ranges.
      */
     suspend fun getLast7Days(
         userId: String,
-        language: LessonLanguage
+        language: LessonLanguage,
     ): Result<List<ProgressHistorySnapshot>> = getProgressHistory(userId, language, 7)
 
     suspend fun getLast30Days(
         userId: String,
-        language: LessonLanguage
+        language: LessonLanguage,
     ): Result<List<ProgressHistorySnapshot>> = getProgressHistory(userId, language, 30)
 
     suspend fun getLast90Days(
         userId: String,
-        language: LessonLanguage
+        language: LessonLanguage,
     ): Result<List<ProgressHistorySnapshot>> = getProgressHistory(userId, language, 90)
 
     /**
@@ -105,35 +109,36 @@ class ProgressHistoryRepository {
     suspend fun getHistoryStats(
         userId: String,
         language: LessonLanguage,
-        days: Int = 30
-    ): Result<HistoryStats> = runCatching {
-        val history = getProgressHistory(userId, language, days).getOrThrow()
-        
-        if (history.isEmpty()) {
-            return@runCatching HistoryStats.empty()
+        days: Int = 30,
+    ): Result<HistoryStats> =
+        runCatching {
+            val history = getProgressHistory(userId, language, days).getOrThrow()
+
+            if (history.isEmpty()) {
+                return@runCatching HistoryStats.empty()
+            }
+
+            val first = history.first()
+            val last = history.last()
+
+            HistoryStats(
+                totalDays = history.size,
+                lessonsGrowth = last.lessonsCompleted - first.lessonsCompleted,
+                sessionsGrowth = last.conversationSessions - first.conversationSessions,
+                vocabularyGrowth = last.vocabularyWords - first.vocabularyWords,
+                timeGrowth = last.totalTimeSeconds - first.totalTimeSeconds,
+                avgScoreImprovement = last.voiceAnalysis.averageScore - first.voiceAnalysis.averageScore,
+                mostActiveDay = history.maxByOrNull { it.conversationSessions }?.date ?: first.date,
+                currentStreak = calculateStreak(history),
+            )
         }
-
-        val first = history.first()
-        val last = history.last()
-
-        HistoryStats(
-            totalDays = history.size,
-            lessonsGrowth = last.lessonsCompleted - first.lessonsCompleted,
-            sessionsGrowth = last.conversationSessions - first.conversationSessions,
-            vocabularyGrowth = last.vocabularyWords - first.vocabularyWords,
-            timeGrowth = last.totalTimeSeconds - first.totalTimeSeconds,
-            avgScoreImprovement = last.voiceAnalysis.averageScore - first.voiceAnalysis.averageScore,
-            mostActiveDay = history.maxByOrNull { it.conversationSessions }?.date ?: first.date,
-            currentStreak = calculateStreak(history)
-        )
-    }
 
     private fun calculateStreak(history: List<ProgressHistorySnapshot>): Int {
         if (history.isEmpty()) return 0
-        
+
         var streak = 0
         var previousDate = LocalDate.now().plusDays(1) // Start from tomorrow
-        
+
         // Iterate from most recent to oldest
         for (snapshot in history.reversed()) {
             val expectedDate = previousDate.minusDays(1)
@@ -144,7 +149,7 @@ class ProgressHistoryRepository {
                 break
             }
         }
-        
+
         return streak
     }
 }
@@ -167,23 +172,25 @@ private data class ProgressHistoryDTO(
     @SerialName("score_fluency") val scoreFluency: Double,
     @SerialName("score_accuracy") val scoreAccuracy: Double,
 ) {
-    fun toDomain(language: LessonLanguage) = ProgressHistorySnapshot(
-        date = LocalDate.parse(snapshotDate),
-        language = language,
-        lessonsCompleted = lessonsCompleted,
-        totalLessons = totalLessons,
-        conversationSessions = conversationSessions,
-        vocabularyWords = vocabularyWords,
-        totalTimeSeconds = totalTimeSeconds,
-        voiceAnalysis = VoiceAnalysisScores(
-            overall = scoreOverall,
-            grammar = scoreGrammar,
-            pronunciation = scorePronunciation,
-            vocabulary = scoreVocabulary,
-            fluency = scoreFluency,
-            accuracy = scoreAccuracy
-        ).clampedScores()
-    )
+    fun toDomain(language: LessonLanguage) =
+        ProgressHistorySnapshot(
+            date = LocalDate.parse(snapshotDate),
+            language = language,
+            lessonsCompleted = lessonsCompleted,
+            totalLessons = totalLessons,
+            conversationSessions = conversationSessions,
+            vocabularyWords = vocabularyWords,
+            totalTimeSeconds = totalTimeSeconds,
+            voiceAnalysis =
+                VoiceAnalysisScores(
+                    overall = scoreOverall,
+                    grammar = scoreGrammar,
+                    pronunciation = scorePronunciation,
+                    vocabulary = scoreVocabulary,
+                    fluency = scoreFluency,
+                    accuracy = scoreAccuracy,
+                ).clampedScores(),
+        )
 }
 
 /**
@@ -197,18 +204,19 @@ data class HistoryStats(
     val timeGrowth: Double,
     val avgScoreImprovement: Double,
     val mostActiveDay: LocalDate,
-    val currentStreak: Int
+    val currentStreak: Int,
 ) {
     companion object {
-        fun empty() = HistoryStats(
-            totalDays = 0,
-            lessonsGrowth = 0,
-            sessionsGrowth = 0,
-            vocabularyGrowth = 0,
-            timeGrowth = 0.0,
-            avgScoreImprovement = 0.0,
-            mostActiveDay = LocalDate.now(),
-            currentStreak = 0
-        )
+        fun empty() =
+            HistoryStats(
+                totalDays = 0,
+                lessonsGrowth = 0,
+                sessionsGrowth = 0,
+                vocabularyGrowth = 0,
+                timeGrowth = 0.0,
+                avgScoreImprovement = 0.0,
+                mostActiveDay = LocalDate.now(),
+                currentStreak = 0,
+            )
     }
 }

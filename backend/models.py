@@ -113,7 +113,7 @@ class LoadHistoryResponse(BaseModel):
 class GenerateReferenceAudioRequest(BaseModel):
     word: str
     language_code: str  # ko, zh, fr, de, es, en
-    word_id: Optional[str] = None  # Optional: ID of the word in vocabulary_words table to save audio_url
+    word_id: Optional[str] = None  # Optional: ID of the word in the vocabulary_words table to save audio_url
 
 
 class GenerateReferenceAudioResponse(BaseModel):

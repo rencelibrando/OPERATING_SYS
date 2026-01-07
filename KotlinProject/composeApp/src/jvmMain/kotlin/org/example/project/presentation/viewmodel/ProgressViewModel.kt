@@ -10,14 +10,13 @@ import org.example.project.core.api.SupabaseApiHelper
 import org.example.project.core.export.ProgressExportService
 import org.example.project.core.realtime.ProgressRealtimeService
 import org.example.project.core.realtime.ProgressUpdateEvent
-import org.example.project.data.repository.ProgressTrackerRepository
-import org.example.project.data.repository.ProgressTrackerRepositoryImpl
 import org.example.project.data.repository.ProgressHistoryRepository
+import org.example.project.data.repository.ProgressTrackerRepositoryImpl
 import org.example.project.domain.model.*
 
 /**
  * ViewModel for comprehensive language progress tracking.
- * 
+ *
  * Features:
  * - Per-language analytics (lessons, conversations, vocabulary, voice analysis, time)
  * - Automatic caching with 5-minute TTL
@@ -31,38 +30,38 @@ class ProgressViewModel : ViewModel() {
     private val historyRepository = ProgressHistoryRepository()
     private val realtimeService = ProgressRealtimeService()
     private val exportService = ProgressExportService()
-    
+
     // Language-specific progress state
     private val _selectedLanguage = mutableStateOf(LessonLanguage.KOREAN)
     val selectedLanguage: State<LessonLanguage> = _selectedLanguage
-    
+
     private val _progressState = mutableStateOf<ProgressTrackerState>(ProgressTrackerState.Loading)
     val progressState: State<ProgressTrackerState> = _progressState
-    
+
     private val _isRefreshing = mutableStateOf(false)
     val isRefreshing: State<Boolean> = _isRefreshing
-    
+
     // Historical trends state
     private val _selectedTimeRange = mutableStateOf(HistoryTimeRange.MONTH)
     val selectedTimeRange: State<HistoryTimeRange> = _selectedTimeRange
-    
+
     private val _progressHistory = mutableStateOf<List<ProgressHistorySnapshot>>(emptyList())
     val progressHistory: State<List<ProgressHistorySnapshot>> = _progressHistory
-    
+
     private val _isLoadingHistory = mutableStateOf(false)
     val isLoadingHistory: State<Boolean> = _isLoadingHistory
-    
+
     // Share/Export state
     private val _showShareDialog = mutableStateOf(false)
     val showShareDialog: State<Boolean> = _showShareDialog
-    
+
     private val _exportMessage = mutableStateOf<String?>(null)
     val exportMessage: State<String?> = _exportMessage
-    
+
     // Real-time updates
     private val _isRealtimeConnected = mutableStateOf(false)
     val isRealtimeConnected: State<Boolean> = _isRealtimeConnected
-    
+
     // Legacy progress states for backwards compatibility
     private val _learningProgress = mutableStateOf(LearningProgress.getSampleProgress())
     private val _achievements = mutableStateOf(Achievement.getSampleAchievements())
@@ -98,7 +97,7 @@ class ProgressViewModel : ViewModel() {
         startRealtimeUpdates()
         loadProgressHistory()
     }
-    
+
     override fun onCleared() {
         super.onCleared()
         stopRealtimeUpdates()
@@ -115,19 +114,21 @@ class ProgressViewModel : ViewModel() {
                 return@launch
             }
             _progressState.value = ProgressTrackerState.Loading
-            
+
             analyticsService.getLanguageProgress(userId, _selectedLanguage.value, forceRefresh)
                 .onSuccess { progress ->
-                    _progressState.value = if (progress.hasData) {
-                        ProgressTrackerState.Success(progress)
-                    } else {
-                        ProgressTrackerState.Empty
-                    }
+                    _progressState.value =
+                        if (progress.hasData) {
+                            ProgressTrackerState.Success(progress)
+                        } else {
+                            ProgressTrackerState.Empty
+                        }
                 }
                 .onFailure { error ->
-                    _progressState.value = ProgressTrackerState.Error(
-                        error.message ?: "Failed to load progress"
-                    )
+                    _progressState.value =
+                        ProgressTrackerState.Error(
+                            error.message ?: "Failed to load progress",
+                        )
                 }
         }
     }
@@ -161,7 +162,7 @@ class ProgressViewModel : ViewModel() {
         viewModelScope.launch {
             val userId = SupabaseApiHelper.getCurrentUserId() ?: return@launch
             analyticsService.invalidateCache(userId, language)
-            
+
             if (language == _selectedLanguage.value) {
                 loadLanguageProgress(forceRefresh = true)
             }
@@ -176,7 +177,7 @@ class ProgressViewModel : ViewModel() {
         viewModelScope.launch {
             val userId = SupabaseApiHelper.getCurrentUserId() ?: return@launch
             analyticsService.invalidateCache(userId, language)
-            
+
             if (language == _selectedLanguage.value) {
                 loadLanguageProgress(forceRefresh = true)
             }
@@ -191,7 +192,7 @@ class ProgressViewModel : ViewModel() {
         viewModelScope.launch {
             val userId = SupabaseApiHelper.getCurrentUserId() ?: return@launch
             analyticsService.invalidateCache(userId, language)
-            
+
             if (language == _selectedLanguage.value) {
                 loadLanguageProgress(forceRefresh = true)
             }
@@ -205,19 +206,19 @@ class ProgressViewModel : ViewModel() {
     fun clearCache() {
         analyticsService.clearAllCache()
     }
-    
+
     // ============================================================================
     // Real-time Updates
     // ============================================================================
-    
+
     private fun startRealtimeUpdates() {
         viewModelScope.launch {
             val userId = SupabaseApiHelper.getCurrentUserId() ?: return@launch
-            
+
             try {
                 realtimeService.start(userId)
                 _isRealtimeConnected.value = true
-                
+
                 // Listen to progress update events
                 realtimeService.progressUpdates.collect { event ->
                     handleRealtimeUpdate(event)
@@ -228,37 +229,37 @@ class ProgressViewModel : ViewModel() {
             }
         }
     }
-    
+
     private fun stopRealtimeUpdates() {
         viewModelScope.launch {
             realtimeService.stop()
             _isRealtimeConnected.value = false
         }
     }
-    
+
     private fun handleRealtimeUpdate(event: ProgressUpdateEvent) {
         println("[ProgressViewModel] 🔔 Real-time update received: $event")
-        
+
         // Refresh progress if it's for the current language
         if (event.language == null || event.language == _selectedLanguage.value) {
             loadLanguageProgress(forceRefresh = true)
             loadProgressHistory() // Also refresh history
         }
     }
-    
+
     // ============================================================================
     // Historical Trends
     // ============================================================================
-    
+
     fun loadProgressHistory() {
         viewModelScope.launch {
             val userId = SupabaseApiHelper.getCurrentUserId() ?: return@launch
             _isLoadingHistory.value = true
-            
+
             historyRepository.getProgressHistory(
                 userId = userId,
                 language = _selectedLanguage.value,
-                days = _selectedTimeRange.value.days
+                days = _selectedTimeRange.value.days,
             )
                 .onSuccess { history ->
                     _progressHistory.value = history
@@ -268,24 +269,24 @@ class ProgressViewModel : ViewModel() {
                     println("[ProgressViewModel] ⚠️ Failed to load history: ${error.message}")
                     _progressHistory.value = emptyList()
                 }
-            
+
             _isLoadingHistory.value = false
         }
     }
-    
+
     fun selectTimeRange(timeRange: HistoryTimeRange) {
         if (_selectedTimeRange.value != timeRange) {
             _selectedTimeRange.value = timeRange
             loadProgressHistory()
         }
     }
-    
+
     fun captureCurrentSnapshot() {
         viewModelScope.launch {
             val userId = SupabaseApiHelper.getCurrentUserId() ?: return@launch
             historyRepository.captureSnapshot(
                 userId = userId,
-                language = _selectedLanguage.value
+                language = _selectedLanguage.value,
             )
                 .onSuccess {
                     println("[ProgressViewModel] ✅ Snapshot captured")
@@ -296,27 +297,27 @@ class ProgressViewModel : ViewModel() {
                 }
         }
     }
-    
+
     // ============================================================================
     // Export & Share
     // ============================================================================
-    
+
     fun showShareDialog() {
         _showShareDialog.value = true
     }
-    
+
     fun hideShareDialog() {
         _showShareDialog.value = false
     }
-    
+
     fun exportToHTML() {
         val state = _progressState.value
         if (state !is ProgressTrackerState.Success) return
-        
+
         viewModelScope.launch {
             exportService.exportToHTML(
                 progress = state.progress,
-                userName = "Student" // TODO: Get from user profile
+                userName = "Student", // TODO: Get from user profile
             )
                 .onSuccess { filePath ->
                     _exportMessage.value = "✅ Report exported to: $filePath"
@@ -327,17 +328,18 @@ class ProgressViewModel : ViewModel() {
                 }
         }
     }
-    
+
     fun copyProgressText() {
         val state = _progressState.value
         if (state !is ProgressTrackerState.Success) return
-        
+
         viewModelScope.launch {
-            val text = exportService.generateShareableText(
-                progress = state.progress,
-                userName = "I"
-            )
-            
+            val text =
+                exportService.generateShareableText(
+                    progress = state.progress,
+                    userName = "I",
+                )
+
             exportService.copyToClipboard(text)
                 .onSuccess {
                     _exportMessage.value = "✅ Progress copied to clipboard!"
@@ -347,11 +349,11 @@ class ProgressViewModel : ViewModel() {
                 }
         }
     }
-    
+
     fun shareLink() {
         val state = _progressState.value
         if (state !is ProgressTrackerState.Success) return
-        
+
         viewModelScope.launch {
             val userId = SupabaseApiHelper.getCurrentUserId() ?: return@launch
             val link = exportService.generateShareableLink(state.progress, userId)
@@ -364,7 +366,7 @@ class ProgressViewModel : ViewModel() {
                 }
         }
     }
-    
+
     fun clearExportMessage() {
         _exportMessage.value = null
     }

@@ -132,7 +132,7 @@ class EnhancedVoiceAnalyzer:
         )
 
     def _parse_word_timings(self, words: List[Dict[str, Any]]) -> List[WordTiming]:
-        """Parse word timing data into structured format."""
+        """Parse word timing data into a structured format."""
         word_timings = []
         for word_data in words:
             start = word_data.get('start', 0.0)
@@ -158,14 +158,14 @@ class EnhancedVoiceAnalyzer:
         confidences = [wt.confidence for wt in word_timings]
         avg_confidence = statistics.mean(confidences)
 
-        # Find low confidence words
+        # Find low-confidence words
         low_confidence_words = [
             wt.word for wt in word_timings
             if wt.confidence < self.LOW_CONFIDENCE
         ]
 
         # Calculate pronunciation score (0-100)
-        # Penalize based on number and severity of low confidence words
+        # Penalize based on the number and severity of low confidence words
         base_score = avg_confidence * 100
         penalty = len(low_confidence_words) / len(word_timings) * 15  # Up to 15 point penalty
         pronunciation_score = max(0, base_score - penalty)

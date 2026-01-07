@@ -1,10 +1,10 @@
 package org.example.project.presentation.viewmodel.speaking
 
-import org.example.project.domain.model.PracticeLanguage
-import org.example.project.domain.model.PracticeFeedback
-import org.example.project.domain.model.VocabularyWord
-import org.example.project.domain.model.SpeakingScenario
 import org.example.project.domain.model.ConversationRecording
+import org.example.project.domain.model.PracticeFeedback
+import org.example.project.domain.model.PracticeLanguage
+import org.example.project.domain.model.SpeakingScenario
+import org.example.project.domain.model.VocabularyWord
 import org.example.project.models.ConversationTurnUI
 
 /**
@@ -14,24 +14,26 @@ data class VoiceTutorConfig(
     val language: PracticeLanguage? = null,
     val level: String? = null,
     val scenario: String? = null,
-    val prompt: String? = null
+    val prompt: String? = null,
 ) {
     fun isValid(): Boolean = language != null && level != null && scenario != null
-    
-    fun getLanguageCode(): String = when (language) {
-        PracticeLanguage.ENGLISH -> "en"
-        PracticeLanguage.FRENCH -> "fr"
-        PracticeLanguage.GERMAN -> "de"
-        PracticeLanguage.HANGEUL -> "ko"
-        PracticeLanguage.MANDARIN -> "zh"
-        PracticeLanguage.SPANISH -> "es"
-        else -> "en"
-    }
-    
-    fun shouldUseCustomPipeline(): Boolean = when (language) {
-        PracticeLanguage.HANGEUL, PracticeLanguage.MANDARIN -> true
-        else -> false
-    }
+
+    fun getLanguageCode(): String =
+        when (language) {
+            PracticeLanguage.ENGLISH -> "en"
+            PracticeLanguage.FRENCH -> "fr"
+            PracticeLanguage.GERMAN -> "de"
+            PracticeLanguage.HANGEUL -> "ko"
+            PracticeLanguage.MANDARIN -> "zh"
+            PracticeLanguage.SPANISH -> "es"
+            else -> "en"
+        }
+
+    fun shouldUseCustomPipeline(): Boolean =
+        when (language) {
+            PracticeLanguage.HANGEUL, PracticeLanguage.MANDARIN -> true
+            else -> false
+        }
 }
 
 /**
@@ -44,9 +46,10 @@ data class ConversationState(
     val isAgentSpeaking: Boolean = false,
     val isAgentThinking: Boolean = false,
     val error: String? = null,
-    val isRecording: Boolean = false
+    val isRecording: Boolean = false,
 ) {
     fun hasError(): Boolean = error != null
+
     fun hasTurns(): Boolean = turns.isNotEmpty()
 }
 
@@ -61,10 +64,12 @@ data class PracticeSessionState(
     val isPlayingRecording: Boolean = false,
     val feedback: PracticeFeedback? = null,
     val isAnalyzing: Boolean = false,
-    val recordingDuration: Float = 0f
+    val recordingDuration: Float = 0f,
 ) {
     fun canRecord(): Boolean = !isRecording && !isAnalyzing
+
     fun canPlay(): Boolean = hasRecording && !isPlayingRecording && !isRecording
+
     fun canAnalyze(): Boolean = hasRecording && !isAnalyzing
 }
 
@@ -73,7 +78,7 @@ data class PracticeSessionState(
  */
 data class DialogState(
     val showLanguageDialog: Boolean = false,
-    val showVoiceTutorSelection: Boolean = false
+    val showVoiceTutorSelection: Boolean = false,
 )
 
 /**
@@ -81,12 +86,16 @@ data class DialogState(
  */
 data class SessionTracking(
     val sessionId: String? = null,
-    val startTime: Long = 0L
+    val startTime: Long = 0L,
 ) {
     fun isActive(): Boolean = sessionId != null
-    fun durationSeconds(): Float = if (startTime > 0) {
-        (System.currentTimeMillis() - startTime) / 1000f
-    } else 0f
+
+    fun durationSeconds(): Float =
+        if (startTime > 0) {
+            (System.currentTimeMillis() - startTime) / 1000f
+        } else {
+            0f
+        }
 }
 
 /**
@@ -96,5 +105,5 @@ data class LessonState(
     val scenarios: List<SpeakingScenario> = emptyList(),
     val selectedScenario: SpeakingScenario? = null,
     val conversationRecording: ConversationRecording? = null,
-    val isLoadingRecording: Boolean = false
+    val isLoadingRecording: Boolean = false,
 )

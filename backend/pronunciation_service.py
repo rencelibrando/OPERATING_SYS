@@ -29,7 +29,7 @@ LANGUAGE_CODES = {
 def generate_reference_audio(word: str, language_code: str, word_id: Optional[str] = None) -> str:
     """
     Generate reference audio using gTTS and save directly to Supabase storage.
-    Also saves the URL to vocabulary_words table if word_id is provided.
+    Also saves the URL to the vocabulary_words table if word_id is provided.
     
     Args:
         word: The word to generate audio for
@@ -54,7 +54,7 @@ def generate_reference_audio(word: str, language_code: str, word_id: Optional[st
         # Note: gTTS saves as MP3 by default, but we'll convert to WAV for better compatibility
         tts = gTTS(text=word, lang=gtts_lang, slow=False)
         
-        # Save to temporary MP3 file first (gTTS default format)
+        # Save to a temporary MP3 file first (gTTS default format)
         with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
             mp3_path = Path(tmp.name)
         
@@ -83,13 +83,13 @@ def generate_reference_audio(word: str, language_code: str, word_id: Optional[st
             temp_path = Path(str(mp3_path).replace(".mp3", ".wav"))
             
             # Export as WAV PCM format (compatible with Java AudioSystem)
-            # Use explicit parameters to ensure PCM format
+            # Use explicit parameters to ensure a PCM format
             try:
                 audio.export(
                     str(temp_path), 
                     format="wav",
                     parameters=[
-                        "-acodec", "pcm_s16le",  # PCM 16-bit little-endian (standard WAV)
+                        "-code", "pcm_s16le",  # PCM 16-bit little-endian (standard WAV)
                         "-ac", "1",              # Mono
                         "-ar", "44100"           # Sample rate 44.1kHz
                     ]
@@ -103,7 +103,7 @@ def generate_reference_audio(word: str, language_code: str, word_id: Optional[st
                         "ffmpeg",
                         "-y",  # Overwrite output
                         "-i", str(mp3_path),
-                        "-acodec", "pcm_s16le",
+                        "-code", "pcm_s16le",
                         "-ac", "1",
                         "-ar", "44100",
                         str(temp_path)
@@ -120,7 +120,7 @@ def generate_reference_audio(word: str, language_code: str, word_id: Optional[st
             if not temp_path.exists() or temp_path.stat().st_size == 0:
                 raise RuntimeError("WAV conversion produced empty or missing file")
             
-            # Verify it's a valid WAV file by checking header
+            # Verify it's a valid WAV file by checking the header
             with open(temp_path, "rb") as f:
                 header = f.read(12)
                 if not header.startswith(b"RIFF"):
@@ -145,7 +145,7 @@ def generate_reference_audio(word: str, language_code: str, word_id: Optional[st
             ) from e
         
         try:
-            # Create storage path: pronunciation-references/{language_code}/{word}_{timestamp}.wav
+            # Create a storage path: pronunciation-references/{language_code}/{word}_{timestamp}.wav
             # Use word_id in filename if available for better organization
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             if word_id:
@@ -173,7 +173,7 @@ def generate_reference_audio(word: str, language_code: str, word_id: Optional[st
             
             logger.info(f"Reference audio uploaded to Supabase: {public_url}")
             
-            # Save URL to vocabulary_words table if word_id is provided
+            # Save URL to the vocabulary_words table if word_id is provided
             if word_id and public_url:
                 try:
                     result = supabase.table("vocabulary_words").update({
@@ -216,8 +216,8 @@ def compare_user_pronunciation(
     Compare user's pronunciation with reference audio.
     
     Args:
-        reference_audio_path: Path to reference audio file
-        user_audio_path: Path to user's recorded audio file
+        reference_audio_path: Path to reference an audio file
+        user_audio_path: Path to the user's recorded audio file
         word: The word being practiced
     
     Returns:

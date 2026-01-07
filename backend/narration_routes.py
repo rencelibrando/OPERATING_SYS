@@ -68,7 +68,7 @@ class GenerateLessonNarrationResponse(BaseModel):
 @router.post("/detect-language", response_model=DetectLanguageResponse)
 async def detect_language(request: DetectLanguageRequest):
     """
-    Detect the language of given text using FastText.
+    Detect the language of a given text using FastText.
     Useful for previewing language detection before generating audio.
     """
     try:
@@ -280,7 +280,7 @@ async def generate_lesson_narration(
             question_urls = {"question": None, "answer": None}
             
             try:
-                # Get language override from lesson or question
+                # Get language override from a lesson or question
                 language_override = (
                     getattr(question, 'narration_language', None) or
                     getattr(lesson, 'narration_language', None)

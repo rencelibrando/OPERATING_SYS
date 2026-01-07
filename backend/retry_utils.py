@@ -59,7 +59,7 @@ async def retry_with_exponential_backoff(
                 await asyncio.sleep(delay)
                 continue
             
-            # Don't retry on the last attempt or if exception type shouldn't be retried
+            # Don't retry on the last attempt or if an exception type shouldn't be retried
             if attempt == max_retries or not should_retry:
                 break
             
@@ -83,7 +83,7 @@ async def retry_with_exponential_backoff(
 
 
 def _get_logger():
-    """Get logger instance (imported here to avoid circular imports)."""
+    """Get a logger instance (imported here to avoid circular imports)."""
     import logging
     return logging.getLogger(__name__)
 
@@ -96,7 +96,7 @@ class ProviderManager:
     def __init__(self, providers: dict):
         self.providers = providers
         self.provider_health = {}  # Track provider health
-        self.last_error_time = {}  # Track last error time for each provider
+        self.last_error_time = {}  # Track the last error time for each provider
     
     async def generate_with_fallback(
         self,
@@ -109,7 +109,7 @@ class ProviderManager:
         enable_retry: bool = True
     ) -> tuple:
         """
-        Generate response using providers with fallback and retry logic.
+        Generate a response using providers with fallback and retry logic.
         
         Args:
             primary_provider: The preferred provider to use first
@@ -180,12 +180,12 @@ class ProviderManager:
                 self.provider_health[provider_enum] = False
                 self.last_error_time[provider_enum] = time.time()
                 
-                # Log quota error and immediately continue to next provider
+                # Log the quota error and immediately continue to the next provider
                 logger_instance = _get_logger()
                 logger_instance.warning(f"Provider {provider_enum.value} quota exceeded: {str(e)}")
                 logger_instance.info(f"Immediately falling back to next provider...")
                 
-                # Continue to next provider without retry
+                # Continue to the next provider without a retry
                 continue
                 
             except Exception as e:
@@ -199,7 +199,7 @@ class ProviderManager:
                 # For non-quota errors, try retry once
                 if provider_enum == provider_order[-1]:  # Last provider
                     raise
-                # Continue to next provider
+                # Continue to the next provider
                 continue
         
         # All providers failed

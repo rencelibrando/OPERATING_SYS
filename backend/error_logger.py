@@ -11,9 +11,9 @@ This ensures:
 Usage:
     from error_logger import ErrorLogger
     
-    logger = ErrorLogger("my_file.py")
+    Logger = ErrorLogger("my_file.py")
     logger.error("Something went wrong")
-    logger.warning("Connection slow")
+    logger.warning("Connection slows")
     logger.info("Processing started")
 """
 
@@ -94,7 +94,7 @@ class ErrorLogger:
     
     def debug(self, message: str):
         """
-        Log a debug message with standardized format.
+        Log a debug message with a standardized format.
         
         Args:
             message: The debug message to log

@@ -1,23 +1,23 @@
 package org.example.project.admin.ui
 
 import androidx.compose.foundation.*
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.BrokenImage
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toComposeImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -46,10 +46,6 @@ fun AdminLessonContentScreen(
     viewModel: AdminLessonContentViewModel = viewModel(),
 ) {
     val lessons by viewModel.lessons
-    val lessonTitle by viewModel.lessonTitle
-    val lessonDescription by viewModel.lessonDescription
-    val questions by viewModel.questions
-    val isPublished by viewModel.isPublished
     val isLoading by viewModel.isLoading
     val errorMessage by viewModel.errorMessage
     val successMessage by viewModel.successMessage
@@ -62,7 +58,7 @@ fun AdminLessonContentScreen(
         viewModel.loadLessonsForTopic(topicId)
     }
 
-    // Open dialog when a lesson is loaded for editing
+    // Open a dialog when a lesson is loaded for editing
     LaunchedEffect(currentLesson) {
         if (currentLesson != null && !showCreateDialog) {
             editingLessonId = currentLesson!!.id
@@ -100,7 +96,7 @@ fun AdminLessonContentScreen(
                 ) {
                     IconButton(onClick = onBack) {
                         Icon(
-                            Icons.Default.ArrowBack,
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = Color.White,
                         )
@@ -195,9 +191,7 @@ fun AdminLessonContentScreen(
             }
 
             LessonCreationDialog(
-                topicId = topicId,
                 isEditing = editingLessonId != null,
-                lessonId = editingLessonId,
                 viewModel = viewModel,
                 onDismiss = {
                     showCreateDialog = false
@@ -210,7 +204,7 @@ fun AdminLessonContentScreen(
                     } else {
                         viewModel.createLesson(topicId)
                     }
-                    // Don't close dialog here - let LaunchedEffect handle it on success
+                    // Don't close the dialog here - let LaunchedEffect handle it on success
                 },
             )
         }
@@ -220,9 +214,7 @@ fun AdminLessonContentScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LessonCreationDialog(
-    topicId: String,
     isEditing: Boolean,
-    lessonId: String?,
     viewModel: AdminLessonContentViewModel,
     onDismiss: () -> Unit,
     onSave: () -> Unit,
@@ -243,7 +235,7 @@ private fun LessonCreationDialog(
     // Discard confirmation dialog
     if (showDiscardDialog) {
         AlertDialog(
-            onDismissRequest = { showDiscardDialog = false },
+            onDismissRequest = { },
             containerColor = Color(0xFF1E1B2E),
             title = {
                 Row(
@@ -273,7 +265,6 @@ private fun LessonCreationDialog(
             confirmButton = {
                 Button(
                     onClick = {
-                        showDiscardDialog = false
                         viewModel.clearForm()
                         onDismiss()
                     },
@@ -287,7 +278,7 @@ private fun LessonCreationDialog(
             },
             dismissButton = {
                 OutlinedButton(
-                    onClick = { showDiscardDialog = false },
+                    onClick = { },
                     colors =
                         ButtonDefaults.outlinedButtonColors(
                             contentColor = Color.White,
@@ -302,7 +293,6 @@ private fun LessonCreationDialog(
     Dialog(
         onDismissRequest = {
             if (hasChanges) {
-                showDiscardDialog = true
             } else {
                 onDismiss()
             }
@@ -493,7 +483,7 @@ private fun LessonCreationDialog(
                         }
                     }
 
-                    Divider(color = Color(0xFF3A3147))
+                    HorizontalDivider(Modifier, DividerDefaults.Thickness, color = Color(0xFF3A3147))
 
                     // Questions Section
                     Row(
@@ -666,7 +656,6 @@ private fun LessonCreationDialog(
                     TextButton(
                         onClick = {
                             if (hasChanges) {
-                                showDiscardDialog = true
                             } else {
                                 onDismiss()
                             }
@@ -691,11 +680,12 @@ private fun LessonCreationDialog(
                     }
 
                     if (!canSave) {
-                        val reason = when {
-                            lessonTitle.isBlank() -> "Lesson title is required"
-                            questions.isEmpty() -> "At least one question is required"
-                            else -> ""
-                        }
+                        val reason =
+                            when {
+                                lessonTitle.isBlank() -> "Lesson title is required"
+                                questions.isEmpty() -> "At least one question is required"
+                                else -> ""
+                            }
                         if (reason.isNotEmpty()) {
                             Text(
                                 reason,
@@ -1232,7 +1222,7 @@ private fun MatchingEditor(
                             }
                         }
 
-                        // Right column (answers) - Show in same order as questions (they'll be shuffled for students)
+                        // Right column (answers) - Show in the same order as questions (they'll be shuffled for students)
                         Column(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -1638,7 +1628,7 @@ private fun MediaUploadField(
     // Delete confirmation dialog
     if (showDeleteDialog) {
         AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
+            onDismissRequest = { },
             containerColor = Color(0xFF1E1B2E),
             title = {
                 Text(
@@ -1656,7 +1646,6 @@ private fun MediaUploadField(
                 Button(
                     onClick = {
                         onUrlChanged(null)
-                        showDeleteDialog = false
                     },
                     colors =
                         ButtonDefaults.buttonColors(
@@ -1668,7 +1657,7 @@ private fun MediaUploadField(
             },
             dismissButton = {
                 OutlinedButton(
-                    onClick = { showDeleteDialog = false },
+                    onClick = { },
                 ) {
                     Text("Cancel", color = Color.White)
                 }
@@ -1713,7 +1702,7 @@ private fun MediaUploadField(
 
                     // Delete button overlay
                     IconButton(
-                        onClick = { showDeleteDialog = true },
+                        onClick = { },
                         modifier =
                             Modifier
                                 .align(Alignment.TopEnd)
@@ -1782,7 +1771,7 @@ private fun MediaUploadField(
                     color = Color(0xFF10B981),
                 )
                 IconButton(
-                    onClick = { showDeleteDialog = true },
+                    onClick = { },
                     modifier = Modifier.size(24.dp),
                 ) {
                     Icon(
@@ -2547,7 +2536,7 @@ private fun NarrationControlField(
                             Text("Retry", style = MaterialTheme.typography.labelSmall)
                         }
                         else -> {
-                            Icon(Icons.Default.VolumeUp, null, modifier = Modifier.size(14.dp))
+                            Icon(Icons.AutoMirrored.Filled.VolumeUp, null, modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Generate", style = MaterialTheme.typography.labelSmall)
                         }

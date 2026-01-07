@@ -26,11 +26,11 @@ class AudioSummary:
     frames: np.ndarray
     mfccs: np.ndarray
     pitch_track: np.ndarray
-    formants: np.ndarray
+    formats: np.ndarray
 
 
 def _needs_conversion(path: Path) -> bool:
-    """Check if audio file needs conversion to WAV PCM format."""
+    """Check if an audio file needs conversion to WAV PCM format."""
     with path.open("rb") as fh:
         header = fh.read(4)
     return header != b"RIFF"
@@ -91,14 +91,14 @@ def detect_speech_boundaries(signal: np.ndarray, sample_rate: int,
     
     energy = np.array(energy)
     
-    # Find frames above threshold
+    # Find frames above a threshold
     speech_frames = energy > energy_threshold
     
     if not np.any(speech_frames):
         # No speech detected, return full signal
         return 0, len(signal)
     
-    # Find first speech frame
+    # Find the first speech frame
     first_speech = np.argmax(speech_frames)
     
     # Find last speech frame
@@ -112,13 +112,13 @@ def detect_speech_boundaries(signal: np.ndarray, sample_rate: int,
 
 
 def trim_silence(signal: np.ndarray, sample_rate: int) -> np.ndarray:
-    """Trim silence from beginning and end of audio signal."""
+    """Trim silence from the beginning and end of the audio signal."""
     start, end = detect_speech_boundaries(signal, sample_rate)
     return signal[start:end]
 
 
 def record_audio(duration: float, sample_rate: int = 16000, output_path: Optional[Path] = None) -> Path:
-    """Record audio from microphone and save to WAV file."""
+    """Record audio from a microphone and save to a WAV file."""
     if not PYAUDIO_AVAILABLE:
         raise RuntimeError(
             "PyAudio is required for microphone recording.\n"
@@ -193,7 +193,7 @@ def play_audio(path: Path):
 
 
 def read_wav(path: Path) -> Tuple[np.ndarray, int]:
-    """Read WAV file and return normalized audio signal and sample rate."""
+    """Read the WAV file and return normalized audio signal and sample rate."""
     with ensure_wav_pcm(path) as wav_path:
         with wave.open(str(wav_path), "rb") as wav_file:
             sample_rate = wav_file.getframerate()
@@ -217,7 +217,7 @@ def read_wav(path: Path) -> Tuple[np.ndarray, int]:
 
 
 def frame_signal(signal: np.ndarray, frame_size: int, hop_size: int) -> np.ndarray:
-    """Split signal into overlapping frames."""
+    """Split a signal into overlapping frames."""
     frames = []
     for start in range(0, len(signal) - frame_size + 1, hop_size):
         frames.append(signal[start : start + frame_size])
@@ -241,7 +241,7 @@ def extract_mfccs(signal: np.ndarray, sample_rate: int, n_mfcc: int = 13) -> np.
     
     mfccs = []
     for frame in frames:
-        # Apply window and FFT
+        # Apply a window and FFT
         windowed = frame * window
         spectrum = np.abs(np.fft.rfft(windowed, n=n_fft))
         power_spectrum = spectrum ** 2
@@ -307,7 +307,7 @@ def dct(x: np.ndarray) -> np.ndarray:
 
 
 def extract_pitch(signal: np.ndarray, sample_rate: int) -> np.ndarray:
-    """Extract pitch using autocorrelation method."""
+    """Extract pitch using the autocorrelation method."""
     frame_size = 2048
     hop_size = 512
     frames = frame_signal(signal, frame_size, hop_size)
@@ -338,7 +338,7 @@ def extract_pitch(signal: np.ndarray, sample_rate: int) -> np.ndarray:
 
 
 def extract_formants(signal: np.ndarray, sample_rate: int) -> np.ndarray:
-    """Extract first 3 formants using LPC (Linear Predictive Coding)."""
+    """Extract the first 3 formants using LPC (Linear Predictive Coding)."""
     frame_size = 512
     hop_size = 160
     frames = frame_signal(signal, frame_size, hop_size)
@@ -350,7 +350,7 @@ def extract_formants(signal: np.ndarray, sample_rate: int) -> np.ndarray:
         windowed = frame * window
         spectrum = np.abs(np.fft.rfft(windowed))
         
-        # Find peaks in spectrum
+        # Find peaks in the spectrum
         freqs = np.fft.rfftfreq(len(frame), d=1.0 / sample_rate)
         
         # Smooth spectrum
@@ -449,7 +449,7 @@ def compare_pronunciation(reference: AudioSummary, attempt: AudioSummary) -> Dic
     ref_flat = reference.mfccs.flatten()
     att_flat = attempt.mfccs.flatten()
     
-    # Truncate to same length
+    # Truncate to the same length
     min_len = min(len(ref_flat), len(att_flat))
     ref_flat = ref_flat[:min_len]
     att_flat = att_flat[:min_len]
@@ -608,7 +608,7 @@ def run_cli():
             print("\n   Listen carefully and get ready to repeat it!")
             time.sleep(1.5)
         
-        # Determine recording duration - give user plenty of time
+        # Determine recording duration - give the user plenty of time
         if args.duration:
             record_duration = args.duration
         else:
@@ -625,7 +625,7 @@ def run_cli():
         
         print(f"💾 Recording saved to: {args.save_recording}")
     else:
-        # Use provided attempt file
+        # Use the provided attempt file
         if not args.attempt.exists():
             raise FileNotFoundError(f"Attempt file not found: {args.attempt}")
         attempt_path = args.attempt

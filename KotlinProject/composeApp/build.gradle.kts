@@ -234,10 +234,11 @@ tasks.register<JavaExec>("runAdmin") {
     val jvmMain = kotlin.jvm().compilations.getByName("main")
     val runtimeClasspath = configurations.getByName(jvmMain.runtimeDependencyConfigurationName)
 
-    classpath = files(
-        jvmMain.output.classesDirs,
-        runtimeClasspath,
-    )
+    classpath =
+        files(
+            jvmMain.output.classesDirs,
+            runtimeClasspath,
+        )
     dependsOn("jvmProcessResources", "jvmMainClasses")
     javaLauncher.set(
         javaToolchains.launcherFor {

@@ -145,17 +145,18 @@ class VocabularyRepositoryImpl : VocabularyRepository {
         userId: String,
         wordId: String,
         audioUrl: String,
-    ): Result<Unit> = runCatching {
-        supabase.postgrest["user_vocabulary"]
-            .update({
-                set("user_audio_url", audioUrl)
-            }) {
-                filter {
-                    eq("user_id", userId)
-                    eq("word_id", wordId)
+    ): Result<Unit> =
+        runCatching {
+            supabase.postgrest["user_vocabulary"]
+                .update({
+                    set("user_audio_url", audioUrl)
+                }) {
+                    filter {
+                        eq("user_id", userId)
+                        eq("word_id", wordId)
+                    }
                 }
-            }
-    }
+        }
 
     override suspend fun getUserWordsByStatus(
         userId: String,
@@ -203,7 +204,7 @@ internal data class VocabularyWordDTO(
             status = VocabularyStatus.NEW,
             dateAdded = System.currentTimeMillis(),
             lastReviewed = null,
-            language = language ?: "en"
+            language = language ?: "en",
         )
     }
 }
@@ -218,7 +219,7 @@ internal fun VocabularyWord.toDTO(): VocabularyWordDTO {
         category = this.category.ifBlank { "General" },
         audioUrl = this.audioUrl,
         imageUrl = null,
-        language = this.language
+        language = this.language,
     )
 }
 
@@ -269,7 +270,7 @@ internal data class UserVocabularyJoinDTO(
                     },
                 dateAdded = System.currentTimeMillis(),
                 lastReviewed = lastReviewed?.let { System.currentTimeMillis() },
-                language = word.language ?: "en"
+                language = word.language ?: "en",
             )
         }
     }

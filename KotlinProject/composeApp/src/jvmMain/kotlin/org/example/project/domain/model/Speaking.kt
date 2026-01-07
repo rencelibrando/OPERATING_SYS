@@ -1,7 +1,7 @@
 package org.example.project.domain.model
 
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 enum class PracticeLanguage(
     val displayName: String,
@@ -112,7 +112,7 @@ data class ConversationSession(
     @SerialName("createdAt")
     val createdAt: String,
     @SerialName("feedback")
-    val feedback: kotlinx.serialization.json.JsonObject? = null
+    val feedback: kotlinx.serialization.json.JsonObject? = null,
 )
 
 data class SpeakingExercise(
@@ -186,7 +186,6 @@ data class SpeakingStats(
             )
     }
 }
-
 
 enum class SpeakingFilter(val displayName: String) {
     ALL("All"),

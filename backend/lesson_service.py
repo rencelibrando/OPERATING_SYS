@@ -153,7 +153,7 @@ class LessonService:
     async def create_lesson(self, lesson_data: LessonCreate) -> Lesson:
         """Create a new lesson with questions"""
         try:
-            # Create lesson
+            # Create a lesson
             lesson_dict = {
                 "topic_id": lesson_data.topic_id,
                 "title": lesson_data.title,
@@ -238,7 +238,7 @@ class LessonService:
                     for choice_data in question_data.choices:
                         await self.create_choice(question_id, choice_data)
             
-            # Fetch and return complete question
+            # Fetch and return a complete question
             return await self.get_question_by_id(question_id)
         except Exception as e:
             logger.error(f"Error creating question: {e}")
@@ -449,7 +449,7 @@ class LessonService:
                 "score": score,
                 "total_questions": total_questions,
                 "correct_answers": correct_count,
-                "is_passed": score >= 70,  # 70% passing threshold
+                "is_passed": score >= 70,  # 70% passing a threshold
                 "completed_at": datetime.utcnow().isoformat()
             }
             logger.info(f"[SUBMIT_SERVICE] ===== SUBMISSION COMPLETED =====")
