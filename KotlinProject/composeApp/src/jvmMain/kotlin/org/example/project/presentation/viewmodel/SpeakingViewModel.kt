@@ -23,6 +23,10 @@ import org.example.project.core.ai.VoiceApiService
 import org.example.project.core.audio.AudioPlayer
 import org.example.project.core.audio.VoiceRecorder
 import org.example.project.core.config.SupabaseConfig
+import org.example.project.data.repository.PracticeRecordingRepository
+import org.example.project.data.repository.PracticeRecordingRepositoryImpl
+import org.example.project.data.repository.VocabularyRepository
+import org.example.project.data.repository.VocabularyRepositoryImpl
 import org.example.project.domain.model.PracticeFeedback
 import org.example.project.domain.model.PracticeLanguage
 import org.example.project.domain.model.SpeakingFeature
@@ -43,6 +47,8 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
     private val agentService = AgentApiService()
     private val voiceRecorder = VoiceRecorder()
     private val audioPlayer = AudioPlayer()
+    private val vocabularyRepository: VocabularyRepository = VocabularyRepositoryImpl()
+    private val practiceRecordingRepository: PracticeRecordingRepository = PracticeRecordingRepositoryImpl()
     private var currentRecordingFile: File? = null
 
     private val _currentWord = mutableStateOf<VocabularyWord?>(null)
@@ -77,6 +83,13 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
 
     private val _showVoiceTutorSelection = mutableStateOf(false)
     val showVoiceTutorSelection: State<Boolean> = _showVoiceTutorSelection
+    
+    // Vocabulary word practice state
+    private val _vocabularyWordsForPractice = mutableStateOf<List<VocabularyWord>>(emptyList())
+    val vocabularyWordsForPractice: State<List<VocabularyWord>> = _vocabularyWordsForPractice
+    
+    private val _showWordPractice = mutableStateOf(false)
+    val showWordPractice: State<Boolean> = _showWordPractice
 
     private val _voiceTutorLanguage = mutableStateOf<PracticeLanguage?>(null)
     val voiceTutorLanguage: State<PracticeLanguage?> = _voiceTutorLanguage
@@ -168,6 +181,34 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
         // Start audio processing workers for background offloading
         startAgentAudioProcessingWorker()
         startUserAudioProcessingWorker()
+        
+        // Load vocabulary words for practice
+        loadVocabularyWordsForPractice()
+    }
+    
+    /**
+     * Load vocabulary words from the user's vocabulary bank for practice
+     */
+    private fun loadVocabularyWordsForPractice() {
+        viewModelScope.launch {
+            try {
+                vocabularyRepository.getAllVocabularyWords().onSuccess { words ->
+                    _vocabularyWordsForPractice.value = words
+                    SpeakingLogger.info("WordPractice") { "Loaded ${words.size} vocabulary words for practice" }
+                }.onFailure { error ->
+                    SpeakingLogger.error("WordPractice") { "Failed to load vocabulary words: ${error.message}" }
+                }
+            } catch (e: Exception) {
+                SpeakingLogger.error("WordPractice") { "Error loading vocabulary words: ${e.message}" }
+            }
+        }
+    }
+    
+    /**
+     * Refresh vocabulary words for practice
+     */
+    fun refreshVocabularyWords() {
+        loadVocabularyWordsForPractice()
     }
 
     /**
@@ -242,6 +283,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
             }
         }
     }
+
     fun startPracticeSessionForLessonLanguage(
         word: VocabularyWord,
         language: String,
@@ -265,6 +307,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
         _selectedLanguage.value = language
         _showLanguageDialog.value = false
     }
+
     fun hideLanguageDialog() {
         _showLanguageDialog.value = false
     }
@@ -399,40 +442,48 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                     return@launch
                 }
 
-                // All validations passed - now call Deepgram API
+                // All validations passed - now call local Whisper + SpeechBrain analysis
                 SpeakingLogger.debug { "Recording validated: ${_recordingDuration.value}s, ${currentRecordingFile!!.length()} bytes" }
-                SpeakingLogger.debug { "Calling Deepgram API for transcription" }
+                SpeakingLogger.debug { "Calling local Whisper + SpeechBrain for voice analysis" }
                 _isAnalyzing.value = true
 
-                // Step 1: Transcribe audio using Deepgram
-                // For English-only content, use model without a language parameter or use "en-US"
+                // Map language for Whisper
                 val languageCode =
                     when (_selectedLanguage.value) {
-                        PracticeLanguage.ENGLISH -> null // Use model default for English
+                        PracticeLanguage.ENGLISH -> "en"
                         PracticeLanguage.FRENCH -> "fr"
                         PracticeLanguage.GERMAN -> "de"
                         PracticeLanguage.HANGEUL -> "ko"
                         PracticeLanguage.MANDARIN -> "zh"
                         PracticeLanguage.SPANISH -> "es"
-                        null -> null // Use model default
+                        null -> "en"
                     }
 
-                val transcriptionResult =
-                    voiceApiService.transcribeAudio(
+                val expectedText = _currentPrompt.value ?: _currentWord.value?.word ?: ""
+                val level = _voiceTutorLevel.value ?: "intermediate"
+                val scenario = _voiceTutorScenario.value ?: "daily_conversation"
+
+                // Use local voice analysis (Whisper STT + SpeechBrain speaker analysis)
+                val analysisResult =
+                    voiceApiService.analyzeVoiceLocal(
                         audioFile = currentRecordingFile!!,
-                        language = languageCode ?: "en-US", // Use en-US for English or when null
-                        model = "nova-3",
+                        language = languageCode,
+                        expectedText = expectedText,
+                        level = level,
+                        scenario = scenario,
+                        userId = userId,
                     )
 
-                if (transcriptionResult.isSuccess) {
-                    val transcript = transcriptionResult.getOrNull()
-                    if (transcript != null && transcript.success) {
-                        SpeakingLogger.debug { "Transcription: ${transcript.transcript}" }
-                        SpeakingLogger.debug { "Confidence: ${transcript.confidence}" }
+                if (analysisResult.isSuccess) {
+                    val analysis = analysisResult.getOrNull()
+                    if (analysis != null && analysis.success) {
+                        SpeakingLogger.debug { "Transcription: ${analysis.transcript}" }
+                        SpeakingLogger.debug { "Confidence: ${analysis.confidence}" }
+                        SpeakingLogger.debug { "Scores: ${analysis.scores}" }
 
                         // Validate transcription has actual content
-                        if (transcript.transcript.isBlank() || transcript.confidence < 0.1f) {
-                            SpeakingLogger.warn("Analysis") { "Empty or low-confidence transcription" }
+                        if (analysis.transcript.isBlank()) {
+                            SpeakingLogger.warn("Analysis") { "Empty transcription - no speech detected" }
                             _feedback.value =
                                 PracticeFeedback(
                                     overallScore = 0,
@@ -455,51 +506,29 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                             return@launch
                         }
 
-                        // Step 2: Generate AI feedback
-                        val expectedText = _currentPrompt.value ?: _currentWord.value?.word ?: ""
-                        val level = _voiceTutorLevel.value ?: "intermediate"
-                        val scenario = _voiceTutorScenario.value ?: "daily_conversation"
-                        val langCode = languageCode ?: "en-US"
-
-                        SpeakingLogger.debug { "Generating AI feedback" }
-                        val feedbackResult =
-                            voiceApiService.generateFeedback(
-                                transcript = transcript.transcript,
-                                expectedText = expectedText,
-                                language = langCode,
-                                level = level,
-                                scenario = scenario,
-                                userId = userId,
+                        // Convert local analysis response to PracticeFeedback
+                        val practiceFeedback =
+                            PracticeFeedback(
+                                overallScore = analysis.overall_score.toInt(),
+                                pronunciationScore = analysis.scores["pronunciation"]?.toInt() ?: 0,
+                                clarityScore = analysis.scores["clarity"]?.toInt() ?: 0,
+                                fluencyScore = analysis.scores["fluency"]?.toInt() ?: 0,
+                                messages = analysis.feedback_messages,
+                                suggestions = analysis.suggestions,
                             )
 
-                        if (feedbackResult.isSuccess) {
-                            val feedback = feedbackResult.getOrNull()
-                            if (feedback != null && feedback.success) {
-                                // Convert API response to PracticeFeedback
-                                val practiceFeedback =
-                                    PracticeFeedback(
-                                        overallScore = feedback.overall_score.toInt(),
-                                        pronunciationScore = feedback.scores["pronunciation"]?.toInt() ?: 0,
-                                        clarityScore = feedback.scores["fluency"]?.toInt() ?: 0,
-                                        fluencyScore = feedback.scores["accuracy"]?.toInt() ?: 0,
-                                        messages = feedback.feedback_messages,
-                                        suggestions = feedback.suggestions,
-                                    )
+                        _feedback.value = practiceFeedback
+                        SpeakingLogger.info("Analysis") { "Complete - score: ${practiceFeedback.overallScore}%" }
 
-                                _feedback.value = practiceFeedback
-                                SpeakingLogger.info("Analysis") { "Complete - score: ${practiceFeedback.overallScore}%" }
-
-                                // Step 3: Save session (optional)
-                                saveSessionToDatabase(transcript.transcript, feedback.scores, langCode)
-                            }
-                        } else {
-                            SpeakingLogger.error("Analysis") { "Failed to generate feedback" }
-                            _feedback.value = generateErrorFeedback("Failed to generate feedback")
-                        }
+                        // Save session with local analysis scores
+                        saveSessionToDatabase(analysis.transcript, analysis.scores, languageCode)
+                    } else {
+                        SpeakingLogger.error("Analysis") { "Local analysis failed: ${analysis?.error}" }
+                        _feedback.value = generateErrorFeedback(analysis?.error ?: "Analysis failed")
                     }
                 } else {
-                    SpeakingLogger.error("Analysis") { "Failed to transcribe audio" }
-                    _feedback.value = generateErrorFeedback("Failed to transcribe audio")
+                    SpeakingLogger.error("Analysis") { "Failed to analyze audio locally" }
+                    _feedback.value = generateErrorFeedback("Failed to analyze audio")
                 }
             } catch (e: Exception) {
                 SpeakingLogger.error("Analysis") { "Error: ${e.message}" }
@@ -521,6 +550,36 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
         )
     }
 
+    // Store the uploaded audio URL for the current session
+    private var currentRecordingUrl: String? = null
+    
+    /**
+     * Upload recording to Supabase storage
+     */
+    private suspend fun uploadRecordingToSupabase(audioFile: File): String? {
+        return try {
+            val timestamp = System.currentTimeMillis()
+            val fileName = "recordings/${userId}/${timestamp}_recording.wav"
+            
+            SpeakingLogger.debug { "Uploading recording to Supabase: $fileName" }
+            
+            val storage = SupabaseConfig.client.storage.from("voice-recordings")
+            val bytes = audioFile.readBytes()
+            
+            storage.upload(fileName, bytes, upsert = true)
+            
+            // Get public URL
+            val publicUrl = storage.publicUrl(fileName)
+            SpeakingLogger.info("Upload") { "Recording uploaded: $publicUrl" }
+            
+            currentRecordingUrl = publicUrl
+            publicUrl
+        } catch (e: Exception) {
+            SpeakingLogger.error("Upload") { "Failed to upload recording: ${e.message}" }
+            null
+        }
+    }
+    
     private fun saveSessionToDatabase(
         transcript: String,
         scores: Map<String, Float>,
@@ -528,34 +587,233 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
     ) {
         viewModelScope.launch {
             try {
-                // TODO: Get actual user ID from auth service
-                val userId = userId
+                val currentWord = _currentWord.value
+                val currentFile = currentRecordingFile
+                val expectedText = _currentPrompt.value ?: currentWord?.word ?: ""
+                val isVocabularyPractice = currentWord != null
+                val isPhraseOrScenarioPractice = _voiceTutorScenario.value != null && currentWord == null
 
-                val saveResult =
-                    voiceApiService.saveSession(
-                        userId = userId,
-                        language = languageCode,
-                        level = "intermediate",
-                        scenario = "daily_conversation",
+                SpeakingLogger.info("SaveSession") { 
+                    "currentWord=${currentWord?.word}, isVocabPractice=$isVocabularyPractice, " +
+                    "isPhraseOrScenario=$isPhraseOrScenarioPractice, hasFile=${currentFile != null}"
+                }
+
+                if (isVocabularyPractice && currentFile != null) {
+                    // Save vocabulary practice recording and AI feedback
+                    saveVocabularyPracticeSession(
+                        word = currentWord,
+                        audioFile = currentFile,
                         transcript = transcript,
-                        audioUrl = null, // TODO: Upload audio file if needed
-                        feedback =
-                            kotlinx.serialization.json.buildJsonObject {
-                                put("scores", kotlinx.serialization.json.JsonPrimitive(scores.toString()))
-                                put("overall_score", kotlinx.serialization.json.JsonPrimitive(scores.values.average()))
-                            },
-                        sessionDuration = _recordingDuration.value,
+                        scores = scores,
+                        languageCode = languageCode,
+                        expectedText = expectedText
                     )
-
-                if (saveResult.isSuccess) {
-                    SpeakingLogger.debug { "Session saved successfully" }
+                } else if (isPhraseOrScenarioPractice && currentFile != null) {
+                    // Save phrase practice recording and AI feedback
+                    savePhrasePracticeSession(
+                        audioFile = currentFile,
+                        transcript = transcript,
+                        scores = scores,
+                        languageCode = languageCode,
+                        expectedPhrase = expectedText
+                    )
                 } else {
-                    SpeakingLogger.error("Session") { "Failed to save" }
+                    // Fallback to legacy voice session save
+                    saveLegacyVoiceSession(transcript, scores, languageCode)
                 }
             } catch (e: Exception) {
                 SpeakingLogger.error("Session") { "Error saving: ${e.message}" }
             }
         }
+    }
+
+    private suspend fun saveVocabularyPracticeSession(
+        word: VocabularyWord,
+        audioFile: File,
+        transcript: String,
+        scores: Map<String, Float>,
+        languageCode: String,
+        expectedText: String
+    ) {
+        try {
+            SpeakingLogger.info("VocabPractice") { "Starting save for word: ${word.word} (${word.id})" }
+            
+            // 1. Upload recording and save to vocabulary_practice_recordings
+            val recordingResult = practiceRecordingRepository.uploadVocabularyRecording(
+                wordId = word.id,
+                audioFile = audioFile,
+                transcript = transcript,
+                language = languageCode,
+                expectedText = expectedText,
+                durationSeconds = _recordingDuration.value
+            )
+
+            if (recordingResult.isSuccess) {
+                val recording = recordingResult.getOrThrow()
+                SpeakingLogger.info("VocabPractice") { "Recording saved: ${recording.id}" }
+
+                // 2. Save AI feedback to vocabulary_ai_feedback
+                val overallScore = scores.values.average().toInt()
+                val pronunciationScore = scores["pronunciation"]?.toInt() ?: 0
+                val accuracyScore = scores["accuracy"]?.toInt() ?: 0
+                val fluencyScore = scores["fluency"]?.toInt() ?: 0
+                val clarityScore = scores["clarity"]?.toInt() ?: 0
+
+                val feedbackResult = practiceRecordingRepository.saveVocabularyAIFeedback(
+                    recordingId = recording.id,
+                    wordId = word.id,
+                    overallScore = overallScore,
+                    pronunciationScore = pronunciationScore,
+                    accuracyScore = accuracyScore,
+                    fluencyScore = fluencyScore,
+                    clarityScore = clarityScore,
+                    detailedAnalysis = _feedback.value?.messages?.joinToString("\n"),
+                    strengths = extractStrengths(scores),
+                    areasForImprovement = extractAreasForImprovement(scores),
+                    suggestions = _feedback.value?.suggestions ?: emptyList(),
+                    analysisProvider = "local"
+                )
+
+                if (feedbackResult.isSuccess) {
+                    SpeakingLogger.info("VocabPractice") { "AI feedback saved for word: ${word.word}" }
+                } else {
+                    SpeakingLogger.error("VocabPractice") { "Failed to save AI feedback: ${feedbackResult.exceptionOrNull()?.message}" }
+                }
+
+                // 3. Also update user_vocabulary with the latest recording URL
+                try {
+                    vocabularyRepository.updateUserAudioUrl(
+                        userId = userId,
+                        wordId = word.id,
+                        audioUrl = recording.recordingUrl
+                    )
+                    SpeakingLogger.debug { "Updated user_vocabulary with latest recording" }
+                } catch (e: Exception) {
+                    SpeakingLogger.warn("VocabPractice") { "Failed to update user_vocabulary: ${e.message}" }
+                }
+            } else {
+                SpeakingLogger.error("VocabPractice") { "Failed to save recording: ${recordingResult.exceptionOrNull()?.message}" }
+            }
+        } catch (e: Exception) {
+            SpeakingLogger.error("VocabPractice") { "Error saving vocabulary practice: ${e.message}" }
+            throw e
+        }
+    }
+
+    private suspend fun savePhrasePracticeSession(
+        audioFile: File,
+        transcript: String,
+        scores: Map<String, Float>,
+        languageCode: String,
+        expectedPhrase: String
+    ) {
+        try {
+            val scenarioType = _voiceTutorScenario.value
+            val difficultyLevel = _voiceTutorLevel.value ?: "intermediate"
+
+            // 1. Upload recording and save to phrase_practice_recordings
+            val recordingResult = practiceRecordingRepository.uploadPhraseRecording(
+                scenarioId = null, // No specific scenario ID for now
+                audioFile = audioFile,
+                transcript = transcript,
+                language = languageCode,
+                expectedPhrase = expectedPhrase,
+                scenarioType = scenarioType,
+                difficultyLevel = difficultyLevel,
+                durationSeconds = _recordingDuration.value
+            )
+
+            if (recordingResult.isSuccess) {
+                val recording = recordingResult.getOrThrow()
+                SpeakingLogger.info("PhrasePractice") { "Recording saved: ${recording.id}" }
+
+                // 2. Save AI feedback to phrase_ai_feedback
+                val overallScore = scores.values.average().toInt()
+                val pronunciationScore = scores["pronunciation"]?.toInt() ?: 0
+                val grammarScore = scores["grammar"]?.toInt() ?: overallScore
+                val fluencyScore = scores["fluency"]?.toInt() ?: 0
+                val accuracyScore = scores["accuracy"]?.toInt() ?: 0
+                val contextualScore = scores["contextual"]?.toInt() ?: overallScore
+
+                val feedbackResult = practiceRecordingRepository.savePhraseAIFeedback(
+                    recordingId = recording.id,
+                    scenarioId = null,
+                    overallScore = overallScore,
+                    pronunciationScore = pronunciationScore,
+                    grammarScore = grammarScore,
+                    fluencyScore = fluencyScore,
+                    accuracyScore = accuracyScore,
+                    contextualScore = contextualScore,
+                    detailedAnalysis = _feedback.value?.messages?.joinToString("\n"),
+                    strengths = extractStrengths(scores),
+                    areasForImprovement = extractAreasForImprovement(scores),
+                    suggestions = _feedback.value?.suggestions ?: emptyList(),
+                    analysisProvider = "local"
+                )
+
+                if (feedbackResult.isSuccess) {
+                    SpeakingLogger.info("PhrasePractice") { "AI feedback saved for phrase" }
+                } else {
+                    SpeakingLogger.error("PhrasePractice") { "Failed to save AI feedback: ${feedbackResult.exceptionOrNull()?.message}" }
+                }
+            } else {
+                SpeakingLogger.error("PhrasePractice") { "Failed to save recording: ${recordingResult.exceptionOrNull()?.message}" }
+            }
+        } catch (e: Exception) {
+            SpeakingLogger.error("PhrasePractice") { "Error saving phrase practice: ${e.message}" }
+            throw e
+        }
+    }
+
+    private suspend fun saveLegacyVoiceSession(
+        transcript: String,
+        scores: Map<String, Float>,
+        languageCode: String
+    ) {
+        // Upload recording to Supabase storage first
+        val audioUrl = currentRecordingFile?.let { uploadRecordingToSupabase(it) }
+
+        val saveResult =
+            voiceApiService.saveSession(
+                userId = userId,
+                language = languageCode,
+                level = _voiceTutorLevel.value ?: "intermediate",
+                scenario = _voiceTutorScenario.value ?: "daily_conversation",
+                transcript = transcript,
+                audioUrl = audioUrl,
+                feedback =
+                    kotlinx.serialization.json.buildJsonObject {
+                        put("scores", kotlinx.serialization.json.JsonPrimitive(scores.toString()))
+                        put("overall_score", kotlinx.serialization.json.JsonPrimitive(scores.values.average()))
+                    },
+                sessionDuration = _recordingDuration.value,
+            )
+
+        if (saveResult.isSuccess) {
+            SpeakingLogger.info("Session") { "Legacy session saved with audio URL: $audioUrl" }
+        } else {
+            SpeakingLogger.error("Session") { "Failed to save legacy session" }
+        }
+    }
+
+    private fun extractStrengths(scores: Map<String, Float>): List<String> {
+        val strengths = mutableListOf<String>()
+        scores.forEach { (key, value) ->
+            if (value >= 70f) {
+                strengths.add("Good ${key.replaceFirstChar { it.uppercase() }}: ${value.toInt()}%")
+            }
+        }
+        return strengths.ifEmpty { listOf("Keep practicing!") }
+    }
+
+    private fun extractAreasForImprovement(scores: Map<String, Float>): List<String> {
+        val improvements = mutableListOf<String>()
+        scores.forEach { (key, value) ->
+            if (value < 70f) {
+                improvements.add("Improve ${key.replaceFirstChar { it.uppercase() }}: currently ${value.toInt()}%")
+            }
+        }
+        return improvements
     }
 
     fun tryAgain() {
@@ -680,16 +938,223 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
         _showVoiceTutorSelection.value = false
     }
 
+    /**
+     * Extended phrase library for practice scenarios
+     * Each scenario has multiple phrases at different difficulty levels
+     */
+    private val scenarioPhrases = mapOf(
+        "travel" to listOf(
+            // Beginner
+            "Where is the nearest hotel?",
+            "How much does a ticket cost?",
+            "Can you help me find the train station?",
+            "I need a taxi to the airport.",
+            "Where is the bathroom?",
+            // Intermediate
+            "Could you recommend a good place to stay nearby?",
+            "I would like to book a room for two nights, please.",
+            "What time does the next bus to downtown leave?",
+            "Is there a direct flight to Paris tomorrow?",
+            "Could you tell me how to get to the museum from here?",
+            // Advanced
+            "I'm looking for accommodations that are accessible for wheelchair users.",
+            "Would it be possible to arrange a guided tour of the historical district?",
+            "I'd appreciate recommendations for authentic local experiences off the beaten path.",
+            "Could you explain the public transportation system and the best pass options?",
+            "I need to modify my reservation due to an unexpected change in my itinerary."
+        ),
+        "food" to listOf(
+            // Beginner
+            "Could you recommend a good local restaurant?",
+            "I would like to order this dish, please.",
+            "Can I have the menu?",
+            "The food is delicious!",
+            "How much is the bill?",
+            // Intermediate
+            "Do you have any vegetarian options on the menu?",
+            "I have a food allergy to nuts. Is this dish safe for me?",
+            "Could you recommend a traditional dish from this region?",
+            "I'd like to make a reservation for four people at eight o'clock.",
+            "What ingredients are used in this specialty?",
+            // Advanced
+            "I'm interested in learning about the culinary traditions of your region.",
+            "Could you explain the preparation method for this traditional recipe?",
+            "I'd love to try something authentic that tourists rarely discover.",
+            "What wine would you pair with this particular dish?",
+            "The flavor profile is quite complex. What spices are used?"
+        ),
+        "daily_conversation" to listOf(
+            // Beginner
+            "How was your day today?",
+            "Nice to meet you!",
+            "What is your name?",
+            "Where are you from?",
+            "What do you like to do for fun?",
+            // Intermediate
+            "I've been quite busy with work lately. How about you?",
+            "What are your plans for the weekend?",
+            "Have you seen any good movies recently?",
+            "I really enjoy spending time with my family on weekends.",
+            "The weather has been lovely these past few days.",
+            // Advanced
+            "I find it fascinating how different cultures approach work-life balance.",
+            "What are your thoughts on the importance of learning multiple languages?",
+            "I've been reflecting on my goals and considering some significant changes.",
+            "Technology has certainly transformed the way we communicate with each other.",
+            "I believe that continuous learning is essential for personal growth."
+        ),
+        "work" to listOf(
+            // Beginner
+            "Could we schedule a meeting for next week?",
+            "I need help with this project.",
+            "When is the deadline?",
+            "Can you send me that file?",
+            "I have a question about my tasks.",
+            // Intermediate
+            "I'd like to discuss the progress we've made on the quarterly report.",
+            "Could we arrange a conference call with the team for tomorrow?",
+            "I think we should reconsider our approach to this problem.",
+            "The client has requested some modifications to the proposal.",
+            "I appreciate your feedback on my presentation.",
+            // Advanced
+            "I'd like to propose a more efficient workflow for our department.",
+            "We need to align our strategies with the company's long-term objectives.",
+            "I've identified some potential risks that we should address proactively.",
+            "Could you elaborate on the key performance indicators for this initiative?",
+            "I believe cross-functional collaboration would significantly improve our outcomes."
+        ),
+        "culture" to listOf(
+            // Beginner
+            "What are the most important holidays in your culture?",
+            "What traditional food do you eat?",
+            "Do you have any festivals?",
+            "What music do you like?",
+            "Tell me about your family traditions.",
+            // Intermediate
+            "How do people in your country typically celebrate New Year?",
+            "What customs should I be aware of when visiting your country?",
+            "I'm curious about the traditional arts and crafts from your region.",
+            "How has modernization affected traditional practices in your culture?",
+            "What role does family play in your society?",
+            // Advanced
+            "I'm fascinated by how cultural identity evolves across generations.",
+            "Could you explain the significance of this ceremony in your tradition?",
+            "How do younger generations in your country view traditional values?",
+            "What aspects of your cultural heritage do you feel most connected to?",
+            "I'd love to understand the historical context behind these customs."
+        ),
+        "shopping" to listOf(
+            // Beginner
+            "How much does this cost?",
+            "Do you have this in a different size?",
+            "Can I try this on?",
+            "Where is the fitting room?",
+            "I'll take this one, please.",
+            // Intermediate
+            "Do you offer any discounts for students?",
+            "I'm looking for something similar but in a different color.",
+            "What's your return policy if this doesn't fit properly?",
+            "Could you recommend something within my budget?",
+            "Is this item available in your other stores?",
+            // Advanced
+            "I'm interested in locally made products that support artisan communities.",
+            "Could you tell me about the materials and craftsmanship of this item?",
+            "I appreciate quality over quantity and prefer sustainable options.",
+            "What makes this brand stand out from similar products in the market?",
+            "I'd like to understand the story behind this handcrafted piece."
+        ),
+        "health" to listOf(
+            // Beginner
+            "I don't feel well today.",
+            "I have a headache.",
+            "Where is the pharmacy?",
+            "I need to see a doctor.",
+            "Can you help me?",
+            // Intermediate
+            "I've been experiencing some discomfort in my lower back.",
+            "Could you recommend something for seasonal allergies?",
+            "I need to schedule a routine checkup with a general practitioner.",
+            "Are there any side effects I should be aware of with this medication?",
+            "How often should I take this prescription?",
+            // Advanced
+            "I'd like to discuss preventive measures for maintaining long-term health.",
+            "Could you explain the treatment options available for this condition?",
+            "I'm interested in incorporating holistic approaches alongside conventional medicine.",
+            "What lifestyle modifications would you recommend for my situation?",
+            "I'd appreciate a thorough explanation of the procedure and recovery process."
+        )
+    )
+
     private fun loadPromptForScenario(scenario: String): String {
-        // In production, these would come from the backend API
-        return when (scenario) {
-            "travel" -> "Where is the nearest hotel?"
-            "food" -> "Could you recommend a good local restaurant?"
-            "daily_conversation" -> "How was your day today?"
-            "work" -> "Could we schedule a meeting for next week?"
-            "culture" -> "What are the most important holidays in your culture?"
-            else -> "Hello, how are you?"
+        val phrases = scenarioPhrases[scenario] ?: scenarioPhrases["daily_conversation"]!!
+        // Select a random phrase from the scenario
+        return phrases.random()
+    }
+    
+    /**
+     * Get a specific phrase for a scenario at a given index
+     */
+    fun getPhraseForScenario(scenario: String, index: Int): String {
+        val phrases = scenarioPhrases[scenario] ?: scenarioPhrases["daily_conversation"]!!
+        return phrases.getOrElse(index % phrases.size) { phrases.first() }
+    }
+    
+    /**
+     * Get total number of phrases for a scenario
+     */
+    fun getPhrasesCountForScenario(scenario: String): Int {
+        return scenarioPhrases[scenario]?.size ?: 0
+    }
+    
+    /**
+     * Get all phrases for a scenario
+     */
+    fun getAllPhrasesForScenario(scenario: String): List<String> {
+        return scenarioPhrases[scenario] ?: emptyList()
+    }
+    
+    /**
+     * Load next phrase for current scenario
+     */
+    fun loadNextPrompt() {
+        val scenario = _voiceTutorScenario.value ?: return
+        _currentPrompt.value = loadPromptForScenario(scenario)
+        resetSession()
+    }
+    
+    /**
+     * Set vocabulary words for practice from the vocabulary bank
+     */
+    fun setVocabularyWordsForPractice(words: List<VocabularyWord>) {
+        _vocabularyWordsForPractice.value = words
+        SpeakingLogger.info("WordPractice") { "Loaded ${words.size} words for practice" }
+    }
+    
+    /**
+     * Show/hide word practice section
+     */
+    fun toggleWordPractice() {
+        _showWordPractice.value = !_showWordPractice.value
+    }
+    
+    /**
+     * Start practicing a specific vocabulary word
+     */
+    fun startWordPractice(word: VocabularyWord, languageCode: String) {
+        _currentWord.value = word
+        val practiceLanguage = when (languageCode.lowercase()) {
+            "ko", "korean" -> PracticeLanguage.HANGEUL
+            "zh", "chinese" -> PracticeLanguage.MANDARIN
+            "es", "spanish" -> PracticeLanguage.SPANISH
+            "fr", "french" -> PracticeLanguage.FRENCH
+            "de", "german" -> PracticeLanguage.GERMAN
+            else -> PracticeLanguage.ENGLISH
         }
+        _selectedLanguage.value = practiceLanguage
+        _currentPrompt.value = word.word
+        _showWordPractice.value = false
+        resetSession()
+        SpeakingLogger.info("WordPractice") { "Started practice for word: ${word.word}" }
     }
 
     /**
@@ -839,54 +1304,56 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
         apiKey: String,
         languageCode: String,
         level: String,
-        scenario: String
+        scenario: String,
     ): Result<Unit> {
         // Track user audio reception for debugging
         var userAudioChunksReceived = 0L
-        
-        val result = agentService.startConversation(
-            apiKey = apiKey,
-            language = languageCode,
-            level = level,
-            scenario = scenario,
-            onMessage = { message: AgentApiService.AgentMessage ->
-                // Update UI state on Main dispatcher for immediate responsiveness
-                viewModelScope.launch(Dispatchers.Main.immediate) {
-                    handleAgentMessage(message)
-                }
-            },
-            onAudioReceived = { audioData ->
-                // Offload agent audio processing to a dedicated channel (non-blocking)
-                viewModelScope.launch(Dispatchers.Default) {
-                    try {
-                        agentAudioChannel.send(audioData)
-                    } catch (e: Exception) {
-                        if (e !is CancellationException) {
-                            SpeakingLogger.error("AgentAudio") { "Failed to queue chunk: ${e.message}" }
+
+        val result =
+            agentService.startConversation(
+                apiKey = apiKey,
+                language = languageCode,
+                level = level,
+                scenario = scenario,
+                onMessage = { message: AgentApiService.AgentMessage ->
+                    // Update UI state on Main dispatcher for immediate responsiveness
+                    viewModelScope.launch(Dispatchers.Main.immediate) {
+                        handleAgentMessage(message)
+                    }
+                },
+                onAudioReceived = { audioData ->
+                    // Offload agent audio processing to a dedicated channel (non-blocking)
+                    viewModelScope.launch(Dispatchers.Default) {
+                        try {
+                            agentAudioChannel.send(audioData)
+                        } catch (e: Exception) {
+                            if (e !is CancellationException) {
+                                SpeakingLogger.error("AgentAudio") { "Failed to queue chunk: ${e.message}" }
+                            }
                         }
                     }
-                }
-            },
-            onUserAudioCaptured = { audioData ->
-                // Capture user audio to a dedicated channel for reliable recording
-                userAudioChunksReceived++
-                if (userAudioChunksReceived == 1L) {
-                    SpeakingLogger.info("UserAudioCallback") { "First user audio chunk received from AgentService: ${audioData.size} bytes" }
-                }
-                viewModelScope.launch(Dispatchers.Default) {
-                    try {
-                        userAudioChannel.send(audioData)
-                    } catch (e: Exception) {
-                        if (e !is CancellationException) {
-                            SpeakingLogger.error("UserAudio") { "Failed to queue chunk: ${e.message}" }
+                },
+                onUserAudioCaptured = { audioData ->
+                    // Capture user audio to a dedicated channel for reliable recording
+                    userAudioChunksReceived++
+                    if (userAudioChunksReceived == 1L) {
+                        SpeakingLogger.info("UserAudioCallback") { "First user audio chunk received from AgentService: ${audioData.size} bytes" }
+                    }
+                    viewModelScope.launch(Dispatchers.Default) {
+                        try {
+                            userAudioChannel.send(audioData)
+                        } catch (e: Exception) {
+                            if (e !is CancellationException) {
+                                SpeakingLogger.error("UserAudio") { "Failed to queue chunk: ${e.message}" }
+                            }
                         }
                     }
-                }
-            },
-        )
+                },
+            )
         // Map Result<String> to Result<Unit>
         return result.map { }
     }
+
     fun startConversationMode(
         autoStartAgent: Boolean = true,
         preserveData: Boolean = false,
@@ -992,12 +1459,13 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                     }
 
                     // Start a fresh connection
-                    val result = startAgentConversation(
-                        apiKey = apiKey,
-                        languageCode = languageCode,
-                        level = _voiceTutorLevel.value ?: "intermediate",
-                        scenario = _voiceTutorScenario.value ?: "daily_conversation"
-                    )
+                    val result =
+                        startAgentConversation(
+                            apiKey = apiKey,
+                            languageCode = languageCode,
+                            level = _voiceTutorLevel.value ?: "intermediate",
+                            scenario = _voiceTutorScenario.value ?: "daily_conversation",
+                        )
 
                     if (result.isFailure) {
                         val error = result.exceptionOrNull()
@@ -1046,12 +1514,13 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                         return@withLock
                     }
 
-                    val result = startAgentConversation(
-                        apiKey = apiKey,
-                        languageCode = languageCode,
-                        level = _voiceTutorLevel.value ?: "intermediate",
-                        scenario = _voiceTutorScenario.value ?: "daily_conversation"
-                    )
+                    val result =
+                        startAgentConversation(
+                            apiKey = apiKey,
+                            languageCode = languageCode,
+                            level = _voiceTutorLevel.value ?: "intermediate",
+                            scenario = _voiceTutorScenario.value ?: "daily_conversation",
+                        )
 
                     if (result.isFailure) {
                         val error = result.exceptionOrNull()
@@ -1154,13 +1623,13 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
 
         try {
             // Log buffer statistics before save
-            SpeakingLogger.info("SaveAudio") { 
-                "Session buffer: ${sessionAudioChunks.stats()}, User buffer: ${userAudioChunks.stats()}" 
+            SpeakingLogger.info("SaveAudio") {
+                "Session buffer: ${sessionAudioChunks.stats()}, User buffer: ${userAudioChunks.stats()}"
             }
-            
+
             // Create a WAV file from audio chunks using the temp file manager
             val tempFile = tempFileManager.createTempFile("conversation_", ".wav")
-            
+
             // Move blocking I/O operations to IO dispatcher
             withContext(Dispatchers.IO) {
                 val outputStream = FileOutputStream(tempFile)
@@ -1212,11 +1681,11 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                 sessionDuration = (System.currentTimeMillis() - sessionStartTime) / 1000f,
             )
 
-            SpeakingLogger.info("SaveAudio") { 
-                "Audio saved: ${tempFile.absolutePath} (${tempFile.length()} bytes)" 
+            SpeakingLogger.info("SaveAudio") {
+                "Audio saved: ${tempFile.absolutePath} (${tempFile.length()} bytes)"
             }
-            SpeakingLogger.info("SaveAudio") { 
-                "User audio captured: ${userAudioChunks.size()} chunks, ${userAudioChunks.totalBytes()} bytes" 
+            SpeakingLogger.info("SaveAudio") {
+                "User audio captured: ${userAudioChunks.size()} chunks, ${userAudioChunks.totalBytes()} bytes"
             }
 
             // Clean up temp file after upload
@@ -1226,6 +1695,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
             e.printStackTrace()
         }
     }
+
     /**
      * Start conversation recording (push-to-talk).
      * Called when the user presses the mic button.
@@ -1327,15 +1797,16 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
             // Replace the empty thinking bubble with actual content (in-place update)
             val lastIndex = _conversationTurns.lastIndex
             val uniqueId = turnId ?: java.util.UUID.randomUUID().toString()
-            
+
             // Ensure we don't create duplicate IDs when replacing thinking bubble
-            val finalId = if (_conversationTurns.any { it.id == uniqueId && it != _conversationTurns[lastIndex] }) {
-                SpeakingLogger.warn("Conversation") { "Duplicate ID detected in thinking bubble replacement: $uniqueId, generating new UUID" }
-                java.util.UUID.randomUUID().toString()
-            } else {
-                uniqueId
-            }
-            
+            val finalId =
+                if (_conversationTurns.any { it.id == uniqueId && it != _conversationTurns[lastIndex] }) {
+                    SpeakingLogger.warn("Conversation") { "Duplicate ID detected in thinking bubble replacement: $uniqueId, generating new UUID" }
+                    java.util.UUID.randomUUID().toString()
+                } else {
+                    uniqueId
+                }
+
             _conversationTurns[lastIndex] =
                 ConversationTurnUI(
                     id = finalId,
@@ -1383,7 +1854,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
 
         // Add a new conversation turn (efficient append to SnapshotStateList)
         val newTurnId = turnId ?: java.util.UUID.randomUUID().toString()
-        
+
         // Ensure we don't create duplicate IDs
         if (_conversationTurns.any { it.id == newTurnId }) {
             SpeakingLogger.warn("Conversation") { "Duplicate ID detected: $newTurnId, generating new UUID" }
@@ -1395,7 +1866,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                     text = content,
                     isFinal = isFinal,
                     isStreaming = !isFinal,
-                )
+                ),
             )
             SpeakingLogger.debug { "Added new turn with fallback ID: role=$role, final=$isFinal, id=$fallbackId" }
         } else {
@@ -1406,7 +1877,7 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                     text = content,
                     isFinal = isFinal,
                     isStreaming = !isFinal,
-                )
+                ),
             )
             SpeakingLogger.debug { "Added new turn: role=$role, final=$isFinal, id=$newTurnId" }
         }

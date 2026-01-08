@@ -70,7 +70,7 @@ def ensure_dependencies() -> None:
     dependencies = [
         "fastapi>=0.110.0",
         "uvicorn[standard]>=0.27.0", 
-        "google-generativeai>=0.8.0",
+        "google-genai>=1.0.0",
         "pydantic>=2.6.0",
         "pydantic-settings>=2.2.0",
         "python-dotenv>=1.0.0",

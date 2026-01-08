@@ -283,22 +283,32 @@ class AudioPlayer {
                     }
                 }
 
-            // Define our target format: 16kHz, 16-bit, mono, PCM signed
-            val targetFormat =
-                AudioFormat(
-                    AudioFormat.Encoding.PCM_SIGNED,
-                    16000f, // sample rate
-                    16, // sample size in bits
-                    1, // channels (mono)
-                    2, // frame size (channels * bytes per sample = 1 * 2)
-                    16000f, // frame rate
-                    false, // little endian
-                )
+            // Define target format based on source format
+            // For MP3 files, preserve original sample rate and use stereo to avoid mp3spi mono conversion bug
+            val sourceFormat = audioInputStream.format
+            val usesStereo = isMp3 || sourceFormat.channels >= 2
+            
+            // Preserve original sample rate to avoid pitch/speed issues
+            val originalSampleRate = sourceFormat.sampleRate
+            val targetChannels = if (usesStereo) 2 else 1
+            val targetFrameSize = targetChannels * 2 // 16-bit = 2 bytes per sample
+            
+            println("Source format: ${originalSampleRate}Hz, ${sourceFormat.channels} channels, ${sourceFormat.sampleSizeInBits} bits")
+            
+            val targetFormat = AudioFormat(
+                AudioFormat.Encoding.PCM_SIGNED,
+                originalSampleRate, // preserve original sample rate to avoid pitch issues
+                16, // sample size in bits
+                targetChannels, // channels
+                targetFrameSize, // frame size
+                originalSampleRate, // frame rate = sample rate for PCM
+                false, // little endian
+            )
 
-            // Convert to target format regardless of original format
+            // Convert to target format (PCM_SIGNED for compatibility)
             val convertedStream =
                 try {
-                    println("Converting audio to target format: 16000 Hz, 16-bit, mono")
+                    println("Converting audio to target format: ${targetFormat.sampleRate.toInt()} Hz, ${targetFormat.sampleSizeInBits}-bit, ${if (usesStereo) "stereo" else "mono"}")
                     AudioSystem.getAudioInputStream(targetFormat, audioInputStream)
                 } catch (e: Exception) {
                     println("Conversion failed: ${e.message}. Using original format")

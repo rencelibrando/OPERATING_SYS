@@ -1,28 +1,39 @@
 package org.example.project.ui.screens
 
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
+import org.example.project.core.audio.AudioPlayer
 import org.example.project.core.dictionary.DeepSeekWordValidationService
 import org.example.project.core.dictionary.WordNotFoundException
+import org.example.project.core.tts.EdgeTTSService
 import org.example.project.domain.model.LessonLanguage
 import org.example.project.domain.model.VocabularyStatus
 import org.example.project.domain.model.VocabularyWord
 import org.example.project.presentation.viewmodel.LessonsViewModel
 import org.example.project.presentation.viewmodel.SpeakingViewModel
 import org.example.project.presentation.viewmodel.VocabularyViewModel
+import org.example.project.data.repository.VocabularyPracticeHistoryDTO
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
 import org.example.project.core.auth.User as AuthUser
@@ -95,76 +106,108 @@ fun VocabularyScreen(
         )
     } else {
         Column(
-            modifier =
-                modifier
-                    .fillMaxSize()
-                    .padding(24.dp)
-                    .verticalScroll(rememberScrollState()),
+            modifier = modifier
+                .fillMaxSize()
+                .background(Color(0xFF0F0F23).copy(alpha = 0.95f))
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+            // Modern Header with soft elevated design
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(
+                        elevation = 8.dp,
+                        shape = RoundedCornerShape(20.dp),
+                        spotColor = Color(0xFF8B5CF6).copy(alpha = 0.2f)
+                    ),
+                shape = RoundedCornerShape(20.dp),
+                color = Color(0xFF1A1625).copy(alpha = 0.95f),
             ) {
-                Column {
-                    Text(
-                        text = "Vocabulary Bank",
-                        style =
-                            MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                            ),
-                        color = WordBridgeColors.TextPrimaryDark,
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Learning ${selectedLanguage.displayName}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextSecondaryDark,
-                    )
-                }
-
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Language Switcher
-                    LessonLanguageSwitcher(
-                        selectedLanguage = selectedLanguage,
-                        availableLanguages = availableLanguages,
-                        onLanguageSelected = { language ->
-                            lessonsViewModel.changeLanguage(language)
-                        },
-                        enabled = !isLanguageChanging,
-                    )
-
-                    TextButton(
-                        onClick = { vocabularyViewModel.refresh() },
-                        colors =
-                            ButtonDefaults.textButtonColors(
-                                contentColor = WordBridgeColors.TextSecondary,
-                            ),
+                    Column(
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = "Refresh",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "Vocabulary Bank",
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 28.sp
+                            ),
+                            color = Color.White.copy(alpha = 0.95f),
                         )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFF8B5CF6).copy(alpha = 0.2f)
+                            ) {
+                                Text(
+                                    text = "Learning ${selectedLanguage.displayName}",
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 12.sp
+                                    ),
+                                    color = Color(0xFF8B5CF6),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
                     }
 
-                    UserAvatar(
-                        initials = authenticatedUser?.initials ?: "U",
-                        profileImageUrl = authenticatedUser?.profileImageUrl,
-                        size = 48.dp,
-                        onClick = onUserAvatarClick,
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        // Language Switcher
+                        LessonLanguageSwitcher(
+                            selectedLanguage = selectedLanguage,
+                            availableLanguages = availableLanguages,
+                            onLanguageSelected = { language ->
+                                lessonsViewModel.changeLanguage(language)
+                            },
+                            enabled = !isLanguageChanging,
+                        )
+
+                        TextButton(
+                            onClick = { vocabularyViewModel.refresh() },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = Color.White.copy(alpha = 0.7f),
+                            ),
+                        ) {
+                            Text(
+                                text = "↻ Refresh",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.Medium
+                                ),
+                            )
+                        }
+
+                        UserAvatar(
+                            initials = authenticatedUser?.initials ?: "U",
+                            profileImageUrl = authenticatedUser?.profileImageUrl,
+                            size = 48.dp,
+                            onClick = onUserAvatarClick,
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Daily Goal Progress Card
             DailyGoalCard(
                 dailyGoal = dailyGoal,
-                wordsLearnedToday = wordsLearnedToday,
+                wordsLearnedToday = vocabularyWords.size,
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -239,6 +282,7 @@ fun VocabularyScreen(
 
                 if (filteredWords.isNotEmpty()) {
                     Column(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         filteredWords.forEach { word ->
@@ -320,10 +364,15 @@ fun VocabularyScreen(
         )
     }
 
-    // Word Details Dialog
+    // Word Details Dialog with Practice History
+    val practiceHistory by vocabularyViewModel.practiceHistory
+    val isLoadingHistory by vocabularyViewModel.isLoadingHistory
+    
     selectedWordForDetails?.let { word ->
         WordDetailsDialog(
             word = word,
+            practiceHistory = practiceHistory,
+            isLoadingHistory = isLoadingHistory,
             onDismiss = { vocabularyViewModel.hideWordDetails() },
             onStatusChange = { status ->
                 vocabularyViewModel.updateWordStatus(word.id, status)
@@ -335,6 +384,7 @@ fun VocabularyScreen(
                     selectedLanguage.code,
                 )
             },
+            onRefreshHistory = { vocabularyViewModel.refreshPracticeHistory() },
         )
     }
 }
@@ -346,56 +396,75 @@ private fun VocabularyWordItem(
     onClick: (String) -> Unit,
     onStatusChange: ((VocabularyStatus) -> Unit)? = null,
 ) {
+    val scope = rememberCoroutineScope()
+    var isPlayingAudio by remember { mutableStateOf(false) }
+    val audioPlayer = remember { AudioPlayer() }
+    
+    // Status color for the glow effect
+    val statusColor = when (word.status) {
+        VocabularyStatus.NEW -> Color(0xFF94A3B8)
+        VocabularyStatus.LEARNING -> Color(0xFFF59E0B)
+        VocabularyStatus.MASTERED -> Color(0xFF10B981)
+        VocabularyStatus.NEED_REVIEW -> Color(0xFFEF4444)
+    }
+    
     Card(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clickable { onClick(word.id) },
-        shape = RoundedCornerShape(12.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = WordBridgeColors.CardBackgroundDark,
-            ),
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = 2.dp,
-                hoveredElevation = 4.dp,
-            ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(16.dp),
+                spotColor = statusColor.copy(alpha = 0.2f)
+            )
+            .clickable { onClick(word.id) },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF1A1625).copy(alpha = 0.95f),
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            statusColor.copy(alpha = 0.08f),
+                            Color.Transparent
+                        )
+                    )
+                )
+                .padding(16.dp),
+            verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Text(
                         text = word.word,
-                        style =
-                            MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                            ),
-                        color = WordBridgeColors.TextPrimaryDark,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        ),
+                        color = Color.White.copy(alpha = 0.95f),
                     )
 
-                    // Status badge
+                    // Modern status badge
                     StatusBadge(status = word.status)
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
                     text = word.definition,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = WordBridgeColors.TextSecondaryDark,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp
+                    ),
+                    color = Color.White.copy(alpha = 0.7f),
                     maxLines = 2,
                 )
 
@@ -403,32 +472,85 @@ private fun VocabularyWordItem(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = word.pronunciation,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextMutedDark,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontSize = 12.sp
+                        ),
+                        color = Color.White.copy(alpha = 0.5f),
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
+                modifier = Modifier.widthIn(max = 120.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.End
             ) {
+                // Audio playback button (if audio URL exists)
+                if (!word.audioUrl.isNullOrBlank()) {
+                    IconButton(
+                        onClick = {
+                            if (!isPlayingAudio) {
+                                isPlayingAudio = true
+                                scope.launch {
+                                    try {
+                                        audioPlayer.setPlaybackFinishedCallback {
+                                            isPlayingAudio = false
+                                        }
+                                        audioPlayer.playAudioFromUrl(word.audioUrl)
+                                    } catch (e: Exception) {
+                                        isPlayingAudio = false
+                                    }
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .shadow(
+                                elevation = 4.dp,
+                                shape = RoundedCornerShape(10.dp),
+                                spotColor = Color(0xFF3B82F6).copy(alpha = 0.3f)
+                            )
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                if (isPlayingAudio) Color(0xFF3B82F6) 
+                                else Color(0xFF3B82F6).copy(alpha = 0.2f)
+                            )
+                    ) {
+                        Icon(
+                            Icons.Default.VolumeUp,
+                            contentDescription = "Play pronunciation",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                
+                // Practice button with gradient
                 Button(
                     onClick = { onPracticeClick(word) },
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = WordBridgeColors.PrimaryPurple,
+                    modifier = Modifier
+                        .height(40.dp)
+                        .widthIn(min = 100.dp)
+                        .shadow(
+                            elevation = 4.dp,
+                            shape = RoundedCornerShape(10.dp),
+                            spotColor = Color(0xFF8B5CF6).copy(alpha = 0.4f)
                         ),
-                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF8B5CF6),
+                    ),
+                    contentPadding = PaddingValues(horizontal = 14.dp),
+                    shape = RoundedCornerShape(10.dp),
                 ) {
                     Text(
                         text = "🎤 Practice",
-                        style =
-                            MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.Medium,
-                            ),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        ),
+                        color = Color.White,
                     )
                 }
             }
@@ -438,24 +560,40 @@ private fun VocabularyWordItem(
 
 @Composable
 private fun StatusBadge(status: VocabularyStatus) {
-    val (color, text) =
-        when (status) {
-            VocabularyStatus.NEW -> Color(0xFF94A3B8) to "New"
-            VocabularyStatus.LEARNING -> Color(0xFFF59E0B) to "Learning"
-            VocabularyStatus.MASTERED -> Color(0xFF10B981) to "Mastered"
-            VocabularyStatus.NEED_REVIEW -> Color(0xFFEF4444) to "Review"
-        }
+    val (color, text, icon) = when (status) {
+        VocabularyStatus.NEW -> Triple(Color(0xFF94A3B8), "New", "✨")
+        VocabularyStatus.LEARNING -> Triple(Color(0xFFF59E0B), "Learning", "📖")
+        VocabularyStatus.MASTERED -> Triple(Color(0xFF10B981), "Mastered", "✅")
+        VocabularyStatus.NEED_REVIEW -> Triple(Color(0xFFEF4444), "Review", "🔄")
+    }
 
     Surface(
-        color = color.copy(alpha = 0.1f),
-        shape = RoundedCornerShape(6.dp),
+        modifier = Modifier.shadow(
+            elevation = 2.dp,
+            shape = RoundedCornerShape(8.dp),
+            spotColor = color.copy(alpha = 0.3f)
+        ),
+        color = color.copy(alpha = 0.15f),
+        shape = RoundedCornerShape(8.dp),
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelSmall,
-            color = color,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = icon,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 11.sp
+                ),
+                color = color,
+            )
+        }
     }
 }
 
@@ -849,67 +987,147 @@ private fun DailyGoalCard(
     modifier: Modifier = Modifier,
 ) {
     val progress = (wordsLearnedToday.toFloat() / dailyGoal.toFloat()).coerceIn(0f, 1f)
+    val progressColor = when {
+        progress >= 1f -> Color(0xFF10B981) // Green when complete
+        progress >= 0.5f -> Color(0xFF3B82F6) // Blue when halfway
+        else -> Color(0xFF8B5CF6) // Purple otherwise
+    }
 
     Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = Color(0xFFF0F9FF), // blue-50
-            ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = modifier.shadow(
+            elevation = 8.dp,
+            shape = RoundedCornerShape(20.dp),
+            spotColor = progressColor.copy(alpha = 0.2f)
+        ),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF1A1625).copy(alpha = 0.95f),
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
-        Column(
-            modifier =
-                Modifier
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            progressColor.copy(alpha = 0.1f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        ) {
+            Column(
+                modifier = Modifier
                     .fillMaxWidth()
                     .padding(20.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column {
-                    Text(
-                        text = "📅 Daily Goal",
-                        style =
-                            MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "🎯",
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+                            Text(
+                                text = "Daily Goal",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp
+                                ),
+                                color = Color.White.copy(alpha = 0.95f),
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "$wordsLearnedToday of $dailyGoal words learned today",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = 14.sp
                             ),
-                        color = Color(0xFF1E293B),
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "$wordsLearnedToday / $dailyGoal words learned today",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF64748B),
+                            color = Color.White.copy(alpha = 0.6f),
+                        )
+                    }
+
+                    // Circular progress indicator
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.size(60.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier.size(60.dp),
+                            color = progressColor,
+                            trackColor = Color.White.copy(alpha = 0.1f),
+                            strokeWidth = 6.dp,
+                        )
+                        Text(
+                            text = "${(progress * 100).toInt()}%",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            ),
+                            color = Color.White.copy(alpha = 0.9f),
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Progress bar with gradient
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(10.dp)
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(Color.White.copy(alpha = 0.1f))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(progress)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(
+                                        progressColor,
+                                        progressColor.copy(alpha = 0.7f)
+                                    )
+                                )
+                            )
+                            .shadow(
+                                elevation = 4.dp,
+                                shape = RoundedCornerShape(5.dp),
+                                spotColor = progressColor.copy(alpha = 0.4f)
+                            )
                     )
                 }
 
-                Text(
-                    text = "${(progress * 100).toInt()}%",
-                    style =
-                        MaterialTheme.typography.headlineSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    color = Color(0xFF3B82F6),
-                )
+                if (progress >= 1f) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFF10B981).copy(alpha = 0.2f)
+                    ) {
+                        Text(
+                            text = "🎉 Goal achieved! Great job!",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = Color(0xFF10B981),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
+                }
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Progress bar
-            LinearProgressIndicator(
-                progress = progress,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(4.dp)),
-                color = Color(0xFF3B82F6),
-                trackColor = Color(0xFFE0E7FF),
-            )
         }
     }
 }
@@ -920,79 +1138,160 @@ private fun WordOfTheDayCard(
     onLearnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Animated glow effect
+    val infiniteTransition = rememberInfiniteTransition()
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.15f,
+        targetValue = 0.25f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = EaseInOutCubic),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+    
     Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = Color(0xFFFEF3C7), // amber-50
-            ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = modifier.shadow(
+            elevation = 10.dp,
+            shape = RoundedCornerShape(20.dp),
+            spotColor = Color(0xFFF59E0B).copy(alpha = 0.3f)
+        ),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF1A1625).copy(alpha = 0.95f),
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            Color(0xFFF59E0B).copy(alpha = glowAlpha),
+                            Color.Transparent
+                        )
+                    )
+                )
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            ) {
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(
-                        text = "⭐",
-                        style = MaterialTheme.typography.headlineMedium,
-                    )
-                    Text(
-                        text = "Word of the Day",
-                        style =
-                            MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        // Glowing star icon
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .shadow(
+                                    elevation = 6.dp,
+                                    shape = RoundedCornerShape(12.dp),
+                                    spotColor = Color(0xFFF59E0B).copy(alpha = 0.4f)
+                                )
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(
+                                    Brush.linearGradient(
+                                        colors = listOf(
+                                            Color(0xFFF59E0B),
+                                            Color(0xFFD97706)
+                                        )
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "⭐",
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "Word of the Day",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                ),
+                                color = Color.White.copy(alpha = 0.95f),
+                            )
+                            Text(
+                                text = "Expand your vocabulary",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = 12.sp
+                                ),
+                                color = Color.White.copy(alpha = 0.5f),
+                            )
+                        }
+                    }
+
+                    // Learn button with gradient
+                    Button(
+                        onClick = onLearnClick,
+                        modifier = Modifier
+                            .height(40.dp)
+                            .widthIn(min = 90.dp, max = 120.dp)
+                            .shadow(
+                                elevation = 6.dp,
+                                shape = RoundedCornerShape(12.dp),
+                                spotColor = Color(0xFFF59E0B).copy(alpha = 0.4f)
                             ),
-                        color = Color(0xFF1E293B),
-                    )
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFF59E0B),
+                        ),
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text(
+                            text = "Learn →",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                            color = Color.White,
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Text(
-                    text = word.word,
-                    style =
-                        MaterialTheme.typography.headlineSmall.copy(
+                // Word with pronunciation
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = word.word,
+                        style = MaterialTheme.typography.headlineSmall.copy(
                             fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp
                         ),
-                    color = WordBridgeColors.TextPrimaryDark,
-                )
+                        color = Color(0xFFF59E0B),
+                    )
+                    if (word.pronunciation.isNotBlank()) {
+                        Text(
+                            text = word.pronunciation,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.5f),
+                        )
+                    }
+                }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
                     text = word.definition,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = WordBridgeColors.TextSecondaryDark,
-                    maxLines = 2,
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Button(
-                onClick = onLearnClick,
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFF59E0B),
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        lineHeight = 18.sp
                     ),
-                shape = RoundedCornerShape(8.dp),
-            ) {
-                Text(
-                    text = "Learn",
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Medium,
-                        ),
+                    color = Color.White.copy(alpha = 0.7f),
+                    maxLines = 2,
                 )
             }
         }
@@ -1002,14 +1301,22 @@ private fun WordOfTheDayCard(
 @Composable
 private fun WordDetailsDialog(
     word: VocabularyWord,
+    practiceHistory: List<VocabularyPracticeHistoryDTO> = emptyList(),
+    isLoadingHistory: Boolean = false,
     onDismiss: () -> Unit,
     onStatusChange: (VocabularyStatus) -> Unit,
     onPracticeClick: () -> Unit,
+    onRefreshHistory: () -> Unit = {},
 ) {
     var selectedStatus by remember { mutableStateOf(word.status) }
+    var showHistoryExpanded by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val audioPlayer = remember { AudioPlayer() }
+    var playingRecordingId by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier.widthIn(max = 600.dp),
         title = {
             Text(
                 text = word.word,
@@ -1026,7 +1333,9 @@ private fun WordDetailsDialog(
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
             ) {
                 if (word.pronunciation.isNotBlank()) {
                     Text(
@@ -1046,7 +1355,6 @@ private fun WordDetailsDialog(
                         ),
                     color = WordBridgeColors.TextSecondaryDark,
                 )
-                // Create a dark-themed card for the definition
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
@@ -1077,7 +1385,6 @@ private fun WordDetailsDialog(
                             ),
                         color = WordBridgeColors.TextSecondaryDark,
                     )
-                    // Create a dark-themed card for the example
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
@@ -1135,6 +1442,158 @@ private fun WordDetailsDialog(
                         )
                     }
                 }
+
+                HorizontalDivider()
+
+                // Practice History Section
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showHistoryExpanded = !showHistoryExpanded },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "📊 Practice History",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                            color = WordBridgeColors.TextSecondaryDark,
+                        )
+                        if (practiceHistory.isNotEmpty()) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color(0xFF8B5CF6).copy(alpha = 0.2f),
+                            ) {
+                                Text(
+                                    text = "${practiceHistory.size}",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                                    color = Color(0xFF8B5CF6),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                )
+                            }
+                        }
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (isLoadingHistory) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0xFF8B5CF6),
+                            )
+                        }
+                        IconButton(
+                            onClick = onRefreshHistory,
+                            modifier = Modifier.size(24.dp),
+                        ) {
+                            Text(
+                                text = "↻",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = WordBridgeColors.TextSecondaryDark,
+                            )
+                        }
+                        Text(
+                            text = if (showHistoryExpanded) "▲" else "▼",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = WordBridgeColors.TextSecondaryDark,
+                        )
+                    }
+                }
+
+                if (showHistoryExpanded) {
+                    if (isLoadingHistory) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(32.dp),
+                                color = Color(0xFF8B5CF6),
+                            )
+                        }
+                    } else if (practiceHistory.isEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF1A1625),
+                            ),
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(20.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Text(
+                                    text = "🎤",
+                                    style = MaterialTheme.typography.displaySmall,
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "No practice sessions yet",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.Medium,
+                                    ),
+                                    color = Color.White.copy(alpha = 0.7f),
+                                )
+                                Text(
+                                    text = "Practice this word to see your progress here",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White.copy(alpha = 0.5f),
+                                )
+                            }
+                        }
+                    } else {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            practiceHistory.take(5).forEach { session ->
+                                PracticeHistoryItem(
+                                    session = session,
+                                    isPlaying = playingRecordingId == session.recordingId,
+                                    onPlayClick = {
+                                        if (playingRecordingId == session.recordingId) {
+                                            audioPlayer.stop()
+                                            playingRecordingId = null
+                                        } else if (!session.recordingUrl.isNullOrBlank()) {
+                                            playingRecordingId = session.recordingId
+                                            scope.launch {
+                                                try {
+                                                    audioPlayer.setPlaybackFinishedCallback {
+                                                        playingRecordingId = null
+                                                    }
+                                                    audioPlayer.playAudioFromUrl(session.recordingUrl)
+                                                } catch (e: Exception) {
+                                                    playingRecordingId = null
+                                                }
+                                            }
+                                        }
+                                    },
+                                )
+                            }
+                            if (practiceHistory.size > 5) {
+                                Text(
+                                    text = "+ ${practiceHistory.size - 5} more sessions",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White.copy(alpha = 0.5f),
+                                    modifier = Modifier.padding(start = 12.dp),
+                                )
+                            }
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -1162,4 +1621,157 @@ private fun WordDetailsDialog(
             }
         },
     )
+}
+
+@Composable
+private fun PracticeHistoryItem(
+    session: VocabularyPracticeHistoryDTO,
+    isPlaying: Boolean,
+    onPlayClick: () -> Unit,
+) {
+    val overallScore = session.overallScore ?: 0
+    val scoreColor = when {
+        overallScore >= 80 -> Color(0xFF10B981)
+        overallScore >= 60 -> Color(0xFFF59E0B)
+        overallScore >= 40 -> Color(0xFFEF4444)
+        else -> Color(0xFF94A3B8)
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF1A1625),
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Date and time
+                Text(
+                    text = session.practicedAt?.take(16)?.replace("T", " ") ?: "Unknown date",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.5f),
+                )
+
+                // Overall score badge
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = scoreColor.copy(alpha = 0.2f),
+                ) {
+                    Text(
+                        text = "${overallScore}%",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        color = scoreColor,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Score breakdown
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                ScoreChip("🎯 Pronunciation", session.pronunciationScore ?: 0)
+                ScoreChip("✓ Accuracy", session.accuracyScore ?: 0)
+                ScoreChip("💬 Fluency", session.fluencyScore ?: 0)
+            }
+
+            // Transcript if available
+            if (!session.transcript.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "\"${session.transcript}\"",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                    ),
+                    color = Color.White.copy(alpha = 0.6f),
+                    maxLines = 2,
+                )
+            }
+
+            // Play recording button
+            if (!session.recordingUrl.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    Button(
+                        onClick = onPlayClick,
+                        modifier = Modifier.height(32.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isPlaying) Color(0xFF3B82F6) else Color(0xFF3B82F6).copy(alpha = 0.2f),
+                        ),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                        shape = RoundedCornerShape(8.dp),
+                    ) {
+                        Icon(
+                            if (isPlaying) Icons.Default.VolumeUp else Icons.Default.PlayArrow,
+                            contentDescription = if (isPlaying) "Stop" else "Play recording",
+                            modifier = Modifier.size(16.dp),
+                            tint = Color.White,
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (isPlaying) "Playing..." else "Play",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White,
+                        )
+                    }
+                }
+            }
+
+            // Suggestions if available
+            if (!session.suggestions.isNullOrEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "💡 ${session.suggestions.first()}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFFF59E0B).copy(alpha = 0.8f),
+                    maxLines = 2,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScoreChip(label: String, score: Int) {
+    val color = when {
+        score >= 80 -> Color(0xFF10B981)
+        score >= 60 -> Color(0xFFF59E0B)
+        score >= 40 -> Color(0xFFEF4444)
+        else -> Color(0xFF94A3B8)
+    }
+    
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.6f),
+        )
+        Text(
+            text = "$score%",
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Bold,
+            ),
+            color = color,
+        )
+    }
 }

@@ -1,15 +1,30 @@
 """
 FastText Language Detection Service
 Singleton service for detecting language using FastText lid.176.bin model.
+
+Note: fasttext is imported lazily to avoid issues with numpy/multiprocessing
+on Windows when using Uvicorn's reload feature.
 """
-import fasttext
 import os
 import logging
-from typing import Optional, Tuple
+from typing import Optional, Tuple, TYPE_CHECKING
 from pathlib import Path
 import urllib.request
 
+# Lazy import fasttext to avoid Windows multiprocessing issues with numpy
+# during Uvicorn hot-reload
+fasttext = None
+
 logger = logging.getLogger(__name__)
+
+
+def _get_fasttext():
+    """Lazily import fasttext module to avoid Windows multiprocessing issues."""
+    global fasttext
+    if fasttext is None:
+        import fasttext as ft
+        fasttext = ft
+    return fasttext
 
 
 class LanguageDetectionService:
@@ -19,7 +34,7 @@ class LanguageDetectionService:
     """
 
     _instance: Optional['LanguageDetectionService'] = None
-    _model: Optional[fasttext.FastText._FastText] = None
+    _model = None  # Type: Optional[fasttext.FastText._FastText]
     
     # FastText language codes with full language names
     LANGUAGE_MAP = {
@@ -78,10 +93,13 @@ class LanguageDetectionService:
             
             logger.info(f"Loading FastText model from {model_path}")
             
-            # Suppress FastText warnings
-            fasttext.FastText.eprint = lambda x: None
+            # Get fasttext lazily to avoid Windows multiprocessing issues
+            ft = _get_fasttext()
             
-            self._model = fasttext.load_model(str(model_path))
+            # Suppress FastText warnings
+            ft.FastText.eprint = lambda x: None
+            
+            self._model = ft.load_model(str(model_path))
             logger.info("FastText model loaded successfully")
             
         except Exception as e:

@@ -184,7 +184,7 @@ class AdminLessonTopicsViewModel : ViewModel() {
                         onSuccess = { successCount++ },
                         onFailure = { errorCount++ },
                     )
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     errorCount++
                 }
             }
@@ -313,5 +313,4 @@ class AdminLessonTopicsViewModel : ViewModel() {
         _errorMessage.value = null
         _successMessage.value = null
     }
-
 }

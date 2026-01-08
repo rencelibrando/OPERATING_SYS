@@ -1,0 +1,1004 @@
+"""
+Auto-installer for voice analysis dependencies.
+Automatically detects and installs missing packages.
+Works on Windows, Linux, and macOS.
+"""
+import subprocess
+import sys
+import importlib
+import os
+import platform
+import shutil
+import tempfile
+import urllib.request
+import zipfile
+import glob
+from pathlib import Path
+from typing import List, Tuple, Optional
+import logging
+import sitecustomize  # noqa: F401
+
+logger = logging.getLogger(__name__)
+
+# Configure logging and encoding for standalone execution
+if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+    
+    # Fix Windows console encoding for Unicode support
+    if sys.platform == 'win32':
+        try:
+            # Enable UTF-8 mode on Windows
+            import io
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+        except Exception:
+            pass
+
+# Emoji to ASCII fallback mapping for systems that don't support Unicode
+EMOJI_FALLBACK = {
+    '🚀': '[*]',
+    '📋': '[>]',
+    '📦': '[#]',
+    '🔧': '[+]',
+    '🔍': '[?]',
+    '🎉': '[!]',
+    '✓': '[OK]',
+    '✗': '[X]',
+    '⚠️': '[!]',
+    '❌': '[X]',
+    '⏳': '[..]',
+}
+
+
+def safe_print(text: str):
+    """Print text safely, handling Unicode encoding issues on Windows."""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        # Fallback: replace emojis with ASCII alternatives
+        for emoji, replacement in EMOJI_FALLBACK.items():
+            text = text.replace(emoji, replacement)
+        try:
+            print(text)
+        except UnicodeEncodeError:
+            # Last resort: encode with errors='replace'
+            print(text.encode('ascii', errors='replace').decode('ascii'))
+
+
+class AutoInstaller:
+    """Cross-platform dependency installer for voice analysis."""
+    
+    def __init__(self):
+        self.required_packages = {
+            'whisper': 'openai-whisper',
+            'speechbrain': 'speechbrain', 
+            'torch': 'torch',
+            'torchaudio': 'torchaudio',
+            'soundfile': 'soundfile',
+            'ffmpeg': 'ffmpeg-python',
+            'numpy': 'numpy',
+            'scipy': 'scipy'
+        }
+        
+        self.system_requirements = {
+            'ffmpeg': 'ffmpeg'
+        }
+        
+        self.platform = sys.platform.lower()
+        self.is_windows = self.platform == 'win32' or self.platform.startswith('windows')
+        self.is_linux = self.platform.startswith('linux')
+        self.is_macos = self.platform.startswith('darwin')
+    
+    def check_package(self, package_name: str) -> bool:
+        """Check if a Python package is installed."""
+        try:
+            importlib.import_module(package_name)
+            return True
+        except ImportError:
+            return False
+        except Exception as exc:
+            logger.warning(f"Error importing {package_name}: {exc}")
+            return False
+    
+    def check_system_command(self, command: str) -> bool:
+        """Check if a system command is available."""
+        # Fast path: command already resolvable via PATH
+        if shutil.which(command):
+            return True
+        
+        # Special handling for FFmpeg on Windows where installers may not add it to PATH
+        if command == 'ffmpeg':
+            ffmpeg_path = self._locate_existing_ffmpeg()
+            if ffmpeg_path:
+                logger.info(f"Detected FFmpeg binary at {ffmpeg_path}")
+                self._ensure_directory_on_path(os.path.dirname(ffmpeg_path), persist=True)
+                return self._try_command([command, '--version'])
+        
+        try:
+            result = subprocess.run([command, '--version'], 
+                                  capture_output=True, 
+                                  text=True, 
+                                  timeout=10)
+            return result.returncode == 0
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            return False
+    
+    def install_package(self, package_name: str) -> Tuple[bool, str]:
+        """Install a Python package."""
+        try:
+            logger.info(f"Installing {package_name}...")
+            result = subprocess.run(
+                [sys.executable, '-m', 'pip', 'install', package_name],
+                capture_output=True,
+                text=True,
+                timeout=300  # 5 minute timeout
+            )
+            
+            if result.returncode == 0:
+                logger.info(f"Successfully installed {package_name}")
+                return True, f"Successfully installed {package_name}"
+            else:
+                error_msg = f"Failed to install {package_name}: {result.stderr}"
+                logger.error(error_msg)
+                return False, error_msg
+                
+        except subprocess.TimeoutExpired:
+            error_msg = f"Installation of {package_name} timed out"
+            logger.error(error_msg)
+            return False, error_msg
+        except Exception as e:
+            error_msg = f"Error installing {package_name}: {str(e)}"
+            logger.error(error_msg)
+            return False, error_msg
+    
+    def install_system_package(self, package_name: str) -> Tuple[bool, str]:
+        """Attempt to auto-install system packages."""
+        if package_name == 'ffmpeg':
+            return self._install_ffmpeg()
+        
+        return False, f"No auto-installation available for {package_name}"
+    
+    def _install_ffmpeg(self) -> Tuple[bool, str]:
+        """Auto-install FFmpeg using available package managers."""
+        platform = sys.platform.lower()
+        
+        if platform == 'win32' or platform == 'windows':
+            return self._install_ffmpeg_windows()
+        elif platform.startswith('linux'):
+            return self._install_ffmpeg_linux()
+        elif platform.startswith('darwin'):
+            return self._install_ffmpeg_macos()
+        else:
+            return False, f"Unsupported platform: {platform}"
+    
+    def _install_ffmpeg_windows(self) -> Tuple[bool, str]:
+        """Install FFmpeg on Windows using available package managers or direct download."""
+        
+        # Try winget first (built into Windows 10/11)
+        if self._try_command(['winget', '--version']):
+            logger.info("Installing FFmpeg using winget...")
+            try:
+                result = subprocess.run(
+                    ['winget', 'install', 'ffmpeg', '--accept-package-agreements', '--accept-source-agreements'],
+                    capture_output=True,
+                    text=True,
+                    timeout=600  # 10 minutes for download
+                )
+                if result.returncode == 0 or 'successfully installed' in result.stdout.lower():
+                    logger.info("FFmpeg installed successfully with winget")
+                    self._notify_path_refresh()
+                    return True, "FFmpeg installed successfully using winget. Please restart your terminal for PATH changes."
+                else:
+                    logger.warning(f"Winget install output: {result.stdout}")
+                    logger.warning(f"Winget install stderr: {result.stderr}")
+            except subprocess.TimeoutExpired:
+                logger.warning("Winget install timed out")
+            except Exception as e:
+                logger.warning(f"Winget install error: {e}")
+        
+        # Try Chocolatey
+        if self._try_command(['choco', '--version']):
+            logger.info("Installing FFmpeg using Chocolatey...")
+            try:
+                result = subprocess.run(
+                    ['choco', 'install', 'ffmpeg', '-y'],
+                    capture_output=True,
+                    text=True,
+                    timeout=600
+                )
+                if result.returncode == 0:
+                    logger.info("FFmpeg installed successfully with Chocolatey")
+                    self._notify_path_refresh()
+                    return True, "FFmpeg installed successfully using Chocolatey. Please restart your terminal for PATH changes."
+                else:
+                    logger.warning(f"Chocolatey install failed: {result.stderr}")
+            except Exception as e:
+                logger.warning(f"Chocolatey install error: {e}")
+        
+        # Try direct download as fallback
+        logger.info("Attempting direct FFmpeg download...")
+        success, message = self._download_ffmpeg_windows()
+        if success:
+            return True, message
+        
+        # If all methods failed, provide manual instructions
+        return False, self._get_ffmpeg_manual_instructions('windows')
+    
+    def _download_ffmpeg_windows(self) -> Tuple[bool, str]:
+        """Download FFmpeg directly for Windows and add to PATH."""
+        try:
+            # FFmpeg essentials build URL (smaller download)
+            ffmpeg_url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
+            
+            # Download location
+            download_dir = Path(os.environ.get('LOCALAPPDATA', tempfile.gettempdir())) / "FFmpeg"
+            download_dir.mkdir(parents=True, exist_ok=True)
+            
+            zip_path = download_dir / "ffmpeg.zip"
+            
+            logger.info(f"Downloading FFmpeg from {ffmpeg_url}...")
+            safe_print("Downloading FFmpeg (this may take a few minutes)...")
+            
+            # Download with progress
+            urllib.request.urlretrieve(ffmpeg_url, zip_path)
+            
+            logger.info("Extracting FFmpeg...")
+            safe_print("Extracting FFmpeg...")
+            
+            # Extract
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(download_dir)
+            
+            # Find the bin directory
+            ffmpeg_bin = None
+            for item in download_dir.iterdir():
+                if item.is_dir() and item.name.startswith('ffmpeg'):
+                    bin_path = item / 'bin'
+                    if bin_path.exists():
+                        ffmpeg_bin = bin_path
+                        break
+            
+            if not ffmpeg_bin:
+                return False, "Failed to find FFmpeg bin directory after extraction"
+            
+            # Add to user PATH
+            success = self._add_to_windows_path(str(ffmpeg_bin))
+            
+            # Clean up zip file
+            try:
+                zip_path.unlink()
+            except:
+                pass
+            
+            if success:
+                self._notify_path_refresh()
+                return True, f"FFmpeg downloaded and installed to {ffmpeg_bin}. Please restart your terminal."
+            else:
+                return True, f"FFmpeg downloaded to {ffmpeg_bin}. Please add this directory to your PATH manually."
+                
+        except Exception as e:
+            logger.error(f"Failed to download FFmpeg: {e}")
+            return False, f"Failed to download FFmpeg: {e}"
+    
+    def _add_to_windows_path(self, directory: str) -> bool:
+        """Add a directory to the Windows user PATH."""
+        try:
+            import winreg
+            
+            # Open the user environment variables
+            key = winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r"Environment",
+                0,
+                winreg.KEY_ALL_ACCESS
+            )
+            
+            try:
+                # Get current PATH
+                current_path, _ = winreg.QueryValueEx(key, "Path")
+            except WindowsError:
+                current_path = ""
+            
+            # Check if already in PATH
+            if directory.lower() in current_path.lower():
+                logger.info(f"{directory} already in PATH")
+                return True
+            
+            # Add to PATH
+            new_path = f"{current_path};{directory}" if current_path else directory
+            winreg.SetValueEx(key, "Path", 0, winreg.REG_EXPAND_SZ, new_path)
+            winreg.CloseKey(key)
+            
+            # Notify Windows of the change
+            try:
+                import ctypes
+                HWND_BROADCAST = 0xFFFF
+                WM_SETTINGCHANGE = 0x1A
+                ctypes.windll.user32.SendMessageW(HWND_BROADCAST, WM_SETTINGCHANGE, 0, "Environment")
+            except:
+                pass
+            
+            logger.info(f"Added {directory} to PATH")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to add to PATH: {e}")
+            return False
+    
+    def _ensure_directory_on_path(self, directory: str, persist: bool = False) -> None:
+        """Ensure a directory is present on PATH (current process and optionally user PATH)."""
+        if not directory:
+            return
+        
+        directory = os.path.abspath(directory)
+        current_path = os.environ.get('PATH', '')
+        path_entries = [entry for entry in current_path.split(os.pathsep) if entry]
+        normalized_directory = os.path.normcase(directory)
+        normalized_entries = {os.path.normcase(os.path.abspath(entry)) for entry in path_entries if entry}
+        
+        if normalized_directory not in normalized_entries:
+            os.environ['PATH'] = directory + os.pathsep + current_path if current_path else directory
+            logger.info(f"Prepended {directory} to current process PATH")
+            if persist and self.is_windows:
+                self._add_to_windows_path(directory)
+    
+    def _locate_existing_ffmpeg(self) -> Optional[str]:
+        """Attempt to locate an FFmpeg binary outside of PATH."""
+        if self.is_windows:
+            return self._locate_existing_ffmpeg_windows()
+        elif self.is_macos:
+            candidates = [
+                '/opt/homebrew/bin/ffmpeg',
+                '/usr/local/bin/ffmpeg',
+                '/usr/bin/ffmpeg'
+            ]
+        else:
+            candidates = [
+                '/usr/local/bin/ffmpeg',
+                '/usr/bin/ffmpeg'
+            ]
+        
+        for candidate in candidates:
+            if candidate and os.path.isfile(candidate):
+                return candidate
+        
+        return None
+    
+    def _locate_existing_ffmpeg_windows(self) -> Optional[str]:
+        """Search common Windows installation paths for FFmpeg."""
+        local_app = os.environ.get('LOCALAPPDATA', '')
+        program_files = os.environ.get('ProgramFiles', r'C:\Program Files')
+        program_files_x86 = os.environ.get('ProgramFiles(x86)', r'C:\Program Files (x86)')
+        
+        patterns = [
+            r'C:\ffmpeg\bin\ffmpeg.exe',
+            os.path.join(program_files, 'ffmpeg', 'bin', 'ffmpeg.exe'),
+            os.path.join(program_files_x86, 'ffmpeg', 'bin', 'ffmpeg.exe'),
+        ]
+        
+        if local_app:
+            patterns.extend([
+                os.path.join(local_app, 'FFmpeg', 'ffmpeg-*', 'bin', 'ffmpeg.exe'),
+                os.path.join(local_app, 'Microsoft', 'WinGet', 'Packages', '*ffmpeg*', 'ffmpeg.exe'),
+                os.path.join(local_app, 'Microsoft', 'WinGet', 'Packages', '*ffmpeg*', 'ffmpeg', 'bin', 'ffmpeg.exe'),
+            ])
+        
+        for pattern in patterns:
+            matches = glob.glob(pattern)
+            for match in matches:
+                if os.path.isfile(match):
+                    return match
+        
+        return None
+    
+    def _notify_path_refresh(self):
+        """Notify user about PATH refresh requirement."""
+        safe_print("\n" + "="*60)
+        safe_print("⚠️  IMPORTANT: PATH Update Required")
+        safe_print("="*60)
+        safe_print("FFmpeg has been installed, but you need to restart your")
+        safe_print("terminal/command prompt for the changes to take effect.")
+        safe_print("")
+        safe_print("After restarting, verify with: ffmpeg -version")
+        safe_print("="*60 + "\n")
+    
+    def _install_ffmpeg_linux(self) -> Tuple[bool, str]:
+        """Install FFmpeg on Linux."""
+        
+        # Check for sudo access
+        has_sudo = self._check_sudo_access()
+        
+        # Try apt (Ubuntu/Debian)
+        if shutil.which('apt') or shutil.which('apt-get'):
+            logger.info("Detected apt package manager (Ubuntu/Debian)...")
+            
+            if has_sudo:
+                try:
+                    # Update package list first
+                    logger.info("Updating package list...")
+                    subprocess.run(
+                        ['sudo', 'apt-get', 'update', '-y'],
+                        capture_output=True,
+                        text=True,
+                        timeout=120
+                    )
+                    
+                    # Install ffmpeg
+                    logger.info("Installing FFmpeg using apt...")
+                    result = subprocess.run(
+                        ['sudo', 'apt-get', 'install', '-y', 'ffmpeg'],
+                        capture_output=True,
+                        text=True,
+                        timeout=300
+                    )
+                    if result.returncode == 0:
+                        logger.info("FFmpeg installed successfully with apt")
+                        return True, "FFmpeg installed successfully using apt"
+                    else:
+                        logger.warning(f"Apt install failed: {result.stderr}")
+                except Exception as e:
+                    logger.warning(f"Apt install error: {e}")
+            else:
+                return False, "sudo access required. Run: sudo apt-get install -y ffmpeg"
+        
+        # Try dnf (Fedora/RHEL)
+        if shutil.which('dnf'):
+            logger.info("Detected dnf package manager (Fedora/RHEL)...")
+            
+            if has_sudo:
+                try:
+                    # Enable RPM Fusion for ffmpeg (may be needed on Fedora)
+                    logger.info("Installing FFmpeg using dnf...")
+                    result = subprocess.run(
+                        ['sudo', 'dnf', 'install', '-y', 'ffmpeg', 'ffmpeg-devel'],
+                        capture_output=True,
+                        text=True,
+                        timeout=300
+                    )
+                    if result.returncode == 0:
+                        logger.info("FFmpeg installed successfully with dnf")
+                        return True, "FFmpeg installed successfully using dnf"
+                    else:
+                        logger.warning(f"dnf install failed: {result.stderr}")
+                except Exception as e:
+                    logger.warning(f"dnf install error: {e}")
+            else:
+                return False, "sudo access required. Run: sudo dnf install -y ffmpeg"
+        
+        # Try pacman (Arch Linux)
+        if shutil.which('pacman'):
+            logger.info("Detected pacman package manager (Arch Linux)...")
+            
+            if has_sudo:
+                try:
+                    result = subprocess.run(
+                        ['sudo', 'pacman', '-S', '--noconfirm', 'ffmpeg'],
+                        capture_output=True,
+                        text=True,
+                        timeout=300
+                    )
+                    if result.returncode == 0:
+                        logger.info("FFmpeg installed successfully with pacman")
+                        return True, "FFmpeg installed successfully using pacman"
+                except Exception as e:
+                    logger.warning(f"pacman install error: {e}")
+            else:
+                return False, "sudo access required. Run: sudo pacman -S ffmpeg"
+        
+        # Try snap as fallback
+        if shutil.which('snap'):
+            logger.info("Trying snap as fallback...")
+            try:
+                result = subprocess.run(
+                    ['sudo', 'snap', 'install', 'ffmpeg'],
+                    capture_output=True,
+                    text=True,
+                    timeout=300
+                )
+                if result.returncode == 0:
+                    return True, "FFmpeg installed successfully using snap"
+            except Exception as e:
+                logger.warning(f"snap install error: {e}")
+        
+        return False, self._get_ffmpeg_manual_instructions('linux')
+    
+    def _check_sudo_access(self) -> bool:
+        """Check if we have passwordless sudo access."""
+        try:
+            result = subprocess.run(
+                ['sudo', '-n', 'true'],
+                capture_output=True,
+                timeout=5
+            )
+            return result.returncode == 0
+        except:
+            return False
+    
+    def _install_ffmpeg_macos(self) -> Tuple[bool, str]:
+        """Install FFmpeg on macOS."""
+        
+        # Try Homebrew (most common on macOS)
+        if shutil.which('brew'):
+            logger.info("Installing FFmpeg using Homebrew...")
+            safe_print("Installing FFmpeg via Homebrew (this may take a few minutes)...")
+            try:
+                result = subprocess.run(
+                    ['brew', 'install', 'ffmpeg'],
+                    capture_output=True,
+                    text=True,
+                    timeout=600  # 10 minutes - ffmpeg has many dependencies
+                )
+                if result.returncode == 0:
+                    logger.info("FFmpeg installed successfully with Homebrew")
+                    return True, "FFmpeg installed successfully using Homebrew"
+                else:
+                    # Check if already installed
+                    if 'already installed' in result.stderr.lower():
+                        return True, "FFmpeg is already installed via Homebrew"
+                    logger.warning(f"Homebrew install failed: {result.stderr}")
+            except subprocess.TimeoutExpired:
+                logger.warning("Homebrew install timed out - ffmpeg may still be installing")
+            except Exception as e:
+                logger.warning(f"Homebrew install error: {e}")
+        else:
+            # Homebrew not installed - try to install it first
+            logger.info("Homebrew not found. Attempting to install Homebrew first...")
+            safe_print("Homebrew not found. Installing Homebrew first...")
+            
+            try:
+                # Install Homebrew
+                homebrew_install_cmd = '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+                result = subprocess.run(
+                    homebrew_install_cmd,
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=600
+                )
+                
+                if result.returncode == 0 or shutil.which('brew'):
+                    logger.info("Homebrew installed, now installing FFmpeg...")
+                    # Now install ffmpeg
+                    result = subprocess.run(
+                        ['brew', 'install', 'ffmpeg'],
+                        capture_output=True,
+                        text=True,
+                        timeout=600
+                    )
+                    if result.returncode == 0:
+                        return True, "Homebrew and FFmpeg installed successfully"
+            except Exception as e:
+                logger.warning(f"Failed to install Homebrew: {e}")
+        
+        # Try MacPorts as fallback
+        if shutil.which('port'):
+            logger.info("Trying MacPorts as fallback...")
+            try:
+                result = subprocess.run(
+                    ['sudo', 'port', 'install', 'ffmpeg'],
+                    capture_output=True,
+                    text=True,
+                    timeout=600
+                )
+                if result.returncode == 0:
+                    return True, "FFmpeg installed successfully using MacPorts"
+            except Exception as e:
+                logger.warning(f"MacPorts install error: {e}")
+        
+        return False, self._get_ffmpeg_manual_instructions('macos')
+    
+    def _try_command(self, command: List[str]) -> bool:
+        """Check if a command is available."""
+        try:
+            result = subprocess.run(command, capture_output=True, timeout=10)
+            return result.returncode == 0
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            return False
+    
+    def _get_ffmpeg_manual_instructions(self, platform: str) -> str:
+        """Get manual installation instructions for FFmpeg."""
+        instructions = {
+            'windows': [
+                "Option 1: winget install ffmpeg (recommended)",
+                "Option 2: choco install ffmpeg (if Chocolatey installed)",
+                "Option 3: Download from https://www.gyan.dev/ffmpeg/builds/",
+                "   - Download 'ffmpeg-release-essentials.zip'",
+                "   - Extract to C:\\ffmpeg",
+                "   - Add C:\\ffmpeg\\bin to your PATH environment variable",
+                "After installation, restart your terminal and verify: ffmpeg -version"
+            ],
+            'linux': [
+                "Ubuntu/Debian: sudo apt-get update && sudo apt-get install -y ffmpeg",
+                "Fedora/RHEL: sudo dnf install -y ffmpeg",
+                "Arch Linux: sudo pacman -S ffmpeg",
+                "Snap: sudo snap install ffmpeg",
+                "After installation, verify: ffmpeg -version"
+            ],
+            'macos': [
+                "Option 1: brew install ffmpeg (recommended - install Homebrew first)",
+                "   - Install Homebrew: /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
+                "Option 2: sudo port install ffmpeg (MacPorts)",
+                "After installation, verify: ffmpeg -version"
+            ]
+        }
+        
+        steps = instructions.get(platform, instructions['windows'])
+        return f"Manual FFmpeg installation required for {platform}:\n" + "\n".join(f"  {step}" for step in steps)
+    
+    def install_requirements(self, requirements_file: str = None) -> Tuple[bool, List[str]]:
+        """
+        Install all packages from requirements.txt.
+        
+        Args:
+            requirements_file: Path to requirements.txt (auto-detected if not provided)
+        
+        Returns:
+            (success, list of failed packages)
+        """
+        if requirements_file is None:
+            # Auto-detect requirements.txt
+            script_dir = Path(__file__).parent
+            requirements_file = script_dir / "requirements.txt"
+            
+            if not requirements_file.exists():
+                logger.warning("requirements.txt not found")
+                return True, []
+        
+        requirements_path = Path(requirements_file)
+        if not requirements_path.exists():
+            logger.error(f"Requirements file not found: {requirements_file}")
+            return False, [f"File not found: {requirements_file}"]
+        
+        logger.info(f"Installing packages from {requirements_file}...")
+        safe_print(f"\n📦 Installing Python packages from requirements.txt...")
+        
+        failed_packages = []
+        
+        try:
+            # Use pip to install all requirements at once
+            result = subprocess.run(
+                [sys.executable, '-m', 'pip', 'install', '-r', str(requirements_path)],
+                capture_output=True,
+                text=True,
+                timeout=600  # 10 minutes
+            )
+            
+            if result.returncode == 0:
+                logger.info("All requirements installed successfully")
+                safe_print("✓ All Python packages installed successfully")
+                return True, []
+            else:
+                logger.warning(f"Some packages may have failed: {result.stderr}")
+                # Try to parse which packages failed
+                for line in result.stderr.split('\n'):
+                    if 'error' in line.lower() or 'failed' in line.lower():
+                        failed_packages.append(line.strip())
+                
+        except subprocess.TimeoutExpired:
+            logger.error("Requirements installation timed out")
+            failed_packages.append("Installation timed out")
+        except Exception as e:
+            logger.error(f"Failed to install requirements: {e}")
+            failed_packages.append(str(e))
+        
+        return len(failed_packages) == 0, failed_packages
+    
+    def install_system_dependencies(self) -> Tuple[bool, List[str]]:
+        """
+        Install system-level dependencies (like ffmpeg).
+        
+        Returns:
+            (success, list of messages)
+        """
+        messages = []
+        all_success = True
+        
+        safe_print("\n🔧 Checking system dependencies...")
+        
+        for cmd_name, package_name in self.system_requirements.items():
+            if self.check_system_command(cmd_name):
+                msg = f"✓ {cmd_name} is already installed"
+                logger.info(msg)
+                safe_print(msg)
+                messages.append(msg)
+            else:
+                msg = f"✗ {cmd_name} not found, attempting installation..."
+                logger.info(msg)
+                safe_print(msg)
+                
+                success, install_msg = self.install_system_package(cmd_name)
+                messages.append(install_msg)
+                
+                if not success:
+                    all_success = False
+                    safe_print(f"⚠️  {install_msg}")
+                else:
+                    safe_print(f"✓ {install_msg}")
+        
+        return all_success, messages
+    
+    def auto_install(self, force_reinstall: bool = False, install_from_requirements: bool = True) -> List[Tuple[str, bool, str]]:
+        """
+        Auto-install missing dependencies.
+        
+        Args:
+            force_reinstall: Whether to reinstall even if already installed
+            install_from_requirements: Whether to install from requirements.txt first
+        
+        Returns:
+            List of (package_name, success, message) tuples
+        """
+        results = []
+        
+        logger.info("Starting auto-installation of dependencies...")
+        safe_print("\n" + "="*60)
+        safe_print("🚀 AUTO-INSTALLER FOR VOICE ANALYSIS DEPENDENCIES")
+        safe_print("="*60)
+        safe_print(f"Platform: {platform.system()} ({platform.machine()})")
+        safe_print(f"Python: {platform.python_version()}")
+        safe_print("="*60)
+        
+        # Step 1: Install system dependencies first (FFmpeg)
+        safe_print("\n📋 Step 1/3: System Dependencies")
+        safe_print("-"*40)
+        
+        for command_name in self.system_requirements:
+            if not force_reinstall and self.check_system_command(command_name):
+                logger.info(f"✓ {command_name} system command available")
+                safe_print(f"✓ {command_name} is already installed")
+                results.append((f"{command_name} (system)", True, "Already available"))
+            else:
+                logger.warning(f"✗ {command_name} system command not found")
+                safe_print(f"⏳ Installing {command_name}...")
+                success, message = self.install_system_package(command_name)
+                results.append((f"{command_name} (system)", success, message))
+                if success:
+                    safe_print(f"✓ {message}")
+                else:
+                    safe_print(f"⚠️  {message}")
+        
+        # Step 2: Install from requirements.txt
+        if install_from_requirements:
+            safe_print("\n📋 Step 2/3: Python Packages (requirements.txt)")
+            safe_print("-"*40)
+            
+            req_success, req_failures = self.install_requirements()
+            if req_success:
+                results.append(("requirements.txt", True, "All packages installed"))
+            else:
+                results.append(("requirements.txt", False, f"Failed: {', '.join(req_failures)}"))
+        
+        # Step 3: Verify voice analysis packages
+        safe_print("\n📋 Step 3/3: Verifying Voice Analysis Packages")
+        safe_print("-"*40)
+        
+        for module_name, package_name in self.required_packages.items():
+            if self.check_package(module_name):
+                logger.info(f"✓ {package_name} available")
+                safe_print(f"✓ {package_name}")
+                results.append((package_name, True, "Available"))
+            else:
+                if force_reinstall:
+                    logger.info(f"Installing {package_name}...")
+                    safe_print(f"⏳ Installing {package_name}...")
+                    success, message = self.install_package(package_name)
+                    results.append((package_name, success, message))
+                    if success:
+                        safe_print(f"✓ {package_name} installed")
+                    else:
+                        safe_print(f"✗ {package_name} failed: {message}")
+                else:
+                    # Should have been installed by requirements.txt
+                    logger.warning(f"✗ {package_name} not available")
+                    safe_print(f"⚠️  {package_name} not available")
+                    results.append((package_name, False, "Not available after requirements install"))
+        
+        return results
+    
+    def get_installation_summary(self, results: List[Tuple[str, bool, str]]) -> Tuple[int, int, List[str]]:
+        """
+        Get summary of installation results.
+        
+        Returns:
+            (success_count, total_count, warnings)
+        """
+        success_count = sum(1 for _, success, _ in results if success)
+        total_count = len(results)
+        
+        warnings = []
+        for package, success, message in results:
+            if not success:
+                if "(system)" in package:
+                    warnings.append(f"⚠️  {message}")
+                else:
+                    warnings.append(f"❌ Failed to install {package}: {message}")
+        
+        return success_count, total_count, warnings
+    
+    def print_results(self, results: List[Tuple[str, bool, str]]) -> None:
+        """Print installation results in a formatted way."""
+        safe_print("\n" + "="*60)
+        safe_print("VOICE ANALYSIS DEPENDENCIES INSTALLATION")
+        safe_print("="*60)
+        
+        success_count, total_count, warnings = self.get_installation_summary(results)
+        
+        for package, success, message in results:
+            status = "✓" if success else "✗"
+            safe_print(f"{status} {package}: {message}")
+        
+        safe_print(f"\nSummary: {success_count}/{total_count} dependencies installed")
+        
+        if warnings:
+            safe_print("\nWarnings/Issues:")
+            for warning in warnings:
+                safe_print(f"  {warning}")
+        
+        if success_count == total_count:
+            safe_print("\n🎉 All dependencies installed successfully!")
+        else:
+            safe_print(f"\n⚠️  {total_count - success_count} dependencies need attention")
+        
+        safe_print("="*60)
+
+
+def auto_install_dependencies(force_reinstall: bool = False, skip_requirements: bool = False) -> bool:
+    """
+    Auto-install all voice analysis dependencies.
+    
+    Args:
+        force_reinstall: Whether to reinstall even if already installed
+        skip_requirements: Whether to skip requirements.txt installation
+    
+    Returns:
+        True if all critical dependencies are installed
+    """
+    installer = AutoInstaller()
+    results = installer.auto_install(force_reinstall, install_from_requirements=not skip_requirements)
+    installer.print_results(results)
+    
+    # Check if critical packages are installed
+    critical_packages = ['whisper', 'speechbrain', 'torch', 'torchaudio', 'soundfile']
+    missing_critical = []
+    
+    for package in critical_packages:
+        if not installer.check_package(package):
+            missing_critical.append(package)
+    
+    if missing_critical:
+        safe_print(f"\n❌ Critical packages missing: {', '.join(missing_critical)}")
+        safe_print("   Try running: pip install openai-whisper speechbrain torch torchaudio soundfile")
+        return False
+    
+    # Check FFmpeg (critical for Whisper)
+    if not installer.check_system_command('ffmpeg'):
+        safe_print("\n" + "="*60)
+        safe_print("⚠️  WARNING: FFmpeg not found!")
+        safe_print("="*60)
+        safe_print("FFmpeg is REQUIRED for Whisper speech-to-text to work.")
+        safe_print("Whisper will fail with '[WinError 2]' or similar errors without it.")
+        safe_print("")
+        safe_print("Please install FFmpeg manually and restart your terminal:")
+        safe_print(installer._get_ffmpeg_manual_instructions(
+            'windows' if installer.is_windows else ('macos' if installer.is_macos else 'linux')
+        ))
+        safe_print("="*60)
+        return False
+    else:
+        safe_print("\n✓ FFmpeg is available")
+    
+    return True
+
+
+def install_ffmpeg_only() -> bool:
+    """Install only FFmpeg (useful for quick fix)."""
+    installer = AutoInstaller()
+    
+    if installer.check_system_command('ffmpeg'):
+        safe_print("✓ FFmpeg is already installed")
+        # Show version
+        try:
+            result = subprocess.run(['ffmpeg', '-version'], capture_output=True, text=True, timeout=10)
+            first_line = result.stdout.split('\n')[0] if result.stdout else "Unknown version"
+            safe_print(f"  Version: {first_line}")
+        except:
+            pass
+        return True
+    
+    safe_print("Installing FFmpeg...")
+    success, message = installer.install_system_package('ffmpeg')
+    
+    if success:
+        safe_print(f"✓ {message}")
+    else:
+        safe_print(f"✗ {message}")
+    
+    return success
+
+
+def verify_installation() -> bool:
+    """Verify all dependencies are properly installed."""
+    installer = AutoInstaller()
+    all_ok = True
+    
+    safe_print("\n" + "="*60)
+    safe_print("🔍 DEPENDENCY VERIFICATION")
+    safe_print("="*60)
+    
+    # Check Python packages
+    safe_print("\nPython Packages:")
+    for module_name, package_name in installer.required_packages.items():
+        if installer.check_package(module_name):
+            safe_print(f"  ✓ {package_name}")
+        else:
+            safe_print(f"  ✗ {package_name} - NOT INSTALLED")
+            all_ok = False
+    
+    # Check FFmpeg
+    safe_print("\nSystem Dependencies:")
+    if installer.check_system_command('ffmpeg'):
+        safe_print("  ✓ ffmpeg")
+        try:
+            result = subprocess.run(['ffmpeg', '-version'], capture_output=True, text=True, timeout=10)
+            first_line = result.stdout.split('\n')[0] if result.stdout else ""
+            if first_line:
+                safe_print(f"    {first_line}")
+        except:
+            pass
+    else:
+        safe_print("  ✗ ffmpeg - NOT INSTALLED")
+        all_ok = False
+    
+    safe_print("\n" + "="*60)
+    if all_ok:
+        safe_print("✓ All dependencies are properly installed!")
+    else:
+        safe_print("⚠️  Some dependencies are missing. Run: python auto_installer.py")
+    safe_print("="*60)
+    
+    return all_ok
+
+
+if __name__ == "__main__":
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description="Auto-installer for voice analysis dependencies (Windows, Linux, macOS)"
+    )
+    parser.add_argument(
+        '--force', '-f',
+        action='store_true',
+        help='Force reinstall all packages'
+    )
+    parser.add_argument(
+        '--verify', '-v',
+        action='store_true',
+        help='Only verify installation, do not install'
+    )
+    parser.add_argument(
+        '--ffmpeg-only',
+        action='store_true',
+        help='Only install FFmpeg'
+    )
+    parser.add_argument(
+        '--skip-requirements',
+        action='store_true',
+        help='Skip requirements.txt installation'
+    )
+    
+    args = parser.parse_args()
+    
+    if args.verify:
+        success = verify_installation()
+    elif args.ffmpeg_only:
+        success = install_ffmpeg_only()
+    else:
+        success = auto_install_dependencies(
+            force_reinstall=args.force,
+            skip_requirements=args.skip_requirements
+        )
+    
+    sys.exit(0 if success else 1)

@@ -67,12 +67,11 @@ fun AdminLessonContentScreen(
     }
 
     // Clear messages after 3 seconds
-    LaunchedEffect(errorMessage, successMessage) {
-        if (errorMessage != null || successMessage != null) {
-            kotlinx.coroutines.delay(3000)
-            viewModel.clearMessages()
-        }
-    }
+    AutoClearMessages(
+        errorMessage = errorMessage,
+        successMessage = successMessage,
+        onClear = { viewModel.clearMessages() },
+    )
 
     Surface(
         modifier = Modifier.fillMaxSize(),

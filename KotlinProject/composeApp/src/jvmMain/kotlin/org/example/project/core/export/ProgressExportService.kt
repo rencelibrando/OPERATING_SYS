@@ -191,144 +191,144 @@ class ProgressExportService {
         val languageFlag = getLanguageFlag(progress.language.code)
 
         return """
-                    <!DOCTYPE html>
-                    <html lang="en">
-                    <head>
-                        <meta charset="UTF-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <title>${progress.language.displayName} Progress Report</title>
-                        <style>
-                            * { margin: 0; padding: 0; box-sizing: border-box; }
-                            body {
-                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                                padding: 40px 20px;
-                                min-height: 100vh;
-                            }
-                            .container {
-                                max-width: 800px;
-                                margin: 0 auto;
-                                background: white;
-                                border-radius: 16px;
-                                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                                overflow: hidden;
-                            }
-                            .header {
-                                background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
-                                color: white;
-                                padding: 40px;
-                                text-align: center;
-                            }
-                            .header h1 {
-                                font-size: 2.5em;
-                                margin-bottom: 10px;
-                            }
-                            .header p {
-                                opacity: 0.9;
-                                font-size: 1.1em;
-                            }
-                            .content {
-                                padding: 40px;
-                            }
-                            .metric-grid {
-                                display: grid;
-                                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-                                gap: 20px;
-                                margin: 30px 0;
-                            }
-                            .metric-card {
-                                background: #F9FAFB;
-                                border-radius: 12px;
-                                padding: 24px;
-                                text-align: center;
-                            }
-                            .metric-icon {
-                                font-size: 2em;
-                                margin-bottom: 8px;
-                            }
-                            .metric-value {
-                                font-size: 1.8em;
-                                font-weight: bold;
-                                color: #1F2937;
-                                margin: 8px 0;
-                            }
-                            .metric-label {
-                                color: #6B7280;
-                                font-size: 0.9em;
-                            }
-                            .scores-section {
-                                margin-top: 40px;
-                                padding: 24px;
-                                background: #F3F4F6;
-                                border-radius: 12px;
-                            }
-                            .score-bar {
-                                margin: 16px 0;
-                            }
-                            .score-label {
-                                display: flex;
-                                justify-content: space-between;
-                                margin-bottom: 8px;
-                                font-size: 0.95em;
-                            }
-                            .progress-bar {
-                                height: 12px;
-                                background: #E5E7EB;
-                                border-radius: 6px;
-                                overflow: hidden;
-                            }
-                            .progress-fill {
-                                height: 100%;
-                                background: linear-gradient(90deg, #8B5CF6, #6366F1);
-                                transition: width 0.3s ease;
-                            }
-                            .footer {
-                                text-align: center;
-                                padding: 30px;
-                                color: #6B7280;
-                                border-top: 1px solid #E5E7EB;
-                            }
-                            @media print {
-                                body { background: white; padding: 0; }
-                                .container { box-shadow: none; }
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="container">
-                            <div class="header">
-                                <h1>$languageFlag ${progress.language.displayName} Learning Progress</h1>
-                                <p>$userName's Progress Report • $date</p>
-                            </div>
-                            
-                            <div class="content">
-                                <div class="metric-grid">
-                                    <div class="metric-card">
-                                        <div class="metric-icon">📚</div>
-                                        <div class="metric-value">${progress.lessonsCompleted}/${progress.totalLessons}</div>
-                                        <div class="metric-label">Lessons Completed</div>
-                                    </div>
-                                    
-                                    <div class="metric-card">
-                                        <div class="metric-icon">💬</div>
-                                        <div class="metric-value">${progress.conversationSessions}</div>
-                                        <div class="metric-label">Conversation Sessions</div>
-                                    </div>
-                                    
-                                    <div class="metric-card">
-                                        <div class="metric-icon">📖</div>
-                                        <div class="metric-value">${progress.vocabularyWords}</div>
-                                        <div class="metric-label">Vocabulary Words</div>
-                                    </div>
-                                    
-                                    <div class="metric-card">
-                                        <div class="metric-icon">⏱️</div>
-                                        <div class="metric-value">${progress.formattedTime}</div>
-                                        <div class="metric-label">Practice Time</div>
-                                    </div>
-                                </div>
-                                
-                                ${if (progress.voiceAnalysis.hasScores) {
+                                <!DOCTYPE html>
+                                <html lang="en">
+                                <head>
+                                    <meta charset="UTF-8">
+                                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                    <title>${progress.language.displayName} Progress Report</title>
+                                    <style>
+                                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                                        body {
+                                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                            padding: 40px 20px;
+                                            min-height: 100vh;
+                                        }
+                                        .container {
+                                            max-width: 800px;
+                                            margin: 0 auto;
+                                            background: white;
+                                            border-radius: 16px;
+                                            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                                            overflow: hidden;
+                                        }
+                                        .header {
+                                            background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+                                            color: white;
+                                            padding: 40px;
+                                            text-align: center;
+                                        }
+                                        .header h1 {
+                                            font-size: 2.5em;
+                                            margin-bottom: 10px;
+                                        }
+                                        .header p {
+                                            opacity: 0.9;
+                                            font-size: 1.1em;
+                                        }
+                                        .content {
+                                            padding: 40px;
+                                        }
+                                        .metric-grid {
+                                            display: grid;
+                                            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                                            gap: 20px;
+                                            margin: 30px 0;
+                                        }
+                                        .metric-card {
+                                            background: #F9FAFB;
+                                            border-radius: 12px;
+                                            padding: 24px;
+                                            text-align: center;
+                                        }
+                                        .metric-icon {
+                                            font-size: 2em;
+                                            margin-bottom: 8px;
+                                        }
+                                        .metric-value {
+                                            font-size: 1.8em;
+                                            font-weight: bold;
+                                            color: #1F2937;
+                                            margin: 8px 0;
+                                        }
+                                        .metric-label {
+                                            color: #6B7280;
+                                            font-size: 0.9em;
+                                        }
+                                        .scores-section {
+                                            margin-top: 40px;
+                                            padding: 24px;
+                                            background: #F3F4F6;
+                                            border-radius: 12px;
+                                        }
+                                        .score-bar {
+                                            margin: 16px 0;
+                                        }
+                                        .score-label {
+                                            display: flex;
+                                            justify-content: space-between;
+                                            margin-bottom: 8px;
+                                            font-size: 0.95em;
+                                        }
+                                        .progress-bar {
+                                            height: 12px;
+                                            background: #E5E7EB;
+                                            border-radius: 6px;
+                                            overflow: hidden;
+                                        }
+                                        .progress-fill {
+                                            height: 100%;
+                                            background: linear-gradient(90deg, #8B5CF6, #6366F1);
+                                            transition: width 0.3s ease;
+                                        }
+                                        .footer {
+                                            text-align: center;
+                                            padding: 30px;
+                                            color: #6B7280;
+                                            border-top: 1px solid #E5E7EB;
+                                        }
+                                        @media print {
+                                            body { background: white; padding: 0; }
+                                            .container { box-shadow: none; }
+                                        }
+                                    </style>
+                                </head>
+                                <body>
+                                    <div class="container">
+                                        <div class="header">
+                                            <h1>$languageFlag ${progress.language.displayName} Learning Progress</h1>
+                                            <p>$userName's Progress Report • $date</p>
+                                        </div>
+                                        
+                                        <div class="content">
+                                            <div class="metric-grid">
+                                                <div class="metric-card">
+                                                    <div class="metric-icon">📚</div>
+                                                    <div class="metric-value">${progress.lessonsCompleted}/${progress.totalLessons}</div>
+                                                    <div class="metric-label">Lessons Completed</div>
+                                                </div>
+                                                
+                                                <div class="metric-card">
+                                                    <div class="metric-icon">💬</div>
+                                                    <div class="metric-value">${progress.conversationSessions}</div>
+                                                    <div class="metric-label">Conversation Sessions</div>
+                                                </div>
+                                                
+                                                <div class="metric-card">
+                                                    <div class="metric-icon">📖</div>
+                                                    <div class="metric-value">${progress.vocabularyWords}</div>
+                                                    <div class="metric-label">Vocabulary Words</div>
+                                                </div>
+                                                
+                                                <div class="metric-card">
+                                                    <div class="metric-icon">⏱️</div>
+                                                    <div class="metric-value">${progress.formattedTime}</div>
+                                                    <div class="metric-label">Practice Time</div>
+                                                </div>
+                                            </div>
+                                            
+                                            ${if (progress.voiceAnalysis.hasScores) {
             """
             <div class="scores-section">
                 <h2 style="margin-bottom: 20px;">🎤 Voice Analysis Scores</h2>
@@ -344,15 +344,15 @@ class ProgressExportService {
         } else {
             ""
         }}
-                            </div>
-                            
-                            <div class="footer">
-                                <p>Generated by <strong>WordBridge</strong> - Your Language Learning Companion</p>
-                                <p style="margin-top: 8px; font-size: 0.9em;">Keep up the great work! 🌟</p>
-                            </div>
-                        </div>
-                    </body>
-                    </html>
+                                        </div>
+                                        
+                                        <div class="footer">
+                                            <p>Generated by <strong>WordBridge</strong> - Your Language Learning Companion</p>
+                                            <p style="margin-top: 8px; font-size: 0.9em;">Keep up the great work! 🌟</p>
+                                        </div>
+                                    </div>
+                                </body>
+                                </html>
             """.trimIndent()
     }
 

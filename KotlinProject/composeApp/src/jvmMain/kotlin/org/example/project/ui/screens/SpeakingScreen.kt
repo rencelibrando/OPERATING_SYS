@@ -1,19 +1,36 @@
 package org.example.project.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.*
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import kotlinx.coroutines.launch
+import org.example.project.core.audio.AudioPlayer
+import org.example.project.core.tts.EdgeTTSService
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -57,6 +74,7 @@ fun SpeakingScreen(
                     }
                 },
         )
+
     val currentWord by viewModel.currentWord
     val selectedLanguage by viewModel.selectedLanguage
     val isRecording by viewModel.isRecording
@@ -96,46 +114,93 @@ fun SpeakingScreen(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(WordBridgeColors.BackgroundMain)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .background(
+                    Color(0xFF0F0F23).copy(alpha = 0.95f) // Softer, warmer background
+                )
+                .padding(horizontal = 20.dp, vertical = 16.dp)
                 .verticalScroll(rememberScrollState()),
     ) {
-        // Header - shows either back button OR user avatar
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+        // Soft Header with connection feel
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = WordBridgeColors.CardBackgroundDark.copy(alpha = 0.8f),
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    spotColor = Color(0xFF8B5CF6).copy(alpha = 0.2f)
+                )
         ) {
-            // Show back button if onBackClick is provided (from VocabularyScreen)
-            if (onBackClick != null) {
-                TextButton(onClick = onBackClick) {
-                    Text(
-                        text = "← Back to Vocabulary",
-                        color = WordBridgeColors.TextPrimaryDark,
-                    )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Show back button if onBackClick is provided (from VocabularyScreen)
+                if (onBackClick != null) {
+                    TextButton(
+                        onClick = onBackClick,
+                        modifier = Modifier
+                            .shadow(
+                                elevation = 2.dp,
+                                shape = RoundedCornerShape(12.dp),
+                                spotColor = Color(0xFF8B5CF6).copy(alpha = 0.3f)
+                            )
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "←",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = WordBridgeColors.PrimaryPurple,
+                            )
+                            Text(
+                                text = "Back to Progress",
+                                color = WordBridgeColors.PrimaryPurple,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                    }
+                } else {
+                    // Otherwise show title (from sidebar navigation)
+                    Column {
+                        Text(
+                            text = "Speaking Practice",
+                            style =
+                                MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 24.sp
+                                ),
+                            color = WordBridgeColors.TextPrimaryDark,
+                        )
+                        Text(
+                            text = "Let's practice together!",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = 14.sp
+                            ),
+                            color = WordBridgeColors.TextSecondaryDark.copy(alpha = 0.8f),
+                        )
+                    }
                 }
-            } else {
-                // Otherwise show title (from sidebar navigation)
-                Text(
-                    text = "Speaking Practice",
-                    style =
-                        MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    color = WordBridgeColors.TextPrimaryDark,
+
+                // Always show user avatar on the right with soft feel
+                UserAvatar(
+                    initials = authenticatedUser?.initials ?: "U",
+                    profileImageUrl = authenticatedUser?.profileImageUrl,
+                    size = 48.dp,
+                    onClick = onUserAvatarClick,
                 )
             }
-
-            // Always show user avatar on the right
-            UserAvatar(
-                initials = authenticatedUser?.initials ?: "U",
-                profileImageUrl = authenticatedUser?.profileImageUrl,
-                size = 48.dp,
-                onClick = onUserAvatarClick,
-            )
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Main content - show Voice Tutor practice, word practice, or empty state
         if (voiceTutorLanguage != null && voiceTutorLevel != null && voiceTutorScenario != null && currentPrompt != null) {
@@ -149,9 +214,10 @@ fun SpeakingScreen(
                 // Back button
                 TextButton(
                     onClick = viewModel::exitVoiceTutorPractice,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = WordBridgeColors.TextSecondaryDark,
-                    ),
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = WordBridgeColors.TextSecondaryDark,
+                        ),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
                 ) {
                     Text("← Back", style = MaterialTheme.typography.labelMedium)
@@ -268,6 +334,7 @@ fun SpeakingScreen(
                 example = currentWord!!.examples.firstOrNull() ?: "No example available",
                 language = selectedLanguage!!,
                 pronunciation = currentWord!!.pronunciation,
+                audioUrl = currentWord!!.audioUrl,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -303,18 +370,24 @@ fun SpeakingScreen(
             }
         } else {
             // Empty state when accessed from sidebar (no word selected)
+            val vocabularyWords by viewModel.vocabularyWordsForPractice
+            
             SpeakingEmptyState(
                 features = viewModel.speakingFeatures.value,
                 onStartFirstPracticeClick = viewModel::onStartFirstPracticeClicked,
                 onExploreExercisesClick = viewModel::onExploreExercisesClicked,
                 onStartConversationClick = viewModel::onStartConversationClicked,
+                vocabularyWords = vocabularyWords,
+                onWordPracticeClick = { word ->
+                    viewModel.startWordPractice(word, word.language)
+                }
             )
         }
     }
 }
 
 /**
- * Card showing Voice Tutor practice information
+ * Card showing Voice Tutor practice information - Soft and User-Centric Design
  */
 @Composable
 private fun VoiceTutorPracticeCard(
@@ -325,44 +398,57 @@ private fun VoiceTutorPracticeCard(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(16.dp),
+                spotColor = Color(0xFF8B5CF6).copy(alpha = 0.2f)
+            ),
+        shape = RoundedCornerShape(16.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = WordBridgeColors.CardBackgroundDark,
+                containerColor = WordBridgeColors.CardBackgroundDark.copy(alpha = 0.98f),
             ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(14.dp),
+                    .padding(18.dp),
         ) {
-            // Compact header with language, level, scenario in one row
+            // Soft header with language, level, scenario in one row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Language
+                // Language with soft gradient feel
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(10.dp),
                     color = Color(0xFF8B5CF6).copy(alpha = 0.15f),
+                    modifier = Modifier.shadow(
+                        elevation = 2.dp,
+                        shape = RoundedCornerShape(10.dp),
+                        spotColor = Color(0xFF8B5CF6).copy(alpha = 0.3f)
+                    )
                 ) {
                     Text(
                         text = language.displayName,
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Medium,
-                        ),
+                        style =
+                            MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp
+                            ),
                         color = Color(0xFF8B5CF6),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     )
                 }
 
-                // Level
+                // Level with soft feel
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(10.dp),
                     color =
                         when (level) {
                             "beginner" -> Color(0xFF34D399).copy(alpha = 0.15f)
@@ -370,10 +456,23 @@ private fun VoiceTutorPracticeCard(
                             "advanced" -> Color(0xFF8B5CF6).copy(alpha = 0.15f)
                             else -> Color(0xFF6B7280).copy(alpha = 0.15f)
                         },
+                    modifier = Modifier.shadow(
+                        elevation = 2.dp,
+                        shape = RoundedCornerShape(10.dp),
+                        spotColor = when (level) {
+                            "beginner" -> Color(0xFF34D399).copy(alpha = 0.3f)
+                            "intermediate" -> Color(0xFFF59E0B).copy(alpha = 0.3f)
+                            "advanced" -> Color(0xFF8B5CF6).copy(alpha = 0.3f)
+                            else -> Color(0xFF6B7280).copy(alpha = 0.3f)
+                        }
+                    )
                 ) {
                     Text(
                         text = level.replaceFirstChar { it.uppercase() },
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 12.sp
+                        ),
                         color =
                             when (level) {
                                 "beginner" -> Color(0xFF34D399)
@@ -381,50 +480,67 @@ private fun VoiceTutorPracticeCard(
                                 "advanced" -> Color(0xFF8B5CF6)
                                 else -> Color(0xFF6B7280)
                             },
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                     )
                 }
 
-                // Scenario
+                // Scenario with soft feel
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(10.dp),
                     color = Color(0xFF3B82F6).copy(alpha = 0.15f),
+                    modifier = Modifier.shadow(
+                        elevation = 2.dp,
+                        shape = RoundedCornerShape(10.dp),
+                        spotColor = Color(0xFF3B82F6).copy(alpha = 0.3f)
+                    )
                 ) {
                     Text(
                         text = scenario.replaceFirstChar { it.uppercase() }.replace("_", " "),
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 12.sp
+                        ),
                         color = Color(0xFF3B82F6),
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Soft: Prominent prompt display as main focus
+            // Soft: Enhanced prompt display with connection feel
             Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = Color(0xFF374151).copy(alpha = 0.5f),
-                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = Color(0xFF374151).copy(alpha = 0.6f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(
+                        elevation = 4.dp,
+                        shape = RoundedCornerShape(16.dp),
+                        spotColor = Color(0xFF8B5CF6).copy(alpha = 0.2f)
+                    )
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
                         text = "Say this:",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.7f),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp
+                        ),
+                        color = Color.White.copy(alpha = 0.8f),
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = "\"$prompt\"",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Medium,
-                            lineHeight = 24.sp,
-                        ),
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                lineHeight = 26.sp,
+                                fontSize = 17.sp
+                            ),
                         color = Color.White.copy(alpha = 0.95f),
                         textAlign = TextAlign.Center,
                     )
@@ -435,7 +551,7 @@ private fun VoiceTutorPracticeCard(
 }
 
 /**
- * Card showing word information
+ * Card showing word information with TTS pronunciation playback
  */
 @Composable
 private fun WordInfoCard(
@@ -444,16 +560,89 @@ private fun WordInfoCard(
     example: String,
     language: PracticeLanguage,
     pronunciation: String,
+    audioUrl: String? = null,
     modifier: Modifier = Modifier,
 ) {
+    val scope = rememberCoroutineScope()
+    var isPlayingAudio by remember { mutableStateOf(false) }
+    var isGeneratingAudio by remember { mutableStateOf(false) }
+    val audioPlayer = remember { AudioPlayer() }
+    val ttsService = remember { EdgeTTSService() }
+    
+    // Cleanup on dispose
+    DisposableEffect(Unit) {
+        onDispose {
+            audioPlayer.dispose()
+            ttsService.close()
+        }
+    }
+    
+    fun playWordAudio() {
+        if (isPlayingAudio || isGeneratingAudio) return
+        
+        scope.launch {
+            // First check if word has an existing audio URL
+            if (!audioUrl.isNullOrBlank()) {
+                isPlayingAudio = true
+                try {
+                    audioPlayer.setPlaybackFinishedCallback {
+                        isPlayingAudio = false
+                    }
+                    audioPlayer.playAudioFromUrl(audioUrl)
+                } catch (e: Exception) {
+                    println("[WordInfo] Error playing existing audio: ${e.message}")
+                    isPlayingAudio = false
+                }
+            } else {
+                // Generate audio using Edge TTS
+                isGeneratingAudio = true
+                try {
+                    val languageCode = when (language) {
+                        PracticeLanguage.SPANISH -> "es"
+                        PracticeLanguage.FRENCH -> "fr"
+                        PracticeLanguage.GERMAN -> "de"
+                        PracticeLanguage.HANGEUL -> "ko"
+                        PracticeLanguage.MANDARIN -> "zh"
+                        else -> "en"
+                    }
+                    val result = ttsService.generateAudio(word, languageCode)
+                    result.onSuccess { response ->
+                        if (!response.audioUrl.isNullOrBlank()) {
+                            isPlayingAudio = true
+                            isGeneratingAudio = false
+                            audioPlayer.setPlaybackFinishedCallback {
+                                isPlayingAudio = false
+                            }
+                            audioPlayer.playAudioFromUrl(response.audioUrl)
+                        } else {
+                            isGeneratingAudio = false
+                        }
+                    }.onFailure {
+                        println("[WordInfo] TTS generation failed: ${it.message}")
+                        isGeneratingAudio = false
+                    }
+                } catch (e: Exception) {
+                    println("[WordInfo] Error generating audio: ${e.message}")
+                    isGeneratingAudio = false
+                }
+            }
+        }
+    }
+    
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(16.dp),
+                spotColor = Color(0xFF8B5CF6).copy(alpha = 0.2f)
+            ),
         shape = RoundedCornerShape(16.dp),
         colors =
             CardDefaults.cardColors(
                 containerColor = WordBridgeColors.CardBackgroundDark,
             ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(
             modifier =
@@ -464,36 +653,81 @@ private fun WordInfoCard(
             // Language badge
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.1f),
+                color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.15f),
             ) {
                 Text(
                     text = language.displayName,
                     style = MaterialTheme.typography.labelMedium,
                     color = WordBridgeColors.PrimaryPurple,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Word
-            Text(
-                text = word,
-                style =
-                    MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                    ),
-                color = WordBridgeColors.TextPrimaryDark,
-            )
+            // Word with speaker button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = word,
+                        style =
+                            MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 28.sp
+                            ),
+                        color = WordBridgeColors.TextPrimaryDark,
+                    )
 
-            if (pronunciation.isNotBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = pronunciation,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = WordBridgeColors.TextSecondaryDark,
-                )
+                    if (pronunciation.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = pronunciation,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = 15.sp
+                            ),
+                            color = WordBridgeColors.TextSecondaryDark.copy(alpha = 0.8f),
+                        )
+                    }
+                }
+                
+                // Speaker button for TTS playback
+                IconButton(
+                    onClick = { playWordAudio() },
+                    modifier = Modifier
+                        .size(48.dp)
+                        .shadow(
+                            elevation = 4.dp,
+                            shape = CircleShape,
+                            spotColor = if (isPlayingAudio) Color(0xFF10B981).copy(alpha = 0.4f)
+                                       else Color(0xFF3B82F6).copy(alpha = 0.3f)
+                        )
+                        .clip(CircleShape)
+                        .background(
+                            if (isPlayingAudio) Color(0xFF10B981)
+                            else if (isGeneratingAudio) Color(0xFFF59E0B)
+                            else Color(0xFF3B82F6)
+                        )
+                ) {
+                    if (isGeneratingAudio) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.VolumeUp,
+                            contentDescription = "Play pronunciation",
+                            modifier = Modifier.size(24.dp),
+                            tint = Color.White
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -550,7 +784,7 @@ private fun WordInfoCard(
 }
 
 /**
- * Card with recording controls
+ * Card with recording controls - Soft and User-Centric Design
  */
 @Composable
 private fun RecordingControlsCard(
@@ -562,42 +796,81 @@ private fun RecordingControlsCard(
     onPlayRecording: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var isPressed by remember { mutableStateOf(false) }
+    val infiniteTransition = rememberInfiniteTransition()
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = EaseInOutCubic),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+    
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = if (isRecording) 8.dp else 4.dp,
+                shape = RoundedCornerShape(20.dp),
+                spotColor = if (isRecording) Color(0xFFEF4444).copy(alpha = 0.3f) else Color(0xFF8B5CF6).copy(alpha = 0.2f)
+            ),
+        shape = RoundedCornerShape(20.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = if (isRecording) Color(0xFFFEF2F2) else Color(0xFF1E1B2E).copy(alpha = 0.95f),
+                containerColor = if (isRecording) 
+                    Color(0xFFFEF2F2).copy(alpha = 0.95f) 
+                else 
+                    Color(0xFF1E1B2E).copy(alpha = 0.98f),
             ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(20.dp)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onPress = {
+                                isPressed = true
+                                awaitRelease()
+                                isPressed = false
+                            },
+                        )
+                    },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Soft status text
-            Text(
-                text =
-                    if (isRecording) {
-                        "🔴 Recording... Speak clearly!"
-                    } else if (hasRecording) {
-                        "✅ Recording saved"
-                    } else {
-                        "Tap to record"
+            // Soft, encouraging status text with connection feel
+            AnimatedVisibility(
+                visible = true,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Text(
+                    text = when {
+                        isRecording -> "Recording... I'm listening to you!"
+                        hasRecording -> "Great job! Ready to hear your practice"
+                        else -> "Ready when you are - tap to begin"
                     },
-                style = MaterialTheme.typography.bodySmall,
-                color = if (isRecording) Color(0xFFDC2626) else Color.White.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center,
-            )
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 15.sp
+                    ),
+                    color = if (isRecording) 
+                        Color(0xFFDC2626).copy(alpha = 0.8f) 
+                    else 
+                        Color.White.copy(alpha = 0.9f),
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp
+                )
+            }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // User-centric: Microphone Button as primary focus
+            // User-centric: Enhanced Microphone Button with connection feel
             Box(
-                modifier = Modifier.size(72.dp),
+                modifier = Modifier.size(90.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 // Soft pulsing background ring for recording state
@@ -605,136 +878,124 @@ private fun RecordingControlsCard(
                     Box(
                         modifier =
                             Modifier
-                                .size(72.dp)
+                                .size(90.dp)
+                                .scale(pulseScale)
                                 .clip(CircleShape)
-                                .background(Color(0xFFFEF2F2)),
+                                .background(
+                                    Color(0xFFEF4444).copy(alpha = 0.1f),
+                                )
                     )
                 }
 
-                // Soft main button
+                // Soft main button with enhanced interaction
                 IconButton(
                     onClick = onToggleRecording,
                     modifier =
                         Modifier
-                            .size(56.dp)
+                            .size(70.dp)
+                            .shadow(
+                                elevation = if (isPressed || isRecording) 12.dp else 6.dp,
+                                shape = CircleShape,
+                                spotColor = if (isRecording) 
+                                    Color(0xFFEF4444).copy(alpha = 0.4f) 
+                                else 
+                                    Color(0xFF8B5CF6).copy(alpha = 0.3f)
+                            )
                             .clip(CircleShape)
                             .background(
-                                if (isRecording) Color(0xFFDC2626) else Color(0xFF8B5CF6),
+                                if (isRecording) 
+                                    Color(0xFFEF4444) 
+                                else 
+                                    Color(0xFF8B5CF6),
                             ),
                 ) {
-                    // Microphone icon using Canvas
-                    androidx.compose.foundation.Canvas(
-                        modifier = Modifier.size(28.dp),
-                    ) {
-                        val canvasWidth = size.width
-                        val canvasHeight = size.height
-                        val iconColor = Color.White
-
-                        if (isRecording) {
-                            // Stop icon (square)
-                            drawRoundRect(
-                                color = iconColor,
-                                topLeft =
-                                    androidx.compose.ui.geometry.Offset(
-                                        canvasWidth * 0.25f,
-                                        canvasHeight * 0.25f,
-                                    ),
-                                size =
-                                    androidx.compose.ui.geometry.Size(
-                                        canvasWidth * 0.5f,
-                                        canvasHeight * 0.5f,
-                                    ),
-                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f),
-                            )
-                        } else {
-                            // Microphone icon
-                            // Mic body (rounded rectangle)
-                            drawRoundRect(
-                                color = iconColor,
-                                topLeft =
-                                    androidx.compose.ui.geometry.Offset(
-                                        canvasWidth * 0.35f,
-                                        canvasHeight * 0.2f,
-                                    ),
-                                size =
-                                    androidx.compose.ui.geometry.Size(
-                                        canvasWidth * 0.3f,
-                                        canvasHeight * 0.35f,
-                                    ),
-                                cornerRadius =
-                                    androidx.compose.ui.geometry.CornerRadius(
-                                        canvasWidth * 0.15f,
-                                        canvasWidth * 0.15f,
-                                    ),
-                            )
-
-                            // Mic stand (vertical line)
-                            drawLine(
-                                color = iconColor,
-                                start =
-                                    androidx.compose.ui.geometry.Offset(
-                                        canvasWidth * 0.5f,
-                                        canvasHeight * 0.55f,
-                                    ),
-                                end =
-                                    androidx.compose.ui.geometry.Offset(
-                                        canvasWidth * 0.5f,
-                                        canvasHeight * 0.75f,
-                                    ),
-                                strokeWidth = 3f,
-                            )
-
-                            // Mic base (horizontal line)
-                            drawLine(
-                                color = iconColor,
-                                start =
-                                    androidx.compose.ui.geometry.Offset(
-                                        canvasWidth * 0.35f,
-                                        canvasHeight * 0.75f,
-                                    ),
-                                end =
-                                    androidx.compose.ui.geometry.Offset(
-                                        canvasWidth * 0.65f,
-                                        canvasHeight * 0.75f,
-                                    ),
-                                strokeWidth = 3f,
-                                cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                            )
-                        }
+                    // Enhanced icons with better visual feedback
+                    if (isRecording) {
+                        Icon(
+                            imageVector = Icons.Default.Stop,
+                            contentDescription = "Stop Recording",
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Mic,
+                            contentDescription = "Start Recording",
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Compact duration + playback in one row
+            // Soft duration + playback with enhanced connection feel
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                AnimatedVisibility(visible = isRecording || hasRecording) {
-                    Text(
-                        text = "${String.format("%.1f", recordingDuration)}s",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Medium,
-                        ),
-                        color = if (isRecording) Color(0xFFDC2626) else Color.White.copy(alpha = 0.8f),
-                    )
+                AnimatedVisibility(
+                    visible = isRecording || hasRecording,
+                    enter = fadeIn() + slideInVertically(),
+                    exit = fadeOut() + slideOutVertically()
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isRecording) 
+                            Color(0xFFEF4444).copy(alpha = 0.1f) 
+                        else 
+                            Color(0xFF8B5CF6).copy(alpha = 0.1f),
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    ) {
+                        Text(
+                            text = "${String.format("%.1f", recordingDuration)}s",
+                            style =
+                                MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 14.sp
+                                ),
+                            color = if (isRecording) 
+                                Color(0xFFDC2626) 
+                            else 
+                                Color(0xFF8B5CF6),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
                 }
 
-                // Soft Playback Button
-                AnimatedVisibility(visible = hasRecording && !isRecording) {
+                // Enhanced Playback Button with connection feel
+                AnimatedVisibility(
+                    visible = hasRecording && !isRecording,
+                    enter = fadeIn() + slideInVertically(),
+                    exit = fadeOut() + slideOutVertically()
+                ) {
                     TextButton(
                         onClick = onPlayRecording,
                         enabled = !isPlayingRecording,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = Color(0xFF34D399),
-                        ),
+                        colors =
+                            ButtonDefaults.textButtonColors(
+                                contentColor = Color(0xFF34D399),
+                            ),
+                        modifier = Modifier
+                            .shadow(
+                                elevation = 4.dp,
+                                shape = RoundedCornerShape(12.dp),
+                                spotColor = Color(0xFF34D399).copy(alpha = 0.3f)
+                            )
                     ) {
-                        Text(
-                            text = if (isPlayingRecording) "▶ Playing..." else "▶ Play",
-                            style = MaterialTheme.typography.labelMedium,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = if (isPlayingRecording) "Playing..." else "Play Back",
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.Medium
+                                ),
+                            )
+                        }
                     }
                 }
             }
@@ -775,7 +1036,7 @@ private fun AnalyzingIndicator(modifier: Modifier = Modifier) {
 }
 
 /**
- * Feedback card with scores and suggestions
+ * Enhanced Feedback card with comprehensive scores and AI analysis
  */
 @Composable
 private fun FeedbackCard(
@@ -786,114 +1047,199 @@ private fun FeedbackCard(
 ) {
     val scoreColor =
         when {
-            feedback.overallScore >= 85 -> WordBridgeColors.AccentGreen
-            feedback.overallScore >= 70 -> WordBridgeColors.AccentOrange
-            else -> WordBridgeColors.AccentRed
+            feedback.overallScore >= 85 -> Color(0xFF10B981) // Green
+            feedback.overallScore >= 70 -> Color(0xFFF59E0B) // Orange
+            feedback.overallScore >= 50 -> Color(0xFFF97316) // Darker Orange
+            else -> Color(0xFFEF4444) // Red
         }
+    
+    val scoreEmoji = when {
+        feedback.overallScore >= 90 -> "🌟"
+        feedback.overallScore >= 80 -> "✨"
+        feedback.overallScore >= 70 -> "👍"
+        feedback.overallScore >= 50 -> "💪"
+        else -> "🎯"
+    }
+    
+    val scoreMessage = when {
+        feedback.overallScore >= 90 -> "Excellent pronunciation!"
+        feedback.overallScore >= 80 -> "Great job!"
+        feedback.overallScore >= 70 -> "Good progress!"
+        feedback.overallScore >= 50 -> "Keep practicing!"
+        else -> "Let's try again"
+    }
 
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(16.dp),
+                spotColor = scoreColor.copy(alpha = 0.3f)
+            ),
+        shape = RoundedCornerShape(16.dp),
         colors =
             CardDefaults.cardColors(
                 containerColor = WordBridgeColors.CardBackgroundDark,
             ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(14.dp),
+                    .padding(20.dp),
         ) {
-            // Compact header with score
+            // Enhanced header with score circle
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = "Your Score",
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontWeight = FontWeight.Medium,
-                    ),
-                    color = Color.White.copy(alpha = 0.9f),
-                )
+                Column {
+                    Text(
+                        text = "$scoreEmoji $scoreMessage",
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            ),
+                        color = Color.White,
+                    )
+                    Text(
+                        text = "AI Pronunciation Analysis",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontSize = 12.sp
+                        ),
+                        color = Color.White.copy(alpha = 0.6f),
+                    )
+                }
 
-                // Soft overall score badge
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = scoreColor.copy(alpha = 0.2f),
+                // Circular score badge
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(scoreColor.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "${feedback.overallScore}%",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                        ),
+                        text = "${feedback.overallScore}",
+                        style =
+                            MaterialTheme.typography.headlineSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
                         color = scoreColor,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Compact Score Breakdown - horizontal
-            Row(
+            // Score Breakdown with progress bars
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                CompactScoreItem(
+                ScoreProgressItem(
                     label = "Pronunciation",
                     score = feedback.pronunciationScore,
-                    color = WordBridgeColors.AccentBlue,
+                    color = Color(0xFF3B82F6),
+                    icon = "🗣️"
                 )
-                CompactScoreItem(
+                ScoreProgressItem(
                     label = "Clarity",
                     score = feedback.clarityScore,
-                    color = WordBridgeColors.AccentGreen,
+                    color = Color(0xFF10B981),
+                    icon = "🎯"
                 )
-                CompactScoreItem(
+                ScoreProgressItem(
                     label = "Fluency",
                     score = feedback.fluencyScore,
-                    color = WordBridgeColors.AccentOrange,
+                    color = Color(0xFFF59E0B),
+                    icon = "🌊"
                 )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-            HorizontalDivider(color = WordBridgeColors.ProgressBackground)
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Soft Feedback
+            // Feedback messages
             if (feedback.messages.isNotEmpty()) {
-                Text(
-                    text = "💡 ${feedback.messages.first()}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.8f),
-                    lineHeight = 16.sp,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFF1F2937).copy(alpha = 0.6f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(text = "📝", fontSize = 16.sp)
+                            Text(
+                                text = "Feedback",
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = Color.White.copy(alpha = 0.9f),
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        feedback.messages.forEach { message ->
+                            Text(
+                                text = "• $message",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    lineHeight = 18.sp
+                                ),
+                                color = Color.White.copy(alpha = 0.8f),
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // Soft suggestion
+            // Suggestions with improved styling
             if (feedback.suggestions.isNotEmpty()) {
                 Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = Color(0xFF374151).copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFF3B82F6).copy(alpha = 0.1f),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(
-                        text = "Tip: ${feedback.suggestions.first()}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.9f),
-                        modifier = Modifier.padding(12.dp),
-                        lineHeight = 16.sp,
-                    )
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(text = "💡", fontSize = 16.sp)
+                            Text(
+                                text = "Tips to Improve",
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = Color(0xFF60A5FA),
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        feedback.suggestions.take(3).forEach { suggestion ->
+                            Text(
+                                text = "→ $suggestion",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    lineHeight = 18.sp
+                                ),
+                                color = Color.White.copy(alpha = 0.8f),
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                    }
                 }
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Compact Action Buttons
+            // Action Buttons with enhanced styling
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -902,9 +1248,10 @@ private fun FeedbackCard(
                     onClick = onTryAgain,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFF8B5CF6),
-                    ),
+                    colors =
+                        ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color(0xFF8B5CF6),
+                        ),
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.5f)),
                     contentPadding = PaddingValues(vertical = 8.dp),
                 ) {
@@ -914,10 +1261,11 @@ private fun FeedbackCard(
                 Button(
                     onClick = onComplete,
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF8B5CF6).copy(alpha = 0.9f),
-                        contentColor = Color.White,
-                    ),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF8B5CF6).copy(alpha = 0.9f),
+                            contentColor = Color.White,
+                        ),
                     shape = RoundedCornerShape(10.dp),
                     elevation = ButtonDefaults.buttonElevation(0.dp),
                     contentPadding = PaddingValues(vertical = 8.dp),
@@ -930,7 +1278,68 @@ private fun FeedbackCard(
 }
 
 /**
- * Individual score item
+ * Score item with progress bar for enhanced feedback display
+ */
+@Composable
+fun ScoreProgressItem(
+    label: String,
+    score: Int,
+    color: Color,
+    icon: String,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(text = icon, fontSize = 16.sp)
+        
+        Column(modifier = Modifier.weight(1f)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Medium
+                    ),
+                    color = Color.White.copy(alpha = 0.9f),
+                )
+                Text(
+                    text = "$score%",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = color,
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            // Progress bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(Color.White.copy(alpha = 0.1f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(score / 100f)
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(color)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Individual score item (compact version)
  */
 @Composable
 private fun CompactScoreItem(
@@ -945,9 +1354,10 @@ private fun CompactScoreItem(
     ) {
         Text(
             text = "$score%",
-            style = MaterialTheme.typography.titleSmall.copy(
-                fontWeight = FontWeight.Bold,
-            ),
+            style =
+                MaterialTheme.typography.titleSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                ),
             color = color,
         )
         Text(

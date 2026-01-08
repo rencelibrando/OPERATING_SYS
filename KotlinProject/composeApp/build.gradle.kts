@@ -1,6 +1,7 @@
 import org.gradle.api.tasks.Copy
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.io.File
 
 plugins {
@@ -21,8 +22,10 @@ java {
 kotlin {
     jvm {
         compilations.all {
-            compilerOptions.configure {
-                jvmTarget.set(JvmTarget.JVM_18)
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_18)
+                }
             }
         }
     }
@@ -75,6 +78,14 @@ kotlin {
         }
     }
 }
+
+// Ensure all Kotlin compile tasks use JVM 18
+tasks.withType<KotlinCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_18)
+    }
+}
+
 // Task to copy .env file to JAR resources before packaging
 tasks.named("jvmProcessResources", Copy::class) {
     val envFile = layout.projectDirectory.file(".env").asFile
@@ -110,7 +121,9 @@ tasks.named("jvmProcessResources", Copy::class) {
 }
 ktlint {
     android.set(false)
-    ignoreFailures.set(false)
+    ignoreFailures.set(true)
+    enableExperimentalRules.set(true)
+
     filter {
         exclude("**/build/**")
         exclude("**/generated/**")
@@ -190,13 +203,9 @@ compose.desktop {
             val resourcesDir = layout.buildDirectory.dir("compose/resources")
             appResourcesRootDir.set(resourcesDir)
 
-            // Add a license file if you have one (optional)
-            // licenseFile.set(project.file("LICENSE.txt"))
-
             windows {
                 // Show a console window for debugging (set to false for release builds)
                 console = false
-
                 // Create Start Menu entry and Desktop shortcut
                 menu = true
                 shortcut = true

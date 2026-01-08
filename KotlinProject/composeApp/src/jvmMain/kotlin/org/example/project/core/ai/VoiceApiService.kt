@@ -70,6 +70,45 @@ data class VoiceLanguagesResponse(
     val languages: List<Map<String, String>>,
 )
 
+@Serializable
+data class LocalVoiceAnalysisResponse(
+    val success: Boolean,
+    val transcript: String = "",
+    val confidence: Float = 0f,
+    val language_detected: String? = null,
+    val duration: Float = 0f,
+    val words: List<Map<String, String>> = emptyList(),
+    val scores: Map<String, Float> = emptyMap(),
+    val overall_score: Float = 0f,
+    val feedback_messages: List<String> = emptyList(),
+    val suggestions: List<String> = emptyList(),
+    val voice_quality: Map<String, Float> = emptyMap(),
+    val pronunciation_metrics: Map<String, Float> = emptyMap(),
+    val fluency_metrics: Map<String, Float> = emptyMap(),
+    val energy_profile: List<Float> = emptyList(),
+    val error: String? = null,
+)
+
+@Serializable
+data class LocalSpeakerAnalysisResponse(
+    val success: Boolean,
+    val voice_quality: Map<String, Float> = emptyMap(),
+    val pronunciation: Map<String, Float> = emptyMap(),
+    val fluency: Map<String, Float> = emptyMap(),
+    val clarity_score: Float = 0f,
+    val energy_profile: List<Float> = emptyList(),
+    val has_embedding: Boolean = false,
+)
+
+@Serializable
+data class LocalHealthResponse(
+    val success: Boolean,
+    val status: String,
+    val device: String = "cpu",
+    val cuda_available: Boolean = false,
+    val models: Map<String, Map<String, String>> = emptyMap(),
+)
+
 class VoiceApiService {
     private val client =
         HttpClient(CIO) {
@@ -427,6 +466,193 @@ class VoiceApiService {
             }
         }.onFailure { error ->
             ErrorLogger.logException(LOG_TAG, error, "Conversation session delete failed")
+        }
+
+    /**
+     * Analyze audio using local Whisper STT + SpeechBrain speaker analysis.
+     * No API keys required - runs entirely on the backend server.
+     */
+    suspend fun analyzeVoiceLocal(
+        audioFile: File,
+        language: String? = null,
+        expectedText: String? = null,
+        level: String = "intermediate",
+        scenario: String = "daily_conversation",
+        userId: String,
+    ): Result<LocalVoiceAnalysisResponse> =
+        runCatching {
+            val url = AIBackendConfig.getEndpointUrl("/local-voice/analyze")
+            println("[LocalVoice] Analyzing audio with Whisper + SpeechBrain")
+            println("   File: ${audioFile.name}, Size: ${audioFile.length()} bytes")
+            println("   Language: $language, Level: $level, Scenario: $scenario")
+
+            val response =
+                client.post(url) {
+                    setBody(
+                        MultiPartFormDataContent(
+                            formData {
+                                append(
+                                    "audio_file",
+                                    audioFile.readBytes(),
+                                    Headers.build {
+                                        append(HttpHeaders.ContentType, "audio/wav")
+                                        append(HttpHeaders.ContentDisposition, "filename=\"${audioFile.name}\"")
+                                    },
+                                )
+                                language?.let { append("language", it) }
+                                expectedText?.let { append("expected_text", it) }
+                                append("level", level)
+                                append("scenario", scenario)
+                                append("user_id", userId)
+                            },
+                        ),
+                    )
+                }
+
+            if (response.status.value in 200..299) {
+                val analysisResponse = response.body<LocalVoiceAnalysisResponse>()
+                println("[LocalVoice] Analysis complete:")
+                println("   Transcript: ${analysisResponse.transcript.take(50)}...")
+                println("   Overall score: ${analysisResponse.overall_score}")
+                println("   Scores: ${analysisResponse.scores}")
+                analysisResponse
+            } else {
+                val errorBody = response.body<String>()
+                throw Exception("Local voice analysis failed with status: ${response.status}, body: $errorBody")
+            }
+        }.onFailure { error ->
+            ErrorLogger.logException(LOG_TAG, error, "Local voice analysis failed")
+        }
+
+    /**
+     * Transcribe audio using local Whisper model only.
+     */
+    suspend fun transcribeAudioLocal(
+        audioFile: File,
+        language: String? = null,
+    ): Result<VoiceTranscriptionResponse> =
+        runCatching {
+            val url = AIBackendConfig.getEndpointUrl("/local-voice/transcribe")
+            println("[LocalVoice] Transcribing audio with Whisper")
+            println("   File: ${audioFile.name}, Size: ${audioFile.length()} bytes")
+
+            val response =
+                client.post(url) {
+                    setBody(
+                        MultiPartFormDataContent(
+                            formData {
+                                append(
+                                    "audio_file",
+                                    audioFile.readBytes(),
+                                    Headers.build {
+                                        append(HttpHeaders.ContentType, "audio/wav")
+                                        append(HttpHeaders.ContentDisposition, "filename=\"${audioFile.name}\"")
+                                    },
+                                )
+                                language?.let { append("language", it) }
+                            },
+                        ),
+                    )
+                }
+
+            if (response.status.value in 200..299) {
+                val transcriptionResponse = response.body<VoiceTranscriptionResponse>()
+                println("[LocalVoice] Transcription complete: ${transcriptionResponse.transcript.take(50)}...")
+                transcriptionResponse
+            } else {
+                val errorBody = response.body<String>()
+                throw Exception("Local transcription failed with status: ${response.status}, body: $errorBody")
+            }
+        }.onFailure { error ->
+            ErrorLogger.logException(LOG_TAG, error, "Local transcription failed")
+        }
+
+    /**
+     * Analyze speaker characteristics using local SpeechBrain model.
+     */
+    suspend fun analyzeSpeakerLocal(
+        audioFile: File,
+    ): Result<LocalSpeakerAnalysisResponse> =
+        runCatching {
+            val url = AIBackendConfig.getEndpointUrl("/local-voice/analyze-speaker")
+            println("[LocalVoice] Analyzing speaker with SpeechBrain")
+            println("   File: ${audioFile.name}, Size: ${audioFile.length()} bytes")
+
+            val response =
+                client.post(url) {
+                    setBody(
+                        MultiPartFormDataContent(
+                            formData {
+                                append(
+                                    "audio_file",
+                                    audioFile.readBytes(),
+                                    Headers.build {
+                                        append(HttpHeaders.ContentType, "audio/wav")
+                                        append(HttpHeaders.ContentDisposition, "filename=\"${audioFile.name}\"")
+                                    },
+                                )
+                            },
+                        ),
+                    )
+                }
+
+            if (response.status.value in 200..299) {
+                val speakerResponse = response.body<LocalSpeakerAnalysisResponse>()
+                println("[LocalVoice] Speaker analysis complete:")
+                println("   Clarity: ${speakerResponse.clarity_score}")
+                println("   Voice quality: ${speakerResponse.voice_quality}")
+                speakerResponse
+            } else {
+                val errorBody = response.body<String>()
+                throw Exception("Speaker analysis failed with status: ${response.status}, body: $errorBody")
+            }
+        }.onFailure { error ->
+            ErrorLogger.logException(LOG_TAG, error, "Speaker analysis failed")
+        }
+
+    /**
+     * Check if local voice analysis service is available and healthy.
+     */
+    suspend fun checkLocalVoiceHealth(): Result<LocalHealthResponse> =
+        runCatching {
+            val url = AIBackendConfig.getEndpointUrl("/local-voice/health")
+            println("[LocalVoice] Checking service health")
+
+            val response = client.get(url)
+
+            if (response.status.value in 200..299) {
+                val healthResponse = response.body<LocalHealthResponse>()
+                println("[LocalVoice] Service status: ${healthResponse.status}")
+                println("   Device: ${healthResponse.device}")
+                println("   CUDA available: ${healthResponse.cuda_available}")
+                healthResponse
+            } else {
+                val errorBody = response.body<String>()
+                throw Exception("Health check failed with status: ${response.status}, body: $errorBody")
+            }
+        }.onFailure { error ->
+            ErrorLogger.logException(LOG_TAG, error, "Local voice health check failed")
+        }
+
+    /**
+     * Preload Whisper and SpeechBrain models to reduce first-request latency.
+     */
+    suspend fun preloadLocalModels(): Result<Boolean> =
+        runCatching {
+            val url = AIBackendConfig.getEndpointUrl("/local-voice/preload-models")
+            println("[LocalVoice] Preloading models...")
+
+            val response = client.post(url)
+
+            if (response.status.value in 200..299) {
+                println("[LocalVoice] Models preloaded successfully")
+                true
+            } else {
+                val errorBody = response.body<String>()
+                throw Exception("Model preload failed with status: ${response.status}, body: $errorBody")
+            }
+        }.onFailure { error ->
+            ErrorLogger.logException(LOG_TAG, error, "Model preload failed")
         }
 
     fun close() {

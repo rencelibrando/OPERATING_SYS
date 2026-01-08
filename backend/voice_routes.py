@@ -41,15 +41,15 @@ async def transcribe_audio(
     model: str = Form(default="nova-3")
 ):
     """
-    Transcribe an audio file using Deepgram API.
+    Transcribe an audio file using local Whisper (Deepgram removed).
     
     Args:
         audio_file: Audio file in WAV format
         language: Target language for transcription
-        model: Deepgram model to use (default: nova-3)
+        model: Model parameter (ignored - using local Whisper)
     
     Returns:
-        Transcription result with confidence score
+        Error message directing to local transcription endpoint
     """
     try:
         # Validate a file type
@@ -59,17 +59,16 @@ async def transcribe_audio(
         # Read audio data
         audio_data = await audio_file.read()
         
-        # Create transcription request
-        request = VoiceTranscribeRequest(
-            audio_data=audio_data,
-            language=language,
-            model=model
+        # Deepgram is no longer available - return error directing to local endpoint
+        return VoiceTranscribeResponse(
+            success=False,
+            transcript="",
+            confidence=0.0,
+            words=[],
+            language_detected=None,
+            duration=0.0,
+            error="Deepgram transcription is no longer available. Please use local Whisper transcription at /local-voice/transcribe"
         )
-        
-        # Transcribe audio
-        response = await voice_service.transcribe_audio(request)
-        
-        return response
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
@@ -88,7 +87,7 @@ async def generate_feedback(
     Generate AI feedback for transcribed speech.
     
     Args:
-        transcript: Transcribed text from Deepgram
+        transcript: Transcribed text (from local Whisper recommended)
         expected_text: Expected phrase or prompt (optional)
         language: Target language
         level: User proficiency level

@@ -6,7 +6,8 @@ import json
 import uuid
 from datetime import datetime
 from typing import Dict, Any, List, Optional
-from deepgram import DeepgramClient
+
+# Try to import Deepgram, but handle gracefully if not available
 from providers.deepseek import DeepSeekProvider
 from providers.gemini import GeminiProvider
 from supabase_client import SupabaseManager
@@ -28,8 +29,6 @@ from config import settings
 
 class VoiceService:
     def __init__(self):
-        # Initialize Deepgram client
-        self.deepgram_client = DeepgramClient(api_key=settings.deepgram_api_key)
         
         # Initialize AI providers - DeepSeek as primary, Gemini as fallback
         self.deepseek_provider = DeepSeekProvider()
@@ -38,7 +37,7 @@ class VoiceService:
         # Initialize Supabase manager
         self.supabase_manager = SupabaseManager()
         
-        # Language mapping for Deepgram
+        # Language mapping (for compatibility - not used with local Whisper)
         self.language_mapping = {
             VoiceLanguage.FRENCH: "fr",
             VoiceLanguage.GERMAN: "de",
@@ -171,85 +170,32 @@ class VoiceService:
         }
     
     async def transcribe_audio(self, request: VoiceTranscribeRequest) -> VoiceTranscribeResponse:
-        """Transcribe audio using Deepgram API with multilingual code-switching support."""
+        """Transcribe audio using local Whisper (Deepgram removed)."""
         try:
-            # Use multilingual model for code-switching support
-            # Override with multi if model supports it (nova-2 or nova-3)
-            model = request.model if request.model else settings.deepgram_model
-            language_code = settings.deepgram_language
-            
-            # Validate model supports multilingual
-            if model not in ["nova-2", "nova-3"]:
-                print(f"Warning: Model '{model}' may not support multilingual code-switching. Recommended: nova-2 or nova-3")
-            
-            # Prepare transcription options with multilingual support and optimizations
-            options = {
-                "model": model,
-                "language": language_code,
-                "punctuate": True,
-                "paragraphs": True,
-                "diarize": False,
-                "profanity_filter": True,
-                "smart_format": settings.deepgram_smart_format,  # From config
-                "utterances": True,  # Enable utterance detection for better sentence boundaries
-                "interim_results": settings.deepgram_interim_results,  # Real-time feedback if streaming
-            }
-            
-            print(f"Transcribing with model={model}, language={language_code}")
-            
-            # Transcribe the audio
-            response = self.deepgram_client.listen.v1.media.transcribe_file(
-                request=request.audio_data,
-                **options
-            )
-            
-            # Extract transcription data using direct attribute access
-            alternatives = response.results.channels[0].alternatives[0]
-            transcript = alternatives.transcript
-            confidence = alternatives.confidence
-            
-            # Extract words with language information
-            words = []
-            if hasattr(alternatives, 'words') and alternatives.words:
-                for word in alternatives.words:
-                    word_dict = word.__dict__ if hasattr(word, '__dict__') else {}
-                    words.append(word_dict)
-            
-            # Get detected languages from response
-            detected_languages = None
-            if hasattr(alternatives, 'languages'):
-                detected_languages = alternatives.languages
-            
-            duration = response.metadata.duration if hasattr(response, 'metadata') and hasattr(response.metadata, 'duration') else None
-            
-            print(f"Transcription successful: confidence={confidence:.2f}, detected_languages={detected_languages}")
-            
-            return VoiceTranscribeResponse(
-                success=True,
-                transcript=transcript,
-                confidence=confidence,
-                words=words,
-                language_detected=str(detected_languages) if detected_languages else language_code,
-                duration=duration
-            )
-            
-        except Exception as e:
-            error_msg = str(e)
-            print(f"Error transcribing audio: {error_msg}")
-            
-            # Enhanced error handling for language/model issues
-            if "language" in error_msg.lower():
-                print("Language configuration error detected. Ensure model supports 'multi' language parameter.")
-            if "model" in error_msg.lower():
-                print(f"Model error detected. Current model: {request.model}. Supported models: nova-2, nova-3")
-            
+            # Deepgram is no longer available - using local Whisper instead
+            # This method is kept for compatibility but should not be used
+            # Use /local-voice/transcribe endpoint instead
             return VoiceTranscribeResponse(
                 success=False,
                 transcript="",
                 confidence=0.0,
                 words=[],
                 language_detected=None,
-                duration=None
+                duration=0.0,
+                error="Deepgram transcription is no longer available. Please use local Whisper transcription at /local-voice/transcribe"
+            )
+            
+        except Exception as e:
+            error_msg = f"Deepgram transcription unavailable: {str(e)}"
+            print(f"Error: {error_msg}")
+            return VoiceTranscribeResponse(
+                success=False,
+                transcript="",
+                confidence=0.0,
+                words=[],
+                language_detected=None,
+                duration=0.0,
+                error="Deepgram transcription is no longer available. Please use local Whisper transcription at /local-voice/transcribe"
             )
     
     async def generate_feedback(self, request: VoiceFeedbackRequest) -> VoiceFeedbackResponse:
@@ -284,10 +230,10 @@ class VoiceService:
                 )
                 ai_response = response.message
                 provider_used = "deepseek"
-                print(f"✅ DeepSeek feedback generated successfully")
+                print(f" DeepSeek feedback generated successfully")
             except Exception as deepseek_error:
-                print(f"❌ DeepSeek failed: {str(deepseek_error)}")
-                print("🔄 Falling back to Gemini...")
+                print(f" DeepSeek failed: {str(deepseek_error)}")
+                print("Falling back to Gemini...")
                 
                 try:
                     response = await self.gemini_provider.generate_response(
@@ -299,7 +245,7 @@ class VoiceService:
                     )
                     ai_response = response.message
                     provider_used = "gemini"
-                    print(f"✅ Gemini fallback successful")
+                    print(f" Gemini fallback successful")
                 except Exception as gemini_error:
                     print(f"❌ Gemini fallback also failed: {str(gemini_error)}")
                     raise Exception("Both DeepSeek and Gemini providers failed")
@@ -427,39 +373,90 @@ class VoiceService:
         return random.choice(prompts) if prompts else "Please speak clearly"
     
     def _create_feedback_prompt(self, transcript: str, expected_text: str, language: str, level: str, scenario: str) -> str:
-        """Create a prompt for AI feedback generation."""
-        return f"""
-        As a language learning expert, analyze the following speech and provide detailed feedback.
+        """Create an enhanced prompt for AI feedback generation with comprehensive analysis."""
         
-        Language: {language}
-        Level: {level}
-        Scenario: {scenario}
-        Expected Text: {expected_text}
-        Actual Transcript: {transcript}
+        # Level-specific guidance for feedback calibration
+        level_guidance = {
+            "beginner": "Be very encouraging and focus on building confidence. Celebrate small wins. Focus on basic pronunciation and simple grammar. Avoid overwhelming with too many corrections.",
+            "intermediate": "Provide balanced feedback with specific areas for improvement. Focus on fluency, natural phrasing, and common expressions. Point out patterns in mistakes.",
+            "advanced": "Be more detailed and nuanced in feedback. Focus on subtle pronunciation differences, advanced grammar structures, idiomatic expressions, and native-like fluency."
+        }
         
-        Please provide feedback in the following JSON format:
-        {{
-            "scores": {{
-                "fluency": <score 0-100>,
-                "pronunciation": <score 0-100>,
-                "accuracy": <score 0-100>
-            }},
-            "overall_score": <average score 0-100>,
-            "feedback_messages": [
-                "<specific feedback message 1>",
-                "<specific feedback message 2>",
-                "<specific feedback message 3>"
-            ],
-            "suggestions": [
-                "<improvement suggestion 1>",
-                "<improvement suggestion 2>",
-                "<improvement suggestion 3>"
-            ],
-            "corrected_text": "<corrected version of the transcript if needed>"
-        }}
+        # Language-specific pronunciation tips
+        language_tips = {
+            "french": "Pay attention to nasal vowels, liaison between words, silent letters, and the distinction between similar sounds like 'u' and 'ou'.",
+            "german": "Focus on umlauts (ä, ö, ü), consonant clusters, word stress patterns, and the pronunciation of 'ch' and 'r' sounds.",
+            "korean": "Check for proper vowel distinction, consonant aspiration levels (ㅂ vs ㅍ), syllable timing, and appropriate intonation patterns.",
+            "mandarin": "Evaluate tone accuracy (1-4 tones), distinguish between similar initials (zh/j, ch/q, sh/x), and check for proper syllable structure.",
+            "spanish": "Focus on rolling 'r' sounds, vowel clarity, proper stress placement, and distinction between 'b' and 'v' sounds."
+        }
         
-        Consider the user's level when providing feedback. Be encouraging but specific.
-        """
+        current_level_guidance = level_guidance.get(level, level_guidance["intermediate"])
+        current_language_tips = language_tips.get(language.lower(), "Focus on clear pronunciation and natural rhythm.")
+        
+        return f"""You are an expert language tutor specializing in {language} pronunciation and speaking skills. 
+Analyze the following speech attempt with care and precision, providing actionable feedback.
+
+## Context
+- **Language**: {language}
+- **Proficiency Level**: {level}
+- **Scenario**: {scenario}
+- **Expected Text**: "{expected_text}"
+- **Student's Actual Speech**: "{transcript}"
+
+## Level-Specific Guidance
+{current_level_guidance}
+
+## Language-Specific Focus Areas
+{current_language_tips}
+
+## Analysis Instructions
+1. **Fluency Analysis**: Evaluate speech flow, hesitations, natural pacing, and rhythm
+2. **Pronunciation Analysis**: Assess sound accuracy, stress patterns, and intonation
+3. **Accuracy Analysis**: Compare against expected text for vocabulary and grammar correctness
+4. **Vocabulary Usage**: Check for appropriate word choice in context
+5. **Grammar Structure**: Identify any structural issues appropriate for the level
+
+## Response Format
+Provide your analysis in the following JSON format ONLY (no additional text):
+{{
+    "scores": {{
+        "fluency": <score 0-100>,
+        "pronunciation": <score 0-100>,
+        "accuracy": <score 0-100>,
+        "vocabulary": <score 0-100>,
+        "grammar": <score 0-100>
+    }},
+    "overall_score": <weighted average score 0-100>,
+    "feedback_messages": [
+        "<specific positive feedback highlighting what was done well>",
+        "<specific area that needs improvement with clear explanation>",
+        "<contextual feedback related to the scenario>"
+    ],
+    "suggestions": [
+        "<actionable tip for pronunciation improvement>",
+        "<specific practice exercise suggestion>",
+        "<resource or technique recommendation>"
+    ],
+    "pronunciation_notes": [
+        "<specific sound or word that needs attention>",
+        "<phonetic tip for improvement>"
+    ],
+    "strengths": [
+        "<what the student did particularly well>"
+    ],
+    "corrected_text": "<corrected version of the transcript if needed, or null if perfect>"
+}}
+
+## Scoring Guidelines
+- 90-100: Excellent, near-native quality
+- 80-89: Very good, minor issues
+- 70-79: Good, noticeable room for improvement
+- 60-69: Fair, several areas need work
+- 50-59: Developing, significant practice needed
+- Below 50: Needs substantial improvement
+
+Be encouraging while being honest. Focus on progress over perfection."""
     
     def _parse_ai_feedback(self, ai_response: str) -> Dict[str, Any]:
         """Parse AI feedback response into structured data."""

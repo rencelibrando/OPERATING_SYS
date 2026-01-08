@@ -1,8 +1,8 @@
 import re
 from typing import Dict, List, Optional
 
-import google.generativeai as genai
-from google.api_core import exceptions as google_exceptions
+from google import genai
+from google.genai import types
 
 from config import settings
 from models import AIProvider, ChatResponse
@@ -15,10 +15,11 @@ class GeminiProvider(AIProviderBase):
     def __init__(self):
         """Initialize Gemini with API key."""
         if settings.gemini_api_key:
-            genai.configure(api_key=settings.gemini_api_key)
-            self.model = genai.GenerativeModel('gemini-2.0-flash')
+            self.client = genai.Client(api_key=settings.gemini_api_key)
+            self.model_name = 'gemini-2.0-flash'
         else:
-            self.model = None
+            self.client = None
+            self.model_name = None
     
     async def generate_response(
         self,
@@ -29,12 +30,12 @@ class GeminiProvider(AIProviderBase):
         max_tokens: int = 1000,
     ) -> ChatResponse:
 
-        if not self.model:
+        if not self.client:
             raise ValueError("Gemini API key not configured")
         
         try:
-            # Configure generation parameters
-            generation_config = genai.GenerationConfig(
+            # Configure generation parameters using the new SDK types
+            generation_config = types.GenerateContentConfig(
                 temperature=temperature,
                 max_output_tokens=max_tokens,
                 top_p=0.95,
@@ -48,10 +49,11 @@ class GeminiProvider(AIProviderBase):
                 message
             )
             
-            # Generate response
-            response = self.model.generate_content(
-                full_prompt,
-                generation_config=generation_config,
+            # Generate response using the new SDK client
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=full_prompt,
+                config=generation_config,
             )
             
             # Extract response text
@@ -67,24 +69,21 @@ class GeminiProvider(AIProviderBase):
                 provider=AIProvider.GEMINI,
                 tokens_used=tokens_used,
                 metadata={
-                    "model": "gemini-2.0-flash",
+                    "model": self.model_name,
                     "finish_reason": getattr(response, 'finish_reason', None),
                 }
             )
 
-        except google_exceptions.ResourceExhausted as e:
-            retry_after = self._extract_retry_after_seconds(e)
-            raise ProviderQuotaExceededError(
-                provider=AIProvider.GEMINI,
-                message="Gemini API quota exceeded. Please check billing or retry later.",
-                retry_after_seconds=retry_after,
-            ) from e
-        except google_exceptions.GoogleAPICallError as e:
-            raise ProviderError(
-                provider=AIProvider.GEMINI,
-                message=f"Gemini API call failed: {str(e)}",
-            ) from e
         except Exception as e:
+            error_str = str(e).lower()
+            # Check for quota/rate limit errors
+            if 'quota' in error_str or 'resource_exhausted' in error_str or 'rate' in error_str:
+                retry_after = self._extract_retry_after_seconds_from_str(str(e))
+                raise ProviderQuotaExceededError(
+                    provider=AIProvider.GEMINI,
+                    message="Gemini API quota exceeded. Please check billing or retry later.",
+                    retry_after_seconds=retry_after,
+                ) from e
             raise ProviderError(
                 provider=AIProvider.GEMINI,
                 message=f"Gemini API error: {str(e)}",
@@ -111,21 +110,17 @@ class GeminiProvider(AIProviderBase):
         
         return "\n".join(parts)
 
-    def _extract_retry_after_seconds(
+    def _extract_retry_after_seconds_from_str(
         self,
-        error: google_exceptions.ResourceExhausted,
+        error_str: str,
     ) -> Optional[int]:
-        """Best-effort extraction of retry delay from error metadata."""
-        retry_info = getattr(error, "retry_info", None)
-        if retry_info and retry_info.retry_delay:
-            seconds = retry_info.retry_delay.seconds
-            if retry_info.retry_delay.nanos:
-                # Round up fractional seconds
-                seconds += 1
-            return seconds or None
-
+        """Best-effort extraction of retry delay from error string."""
         # Fallback: parse textual message for "retry_delay { seconds: X }"
-        match = re.search(r"retry_delay\s*\{\s*seconds:\s*(\d+)", str(error))
+        match = re.search(r"retry_delay\s*\{\s*seconds:\s*(\d+)", error_str)
+        if match:
+            return int(match.group(1))
+        # Also try to find seconds mentioned in different formats
+        match = re.search(r"(\d+)\s*seconds?", error_str)
         if match:
             return int(match.group(1))
         return None
@@ -133,11 +128,11 @@ class GeminiProvider(AIProviderBase):
     async def health_check(self) -> bool:
 
         # Skip actual API call to avoid wasting quota
-        # Just verify that the model is configured
-        if not self.model:
-            print("Gemini health check: Model not configured")
+        # Just verify that the client is configured
+        if not self.client:
+            print("Gemini health check: Client not configured")
             return False
         
-        print("Gemini health check: Model configured (skipping API test to preserve quota)")
+        print("Gemini health check: Client configured (skipping API test to preserve quota)")
         return True
 

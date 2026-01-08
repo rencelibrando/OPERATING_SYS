@@ -28,7 +28,7 @@ import kotlin.math.sin
 /**
  * Circular waveform indicator that shows conversation status.
  * This is a STATUS INDICATOR, not a button - continuous conversation mode.
- * 
+ *
  * States:
  * - User speaking (green): User's voice is being captured
  * - Agent speaking (blue): AI is responding with audio
@@ -53,40 +53,44 @@ fun CircularWaveformMicrophone(
     val userRotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(4000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(4000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
         label = "userRotation",
     )
 
     val agentRotation by infiniteTransition.animateFloat(
         initialValue = 360f,
         targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(6000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(6000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
         label = "agentRotation",
     )
 
     val thinkingRotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(2000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
         label = "thinkingRotation",
     )
 
     val idleRotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(12000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(12000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
         label = "idleRotation",
     )
 
@@ -94,40 +98,44 @@ fun CircularWaveformMicrophone(
     val userPulse by infiniteTransition.animateFloat(
         initialValue = 1f,
         targetValue = 1.15f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(300, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(300, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
         label = "userPulse",
     )
 
     val agentPulse by infiniteTransition.animateFloat(
         initialValue = 1f,
         targetValue = 1.1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(500, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
         label = "agentPulse",
     )
 
     val thinkingPulse by infiniteTransition.animateFloat(
         initialValue = 0.9f,
         targetValue = 1.1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(800, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
         label = "thinkingPulse",
     )
 
     val idlePulse by infiniteTransition.animateFloat(
         initialValue = 0.98f,
         targetValue = 1.02f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(2000, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
         label = "idlePulse",
     )
 
@@ -135,69 +143,76 @@ fun CircularWaveformMicrophone(
     val glowAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
         targetValue = 0.8f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(1000, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
         label = "glowAlpha",
     )
 
     // State-based values - IMPORTANT: Check agent states BEFORE recording state
     // because in continuous mode, isRecording is always true but agent states take priority
-    val currentRotation = when {
-        isAgentSpeaking -> agentRotation
-        isAgentThinking -> thinkingRotation
-        isRecording -> userRotation
-        else -> idleRotation
-    }
+    val currentRotation =
+        when {
+            isAgentSpeaking -> agentRotation
+            isAgentThinking -> thinkingRotation
+            isRecording -> userRotation
+            else -> idleRotation
+        }
 
-    val currentPulse = when {
-        isAgentSpeaking -> agentPulse
-        isAgentThinking -> thinkingPulse
-        isRecording -> userPulse
-        else -> idlePulse
-    }
+    val currentPulse =
+        when {
+            isAgentSpeaking -> agentPulse
+            isAgentThinking -> thinkingPulse
+            isRecording -> userPulse
+            else -> idlePulse
+        }
 
     val primaryColor by animateColorAsState(
-        targetValue = when {
-            !isAgentReady -> Color(0xFF4B5563)
-            isAgentSpeaking -> Color(0xFF3B82F6) // Blue for agent - check FIRST
-            isAgentThinking -> Color(0xFF8B5CF6) // Purple for thinking
-            isRecording -> Color(0xFF10B981) // Green for user
-            else -> Color(0xFF6B7280) // Gray for idle
-        },
+        targetValue =
+            when {
+                !isAgentReady -> Color(0xFF4B5563)
+                isAgentSpeaking -> Color(0xFF3B82F6) // Blue for agent - check FIRST
+                isAgentThinking -> Color(0xFF8B5CF6) // Purple for thinking
+                isRecording -> Color(0xFF10B981) // Green for user
+                else -> Color(0xFF6B7280) // Gray for idle
+            },
         animationSpec = tween(300),
         label = "primaryColor",
     )
 
     val secondaryColor by animateColorAsState(
-        targetValue = when {
-            !isAgentReady -> Color(0xFF374151)
-            isAgentSpeaking -> Color(0xFF2563EB) // Check agent states FIRST
-            isAgentThinking -> Color(0xFF7C3AED)
-            isRecording -> Color(0xFF059669)
-            else -> Color(0xFF4B5563)
-        },
+        targetValue =
+            when {
+                !isAgentReady -> Color(0xFF374151)
+                isAgentSpeaking -> Color(0xFF2563EB) // Check agent states FIRST
+                isAgentThinking -> Color(0xFF7C3AED)
+                isRecording -> Color(0xFF059669)
+                else -> Color(0xFF4B5563)
+            },
         animationSpec = tween(300),
         label = "secondaryColor",
     )
 
     // Status text - prioritize agent states over recording state
-    val statusText = when {
-        !isAgentReady -> "Connecting..."
-        isAgentSpeaking -> "Speaking"
-        isAgentThinking -> "Thinking"
-        isRecording -> "Listening"
-        else -> "Ready"
-    }
+    val statusText =
+        when {
+            !isAgentReady -> "Connecting..."
+            isAgentSpeaking -> "Speaking"
+            isAgentThinking -> "Thinking"
+            isRecording -> "Listening"
+            else -> "Ready"
+        }
 
-    val statusEmoji = when {
-        !isAgentReady -> "⏳"
-        isAgentSpeaking -> "🔊"
-        isAgentThinking -> "💭"
-        isRecording -> "🎤"
-        else -> "✨"
-    }
+    val statusEmoji =
+        when {
+            !isAgentReady -> "⏳"
+            isAgentSpeaking -> "🔊"
+            isAgentThinking -> "💭"
+            isRecording -> "🎤"
+            else -> "✨"
+        }
 
     Column(
         modifier = modifier,
@@ -211,27 +226,31 @@ fun CircularWaveformMicrophone(
             // Outer glow ring
             if (isRecording || isAgentSpeaking) {
                 Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .scale(currentPulse * 1.1f)
-                        .clip(CircleShape)
-                        .background(
-                            brush = Brush.radialGradient(
-                                colors = listOf(
-                                    primaryColor.copy(alpha = glowAlpha * 0.4f),
-                                    primaryColor.copy(alpha = glowAlpha * 0.2f),
-                                    Color.Transparent,
-                                ),
+                    modifier =
+                        Modifier
+                            .size(80.dp)
+                            .scale(currentPulse * 1.1f)
+                            .clip(CircleShape)
+                            .background(
+                                brush =
+                                    Brush.radialGradient(
+                                        colors =
+                                            listOf(
+                                                primaryColor.copy(alpha = glowAlpha * 0.4f),
+                                                primaryColor.copy(alpha = glowAlpha * 0.2f),
+                                                Color.Transparent,
+                                            ),
+                                    ),
                             ),
-                        ),
                 )
             }
 
             // Waveform canvas
             Canvas(
-                modifier = Modifier
-                    .size(64.dp)
-                    .scale(currentPulse),
+                modifier =
+                    Modifier
+                        .size(64.dp)
+                        .scale(currentPulse),
             ) {
                 val canvasWidth = size.width
                 val canvasHeight = size.height
@@ -252,31 +271,32 @@ fun CircularWaveformMicrophone(
                         val angle = (i * angleStep + currentRotation * (1f + ringIndex * 0.15f)) % 360f
                         val angleRad = Math.toRadians(angle.toDouble()).toFloat()
 
-                        val amplitude = when {
-                            isRecording -> {
-                                val normalizedLevel = audioLevel.coerceIn(0f, 1f)
-                                val segmentPhase = (i.toFloat() / waveformSegments) * 2f * PI.toFloat()
-                                val ringPhase = ringIndex * 0.6f
-                                val baseWave = sin(segmentPhase + ringPhase + (currentRotation / 40f))
-                                0.1f + (normalizedLevel * 0.2f) + (baseWave * 0.15f)
+                        val amplitude =
+                            when {
+                                isRecording -> {
+                                    val normalizedLevel = audioLevel.coerceIn(0f, 1f)
+                                    val segmentPhase = (i.toFloat() / waveformSegments) * 2f * PI.toFloat()
+                                    val ringPhase = ringIndex * 0.6f
+                                    val baseWave = sin(segmentPhase + ringPhase + (currentRotation / 40f))
+                                    0.1f + (normalizedLevel * 0.2f) + (baseWave * 0.15f)
+                                }
+                                isAgentSpeaking -> {
+                                    val segmentPhase = (i.toFloat() / waveformSegments) * 2f * PI.toFloat()
+                                    val ringPhase = ringIndex * 0.5f
+                                    val wave = sin(segmentPhase + ringPhase + (currentRotation / 60f))
+                                    0.08f + (wave * 0.1f)
+                                }
+                                isAgentThinking -> {
+                                    val segmentPhase = (i.toFloat() / waveformSegments) * 2f * PI.toFloat()
+                                    val wave = sin(segmentPhase + (currentRotation / 30f))
+                                    0.05f + (wave * 0.05f)
+                                }
+                                else -> {
+                                    val segmentPhase = (i.toFloat() / waveformSegments) * 2f * PI.toFloat()
+                                    val wave = sin(segmentPhase + (currentRotation / 100f))
+                                    0.03f + (wave * 0.02f)
+                                }
                             }
-                            isAgentSpeaking -> {
-                                val segmentPhase = (i.toFloat() / waveformSegments) * 2f * PI.toFloat()
-                                val ringPhase = ringIndex * 0.5f
-                                val wave = sin(segmentPhase + ringPhase + (currentRotation / 60f))
-                                0.08f + (wave * 0.1f)
-                            }
-                            isAgentThinking -> {
-                                val segmentPhase = (i.toFloat() / waveformSegments) * 2f * PI.toFloat()
-                                val wave = sin(segmentPhase + (currentRotation / 30f))
-                                0.05f + (wave * 0.05f)
-                            }
-                            else -> {
-                                val segmentPhase = (i.toFloat() / waveformSegments) * 2f * PI.toFloat()
-                                val wave = sin(segmentPhase + (currentRotation / 100f))
-                                0.03f + (wave * 0.02f)
-                            }
-                        }
 
                         val innerRadius = ringRadius * (1f - amplitude)
                         val outerRadius = ringRadius * (1f + amplitude)
@@ -298,11 +318,12 @@ fun CircularWaveformMicrophone(
 
                 // Center circle with gradient
                 drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(primaryColor, secondaryColor),
-                        center = Offset(centerX, centerY),
-                        radius = 12.dp.toPx(),
-                    ),
+                    brush =
+                        Brush.radialGradient(
+                            colors = listOf(primaryColor, secondaryColor),
+                            center = Offset(centerX, centerY),
+                            radius = 12.dp.toPx(),
+                        ),
                     radius = 10.dp.toPx(),
                     center = Offset(centerX, centerY),
                 )

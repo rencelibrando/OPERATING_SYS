@@ -339,9 +339,10 @@ object BackendManager {
 
         val possibleLocations = mutableListOf<File>()
 
-        // 1. Development location: current directory or parent
+        // 1. Development location: current directory, parent, or grandparent
         possibleLocations.add(File(currentDir, "backend"))
         possibleLocations.add(currentDir.parentFile?.resolve("backend") ?: File(currentDir, "backend"))
+        possibleLocations.add(currentDir.parentFile?.parentFile?.resolve("backend") ?: File(currentDir, "backend"))
 
         // 2. Installed application locations (Windows)
         val programFiles = System.getenv("ProgramFiles") ?: "C:\\Program Files"

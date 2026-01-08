@@ -59,6 +59,7 @@ class AdminLessonContentViewModel : ViewModel() {
 
     private val _narrationLanguage = mutableStateOf<String?>(null)
     private val _narrationVoice = mutableStateOf<String?>(null)
+
     // Narration generation state
     private val _narrationStatus = mutableStateOf<Map<String, NarrationStatus>>(emptyMap())
     val narrationStatus: State<Map<String, NarrationStatus>> = _narrationStatus
@@ -542,7 +543,7 @@ class AdminLessonContentViewModel : ViewModel() {
                         else -> emptyList()
                     },
             )
-        _questions.value = _questions.value + newQuestion
+        _questions.value += newQuestion
     }
 
     fun removeQuestion(index: Int) {
@@ -623,6 +624,30 @@ class AdminLessonContentViewModel : ViewModel() {
     // CHOICE MANAGEMENT
     // ============================================
 
+    /**
+     * Generic helper to update a choice property in a thread-safe manner.
+     * This eliminates code duplication across choice update functions.
+     */
+    private fun updateChoiceProperty(
+        questionIndex: Int,
+        choiceIndex: Int,
+        update: (ChoiceBuilder) -> ChoiceBuilder,
+    ) {
+        _questions.value =
+            _questions.value.mapIndexed { i, q ->
+                if (i == questionIndex) {
+                    q.copy(
+                        choices =
+                            q.choices.mapIndexed { ci, c ->
+                                if (ci == choiceIndex) update(c) else c
+                            },
+                    )
+                } else {
+                    q
+                }
+            }
+    }
+
     fun addChoice(
         questionIndex: Int,
         matchPairId: String? = null,
@@ -664,19 +689,7 @@ class AdminLessonContentViewModel : ViewModel() {
         choiceIndex: Int,
         text: String,
     ) {
-        _questions.value =
-            _questions.value.mapIndexed { i, q ->
-                if (i == questionIndex) {
-                    q.copy(
-                        choices =
-                            q.choices.mapIndexed { ci, c ->
-                                if (ci == choiceIndex) c.copy(text = text) else c
-                            },
-                    )
-                } else {
-                    q
-                }
-            }
+        updateChoiceProperty(questionIndex, choiceIndex) { it.copy(text = text) }
     }
 
     fun updateChoiceCorrect(
@@ -684,19 +697,7 @@ class AdminLessonContentViewModel : ViewModel() {
         choiceIndex: Int,
         isCorrect: Boolean,
     ) {
-        _questions.value =
-            _questions.value.mapIndexed { i, q ->
-                if (i == questionIndex) {
-                    q.copy(
-                        choices =
-                            q.choices.mapIndexed { ci, c ->
-                                if (ci == choiceIndex) c.copy(isCorrect = isCorrect) else c
-                            },
-                    )
-                } else {
-                    q
-                }
-            }
+        updateChoiceProperty(questionIndex, choiceIndex) { it.copy(isCorrect = isCorrect) }
     }
 
     fun updateChoiceImageUrl(
@@ -704,19 +705,7 @@ class AdminLessonContentViewModel : ViewModel() {
         choiceIndex: Int,
         url: String?,
     ) {
-        _questions.value =
-            _questions.value.mapIndexed { i, q ->
-                if (i == questionIndex) {
-                    q.copy(
-                        choices =
-                            q.choices.mapIndexed { ci, c ->
-                                if (ci == choiceIndex) c.copy(imageUrl = url) else c
-                            },
-                    )
-                } else {
-                    q
-                }
-            }
+        updateChoiceProperty(questionIndex, choiceIndex) { it.copy(imageUrl = url) }
     }
 
     fun updateChoiceAudioUrl(
@@ -724,19 +713,7 @@ class AdminLessonContentViewModel : ViewModel() {
         choiceIndex: Int,
         url: String?,
     ) {
-        _questions.value =
-            _questions.value.mapIndexed { i, q ->
-                if (i == questionIndex) {
-                    q.copy(
-                        choices =
-                            q.choices.mapIndexed { ci, c ->
-                                if (ci == choiceIndex) c.copy(audioUrl = url) else c
-                            },
-                    )
-                } else {
-                    q
-                }
-            }
+        updateChoiceProperty(questionIndex, choiceIndex) { it.copy(audioUrl = url) }
     }
 
     fun shuffleMatchingRightSide(questionIndex: Int) {
@@ -885,7 +862,7 @@ class AdminLessonContentViewModel : ViewModel() {
         viewModelScope.launch {
             val questionKey = "question_$questionIndex"
 
-            _narrationStatus.value = _narrationStatus.value + (questionKey to NarrationStatus.Generating)
+            _narrationStatus.value += questionKey to NarrationStatus.Generating
             _isGeneratingNarration.value = true
 
             try {
@@ -896,13 +873,13 @@ class AdminLessonContentViewModel : ViewModel() {
                 ).onSuccess { response ->
                     response.audioUrl?.let { url ->
                         updateQuestionAudioUrl(questionIndex, url)
-                        _narrationStatus.value = _narrationStatus.value + (questionKey to NarrationStatus.Ready(url))
+                        _narrationStatus.value += questionKey to NarrationStatus.Ready(url)
                     }
                 }.onFailure { error ->
-                    _narrationStatus.value = _narrationStatus.value + (questionKey to NarrationStatus.Failed(error.message ?: "Unknown error"))
+                    _narrationStatus.value += questionKey to NarrationStatus.Failed(error.message ?: "Unknown error")
                 }
             } catch (e: Exception) {
-                _narrationStatus.value = _narrationStatus.value + (questionKey to NarrationStatus.Failed(e.message ?: "Unknown error"))
+                _narrationStatus.value += questionKey to NarrationStatus.Failed(e.message ?: "Unknown error")
             }
 
             _isGeneratingNarration.value = false
@@ -916,7 +893,7 @@ class AdminLessonContentViewModel : ViewModel() {
         viewModelScope.launch {
             val answerKey = "answer_$questionIndex"
 
-            _narrationStatus.value = _narrationStatus.value + (answerKey to NarrationStatus.Generating)
+            _narrationStatus.value += answerKey to NarrationStatus.Generating
             _isGeneratingNarration.value = true
 
             try {
@@ -927,13 +904,13 @@ class AdminLessonContentViewModel : ViewModel() {
                 ).onSuccess { response ->
                     response.audioUrl?.let { url ->
                         updateAnswerAudioUrl(questionIndex, url)
-                        _narrationStatus.value = _narrationStatus.value + (answerKey to NarrationStatus.Ready(url))
+                        _narrationStatus.value += answerKey to NarrationStatus.Ready(url)
                     }
                 }.onFailure { error ->
-                    _narrationStatus.value = _narrationStatus.value + (answerKey to NarrationStatus.Failed(error.message ?: "Unknown error"))
+                    _narrationStatus.value += answerKey to NarrationStatus.Failed(error.message ?: "Unknown error")
                 }
             } catch (e: Exception) {
-                _narrationStatus.value = _narrationStatus.value + (answerKey to NarrationStatus.Failed(e.message ?: "Unknown error"))
+                _narrationStatus.value += answerKey to NarrationStatus.Failed(e.message ?: "Unknown error")
             }
 
             _isGeneratingNarration.value = false
@@ -951,7 +928,7 @@ class AdminLessonContentViewModel : ViewModel() {
         viewModelScope.launch {
             val choiceKey = "choice_${questionIndex}_$choiceIndex"
 
-            _narrationStatus.value = _narrationStatus.value + (choiceKey to NarrationStatus.Generating)
+            _narrationStatus.value += choiceKey to NarrationStatus.Generating
             _isGeneratingNarration.value = true
 
             try {
@@ -962,13 +939,13 @@ class AdminLessonContentViewModel : ViewModel() {
                 ).onSuccess { response ->
                     response.audioUrl?.let { url ->
                         updateChoiceAudioUrl(questionIndex, choiceIndex, url)
-                        _narrationStatus.value = _narrationStatus.value + (choiceKey to NarrationStatus.Ready(url))
+                        _narrationStatus.value += choiceKey to NarrationStatus.Ready(url)
                     }
                 }.onFailure { error ->
-                    _narrationStatus.value = _narrationStatus.value + (choiceKey to NarrationStatus.Failed(error.message ?: "Unknown error"))
+                    _narrationStatus.value += choiceKey to NarrationStatus.Failed(error.message ?: "Unknown error")
                 }
             } catch (e: Exception) {
-                _narrationStatus.value = _narrationStatus.value + (choiceKey to NarrationStatus.Failed(e.message ?: "Unknown error"))
+                _narrationStatus.value += choiceKey to NarrationStatus.Failed(e.message ?: "Unknown error")
             }
 
             _isGeneratingNarration.value = false
@@ -982,7 +959,7 @@ class AdminLessonContentViewModel : ViewModel() {
         viewModelScope.launch {
             val explanationKey = "explanation_$questionIndex"
 
-            _narrationStatus.value = _narrationStatus.value + (explanationKey to NarrationStatus.Generating)
+            _narrationStatus.value += explanationKey to NarrationStatus.Generating
             _isGeneratingNarration.value = true
 
             try {
@@ -993,13 +970,13 @@ class AdminLessonContentViewModel : ViewModel() {
                 ).onSuccess { response ->
                     response.audioUrl?.let { url ->
                         updateExplanationAudioUrl(questionIndex, url)
-                        _narrationStatus.value = _narrationStatus.value + (explanationKey to NarrationStatus.Ready(url))
+                        _narrationStatus.value += explanationKey to NarrationStatus.Ready(url)
                     }
                 }.onFailure { error ->
-                    _narrationStatus.value = _narrationStatus.value + (explanationKey to NarrationStatus.Failed(error.message ?: "Unknown error"))
+                    _narrationStatus.value += explanationKey to NarrationStatus.Failed(error.message ?: "Unknown error")
                 }
             } catch (e: Exception) {
-                _narrationStatus.value = _narrationStatus.value + (explanationKey to NarrationStatus.Failed(e.message ?: "Unknown error"))
+                _narrationStatus.value += explanationKey to NarrationStatus.Failed(e.message ?: "Unknown error")
             }
 
             _isGeneratingNarration.value = false

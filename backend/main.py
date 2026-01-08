@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 import logging
 import sys
 import os
+import sitecustomize  # noqa: F401
 
 # Add a parent directory to a path to allow importing from deps_installer
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -32,6 +33,49 @@ from voice_routes import router as voice_router
 from error_logger import get_logger
 from tts_service import get_tts_service
 from elevenlabs_agent_routes import router as elevenlabs_agent_router
+from whisper_analysis_routes import router as whisper_analysis_router
+from auto_installer import auto_install_dependencies
+import shutil
+import subprocess
+
+
+def check_ffmpeg_available() -> bool:
+    """Check if FFmpeg is available in the system PATH."""
+    # Method 1: Use shutil.which
+    ffmpeg_path = shutil.which('ffmpeg')
+    if ffmpeg_path:
+        return True
+    
+    # Method 2: Try running ffmpeg directly
+    try:
+        result = subprocess.run(
+            ['ffmpeg', '-version'],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        return result.returncode == 0
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    
+    # Method 3: Check common Windows installation paths
+    import sys
+    if sys.platform == 'win32':
+        common_paths = [
+            r'C:\ffmpeg\bin\ffmpeg.exe',
+            r'C:\Program Files\ffmpeg\bin\ffmpeg.exe',
+            r'C:\Program Files (x86)\ffmpeg\bin\ffmpeg.exe',
+            os.path.expandvars(r'%LOCALAPPDATA%\FFmpeg\ffmpeg-*\bin\ffmpeg.exe'),
+            os.path.expandvars(r'%LOCALAPPDATA%\Microsoft\WinGet\Packages\*ffmpeg*\ffmpeg.exe'),
+        ]
+        import glob
+        for pattern in common_paths:
+            matches = glob.glob(pattern)
+            if matches:
+                # Found ffmpeg, but it's not in PATH
+                return True
+    
+    return False
 
 
 # Configure logging
@@ -56,6 +100,35 @@ async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown."""
     # Startup
     logger.info("Starting AI Backend Service")
+    
+    # Check FFmpeg availability (critical for Whisper)
+    logger.info("Checking FFmpeg availability...")
+    if check_ffmpeg_available():
+        logger.info("✓ FFmpeg is available")
+    else:
+        logger.error("="*60)
+        logger.error("❌ FFmpeg NOT FOUND!")
+        logger.error("="*60)
+        logger.error("FFmpeg is REQUIRED for voice analysis (Whisper) to work.")
+        logger.error("Without FFmpeg, voice analysis will fail with '[WinError 2]'")
+        logger.error("")
+        logger.error("If you just installed FFmpeg, you MUST:")
+        logger.error("  1. STOP this server (Ctrl+C)")
+        logger.error("  2. CLOSE this terminal completely")
+        logger.error("  3. OPEN a new terminal")
+        logger.error("  4. START the server again")
+        logger.error("")
+        logger.error("This is required because Python caches the PATH at startup.")
+        logger.error("="*60)
+    
+    # Auto-install voice analysis dependencies (skip FFmpeg check since we did it above)
+    logger.info("Checking voice analysis dependencies...")
+    try:
+        success = auto_install_dependencies(force_reinstall=False, skip_requirements=True)
+        if not success:
+            logger.warning("Some voice analysis dependencies are missing. Voice analysis may not work properly.")
+    except Exception as e:
+        logger.error(f"Auto-installation failed: {e}")
     
     # Initialize AI providers
     gemini_key = None
@@ -125,6 +198,7 @@ app.include_router(lesson_router)
 app.include_router(narration_router)
 app.include_router(voice_router)
 app.include_router(elevenlabs_agent_router)
+app.include_router(whisper_analysis_router)
 
 # TTS endpoint for generating audio
 @app.post("/tts/generate")
@@ -368,12 +442,28 @@ async def delete_chat_history(session_id: str):
 
 if __name__ == "__main__":
     import uvicorn
+    import multiprocessing
+    import sys
+    
+    # Required for Windows multiprocessing support with Uvicorn's reload feature
+    multiprocessing.freeze_support()
+    
+    # On Windows, disable reload to avoid multiprocessing spawn issues with numpy/fasttext
+    # These libraries don't play well with Uvicorn's WatchFiles reloader on Windows
+    is_windows = sys.platform == "win32"
+    enable_reload = settings.environment == "development" and not is_windows
+    
+    if is_windows and settings.environment == "development":
+        logger.warning(
+            "Hot-reload disabled on Windows to prevent multiprocessing issues. "
+            "Restart the server manually to apply changes."
+        )
     
     logger.info(f"Starting server on {settings.host}:{settings.port}")
     uvicorn.run(
         "main:app",
         host=settings.host,
         port=settings.port,
-        reload=settings.environment == "development",
+        reload=enable_reload,
     )
 

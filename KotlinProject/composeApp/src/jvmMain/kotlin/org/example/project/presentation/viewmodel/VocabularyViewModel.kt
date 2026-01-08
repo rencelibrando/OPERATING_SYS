@@ -5,6 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import org.example.project.data.repository.PracticeRecordingRepository
+import org.example.project.data.repository.PracticeRecordingRepositoryImpl
+import org.example.project.data.repository.VocabularyPracticeHistoryDTO
 import org.example.project.data.repository.VocabularyRepository
 import org.example.project.data.repository.VocabularyRepositoryImpl
 import org.example.project.domain.model.LessonLanguage
@@ -15,6 +18,7 @@ import org.example.project.domain.model.VocabularyWord
 
 class VocabularyViewModel(
     private val repository: VocabularyRepository = VocabularyRepositoryImpl(),
+    private val practiceRepository: PracticeRecordingRepository = PracticeRecordingRepositoryImpl(),
 ) : ViewModel() {
     private val _vocabularyWords = mutableStateOf(emptyList<VocabularyWord>())
     private val _vocabularyStats = mutableStateOf(VocabularyStats.getSampleStats())
@@ -27,6 +31,10 @@ class VocabularyViewModel(
     private val _dailyGoal = mutableStateOf(10) // Default daily goal: 10 words
     private val _wordsLearnedToday = mutableStateOf(0)
     private val _selectedWordForDetails = mutableStateOf<VocabularyWord?>(null)
+    
+    // Practice history state
+    private val _practiceHistory = mutableStateOf<List<VocabularyPracticeHistoryDTO>>(emptyList())
+    private val _isLoadingHistory = mutableStateOf(false)
 
     val vocabularyWords: State<List<VocabularyWord>> = _vocabularyWords
     val vocabularyStats: State<VocabularyStats> = _vocabularyStats
@@ -39,6 +47,8 @@ class VocabularyViewModel(
     val dailyGoal: State<Int> = _dailyGoal
     val wordsLearnedToday: State<Int> = _wordsLearnedToday
     val selectedWordForDetails: State<VocabularyWord?> = _selectedWordForDetails
+    val practiceHistory: State<List<VocabularyPracticeHistoryDTO>> = _practiceHistory
+    val isLoadingHistory: State<Boolean> = _isLoadingHistory
 
     private val _filteredWords = mutableStateOf(emptyList<VocabularyWord>())
     val filteredWords: State<List<VocabularyWord>> = _filteredWords
@@ -92,17 +102,45 @@ class VocabularyViewModel(
     }
 
     /**
-     * Show word details
+     * Show word details and load practice history
      */
     fun showWordDetails(word: VocabularyWord) {
         _selectedWordForDetails.value = word
+        loadPracticeHistory(word.id)
     }
 
     /**
-     * Hide word details
+     * Hide word details and clear practice history
      */
     fun hideWordDetails() {
         _selectedWordForDetails.value = null
+        _practiceHistory.value = emptyList()
+    }
+
+    /**
+     * Load practice history for a specific word
+     */
+    fun loadPracticeHistory(wordId: String) {
+        _isLoadingHistory.value = true
+        viewModelScope.launch {
+            practiceRepository.getVocabularyPracticeHistory(wordId).onSuccess { history ->
+                _practiceHistory.value = history
+                println("[VocabularyVM] Loaded ${history.size} practice sessions for word $wordId")
+            }.onFailure { error ->
+                println("[VocabularyVM] Failed to load practice history: ${error.message}")
+                _practiceHistory.value = emptyList()
+            }
+            _isLoadingHistory.value = false
+        }
+    }
+
+    /**
+     * Refresh practice history for currently selected word
+     */
+    fun refreshPracticeHistory() {
+        _selectedWordForDetails.value?.let { word ->
+            loadPracticeHistory(word.id)
+        }
     }
 
     fun onSearchQueryChanged(query: String) {

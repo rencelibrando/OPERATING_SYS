@@ -27,6 +27,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.example.project.admin.presentation.AdminLessonTopicsViewModel
 import org.example.project.admin.presentation.AdminLessonTopicsViewModel.SortOrder
 import org.example.project.admin.presentation.UserManagementViewModel
+import org.example.project.admin.ui.components.AdminMessageDisplay
 import org.example.project.domain.model.LessonDifficulty
 import org.example.project.domain.model.LessonLanguage
 import org.example.project.domain.model.LessonTopic
@@ -42,6 +43,77 @@ fun AdminApp() {
             AdminMainScreen()
         }
     }
+}
+
+@Composable
+private fun EmptyStateSurface(
+    emoji: String,
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = Color(0xFF1E1B2E),
+        shape = MaterialTheme.shapes.medium,
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(48.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    text = emoji,
+                    style = MaterialTheme.typography.displayMedium,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFFB4B4C4),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdminFilterChip(
+    selected: Boolean,
+    onClick: () -> Unit,
+    label: String,
+) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
+        colors =
+            androidx.compose.material3.FilterChipDefaults.filterChipColors(
+                containerColor = Color(0xFF2D2A3E),
+                selectedContainerColor = Color(0xFF8B5CF6),
+                labelColor = Color(0xFFB4B4C4),
+                selectedLabelColor = Color.White,
+            ),
+        border = null,
+    )
 }
 
 @Composable
@@ -71,7 +143,7 @@ private fun AdminMainScreen() {
             color = Color(0xFF15121F), // Dark background for the main content
         ) {
             when (selectedTab) {
-                "topics" -> LessonTopicsTab()
+                "topics" -> LessonTopicsTab(topicsViewModel)
                 "users" -> UserManagementTab()
             }
         }
@@ -79,8 +151,7 @@ private fun AdminMainScreen() {
 }
 
 @Composable
-private fun LessonTopicsTab() {
-    val viewModel: AdminLessonTopicsViewModel = viewModel()
+private fun LessonTopicsTab(viewModel: AdminLessonTopicsViewModel) {
     val topics by viewModel.topics
     val selectedLanguage by viewModel.selectedLanguage
     val selectedDifficulty by viewModel.selectedDifficulty
@@ -98,12 +169,11 @@ private fun LessonTopicsTab() {
     var selectedTopicForLessons by remember { mutableStateOf<LessonTopic?>(null) }
 
     // Clear messages after 3 seconds
-    LaunchedEffect(errorMessage, successMessage) {
-        if (errorMessage != null || successMessage != null) {
-            kotlinx.coroutines.delay(3000)
-            viewModel.clearMessages()
-        }
-    }
+    AutoClearMessages(
+        errorMessage = errorMessage,
+        successMessage = successMessage,
+        onClear = { viewModel.clearMessages() },
+    )
 
     // Show the edit dialog if editing
     if (editingTopic != null) {
@@ -121,9 +191,10 @@ private fun LessonTopicsTab() {
         CreateTopicDialog(
             language = selectedLanguage,
             difficulty = selectedDifficulty,
-            onDismiss = { },
+            onDismiss = { showCreateDialog = false },
             onSave = { newTopic ->
                 viewModel.createTopic(newTopic)
+                showCreateDialog = false
             },
         )
     }
@@ -133,7 +204,7 @@ private fun LessonTopicsTab() {
         AdminLessonContentScreen(
             topicId = selectedTopicForLessons!!.id,
             topicTitle = selectedTopicForLessons!!.title,
-            onBack = { },
+            onBack = { selectedTopicForLessons = null },
         )
         return
     }
@@ -255,63 +326,10 @@ private fun LessonTopicsTab() {
         Spacer(modifier = Modifier.height(20.dp))
 
         // Messages
-        if (errorMessage != null) {
-            Surface(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                color = Color(0xFFEF4444).copy(alpha = 0.15f),
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        Icons.Filled.Close,
-                        contentDescription = null,
-                        tint = Color(0xFFEF4444),
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = errorMessage!!,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFFEF4444),
-                    )
-                }
-            }
-        }
-
-        if (successMessage != null) {
-            Surface(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                color = Color(0xFF10B981).copy(alpha = 0.15f),
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        Icons.Filled.Check,
-                        contentDescription = null,
-                        tint = Color(0xFF10B981),
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = successMessage!!,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF10B981),
-                    )
-                }
-            }
-        }
+        AdminMessageDisplay(
+            errorMessage = errorMessage,
+            successMessage = successMessage,
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -331,25 +349,12 @@ private fun LessonTopicsTab() {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 LessonLanguage.entries.forEach { language ->
-                    FilterChip(
+                    AdminFilterChip(
                         selected = selectedLanguage == language,
                         onClick = {
                             viewModel.loadTopics(language, LessonDifficulty.BEGINNER)
                         },
-                        label = {
-                            Text(
-                                text = language.displayName,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        },
-                        colors =
-                            androidx.compose.material3.FilterChipDefaults.filterChipColors(
-                                containerColor = Color(0xFF2D2A3E),
-                                selectedContainerColor = Color(0xFF8B5CF6),
-                                labelColor = Color(0xFFB4B4C4),
-                                selectedLabelColor = Color.White,
-                            ),
-                        border = null,
+                        label = language.displayName,
                     )
                 }
             }
@@ -370,25 +375,12 @@ private fun LessonTopicsTab() {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     LessonDifficulty.entries.forEach { difficulty ->
-                        FilterChip(
+                        AdminFilterChip(
                             selected = selectedDifficulty == difficulty,
                             onClick = {
                                 viewModel.loadTopics(selectedLanguage!!, difficulty)
                             },
-                            label = {
-                                Text(
-                                    text = difficulty.displayName,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
-                            },
-                            colors =
-                                androidx.compose.material3.FilterChipDefaults.filterChipColors(
-                                    containerColor = Color(0xFF2D2A3E),
-                                    selectedContainerColor = Color(0xFF8B5CF6),
-                                    labelColor = Color(0xFFB4B4C4),
-                                    selectedLabelColor = Color.White,
-                                ),
-                            border = null,
+                            label = difficulty.displayName,
                         )
                     }
                 }
@@ -487,42 +479,11 @@ private fun LessonTopicsTab() {
 
             // Topics list
             if (filteredTopics.isEmpty() && !isLoading) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = Color(0xFF1E1B2E),
-                    shape = MaterialTheme.shapes.medium,
-                ) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(48.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            Text(
-                                text = "📚",
-                                style = MaterialTheme.typography.displayMedium,
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "No topics found",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Click \"Add New Topic\" to create your first topic",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFFB4B4C4),
-                            )
-                        }
-                    }
-                }
+                EmptyStateSurface(
+                    emoji = "📚",
+                    title = "No topics found",
+                    subtitle = "Click \"Add New Topic\" to create your first topic",
+                )
             } else {
                 AdminTopicsList(
                     topics = filteredTopics,
@@ -538,42 +499,11 @@ private fun LessonTopicsTab() {
                 )
             }
         } else {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = Color(0xFF1E1B2E),
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(48.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Text(
-                            text = "🌍",
-                            style = MaterialTheme.typography.displayMedium,
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Select Language & Difficulty",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Choose a language and difficulty level to manage topics",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFFB4B4C4),
-                        )
-                    }
-                }
-            }
+            EmptyStateSurface(
+                emoji = "🌍",
+                title = "Select Language & Difficulty",
+                subtitle = "Choose a language and difficulty level to manage topics",
+            )
         }
     }
 }

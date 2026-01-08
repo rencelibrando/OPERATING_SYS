@@ -66,7 +66,6 @@ class AgentApiService : Closeable {
         fun get(): ConnectionState = synchronized(lock) { _state }
 
         fun set(state: ConnectionState) = synchronized(lock) { _state = state }
-
     }
 
     private val stateMachine = StateMachine()
@@ -113,6 +112,7 @@ class AgentApiService : Closeable {
     private var targetDataLine: TargetDataLine? = null
     private var onMessageCallback: ((AgentMessage) -> Unit)? = null
     private var onAudioReceivedCallback: ((ByteArray) -> Unit)? = null
+
     // Use AtomicReference for thread-safe access from the audio capture thread
     private val onUserAudioCapturedCallback = AtomicReference<((ByteArray) -> Unit)?>(null)
 
@@ -730,7 +730,7 @@ class AgentApiService : Closeable {
                     // Get callback reference once at the start for thread-safe access
                     val userAudioCallback = onUserAudioCapturedCallback.get()
                     logInfo { "Starting audio capture for ElevenLabs Agent (continuous mode), user callback: ${userAudioCallback != null}" }
-                    
+
                     var audioBytesSent = 0L
                     var userAudioChunksSent = 0L
 
@@ -741,10 +741,10 @@ class AgentApiService : Closeable {
                         if (bytesRead > 0) {
                             audioBytesSent += bytesRead
                             val audioChunk = buffer.copyOf(bytesRead)
-                            
+
                             // Send audio as a binary frame to ElevenLabs via backend
                             currentSession?.send(Frame.Binary(true, audioChunk))
-                            
+
                             // Send to callback for session recording (user audio)
                             // Re-get the callback each time in case it was set after capture started
                             val callback = onUserAudioCapturedCallback.get()

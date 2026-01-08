@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.example.project.admin.data.AdminUser
 import org.example.project.admin.presentation.UserManagementViewModel
+import org.example.project.admin.ui.components.AdminMessageDisplay
 
 @Composable
 fun UserManagementTab() {
@@ -32,12 +33,11 @@ fun UserManagementTab() {
     }
 
     // Clear messages after 3 seconds
-    LaunchedEffect(errorMessage, successMessage) {
-        if (errorMessage != null || successMessage != null) {
-            kotlinx.coroutines.delay(3000)
-            viewModel.clearMessages()
-        }
-    }
+    AutoClearMessages(
+        errorMessage = errorMessage,
+        successMessage = successMessage,
+        onClear = { viewModel.clearMessages() },
+    )
 
     Column(
         modifier =
@@ -98,63 +98,10 @@ fun UserManagementTab() {
         Spacer(modifier = Modifier.height(20.dp))
 
         // Messages
-        if (errorMessage != null) {
-            Surface(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                color = Color(0xFFEF4444).copy(alpha = 0.15f),
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        Icons.Filled.Close,
-                        contentDescription = null,
-                        tint = Color(0xFFEF4444),
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = errorMessage!!,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFFEF4444),
-                    )
-                }
-            }
-        }
-
-        if (successMessage != null) {
-            Surface(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                color = Color(0xFF10B981).copy(alpha = 0.15f),
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        Icons.Filled.Check,
-                        contentDescription = null,
-                        tint = Color(0xFF10B981),
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = successMessage!!,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF10B981),
-                    )
-                }
-            }
-        }
+        AdminMessageDisplay(
+            errorMessage = errorMessage,
+            successMessage = successMessage,
+        )
 
         Spacer(modifier = Modifier.height(20.dp))
 

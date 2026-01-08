@@ -15,8 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Sort
@@ -64,7 +62,7 @@ fun AIFeedbackScreen(
     var isExpanded by remember { mutableStateOf(false) }
     var cardScale by remember { mutableStateOf(1.0f) }
     var contentOpacity by remember { mutableStateOf(1.0f) }
-    var selectedViewMode by remember { mutableStateOf("grid") } // grid, list, compact
+    var selectedViewMode by remember { mutableStateOf("list") } // grid, list, compact
     var animationSpeed by remember { mutableStateOf(1.0f) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var sessionToDelete by remember { mutableStateOf<String?>(null) }
@@ -105,10 +103,10 @@ fun AIFeedbackScreen(
                         .fillMaxSize()
                         .background(WordBridgeColors.BackgroundMain)
                         .padding(
-                            start = if (isTabletScreen) 32.dp else 16.dp,
-                            end = if (isTabletScreen) 32.dp else 16.dp,
-                            top = if (isCompactScreen) 8.dp else 16.dp,
-                            bottom = if (isCompactScreen) 8.dp else 16.dp,
+                            start = if (isTabletScreen) 16.dp else 12.dp,
+                            end = if (isTabletScreen) 16.dp else 12.dp,
+                            top = if (isCompactScreen) 8.dp else 12.dp,
+                            bottom = if (isCompactScreen) 8.dp else 12.dp,
                         )
                         .imePadding()
                         .statusBarsPadding()
@@ -175,7 +173,6 @@ fun AIFeedbackScreen(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             // Expand/Collapse Button
-                            
 
                             UserAvatar(
                                 initials = authenticatedUser?.initials ?: "U",
@@ -187,7 +184,7 @@ fun AIFeedbackScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 if (isLoading) {
                     Box(
@@ -271,7 +268,7 @@ fun AIFeedbackScreen(
 }
 
 @Composable
-private fun DynamicConversationHistory(
+internal fun DynamicConversationHistory(
     sessions: List<org.example.project.domain.model.ConversationSession>,
     onSessionClick: (org.example.project.domain.model.ConversationSession) -> Unit,
     onDeleteClick: (String) -> Unit,
@@ -282,166 +279,206 @@ private fun DynamicConversationHistory(
     cardScale: Float,
     isCompactScreen: Boolean,
     isExpanded: Boolean,
-    sortOrder: org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder,
+    sortOrder: AIFeedbackViewModel.SortOrder,
     onSortClick: () -> Unit,
-    onSortOrderChange: (org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder) -> Unit,
+    onSortOrderChange: (AIFeedbackViewModel.SortOrder) -> Unit,
     showSortMenu: Boolean,
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Dynamic Header
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        // Dynamic Header with softer design
         AnimatedVisibility(
             visible = !isExpanded,
             enter = slideInVertically() + fadeIn(),
             exit = slideOutVertically() + fadeOut(),
         ) {
-            Row(
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = WordBridgeColors.CardBackgroundDark,
+                shadowElevation = 4.dp,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column {
-                    Text(
-                        text = "Your Progress",
-                        style =
-                            MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                            ),
-                        color = WordBridgeColors.TextPrimaryDark,
-                    )
-                    Text(
-                        text = "${sessions.size} conversation${if (sessions.size != 1) "s" else ""} • $viewMode view",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = WordBridgeColors.TextSecondaryDark,
-                    )
-                }
-
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Sort Button with Dropdown
-                    Box {
-                        IconButton(
-                            onClick = onSortClick,
-                            modifier =
-                                Modifier
-                                    .size(if (isCompactScreen) 32.dp else 40.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        WordBridgeColors.PrimaryPurple.copy(alpha = 0.1f),
-                                        CircleShape,
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = "Your Learning Journey",
+                            style =
+                                MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                            color = WordBridgeColors.TextPrimaryDark,
+                        )
+                        Text(
+                            text = "Track your progress and see how you're improving",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = WordBridgeColors.TextSecondaryDark,
+                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.15f),
+                            ) {
+                                Text(
+                                    text = "${sessions.size} ${if (sessions.size == 1) "session" else "sessions"}",
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontWeight = FontWeight.Medium,
                                     ),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Sort,
-                                contentDescription = "Sort",
-                                tint = WordBridgeColors.PrimaryPurple,
-                                modifier = Modifier.size(if (isCompactScreen) 16.dp else 20.dp),
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = showSortMenu,
-                            onDismissRequest = onSortClick,
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Date (Newest)") },
-                                onClick = {
-                                    onSortOrderChange(org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.DATE_DESC)
-                                    onSortClick()
-                                },
-                                leadingIcon =
-                                    if (sortOrder == org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.DATE_DESC) {
-                                        { Text("✓", color = WordBridgeColors.PrimaryPurple) }
-                                    } else {
-                                        null
-                                    },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Date (Oldest)") },
-                                onClick = {
-                                    onSortOrderChange(org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.DATE_ASC)
-                                    onSortClick()
-                                },
-                                leadingIcon =
-                                    if (sortOrder == org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.DATE_ASC) {
-                                        { Text("✓", color = WordBridgeColors.PrimaryPurple) }
-                                    } else {
-                                        null
-                                    },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Duration (Longest)") },
-                                onClick = {
-                                    onSortOrderChange(
-                                        org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.DURATION_DESC,
-                                    )
-                                    onSortClick()
-                                },
-                                leadingIcon =
-                                    if (sortOrder == org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.DURATION_DESC) {
-                                        { Text("✓", color = WordBridgeColors.PrimaryPurple) }
-                                    } else {
-                                        null
-                                    },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Duration (Shortest)") },
-                                onClick = {
-                                    onSortOrderChange(org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.DURATION_ASC)
-                                    onSortClick()
-                                },
-                                leadingIcon =
-                                    if (sortOrder == org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.DURATION_ASC) {
-                                        { Text("✓", color = WordBridgeColors.PrimaryPurple) }
-                                    } else {
-                                        null
-                                    },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Language (A-Z)") },
-                                onClick = {
-                                    onSortOrderChange(org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.LANGUAGE_AZ)
-                                    onSortClick()
-                                },
-                                leadingIcon =
-                                    if (sortOrder == org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.LANGUAGE_AZ) {
-                                        { Text("✓", color = WordBridgeColors.PrimaryPurple) }
-                                    } else {
-                                        null
-                                    },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Language (Z-A)") },
-                                onClick = {
-                                    onSortOrderChange(org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.LANGUAGE_ZA)
-                                    onSortClick()
-                                },
-                                leadingIcon =
-                                    if (sortOrder == org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.LANGUAGE_ZA) {
-                                        { Text("✓", color = WordBridgeColors.PrimaryPurple) }
-                                    } else {
-                                        null
-                                    },
+                                    color = WordBridgeColors.PrimaryPurple,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                )
+                            }
+                            Text(
+                                text = "Keep up the great work! 🌟",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = WordBridgeColors.TextSecondaryDark,
                             )
                         }
                     }
 
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.1f),
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            text = "📈",
-                            modifier = Modifier.padding(8.dp),
-                            style = MaterialTheme.typography.titleMedium,
-                        )
+                        // Sort Button
+                        Box {
+                            Surface(
+                                onClick = onSortClick,
+                                shape = CircleShape,
+                                color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.15f),
+                                modifier = Modifier.size(if (isCompactScreen) 36.dp else 40.dp),
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxSize(),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Sort,
+                                        contentDescription = "Sort",
+                                        tint = WordBridgeColors.PrimaryPurple,
+                                        modifier = Modifier.size(if (isCompactScreen) 16.dp else 18.dp),
+                                    )
+                                }
+                            }
+
+                            DropdownMenu(
+                                expanded = showSortMenu,
+                                onDismissRequest = onSortClick,
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Date (Newest)") },
+                                    onClick = {
+                                        onSortOrderChange(org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.DATE_DESC)
+                                        onSortClick()
+                                    },
+                                    leadingIcon =
+                                        if (sortOrder == org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.DATE_DESC) {
+                                            { Text("✓", color = WordBridgeColors.PrimaryPurple) }
+                                        } else {
+                                            null
+                                        },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Date (Oldest)") },
+                                    onClick = {
+                                        onSortOrderChange(org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.DATE_ASC)
+                                        onSortClick()
+                                    },
+                                    leadingIcon =
+                                        if (sortOrder == AIFeedbackViewModel.SortOrder.DATE_ASC) {
+                                            { Text("✓", color = WordBridgeColors.PrimaryPurple) }
+                                        } else {
+                                            null
+                                        },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Duration (Longest)") },
+                                    onClick = {
+                                        onSortOrderChange(
+                                            org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.DURATION_DESC,
+                                        )
+                                        onSortClick()
+                                    },
+                                    leadingIcon =
+                                        if (sortOrder == org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.DURATION_DESC) {
+                                            { Text("✓", color = WordBridgeColors.PrimaryPurple) }
+                                        } else {
+                                            null
+                                        },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Duration (Shortest)") },
+                                    onClick = {
+                                        onSortOrderChange(org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.DURATION_ASC)
+                                        onSortClick()
+                                    },
+                                    leadingIcon =
+                                        if (sortOrder == org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.DURATION_ASC) {
+                                            { Text("✓", color = WordBridgeColors.PrimaryPurple) }
+                                        } else {
+                                            null
+                                        },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Language (A-Z)") },
+                                    onClick = {
+                                        onSortOrderChange(org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.LANGUAGE_AZ)
+                                        onSortClick()
+                                    },
+                                    leadingIcon =
+                                        if (sortOrder == org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.LANGUAGE_AZ) {
+                                            { Text("✓", color = WordBridgeColors.PrimaryPurple) }
+                                        } else {
+                                            null
+                                        },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Language (Z-A)") },
+                                    onClick = {
+                                        onSortOrderChange(org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.LANGUAGE_ZA)
+                                        onSortClick()
+                                    },
+                                    leadingIcon =
+                                        if (sortOrder == org.example.project.presentation.viewmodel.AIFeedbackViewModel.SortOrder.LANGUAGE_ZA) {
+                                            { Text("✓", color = WordBridgeColors.PrimaryPurple) }
+                                        } else {
+                                            null
+                                        },
+                                )
+                            }
+                        }
+
+                        Surface(
+                            shape = CircleShape,
+                            color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.15f),
+                            modifier = Modifier.size(if (isCompactScreen) 36.dp else 40.dp),
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                Text(
+                                    text = "📈",
+                                    style = MaterialTheme.typography.titleSmall,
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         // Dynamic Content based on view mode
         when (viewMode) {
@@ -481,7 +518,7 @@ private fun DynamicConversationHistory(
 }
 
 @Composable
-private fun DynamicGridView(
+internal fun DynamicGridView(
     sessions: List<org.example.project.domain.model.ConversationSession>,
     onSessionClick: (org.example.project.domain.model.ConversationSession) -> Unit,
     onDeleteClick: (String) -> Unit,
@@ -492,13 +529,14 @@ private fun DynamicGridView(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 4.dp),
     ) {
         val columns = if (isCompactScreen) 1 else 2
         items(sessions.chunked(columns).size) { rowIndex ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(if (isCompactScreen) 12.dp else 16.dp),
             ) {
                 val chunk = sessions.chunked(columns)[rowIndex]
                 chunk.forEach { session ->
@@ -523,7 +561,7 @@ private fun DynamicGridView(
 }
 
 @Composable
-private fun DynamicListView(
+internal fun DynamicListView(
     sessions: List<org.example.project.domain.model.ConversationSession>,
     onSessionClick: (org.example.project.domain.model.ConversationSession) -> Unit,
     onDeleteClick: (String) -> Unit,
@@ -537,6 +575,7 @@ private fun DynamicListView(
         state = listState,
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(vertical = 4.dp),
     ) {
         items(
             items = sessions,
@@ -557,7 +596,7 @@ private fun DynamicListView(
 }
 
 @Composable
-private fun DynamicCompactView(
+internal fun DynamicCompactView(
     sessions: List<org.example.project.domain.model.ConversationSession>,
     onSessionClick: (org.example.project.domain.model.ConversationSession) -> Unit,
     onDeleteClick: (String) -> Unit,
@@ -568,7 +607,8 @@ private fun DynamicCompactView(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        contentPadding = PaddingValues(vertical = 4.dp),
     ) {
         items(
             items = sessions,
@@ -588,7 +628,7 @@ private fun DynamicCompactView(
 }
 
 @Composable
-private fun DynamicSessionCard(
+internal fun DynamicSessionCard(
     session: org.example.project.domain.model.ConversationSession,
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
@@ -599,25 +639,26 @@ private fun DynamicSessionCard(
     modifier: Modifier = Modifier,
 ) {
     var isPressed by remember { mutableStateOf(false) }
-    var isHovered by remember { mutableStateOf(false) }
 
-    val animationDuration = (300 / animationSpeed).toInt()
+    val animationDuration = (200 / animationSpeed).toInt()
+    
+    // Smooth elevation animation
+    val animatedElevation by animateFloatAsState(
+        targetValue = if (isPressed) 2f else 6f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        )
+    )
 
     Card(
         onClick = onClick,
         modifier =
             modifier
                 .shadow(
-                    elevation =
-                        if (isPressed) {
-                            4.dp
-                        } else if (isHovered) {
-                            12.dp
-                        } else {
-                            8.dp
-                        },
+                    elevation = animatedElevation.dp,
                     shape = RoundedCornerShape(16.dp),
-                    spotColor = WordBridgeColors.PrimaryPurple.copy(alpha = 0.3f),
+                    spotColor = WordBridgeColors.PrimaryPurple.copy(alpha = 0.2f),
                 )
                 .clip(RoundedCornerShape(16.dp))
                 .pointerInput(Unit) {
@@ -636,98 +677,142 @@ private fun DynamicSessionCard(
                 containerColor = WordBridgeColors.CardBackgroundDark,
             ),
     ) {
-        Row(
+        Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(if (isCompactScreen) 12.dp else 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+                    .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // Header with language and personal touch
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f),
             ) {
-                Surface(
-                    shape = CircleShape,
-                    color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.15f),
-                    modifier = Modifier.size(if (isCompactScreen) 32.dp else 40.dp),
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize(),
+                    Surface(
+                        shape = CircleShape,
+                        color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.15f),
+                        modifier = Modifier.size(48.dp),
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize(),
+                        ) {
+                            Text(
+                                text = getLanguageEmoji(session.language),
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+                        }
+                    }
+
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
-                            text = getLanguageEmoji(session.language),
-                            style = MaterialTheme.typography.titleMedium,
+                            text = "${session.language.replaceFirstChar { it.uppercase() }} Practice",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                            color = WordBridgeColors.TextPrimaryDark,
+                        )
+                        Text(
+                            text = "Your ${session.level.lowercase()} session",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = WordBridgeColors.TextSecondaryDark,
                         )
                     }
                 }
 
-                Column {
+                // Level badge with more visual appeal
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = getLevelColor(session.level),
+                    shadowElevation = 4.dp,
+                ) {
                     Text(
-                        text = session.language.capitalize(),
-                        style =
-                            MaterialTheme.typography.titleSmall.copy(
-                                fontWeight = FontWeight.SemiBold,
-                            ),
-                        color = WordBridgeColors.TextPrimaryDark,
+                        text = session.level.first().uppercase() + session.level.drop(1),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                }
+            }
+
+            // Personalized progress message
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.08f),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "📈",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         Text(
-                            text = "${session.turnCount} turns",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = WordBridgeColors.TextSecondaryDark,
+                            text = "Great progress! You completed ${session.turnCount} turns",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium,
+                            ),
+                            color = WordBridgeColors.TextPrimaryDark,
                         )
                         Text(
-                            text = formatDuration(session.duration),
-                            style = MaterialTheme.typography.labelSmall,
+                            text = "Practice time: ${formatDuration(session.duration)}",
+                            style = MaterialTheme.typography.bodySmall,
                             color = WordBridgeColors.TextSecondaryDark,
                         )
                     }
                 }
             }
 
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+            // Footer with date and actions
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
-                    IconButton(
-                        onClick = { onDeleteClick() },
-                        modifier = Modifier.size(24.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete",
-                            tint = Color(0xFFEF4444),
-                            modifier = Modifier.size(16.dp),
-                        )
-                    }
-
                     Text(
-                        text = formatTimestamp(session.createdAt).split(" ").first(),
+                        text = "Completed on ${formatTimestamp(session.createdAt).split(" ").first()}",
                         style = MaterialTheme.typography.labelSmall,
                         color = WordBridgeColors.TextSecondaryDark,
+                    )
+                    Text(
+                        text = "Tap to review your feedback 🎯",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Medium,
+                        ),
+                        color = WordBridgeColors.PrimaryPurple,
                     )
                 }
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    // Audio indicator
                     if (session.audioUrl != null) {
                         Surface(
                             shape = CircleShape,
                             color = Color(0xFF10B981).copy(alpha = 0.15f),
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(32.dp),
                         ) {
                             Box(
                                 contentAlignment = Alignment.Center,
@@ -737,25 +822,30 @@ private fun DynamicSessionCard(
                                     imageVector = Icons.Default.VolumeUp,
                                     contentDescription = "Has Audio",
                                     tint = Color(0xFF10B981),
-                                    modifier = Modifier.size(12.dp),
+                                    modifier = Modifier.size(16.dp),
                                 )
                             }
                         }
                     }
 
+                    // Delete button
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = getLevelColor(session.level),
+                        onClick = { onDeleteClick() },
+                        shape = CircleShape,
+                        color = Color(0xFFEF4444).copy(alpha = 0.15f),
+                        modifier = Modifier.size(32.dp),
                     ) {
-                        Text(
-                            text = session.level.first().uppercase() + session.level.drop(1),
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Medium,
-                                ),
-                            color = Color.White,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        )
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize(),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete",
+                                tint = Color(0xFFEF4444),
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -764,7 +854,7 @@ private fun DynamicSessionCard(
 }
 
 @Composable
-private fun DynamicCompactSessionCard(
+internal fun DynamicCompactSessionCard(
     session: org.example.project.domain.model.ConversationSession,
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
@@ -773,7 +863,6 @@ private fun DynamicCompactSessionCard(
     cardScale: Float,
     isCompactScreen: Boolean,
 ) {
-    var isHovered by remember { mutableStateOf(false) }
     val animationDuration = (200 / animationSpeed).toInt()
 
     Surface(
@@ -781,19 +870,24 @@ private fun DynamicCompactSessionCard(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .animateContentSize(animationSpec = tween(animationDuration)),
-        shape = RoundedCornerShape(8.dp),
+                .animateContentSize(animationSpec = tween(animationDuration))
+                .shadow(
+                    elevation = 2.dp,
+                    shape = RoundedCornerShape(10.dp),
+                    spotColor = WordBridgeColors.PrimaryPurple.copy(alpha = 0.1f),
+                ),
+        shape = RoundedCornerShape(10.dp),
         color = WordBridgeColors.CardBackgroundDark,
-        shadowElevation = if (isHovered) 4.dp else 2.dp,
     ) {
         Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Left: Language emoji + name + stats
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -803,13 +897,14 @@ private fun DynamicCompactSessionCard(
                     text = getLanguageEmoji(session.language),
                     style = MaterialTheme.typography.titleSmall,
                 )
-                Column {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(1.dp),
+                ) {
                     Text(
-                        text = session.language.capitalize(),
-                        style =
-                            MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Medium,
-                            ),
+                        text = session.language.replaceFirstChar { it.uppercase() },
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
                         color = WordBridgeColors.TextPrimaryDark,
                     )
                     Text(
@@ -820,19 +915,22 @@ private fun DynamicCompactSessionCard(
                 }
             }
 
+            // Right: Level + audio + delete
             Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(
-                    onClick = { onDeleteClick() },
-                    modifier = Modifier.size(20.dp),
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = getLevelColor(session.level).copy(alpha = 0.15f),
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete",
-                        tint = Color(0xFFEF4444),
-                        modifier = Modifier.size(12.dp),
+                    Text(
+                        text = session.level.first().uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        color = getLevelColor(session.level),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                     )
                 }
                 if (session.audioUrl != null) {
@@ -840,19 +938,26 @@ private fun DynamicCompactSessionCard(
                         imageVector = Icons.Default.VolumeUp,
                         contentDescription = "Has Audio",
                         tint = Color(0xFF10B981),
-                        modifier = Modifier.size(12.dp),
+                        modifier = Modifier.size(14.dp),
                     )
                 }
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = getLevelColor(session.level),
+                    onClick = { onDeleteClick() },
+                    shape = CircleShape,
+                    color = Color(0xFFEF4444).copy(alpha = 0.15f),
+                    modifier = Modifier.size(24.dp),
                 ) {
-                    Text(
-                        text = session.level.first().uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                    )
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete",
+                            tint = Color(0xFFEF4444),
+                            modifier = Modifier.size(12.dp),
+                        )
+                    }
                 }
             }
         }
@@ -860,7 +965,7 @@ private fun DynamicCompactSessionCard(
 }
 
 @Composable
-private fun ConversationSessionCard(
+internal fun ConversationSessionCard(
     session: org.example.project.domain.model.ConversationSession,
     onClick: () -> Unit,
 ) {
@@ -999,7 +1104,7 @@ private fun ConversationSessionCard(
 }
 
 @Composable
-private fun EnhancedPlaybackButton(
+internal fun EnhancedPlaybackButton(
     isPlaying: Boolean,
     onClick: () -> Unit,
     session: org.example.project.domain.model.ConversationSession,
@@ -1075,7 +1180,7 @@ private fun EnhancedPlaybackButton(
 }
 
 @Composable
-private fun AudioWaveformVisualization(
+internal fun AudioWaveformVisualization(
     isPlaying: Boolean,
     modifier: Modifier = Modifier,
     isCompactScreen: Boolean = false,
@@ -1091,45 +1196,56 @@ private fun AudioWaveformVisualization(
             ),
     )
 
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(if (isCompactScreen) 1.dp else 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        val barCount = if (isCompactScreen) 15 else 20
-        repeat(barCount) { index ->
-            val height =
-                if (isPlaying) {
-                    val progress = (animatedProgress + index * 0.05f) % 1f
-                    val minHeight = if (isCompactScreen) 3.dp else 4.dp
-                    val maxHeight = if (isCompactScreen) 16.dp else 20.dp
-                    val baseHeight = if (isCompactScreen) 6.dp else 8.dp
-                    (baseHeight + ((maxHeight - baseHeight) * sin(progress * 2 * PI.toFloat()))).coerceIn(minHeight, maxHeight)
-                } else {
-                    if (isCompactScreen) 6.dp else 8.dp
-                }
-
-            Box(
-                modifier =
-                    Modifier
-                        .width(if (isCompactScreen) 2.dp else 3.dp)
-                        .height(height)
-                        .background(
-                            color =
-                                if (isPlaying) {
-                                    Color(0xFF10B981)
-                                } else {
-                                    WordBridgeColors.PrimaryPurple.copy(alpha = 0.3f)
-                                },
-                            shape = RoundedCornerShape(if (isCompactScreen) 1.dp else 2.dp),
-                        ),
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(if (isCompactScreen) 40.dp else 48.dp)
+            .background(
+                color = WordBridgeColors.CardBackgroundDark.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(12.dp)
             )
+            .padding(horizontal = if (isCompactScreen) 12.dp else 16.dp, vertical = if (isCompactScreen) 8.dp else 12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(if (isCompactScreen) 4.dp else 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val barCount = if (isCompactScreen) 80 else 110
+            repeat(barCount) { index ->
+                val height =
+                    if (isPlaying) {
+                        val progress = (animatedProgress + index * 0.01f) % 1f
+                        val minHeight = if (isCompactScreen) 6.dp else 8.dp
+                        val maxHeight = if (isCompactScreen) 28.dp else 36.dp
+                        val baseHeight = if (isCompactScreen) 12.dp else 16.dp
+                        (baseHeight + ((maxHeight - baseHeight) * sin(progress * 2 * PI.toFloat()))).coerceIn(minHeight, maxHeight)
+                    } else {
+                        if (isCompactScreen) 12.dp else 16.dp
+                    }
+
+                Box(
+                    modifier =
+                        Modifier
+                            .width(if (isCompactScreen) 3.dp else 4.dp)
+                            .height(height)
+                            .background(
+                                color =
+                                    if (isPlaying) {
+                                        Color(0xFF10B981)
+                                    } else {
+                                        WordBridgeColors.PrimaryPurple.copy(alpha = 0.7f)
+                                    },
+                                shape = RoundedCornerShape(if (isCompactScreen) 1.dp else 1.5.dp),
+                            ),
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun AudioPlayerCard(
+internal fun AudioPlayerCard(
     session: org.example.project.domain.model.ConversationSession,
     isPlaying: Boolean,
     onPlayClick: () -> Unit,
@@ -1149,17 +1265,18 @@ private fun AudioPlayerCard(
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(if (isCompactScreen) 16.dp else 20.dp),
-            verticalArrangement = Arrangement.spacedBy(if (isCompactScreen) 12.dp else 16.dp),
+            modifier = Modifier.padding(if (isCompactScreen) 12.dp else 16.dp),
+            verticalArrangement = Arrangement.spacedBy(if (isCompactScreen) 8.dp else 12.dp),
         ) {
+            // Header section with icon and title
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(if (isCompactScreen) 8.dp else 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(if (isCompactScreen) 6.dp else 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f),
                 ) {
                     Surface(
                         shape = CircleShape,
@@ -1171,7 +1288,7 @@ private fun AudioPlayerCard(
                             } else {
                                 WordBridgeColors.PrimaryPurple.copy(alpha = 0.15f)
                             },
-                        modifier = Modifier.size(if (isCompactScreen) 40.dp else 48.dp),
+                        modifier = Modifier.size(if (isCompactScreen) 32.dp else 40.dp),
                     ) {
                         Box(
                             contentAlignment = Alignment.Center,
@@ -1202,7 +1319,7 @@ private fun AudioPlayerCard(
                                     } else {
                                         WordBridgeColors.PrimaryPurple
                                     },
-                                modifier = Modifier.size(if (isCompactScreen) 20.dp else 24.dp),
+                                modifier = Modifier.size(if (isCompactScreen) 16.dp else 20.dp),
                             )
                         }
                     }
@@ -1253,12 +1370,19 @@ private fun AudioPlayerCard(
                 }
             }
 
+            // Extended waveform section in the middle
             if (hasAudio) {
-                AudioWaveformVisualization(
-                    isPlaying = isPlaying,
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    isCompactScreen = isCompactScreen,
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                ) {
+                    AudioWaveformVisualization(
+                        isPlaying = isPlaying,
+                        modifier = Modifier.fillMaxWidth(),
+                        isCompactScreen = isCompactScreen,
+                    )
+                }
             } else {
                 // Show placeholder for no audio
                 Box(
@@ -1280,6 +1404,7 @@ private fun AudioPlayerCard(
                 }
             }
 
+            // Bottom info section
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1302,7 +1427,7 @@ private fun AudioPlayerCard(
 }
 
 @Composable
-private fun ConversationDetailView(
+internal fun ConversationDetailView(
     session: org.example.project.domain.model.ConversationSession,
     onBack: () -> Unit,
     onPlayRecording: () -> Unit,
@@ -1371,37 +1496,7 @@ private fun ConversationDetailView(
                     // Check for audio from both session and recording
                     val hasAudio = !session.audioUrl.isNullOrEmpty() || !currentRecording?.audioUrl.isNullOrEmpty()
 
-                    // Always show playback button (for testing) or conditionally based on audioUrl
-                    if (hasAudio) {
-                        EnhancedPlaybackButton(
-                            isPlaying = isPlayingAudio,
-                            onClick = onPlayRecording,
-                            session = session,
-                        )
-                    } else {
-                        // Show a placeholder button for testing when no audio is available
-                        Button(
-                            onClick = {
-                                println("[ConversationDetailView] No audio URL available for session ${session.sessionId}")
-                            },
-                            colors =
-                                ButtonDefaults.buttonColors(
-                                    containerColor = Color.Gray,
-                                ),
-                            shape = RoundedCornerShape(12.dp),
-                            enabled = false,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.VolumeUp,
-                                contentDescription = "No Audio",
-                                modifier = Modifier.size(16.dp),
-                            )
-                            if (!isCompactScreen) {
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("No Audio")
-                            }
-                        }
-                    }
+                    // Audio playback is handled in AudioPlayerCard below
                 }
             }
 
@@ -1805,7 +1900,7 @@ private fun ConversationDetailView(
 }
 
 @Composable
-private fun EnhancedTranscriptBubble(
+internal fun EnhancedTranscriptBubble(
     role: String,
     text: String,
     isCompactScreen: Boolean = false,
@@ -1947,7 +2042,7 @@ private fun EnhancedTranscriptBubble(
 }
 
 @Composable
-private fun TranscriptBubble(
+internal fun TranscriptBubble(
     role: String,
     text: String,
 ) {
@@ -2054,7 +2149,7 @@ private fun TranscriptBubble(
 }
 
 @Composable
-private fun EmptyFeedbackState() {
+internal fun EmptyFeedbackState() {
     var isVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -2084,7 +2179,8 @@ private fun EmptyFeedbackState() {
         ) {
             Surface(
                 shape = CircleShape,
-                color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.1f),
+                color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.15f),
+                shadowElevation = 4.dp,
                 modifier = Modifier.size(120.dp),
             ) {
                 Box(
@@ -2094,13 +2190,13 @@ private fun EmptyFeedbackState() {
                     Text(
                         text = "🎙️",
                         style = MaterialTheme.typography.displayLarge,
-                        fontSize = 60.sp,
+                        fontSize = 56.sp,
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         AnimatedVisibility(
             visible = isVisible,
@@ -2115,34 +2211,64 @@ private fun EmptyFeedbackState() {
                     animationSpec = tween(durationMillis = 200),
                 ) + fadeOut(animationSpec = tween(durationMillis = 200)),
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = WordBridgeColors.CardBackgroundDark,
+                shadowElevation = 4.dp,
+                modifier = Modifier.padding(horizontal = 16.dp),
             ) {
-                Text(
-                    text = "Start Your Journey",
-                    style =
-                        MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    color = WordBridgeColors.TextPrimaryDark,
-                    textAlign = TextAlign.Center,
-                )
-                Text(
-                    text = "Practice speaking to get personalized AI feedback and track your progress",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = WordBridgeColors.TextSecondaryDark,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 20.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.padding(28.dp),
+                ) {
+                    Text(
+                        text = "Ready to Start Your Journey?",
+                        style =
+                            MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
+                        color = WordBridgeColors.TextPrimaryDark,
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        text = "Begin your language learning adventure with personalized AI feedback. Every conversation brings you closer to fluency! 🌟",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = WordBridgeColors.TextSecondaryDark,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 22.sp,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.1f),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "💡",
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(
+                                text = "Your first session will appear here with detailed AI feedback",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = WordBridgeColors.TextSecondaryDark,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun DeleteConfirmationDialog(
+internal fun DeleteConfirmationDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -2163,6 +2289,7 @@ private fun DeleteConfirmationDialog(
                 text = "This will permanently delete this conversation session and its feedback. This action cannot be undone.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = WordBridgeColors.TextSecondaryDark,
+                lineHeight = 22.sp,
             )
         },
         confirmButton = {
@@ -2172,23 +2299,30 @@ private fun DeleteConfirmationDialog(
                     ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFEF4444),
                     ),
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(12.dp),
             ) {
-                Text("Delete", color = Color.White)
+                Text(
+                    "Delete",
+                    color = Color.White,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                )
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = WordBridgeColors.TextPrimaryDark)
+                Text(
+                    "Cancel",
+                    color = WordBridgeColors.TextSecondaryDark,
+                )
             }
         },
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         containerColor = WordBridgeColors.CardBackgroundDark,
     )
 }
 
 @Composable
-private fun ErrorMessage(
+internal fun ErrorMessage(
     error: String,
     onRetry: () -> Unit,
 ) {
@@ -2293,7 +2427,7 @@ private fun ErrorMessage(
 }
 
 @Composable
-private fun MetricCard(
+internal fun MetricCard(
     label: String,
     value: String,
     icon: String,
@@ -2361,7 +2495,7 @@ private fun MetricCard(
     }
 }
 
-private fun getLanguageEmoji(language: String): String {
+internal fun getLanguageEmoji(language: String): String {
     return when (language.lowercase()) {
         "korean", "hangeul" -> "🇰🇷"
         "mandarin", "chinese" -> "🇨🇳"
@@ -2372,7 +2506,7 @@ private fun getLanguageEmoji(language: String): String {
     }
 }
 
-private fun getLevelColor(level: String): Color {
+internal fun getLevelColor(level: String): Color {
     return when (level.lowercase()) {
         "beginner" -> Color(0xFF10B981)
         "intermediate" -> Color(0xFF3B82F6)
@@ -2381,7 +2515,7 @@ private fun getLevelColor(level: String): Color {
     }
 }
 
-private fun formatDuration(seconds: Float): String {
+internal fun formatDuration(seconds: Float): String {
     val minutes = (seconds / 60).toInt()
     val secs = (seconds % 60).toInt()
     return if (minutes > 0) {
@@ -2391,7 +2525,7 @@ private fun formatDuration(seconds: Float): String {
     }
 }
 
-private fun formatTimestamp(timestamp: String): String {
+internal fun formatTimestamp(timestamp: String): String {
     return try {
         val parts = timestamp.split("T")
         val date = parts[0]
@@ -2402,7 +2536,7 @@ private fun formatTimestamp(timestamp: String): String {
     }
 }
 
-private fun parseTranscript(transcript: String): List<Pair<String, String>> {
+internal fun parseTranscript(transcript: String): List<Pair<String, String>> {
     return transcript.split("\n")
         .filter { it.isNotBlank() }
         .mapNotNull { line ->

@@ -2,7 +2,6 @@ package org.example.project.ui.components
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
@@ -20,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.domain.model.PracticeLanguage
 import org.example.project.models.ConversationTurnUI
-import org.example.project.ui.theme.WordBridgeColors
 
 /**
  * Conversation mode card showing real-time dialogue with AI tutor.
@@ -83,9 +81,10 @@ fun ConversationModeCard(
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = "${language.displayName} Conversation",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Medium,
-                        ),
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Medium,
+                            ),
                         color = Color.White.copy(alpha = 0.95f),
                     )
                 }
@@ -127,9 +126,10 @@ fun ConversationModeCard(
                         Spacer(modifier = Modifier.width(8.dp))
                         TextButton(
                             onClick = onRetryConnection ?: onStartConversation,
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = Color(0xFFDC2626),
-                            ),
+                            colors =
+                                ButtonDefaults.textButtonColors(
+                                    contentColor = Color(0xFFDC2626),
+                                ),
                         ) {
                             Text("Retry", style = MaterialTheme.typography.labelMedium)
                         }
@@ -158,9 +158,10 @@ fun ConversationModeCard(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Ready to chat",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.Medium,
-                            ),
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.Medium,
+                                ),
                             color = Color.White.copy(alpha = 0.8f),
                         )
                     }
@@ -215,20 +216,21 @@ fun ConversationModeCard(
                 // End button as secondary - with red hover color
                 val endButtonInteractionSource = remember { MutableInteractionSource() }
                 val isEndButtonHovered by endButtonInteractionSource.collectIsHoveredAsState()
-                
+
                 val endButtonColor by animateColorAsState(
                     targetValue = if (isEndButtonHovered) Color(0xFFDC2626) else Color(0xFF9CA3AF),
                     animationSpec = tween(150),
-                    label = "endButtonColor"
+                    label = "endButtonColor",
                 )
-                
+
                 TextButton(
                     onClick = onStopConversation,
                     modifier = Modifier.fillMaxWidth(),
                     interactionSource = endButtonInteractionSource,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = endButtonColor,
-                    ),
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = endButtonColor,
+                        ),
                 ) {
                     Text("End Conversation", style = MaterialTheme.typography.labelMedium)
                 }
@@ -237,10 +239,11 @@ fun ConversationModeCard(
                 Button(
                     onClick = onStartConversation,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF8B5CF6).copy(alpha = 0.9f),
-                        contentColor = Color.White,
-                    ),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF8B5CF6).copy(alpha = 0.9f),
+                            contentColor = Color.White,
+                        ),
                     shape = RoundedCornerShape(12.dp),
                     elevation = ButtonDefaults.buttonElevation(0.dp),
                 ) {
@@ -263,7 +266,7 @@ private fun ConversationBubble(
     isAgentThinking: Boolean = false,
 ) {
     val isUser = turn.role == "user"
-    
+
     // Start visible immediately - no delay for real-time chat responsiveness
     // Use remember with turn.id as key to track visibility per bubble
     var visible by remember(turn.id) { mutableStateOf(true) }
