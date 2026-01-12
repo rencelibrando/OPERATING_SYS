@@ -3,6 +3,7 @@
 # ============================================
 # AUTO-INSTALLER FOR VOICE ANALYSIS
 # Works on Linux and macOS
+# Handles shared filesystem symlink issues
 # ============================================
 
 set -e
@@ -11,16 +12,6 @@ echo ""
 echo "============================================"
 echo "  AUTO-INSTALLER FOR VOICE ANALYSIS"
 echo "  Linux / macOS Compatible"
-echo "============================================"
-echo ""
-echo "This will automatically install:"
-echo "  - Python packages from requirements.txt"
-echo "  - OpenAI Whisper (speech-to-text)"
-echo "  - SpeechBrain (speaker analysis)"
-echo "  - PyTorch (deep learning framework)"
-echo "  - FFmpeg (audio processing) <-- CRITICAL"
-echo "  - Other required packages"
-echo ""
 echo "============================================"
 echo ""
 
@@ -34,7 +25,7 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
     echo "Detected: macOS"
 else
     echo "Warning: Unknown OS type: $OSTYPE"
-    OS_TYPE="linux"  # Default to Linux-like behavior
+    OS_TYPE="linux"
 fi
 
 # Check Python installation
@@ -54,12 +45,64 @@ echo "Python found: $(python3 --version)"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-# Create virtual environment if it doesn't exist
+# Check if we're on a shared filesystem (VMware, VirtualBox, etc.)
+USE_COPIES=""
+if [[ "$SCRIPT_DIR" == /mnt/hgfs/* ]] || [[ "$SCRIPT_DIR" == /media/sf_* ]]; then
+    echo ""
+    echo "Shared filesystem detected - using file copies instead of symlinks"
+    USE_COPIES="--copies"
+fi
+
+# Function to test symlink support
+test_symlink_support() {
+    local test_dir="$SCRIPT_DIR/.symlink_test_$$"
+    local test_link="$SCRIPT_DIR/.symlink_test_link_$$"
+    mkdir -p "$test_dir" 2>/dev/null || return 1
+    if ln -s "$test_dir" "$test_link" 2>/dev/null; then
+        rm -f "$test_link" 2>/dev/null
+        rmdir "$test_dir" 2>/dev/null
+        return 0
+    else
+        rmdir "$test_dir" 2>/dev/null
+        return 1
+    fi
+}
+
+# Test symlink support if not already determined
+if [ -z "$USE_COPIES" ]; then
+    if ! test_symlink_support; then
+        echo ""
+        echo "Symlinks not supported on this filesystem - using file copies"
+        USE_COPIES="--copies"
+    fi
+fi
+
+# Create virtual environment if it doesn't exist or is from wrong OS
+NEED_VENV=false
 if [ ! -d "venv" ]; then
+    NEED_VENV=true
+elif [ ! -f "venv/bin/activate" ]; then
+    echo ""
+    echo "Existing venv is not Linux-compatible (likely created on Windows)"
+    echo "Removing and recreating..."
+    rm -rf venv
+    NEED_VENV=true
+fi
+
+if [ "$NEED_VENV" = true ]; then
     echo ""
     echo "Creating virtual environment..."
-    python3 -m venv venv
-    echo "Virtual environment created successfully."
+    if [ -n "$USE_COPIES" ]; then
+        python3 -m venv $USE_COPIES venv
+    else
+        python3 -m venv venv
+    fi
+    if [ $? -eq 0 ]; then
+        echo "Virtual environment created successfully."
+    else
+        echo "ERROR: Failed to create virtual environment"
+        exit 1
+    fi
 fi
 
 # Activate virtual environment
@@ -72,23 +115,41 @@ echo ""
 echo "Upgrading pip..."
 pip install --upgrade pip
 
-# Run the auto-installer
+# Install requirements
 echo ""
 echo "============================================"
-echo "Running Auto-Installer..."
+echo "Installing dependencies from requirements.txt..."
+echo "============================================"
+echo ""
+pip install -r requirements.txt
+
+# Run the auto-installer for additional dependencies
+echo ""
+echo "============================================"
+echo "Running Auto-Installer for additional dependencies..."
 echo "============================================"
 echo ""
 
 python auto_installer.py "$@"
 INSTALL_RESULT=$?
 
+# Verify installation
+echo ""
+echo "============================================"
+echo "Verifying installation..."
+echo "============================================"
+echo ""
+
+python -c "import fastapi; print(f'  [OK] FastAPI: {fastapi.__version__}')" 2>/dev/null || echo "  [FAIL] FastAPI"
+python -c "import uvicorn; print(f'  [OK] Uvicorn: {uvicorn.__version__}')" 2>/dev/null || echo "  [FAIL] Uvicorn"
+python -c "import pydantic; print(f'  [OK] Pydantic: {pydantic.__version__}')" 2>/dev/null || echo "  [FAIL] Pydantic"
+python -c "import numpy; print(f'  [OK] NumPy: {numpy.__version__}')" 2>/dev/null || echo "  [FAIL] NumPy"
+
 echo ""
 echo "============================================"
 if [ $INSTALL_RESULT -eq 0 ]; then
     echo "  Installation Complete!"
     echo "============================================"
-    echo ""
-    echo "All dependencies installed successfully."
     echo ""
     echo "To start the server:"
     echo "  source venv/bin/activate"
@@ -98,13 +159,9 @@ else
     echo "============================================"
     echo ""
     echo "Some dependencies may not have installed correctly."
-    echo "Please review the output above and follow any instructions."
-    echo ""
     echo "Common fixes:"
     if [[ "$OS_TYPE" == "macos" ]]; then
         echo "  - For FFmpeg: brew install ffmpeg"
-        echo "  - Install Homebrew first if needed:"
-        echo '    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
     else
         echo "  - For FFmpeg: sudo apt-get install -y ffmpeg"
         echo "  - For PyAudio: sudo apt-get install -y portaudio19-dev"

@@ -570,6 +570,8 @@ object BackendManager {
     }
 
     private fun findPythonCommand(): String? {
+        val isLinux = System.getProperty("os.name").lowercase().contains("linux")
+        
         // First, try to find Python 3.12 specifically using py launcher
         try {
             val process = ProcessBuilder("py", "-3.12", "--version").start()
@@ -581,6 +583,51 @@ object BackendManager {
             }
         } catch (e: Exception) {
             // py launcher not available or Python 3.12 not found
+        }
+
+        // Linux-specific Python detection
+        if (isLinux) {
+            // Try common Linux Python commands
+            val linuxCommands = listOf("python3.12", "python3", "python3.12-minimal", "python")
+            for (cmd in linuxCommands) {
+                try {
+                    val process = ProcessBuilder(cmd, "--version").start()
+                    val exitCode = process.waitFor()
+
+                    if (exitCode == 0) {
+                        val version = process.inputStream.bufferedReader().readText().trim()
+                        if (version.contains("3.12")) {
+                            println("[Backend]   Found: $cmd - $version")
+                            return cmd
+                        } else {
+                            println("[Backend]   Found: $cmd - $version (not 3.12, but may work)")
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Command not found, try next
+                }
+            }
+            
+            // Try checking which python3 is available and its version
+            try {
+                val whichResult = ProcessBuilder("which", "python3").start()
+                if (whichResult.waitFor() == 0) {
+                    val python3Path = whichResult.inputStream.bufferedReader().readText().trim()
+                    println("[Backend]   python3 found at: $python3Path")
+                    
+                    // Check its version
+                    val versionProcess = ProcessBuilder("python3", "--version").start()
+                    if (versionProcess.waitFor() == 0) {
+                        val version = versionProcess.inputStream.bufferedReader().readText().trim()
+                        if (version.contains("3.12")) {
+                            println("[Backend]   Using python3: $version")
+                            return "python3"
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                // which command failed
+            }
         }
 
         // Check common Python 3.12 installation paths on Windows
@@ -736,11 +783,38 @@ object BackendManager {
             }
 
             // Try pip installation via python-pip package
-            println("[Backend] Trying to install pip via package manager...")
+            println("[Backend] Trying to install pip via winget...")
             val pipInstallResult = runCommand(listOf("winget", "install", "Python.pip", "--silent", "--accept-package-agreements"))
             
             if (pipInstallResult) {
                 println("[Backend] ✓ pip installed via winget")
+                return true
+            }
+
+            // Try chocolatey if available
+            try {
+                val chocoCheck = runCommand(listOf("choco", "--version"))
+                if (chocoCheck) {
+                    println("[Backend] Trying chocolatey package manager...")
+                    val chocoResult = runCommand(listOf("choco", "install", "pip", "--yes"))
+                    if (chocoResult) {
+                        println("[Backend] ✓ pip installed via chocolatey")
+                        return true
+                    }
+                }
+            } catch (e: Exception) {
+                println("[Backend] Chocolatey not available")
+            }
+
+            // Install Windows audio dependencies automatically
+            println("[Backend] Installing Windows audio dependencies...")
+            if (installWindowsAudioDependencies()) {
+                println("[Backend] ✓ Windows audio dependencies installed")
+            }
+
+            // Last resort: Try downloading and installing pip manually
+            println("[Backend] All package managers failed, trying manual pip installation...")
+            if (installPipManually(pythonCmd)) {
                 return true
             }
 
@@ -757,7 +831,9 @@ object BackendManager {
      */
     private fun installMissingModulesLinux(pythonCmd: String): Boolean {
         return try {
-            // First try ensurepip
+            println("[Backend] Attempting to install missing Python modules on Linux...")
+            
+            // First try ensurepip (most reliable method)
             println("[Backend] Trying ensurepip to bootstrap pip...")
             val ensurepipResult = runCommand(
                 if (pythonCmd.contains(" ")) pythonCmd.split(" ") + listOf("-m", "ensurepip", "--default-pip", "--upgrade")
@@ -765,13 +841,58 @@ object BackendManager {
             )
             
             if (ensurepipResult) {
-                println("[Backend] ✓ pip installed via ensurepip")
-                return true
+                println("[Backend] pip installed via ensurepip")
+                // Verify pip is working
+                if (runCommand(listOf(pythonCmd, "-m", "pip", "--version"))) {
+                    return true
+                }
             }
 
-            // Try different package managers
+            // Enhanced package manager detection with better error handling
+            println("[Backend] ensurepip failed, trying package managers...")
+            
+            // Try Ubuntu/Debian specific commands first
+            if (runCommand(listOf("which", "apt"))) {
+                println("[Backend] Found apt package manager (Ubuntu/Debian)")
+                
+                // Update package list
+                println("[Backend] Updating package list...")
+                val updateResult = runCommand(listOf("sudo", "apt", "update", "-qq"))
+                if (!updateResult) {
+                    println("[Backend] Warning: apt update failed, continuing anyway...")
+                }
+                
+                // Try multiple Ubuntu package names
+                val ubuntuPackages = listOf(
+                    listOf("sudo", "apt", "install", "-y", "python3-pip", "python3-venv"),
+                    listOf("sudo", "apt", "install", "-y", "python3.12-pip", "python3.12-venv"),
+                    listOf("sudo", "apt", "install", "-y", "pip", "python3-venv")
+                )
+                
+                for (pkgCmd in ubuntuPackages) {
+                    println("[Backend] Trying: ${pkgCmd.joinToString(" ")}")
+                    if (runCommand(pkgCmd)) {
+                        println("[Backend] ✓ Modules installed via apt")
+                        return true
+                    }
+                }
+                
+                // Install system dependencies for audio libraries
+                println("[Backend] Installing system dependencies for audio libraries...")
+                val audioDeps = listOf(
+                    listOf("sudo", "apt", "install", "-y", "portaudio19-dev", "libasound2-dev", "libportaudio2", "libportaudiocpp0"),
+                    listOf("sudo", "apt", "install", "-y", "python3-dev", "build-essential"),
+                    listOf("sudo", "apt", "install", "-y", "libsndfile1-dev")
+                )
+                
+                for (depCmd in audioDeps) {
+                    println("[Backend] Installing audio dependencies: ${depCmd.joinToString(" ")}")
+                    runCommand(depCmd) // Don't fail if audio deps fail, but log the attempt
+                }
+            }
+            
+            // Try other package managers
             val packageManagers = listOf(
-                Triple("apt", listOf("sudo", "apt", "update", "-qq"), listOf("sudo", "apt", "install", "-y", "python3-pip", "python3-venv")),
                 Triple("apt-get", listOf("sudo", "apt-get", "update", "-qq"), listOf("sudo", "apt-get", "install", "-y", "python3-pip", "python3-venv")),
                 Triple("yum", emptyList<String>(), listOf("sudo", "yum", "install", "-y", "python3-pip")),
                 Triple("dnf", emptyList<String>(), listOf("sudo", "dnf", "install", "-y", "python3-pip", "python3-venv")),
@@ -783,16 +904,20 @@ object BackendManager {
                 try {
                     // Check if package manager exists
                     val checkResult = runCommand(listOf("which", manager))
-                    if (!checkResult) continue
+                    if (!checkResult) {
+                        continue
+                    }
 
                     println("[Backend] Trying $manager package manager...")
                     
                     // Run update command if provided
                     if (updateCmd.isNotEmpty()) {
+                        println("[Backend] Updating packages with $manager...")
                         runCommand(updateCmd)
                     }
                     
                     // Install packages
+                    println("[Backend] Installing packages: ${installCmd.joinToString(" ")}")
                     val installResult = runCommand(installCmd)
                     if (installResult) {
                         println("[Backend] ✓ Modules installed via $manager")
@@ -804,10 +929,46 @@ object BackendManager {
                 }
             }
 
-            println("[Backend] All Linux package managers failed")
+            // Last resort: Try downloading and installing pip manually
+            println("[Backend] All package managers failed, trying manual pip installation...")
+            if (installPipManually(pythonCmd)) {
+                return true
+            }
+
+            println("[Backend] All Linux module installation methods failed")
             false
         } catch (e: Exception) {
             println("[Backend] ERROR: Linux module installation failed: ${e.message}")
+            false
+        }
+    }
+    
+    /**
+     * Manual pip installation as last resort
+     */
+    private fun installPipManually(pythonCmd: String): Boolean {
+        return try {
+            println("[Backend] Attempting manual pip installation...")
+            
+            // Download get-pip.py
+            val downloadResult = runCommand(listOf("curl", "-o", "/tmp/get-pip.py", "https://bootstrap.pypa.io/get-pip.py"))
+            if (!downloadResult) {
+                println("[Backend] Failed to download get-pip.py")
+                return false
+            }
+            
+            // Install pip using the downloaded script
+            val installResult = runCommand(listOf(pythonCmd, "/tmp/get-pip.py"))
+            if (installResult) {
+                println("[Backend] ✓ pip installed manually")
+                // Clean up
+                runCommand(listOf("rm", "/tmp/get-pip.py"))
+                return true
+            }
+            
+            false
+        } catch (e: Exception) {
+            println("[Backend] Manual pip installation failed: ${e.message}")
             false
         }
     }
@@ -829,15 +990,38 @@ object BackendManager {
                 return true
             }
 
-            // Try Homebrew
-            println("[Backend] Trying Homebrew...")
+            // Check if Homebrew is available, install if not
+            println("[Backend] Checking for Homebrew...")
             val brewCheck = runCommand(listOf("which", "brew"))
-            if (brewCheck) {
+            if (!brewCheck) {
+                println("[Backend] Homebrew not found, installing automatically...")
+                if (installHomebrew()) {
+                    println("[Backend] ✓ Homebrew installed successfully")
+                } else {
+                    println("[Backend] Failed to install Homebrew")
+                }
+            }
+
+            // Try Homebrew for pip
+            if (runCommand(listOf("which", "brew"))) {
+                println("[Backend] Installing pip via Homebrew...")
                 val brewResult = runCommand(listOf("brew", "install", "python-pip", "--quiet"))
                 if (brewResult) {
                     println("[Backend] ✓ pip installed via Homebrew")
                     return true
                 }
+            }
+
+            // Install macOS audio dependencies automatically
+            println("[Backend] Installing macOS audio dependencies...")
+            if (installMacAudioDependencies()) {
+                println("[Backend] ✓ macOS audio dependencies installed")
+            }
+
+            // Last resort: Try downloading and installing pip manually
+            println("[Backend] All package managers failed, trying manual pip installation...")
+            if (installPipManually(pythonCmd)) {
+                return true
             }
 
             println("[Backend] Failed to install pip on macOS")
@@ -849,14 +1033,32 @@ object BackendManager {
     }
 
     /**
-     * Helper function to run commands safely
+     * Helper function to run commands safely with output capture
      */
     private fun runCommand(command: List<String>): Boolean {
         return try {
+            println("[Backend] Executing: ${command.joinToString(" ")}")
             val process = ProcessBuilder(command).start()
             val exitCode = process.waitFor()
+            
+            // Capture output for debugging
+            val output = process.inputStream.bufferedReader().readText().trim()
+            val error = process.errorStream.bufferedReader().readText().trim()
+            
+            if (exitCode != 0) {
+                if (error.isNotEmpty()) {
+                    println("[Backend] Command error: $error")
+                }
+                if (output.isNotEmpty()) {
+                    println("[Backend] Command output: $output")
+                }
+            } else if (output.isNotEmpty()) {
+                println("[Backend] Command output: $output")
+            }
+            
             exitCode == 0
         } catch (e: Exception) {
+            println("[Backend] Command execution failed: ${e.message}")
             false
         }
     }
@@ -1430,6 +1632,7 @@ object BackendManager {
 
             val reader = BufferedReader(InputStreamReader(process.inputStream))
             val errorLines = mutableListOf<String>()
+            val audioErrors = mutableListOf<String>()
             var line: String?
             while (reader.readLine().also { line = it } != null) {
                 val lineStr = line!!
@@ -1439,6 +1642,15 @@ object BackendManager {
                 ) {
                     println("[Backend] [pip] $lineStr")
                     errorLines.add(lineStr)
+                    
+                    // Check for specific audio-related errors
+                    if (lineStr.contains("pyaudio", ignoreCase = true) ||
+                        lineStr.contains("portaudio", ignoreCase = true) ||
+                        lineStr.contains("alsa", ignoreCase = true) ||
+                        lineStr.contains("fatal error: portaudio.h", ignoreCase = true) ||
+                        lineStr.contains("src/pyaudio/device_api.c", ignoreCase = true)) {
+                        audioErrors.add(lineStr)
+                    }
                 }
             }
 
@@ -1452,11 +1664,212 @@ object BackendManager {
                     println("[Backend] Error details:")
                     errorLines.take(5).forEach { println("[Backend]   $it") }
                 }
+                
+                // Provide specific guidance for audio library errors
+                if (audioErrors.isNotEmpty()) {
+                    println("[Backend] 🎵 Audio library installation detected!")
+                    println("[Backend] This is common on all systems. Installing system dependencies...")
+                    
+                    val isLinux = System.getProperty("os.name").lowercase().contains("linux")
+                    val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+                    val isMac = System.getProperty("os.name").lowercase().contains("mac")
+                    
+                    var audioDepsInstalled = false
+                    
+                    when {
+                        isLinux -> {
+                            audioDepsInstalled = installAudioSystemDependencies()
+                        }
+                        isWindows -> {
+                            audioDepsInstalled = installWindowsAudioDependencies()
+                        }
+                        isMac -> {
+                            audioDepsInstalled = installMacAudioDependencies()
+                        }
+                    }
+                    
+                    if (audioDepsInstalled) {
+                        println("[Backend] ✓ Audio system dependencies installed, retrying pip install...")
+                        // Retry the installation once more
+                        val retryProcess = ProcessBuilder(installArgs)
+                            .directory(backendDir)
+                            .redirectErrorStream(true)
+                            .start()
+                        
+                        val retryExitCode = retryProcess.waitFor()
+                        if (retryExitCode == 0) {
+                            println("[Backend] ✓ Dependencies installed successfully after adding system deps!")
+                            return true
+                        }
+                    }
+                    
+                    println("[Backend] Manual fix for audio libraries:")
+                    when {
+                        isLinux -> {
+                            println("[Backend]   sudo apt install portaudio19-dev libasound2-dev python3-dev build-essential")
+                        }
+                        isWindows -> {
+                            println("[Backend]   winget install Microsoft.WindowsSDK --silent")
+                            println("[Backend]   winget install Microsoft.VisualStudio.2022.BuildTools --silent --add Microsoft.VisualStudio.Workload.VCTools")
+                        }
+                        isMac -> {
+                            println("[Backend]   brew install portaudio libsndfile")
+                        }
+                    }
+                    println("[Backend]   Then retry: pip install -r requirements.txt")
+                }
+                
                 false
             }
         } catch (e: Exception) {
             println("[Backend] ERROR: Error installing dependencies: ${e.message}")
             e.printStackTrace()
+            false
+        }
+    }
+    
+    /**
+     * Install system dependencies for audio libraries on Linux
+     */
+    private fun installAudioSystemDependencies(): Boolean {
+        return try {
+            println("[Backend] Installing audio system dependencies...")
+            val audioDeps = listOf(
+                listOf("sudo", "apt", "install", "-y", "portaudio19-dev", "libasound2-dev", "libportaudio2", "libportaudiocpp0"),
+                listOf("sudo", "apt", "install", "-y", "python3-dev", "build-essential"),
+                listOf("sudo", "apt", "install", "-y", "libsndfile1-dev")
+            )
+            
+            var allSuccess = true
+            for (depCmd in audioDeps) {
+                println("[Backend] Installing: ${depCmd.joinToString(" ")}")
+                if (!runCommand(depCmd)) {
+                    allSuccess = false
+                }
+            }
+            
+            if (allSuccess) {
+                println("[Backend] ✓ All audio system dependencies installed successfully")
+            } else {
+                println("[Backend] ⚠ Some audio dependencies may have failed")
+            }
+            
+            allSuccess
+        } catch (e: Exception) {
+            println("[Backend] ERROR: Failed to install audio system dependencies: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * Install audio dependencies on Windows
+     */
+    private fun installWindowsAudioDependencies(): Boolean {
+        return try {
+            println("[Backend] Installing Windows audio dependencies...")
+            
+            // Install Windows audio SDK components via winget
+            val windowsAudioDeps = listOf(
+                listOf("winget", "install", "Microsoft.WindowsSDK", "--silent", "--accept-package-agreements"),
+                listOf("winget", "install", "Microsoft.VisualStudio.2022.BuildTools", "--silent", "--accept-package-agreements", "--add", "Microsoft.VisualStudio.Workload.VCTools")
+            )
+            
+            var success = false
+            for (depCmd in windowsAudioDeps) {
+                println("[Backend] Installing: ${depCmd.joinToString(" ")}")
+                if (runCommand(depCmd)) {
+                    success = true
+                }
+            }
+            
+            if (success) {
+                println("[Backend] ✓ Windows audio dependencies installed successfully")
+            } else {
+                println("[Backend] ⚠ Some Windows audio dependencies may have failed")
+            }
+            
+            success
+        } catch (e: Exception) {
+            println("[Backend] ERROR: Failed to install Windows audio dependencies: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * Install audio dependencies on macOS
+     */
+    private fun installMacAudioDependencies(): Boolean {
+        return try {
+            println("[Backend] Installing macOS audio dependencies...")
+            
+            // Install macOS audio dependencies via Homebrew
+            val macAudioDeps = listOf(
+                listOf("brew", "install", "portaudio", "--quiet"),
+                listOf("brew", "install", "libsndfile", "--quiet")
+            )
+            
+            var success = false
+            for (depCmd in macAudioDeps) {
+                println("[Backend] Installing: ${depCmd.joinToString(" ")}")
+                if (runCommand(depCmd)) {
+                    success = true
+                }
+            }
+            
+            if (success) {
+                println("[Backend] ✓ macOS audio dependencies installed successfully")
+            } else {
+                println("[Backend] ⚠ Some macOS audio dependencies may have failed")
+            }
+            
+            success
+        } catch (e: Exception) {
+            println("[Backend] ERROR: Failed to install macOS audio dependencies: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * Install Homebrew on macOS if not present
+     */
+    private fun installHomebrew(): Boolean {
+        return try {
+            println("[Backend] Installing Homebrew...")
+            
+            // Download and install Homebrew
+            val installCommand = listOf(
+                "bash", "-c", 
+                "\"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+            )
+            
+            val result = runCommand(installCommand)
+            if (result) {
+                println("[Backend] ✓ Homebrew installed successfully")
+                
+                // Add Homebrew to PATH for current session
+                val isAppleSilicon = System.getProperty("os.arch").contains("aarch64")
+                val homebrewPath = if (isAppleSilicon) {
+                    "/opt/homebrew/bin"
+                } else {
+                    "/usr/local/bin"
+                }
+                
+                try {
+                    val currentPath = System.getenv("PATH") ?: ""
+                    val newPath = "$homebrewPath:$currentPath"
+                    System.setProperty("java.library.path", newPath)
+                    println("[Backend] ✓ Homebrew added to PATH: $homebrewPath")
+                } catch (e: Exception) {
+                    println("[Backend] Warning: Could not update PATH: ${e.message}")
+                }
+                
+                true
+            } else {
+                println("[Backend] Failed to install Homebrew")
+                false
+            }
+        } catch (e: Exception) {
+            println("[Backend] ERROR: Homebrew installation failed: ${e.message}")
             false
         }
     }

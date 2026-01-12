@@ -2,15 +2,8 @@
 <module type="JAVA_MODULE" version="4">
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
-    <content url="file://$MODULE_DIR$">
-      <excludeFolder url="file://$MODULE_DIR$/.venv/Include" />
-      <excludeFolder url="file://$MODULE_DIR$/.venv/Lib" />
-      <excludeFolder url="file://$MODULE_DIR$/.venv/Scripts" />
-      <excludeFolder url="file://$MODULE_DIR$/backend/venv/Include" />
-      <excludeFolder url="file://$MODULE_DIR$/backend/venv/Lib" />
-      <excludeFolder url="file://$MODULE_DIR$/backend/venv/Scripts" />
-    </content>
-    <orderEntry type="jdk" jdkName="Python 3.12" jdkType="Python SDK" />
+    <content url="file://$MODULE_DIR$" />
+    <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
