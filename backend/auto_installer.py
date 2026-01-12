@@ -75,8 +75,8 @@ class AutoInstaller:
         self.required_packages = {
             'whisper': 'openai-whisper',
             'speechbrain': 'speechbrain', 
-            'torch': 'torch',
-            'torchaudio': 'torchaudio',
+            'torch': 'torch==2.2.0',  # Pinned for SpeechBrain compatibility
+            'torchaudio': 'torchaudio==2.2.0',  # Pinned for SpeechBrain compatibility
             'soundfile': 'soundfile',
             'ffmpeg': 'ffmpeg-python',
             'numpy': 'numpy',
@@ -85,6 +85,23 @@ class AutoInstaller:
         
         self.system_requirements = {
             'ffmpeg': 'ffmpeg'
+        }
+        
+        # Audio system dependencies for PyAudio compilation
+        self.audio_system_deps = {
+            'linux': [
+                'portaudio19-dev',
+                'libasound2-dev', 
+                'libportaudio2',
+                'libportaudiocpp0',
+                'python3-dev',
+                'build-essential',
+                'libsndfile1-dev'
+            ],
+            'macos': [
+                'portaudio'
+            ],
+            'windows': []  # PyAudio wheels are available for Windows
         }
         
         self.platform = sys.platform.lower()
@@ -154,25 +171,25 @@ class AutoInstaller:
             logger.error(error_msg)
             return False, error_msg
     
-    def install_system_package(self, package_name: str) -> Tuple[bool, str]:
+    def install_system_package(self, package_name: str, password: str = None) -> Tuple[bool, str]:
         """Attempt to auto-install system packages."""
         if package_name == 'ffmpeg':
-            return self._install_ffmpeg()
+            return self._install_ffmpeg(password)
         
         return False, f"No auto-installation available for {package_name}"
     
-    def _install_ffmpeg(self) -> Tuple[bool, str]:
+    def _install_ffmpeg(self, password: str = None) -> Tuple[bool, str]:
         """Auto-install FFmpeg using available package managers."""
         platform = sys.platform.lower()
         
         if platform == 'win32' or platform == 'windows':
             return self._install_ffmpeg_windows()
         elif platform.startswith('linux'):
-            return self._install_ffmpeg_linux()
+            return self._install_ffmpeg_linux(password)
         elif platform.startswith('darwin'):
             return self._install_ffmpeg_macos()
-        else:
-            return False, f"Unsupported platform: {platform}"
+        
+        return False, self._get_ffmpeg_manual_instructions('unknown platform: {platform}')
     
     def _install_ffmpeg_windows(self) -> Tuple[bool, str]:
         """Install FFmpeg on Windows using available package managers or direct download."""
@@ -405,17 +422,50 @@ class AutoInstaller:
         safe_print("After restarting, verify with: ffmpeg -version")
         safe_print("="*60 + "\n")
     
-    def _install_ffmpeg_linux(self) -> Tuple[bool, str]:
+    def _install_ffmpeg_linux(self, password: str = None) -> Tuple[bool, str]:
         """Install FFmpeg on Linux."""
-        
-        # Check for sudo access
-        has_sudo = self._check_sudo_access()
         
         # Try apt (Ubuntu/Debian)
         if shutil.which('apt') or shutil.which('apt-get'):
             logger.info("Detected apt package manager (Ubuntu/Debian)...")
             
-            if has_sudo:
+            # Try with password if provided
+            if password:
+                try:
+                    # Update package list first
+                    logger.info("Updating package list...")
+                    result = subprocess.run(
+                        ['sudo', '-S', 'apt-get', 'update', '-y'],
+                        input=f"{password}\n",
+                        text=True,
+                        capture_output=True,
+                        timeout=120
+                    )
+                    if result.returncode != 0:
+                        return False, f"Failed to update package list: {result.stderr}"
+                    
+                    # Install ffmpeg
+                    logger.info("Installing FFmpeg using apt...")
+                    result = subprocess.run(
+                        ['sudo', '-S', 'apt-get', 'install', '-y', 'ffmpeg'],
+                        input=f"{password}\n",
+                        text=True,
+                        capture_output=True,
+                        timeout=300
+                    )
+                    if result.returncode == 0:
+                        logger.info("FFmpeg installed successfully with apt")
+                        return True, "FFmpeg installed successfully using apt"
+                    else:
+                        logger.warning(f"Apt install failed: {result.stderr}")
+                        return False, f"Failed to install FFmpeg: {result.stderr}"
+                except subprocess.TimeoutExpired:
+                    return False, "FFmpeg installation timed out"
+                except Exception as e:
+                    return False, f"Error installing FFmpeg: {e}"
+            
+            # Try passwordless sudo
+            elif self._check_sudo_access():
                 try:
                     # Update package list first
                     logger.info("Updating package list...")
@@ -439,8 +489,10 @@ class AutoInstaller:
                         return True, "FFmpeg installed successfully using apt"
                     else:
                         logger.warning(f"Apt install failed: {result.stderr}")
+                        return False, f"Failed to install FFmpeg: {result.stderr}"
                 except Exception as e:
-                    logger.warning(f"Apt install error: {e}")
+                    return False, f"Error installing FFmpeg: {e}"
+            
             else:
                 return False, "sudo access required. Run: sudo apt-get install -y ffmpeg"
         
@@ -516,6 +568,79 @@ class AutoInstaller:
             return result.returncode == 0
         except:
             return False
+    
+    def install_audio_dependencies(self, password: str = None) -> Tuple[bool, str]:
+        """Install audio system dependencies for PyAudio compilation."""
+        
+        if self.is_windows:
+            return True, "Windows: PyAudio wheels are pre-compiled"
+        
+        if self.is_linux:
+            deps = self.audio_system_deps['linux']
+            logger.info(f"Installing Linux audio dependencies: {', '.join(deps)}")
+            
+            # Try with password if provided
+            if password:
+                try:
+                    cmd = ['sudo', '-S', 'apt-get', 'install', '-y'] + deps
+                    result = subprocess.run(
+                        cmd,
+                        input=f"{password}\n",
+                        text=True,
+                        capture_output=True,
+                        timeout=300
+                    )
+                    if result.returncode == 0:
+                        return True, f"Audio dependencies installed: {', '.join(deps)}"
+                    else:
+                        return False, f"Failed to install audio dependencies: {result.stderr}"
+                except subprocess.TimeoutExpired:
+                    return False, "Audio dependencies installation timed out"
+                except Exception as e:
+                    return False, f"Error installing audio dependencies: {e}"
+            
+            # Try passwordless sudo
+            elif self._check_sudo_access():
+                try:
+                    cmd = ['sudo', 'apt-get', 'install', '-y'] + deps
+                    result = subprocess.run(
+                        cmd,
+                        capture_output=True,
+                        text=True,
+                        timeout=300
+                    )
+                    if result.returncode == 0:
+                        return True, f"Audio dependencies installed: {', '.join(deps)}"
+                    else:
+                        return False, f"Failed to install audio dependencies: {result.stderr}"
+                except Exception as e:
+                    return False, f"Error installing audio dependencies: {e}"
+            
+            else:
+                return False, f"Sudo required. Install manually: sudo apt-get install -y {' '.join(deps)}"
+        
+        elif self.is_macos:
+            deps = self.audio_system_deps['macos']
+            logger.info(f"Installing macOS audio dependencies: {', '.join(deps)}")
+            
+            if shutil.which('brew'):
+                try:
+                    for dep in deps:
+                        result = subprocess.run(
+                            ['brew', 'install', dep],
+                            capture_output=True,
+                            text=True,
+                            timeout=300
+                        )
+                        if result.returncode != 0:
+                            logger.warning(f"Failed to install {dep}: {result.stderr}")
+                    return True, f"Audio dependencies installed via Homebrew"
+                except Exception as e:
+                    return False, f"Error installing audio dependencies: {e}"
+            else:
+                return False, "Homebrew not found. Install with: /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+        
+        return False, "Unsupported platform for audio dependencies"
     
     def _install_ffmpeg_macos(self) -> Tuple[bool, str]:
         """Install FFmpeg on macOS."""
@@ -658,7 +783,21 @@ class AutoInstaller:
         failed_packages = []
         
         try:
-            # Use pip to install all requirements at once
+            # First, install torch and torchaudio with pinned versions for SpeechBrain compatibility
+            # This must be done BEFORE installing speechbrain to avoid version conflicts
+            safe_print("⏳ Installing torch==2.2.0 and torchaudio==2.2.0 first (SpeechBrain compatibility)...")
+            torch_result = subprocess.run(
+                [sys.executable, '-m', 'pip', 'install', 'torch==2.2.0', 'torchaudio==2.2.0'],
+                capture_output=True,
+                text=True,
+                timeout=600  # 10 minutes
+            )
+            if torch_result.returncode == 0:
+                safe_print("✓ torch and torchaudio installed with compatible versions")
+            else:
+                logger.warning(f"torch/torchaudio install warning: {torch_result.stderr}")
+            
+            # Now install all requirements (torch/torchaudio versions already satisfied)
             result = subprocess.run(
                 [sys.executable, '-m', 'pip', 'install', '-r', str(requirements_path)],
                 capture_output=True,
@@ -686,7 +825,7 @@ class AutoInstaller:
         
         return len(failed_packages) == 0, failed_packages
     
-    def install_system_dependencies(self) -> Tuple[bool, List[str]]:
+    def install_system_dependencies(self, password: str = None) -> Tuple[bool, List[str]]:
         """
         Install system-level dependencies (like ffmpeg).
         
@@ -709,7 +848,7 @@ class AutoInstaller:
                 logger.info(msg)
                 safe_print(msg)
                 
-                success, install_msg = self.install_system_package(cmd_name)
+                success, install_msg = self.install_system_package(cmd_name, password)
                 messages.append(install_msg)
                 
                 if not success:
@@ -720,7 +859,7 @@ class AutoInstaller:
         
         return all_success, messages
     
-    def auto_install(self, force_reinstall: bool = False, install_from_requirements: bool = True) -> List[Tuple[str, bool, str]]:
+    def auto_install(self, force_reinstall: bool = False, install_from_requirements: bool = True, password: str = None) -> List[Tuple[str, bool, str]]:
         """
         Auto-install missing dependencies.
         
@@ -741,10 +880,11 @@ class AutoInstaller:
         safe_print(f"Python: {platform.python_version()}")
         safe_print("="*60)
         
-        # Step 1: Install system dependencies first (FFmpeg)
+        # Step 1: Install system dependencies first (FFmpeg + Audio deps)
         safe_print("\n📋 Step 1/3: System Dependencies")
         safe_print("-"*40)
         
+        # Install FFmpeg
         for command_name in self.system_requirements:
             if not force_reinstall and self.check_system_command(command_name):
                 logger.info(f"✓ {command_name} system command available")
@@ -753,12 +893,21 @@ class AutoInstaller:
             else:
                 logger.warning(f"✗ {command_name} system command not found")
                 safe_print(f"⏳ Installing {command_name}...")
-                success, message = self.install_system_package(command_name)
+                success, message = self.install_system_package(command_name, password)
                 results.append((f"{command_name} (system)", success, message))
                 if success:
                     safe_print(f"✓ {message}")
                 else:
                     safe_print(f"⚠️  {message}")
+        
+        # Install audio system dependencies (for PyAudio)
+        safe_print(f"⏳ Installing audio system dependencies...")
+        audio_success, audio_message = self.install_audio_dependencies(password)
+        results.append(("audio_system_deps", audio_success, audio_message))
+        if audio_success:
+            safe_print(f"✓ {audio_message}")
+        else:
+            safe_print(f"⚠️  {audio_message}")
         
         # Step 2: Install from requirements.txt
         if install_from_requirements:
@@ -845,7 +994,7 @@ class AutoInstaller:
         safe_print("="*60)
 
 
-def auto_install_dependencies(force_reinstall: bool = False, skip_requirements: bool = False) -> bool:
+def auto_install_dependencies(force_reinstall: bool = False, skip_requirements: bool = False, password: str = None) -> bool:
     """
     Auto-install all voice analysis dependencies.
     
@@ -857,7 +1006,7 @@ def auto_install_dependencies(force_reinstall: bool = False, skip_requirements: 
         True if all critical dependencies are installed
     """
     installer = AutoInstaller()
-    results = installer.auto_install(force_reinstall, install_from_requirements=not skip_requirements)
+    results = installer.auto_install(force_reinstall, install_from_requirements=not skip_requirements, password=password)
     installer.print_results(results)
     
     # Check if critical packages are installed
@@ -893,7 +1042,7 @@ def auto_install_dependencies(force_reinstall: bool = False, skip_requirements: 
     return True
 
 
-def install_ffmpeg_only() -> bool:
+def install_ffmpeg_only(password: str = None) -> bool:
     """Install only FFmpeg (useful for quick fix)."""
     installer = AutoInstaller()
     
@@ -909,7 +1058,7 @@ def install_ffmpeg_only() -> bool:
         return True
     
     safe_print("Installing FFmpeg...")
-    success, message = installer.install_system_package('ffmpeg')
+    success, message = installer.install_system_package('ffmpeg', password)
     
     if success:
         safe_print(f"✓ {message}")
@@ -988,17 +1137,23 @@ if __name__ == "__main__":
         action='store_true',
         help='Skip requirements.txt installation'
     )
+    parser.add_argument(
+        '--password', '-p',
+        type=str,
+        help='Sudo password for system package installation (Linux only)'
+    )
     
     args = parser.parse_args()
     
     if args.verify:
         success = verify_installation()
     elif args.ffmpeg_only:
-        success = install_ffmpeg_only()
+        success = install_ffmpeg_only(args.password)
     else:
         success = auto_install_dependencies(
             force_reinstall=args.force,
-            skip_requirements=args.skip_requirements
+            skip_requirements=args.skip_requirements,
+            password=args.password
         )
     
     sys.exit(0 if success else 1)

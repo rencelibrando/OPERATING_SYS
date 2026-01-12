@@ -20,10 +20,11 @@ pydub>=0.25.1
 websockets>=12.0
 
 # Local voice analysis (Whisper STT + SpeechBrain speaker analysis)
-openai-whisper>=20231117
+# Pin torch/torchaudio versions for SpeechBrain compatibility (tested on Linux/macOS)
+torch==2.2.0
+torchaudio==2.2.0
 speechbrain>=1.0.0
-torchaudio>=2.0.0
-torch>=2.0.0
+openai-whisper>=20231117
 ffmpeg-python>=0.2.0
 soundfile>=0.12.1
 
