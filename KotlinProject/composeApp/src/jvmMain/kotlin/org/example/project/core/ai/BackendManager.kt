@@ -399,10 +399,27 @@ object BackendManager {
 
         if (pythonCmd != null) {
             println("[Backend] Python found: $pythonCmd")
-            if (checkPythonVersion(pythonCmd) && validatePythonModules(pythonCmd)) {
-                return pythonCmd
+            if (checkPythonVersion(pythonCmd)) {
+                // Check if modules are missing and try to fix them first
+                if (!validatePythonModules(pythonCmd)) {
+                    println("[Backend] Python modules missing, attempting to install missing components...")
+                    if (installMissingPythonModules(pythonCmd)) {
+                        // Try validation again after installing missing modules
+                        if (validatePythonModules(pythonCmd)) {
+                            println("[Backend] ✓ Python modules installed successfully")
+                            return pythonCmd
+                        } else {
+                            println("[Backend] Failed to install missing modules, will try full Python installation")
+                        }
+                    } else {
+                        println("[Backend] Failed to install missing modules, will try full Python installation")
+                    }
+                } else {
+                    // All checks passed
+                    return pythonCmd
+                }
             } else {
-                println("[Backend] Existing Python is invalid, will try to install fresh version")
+                println("[Backend] Existing Python version is incompatible, will try to install fresh version")
             }
         }
 
@@ -621,6 +638,7 @@ object BackendManager {
 
     /**
      * Validates that Python has required modules (pip and venv).
+     * Returns true if both are present, false if either is missing.
      */
     private fun validatePythonModules(pythonCmd: String): Boolean {
         return try {
@@ -632,30 +650,213 @@ object BackendManager {
                     listOf(pythonCmd)
                 }
 
-            // Check for pip
-            val pipProcess = ProcessBuilder(cmdParts + listOf("-m", "pip", "--version")).start()
-            val pipExitCode = pipProcess.waitFor()
+            var pipFound = false
+            var venvFound = false
 
-            if (pipExitCode != 0) {
-                println("[Backend]   ERROR: pip module not found")
-                return false
+            // Check for pip
+            try {
+                val pipProcess = ProcessBuilder(cmdParts + listOf("-m", "pip", "--version")).start()
+                val pipExitCode = pipProcess.waitFor()
+
+                if (pipExitCode == 0) {
+                    val pipVersion = pipProcess.inputStream.bufferedReader().readText().trim()
+                    println("[Backend]   ✓ pip found: $pipVersion")
+                    pipFound = true
+                } else {
+                    println("[Backend]   ✗ pip module not found")
+                }
+            } catch (e: Exception) {
+                println("[Backend]   ✗ pip module check failed: ${e.message}")
             }
-            val pipVersion = pipProcess.inputStream.bufferedReader().readText().trim()
-            println("[Backend]   ✓ pip found: $pipVersion")
 
             // Check for venv
-            val venvProcess = ProcessBuilder(cmdParts + listOf("-m", "venv", "--help")).start()
-            val venvExitCode = venvProcess.waitFor()
+            try {
+                val venvProcess = ProcessBuilder(cmdParts + listOf("-m", "venv", "--help")).start()
+                val venvExitCode = venvProcess.waitFor()
 
-            if (venvExitCode != 0) {
-                println("[Backend]   ERROR: venv module not found")
-                return false
+                if (venvExitCode == 0) {
+                    println("[Backend]   ✓ venv module available")
+                    venvFound = true
+                } else {
+                    println("[Backend]   ✗ venv module not found")
+                }
+            } catch (e: Exception) {
+                println("[Backend]   ✗ venv module check failed: ${e.message}")
             }
-            println("[Backend]   ✓ venv module available")
 
-            true
+            pipFound && venvFound
         } catch (e: Exception) {
             println("[Backend]   ERROR: Failed to validate Python modules: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * Attempts to install missing Python modules (pip and venv) for existing Python installation.
+     * This is more efficient than reinstalling the entire Python distribution.
+     */
+    private fun installMissingPythonModules(pythonCmd: String): Boolean {
+        return try {
+            val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+            val isLinux = System.getProperty("os.name").lowercase().contains("linux")
+            val isMac = System.getProperty("os.name").lowercase().contains("mac")
+
+            println("[Backend] Attempting to install missing Python modules...")
+
+            when {
+                isWindows -> installMissingModulesWindows(pythonCmd)
+                isLinux -> installMissingModulesLinux(pythonCmd)
+                isMac -> installMissingModulesMac(pythonCmd)
+                else -> {
+                    println("[Backend] Unsupported OS for module installation")
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            println("[Backend] ERROR: Failed to install missing modules: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * Install missing modules on Windows using ensurepip or package managers
+     */
+    private fun installMissingModulesWindows(pythonCmd: String): Boolean {
+        return try {
+            // First try ensurepip (built-in Python module)
+            println("[Backend] Trying ensurepip to bootstrap pip...")
+            val ensurepipResult = runCommand(
+                if (pythonCmd.contains(" ")) pythonCmd.split(" ") + listOf("-m", "ensurepip", "--default-pip", "--upgrade")
+                else listOf(pythonCmd, "-m", "ensurepip", "--default-pip", "--upgrade")
+            )
+            
+            if (ensurepipResult) {
+                println("[Backend] ✓ pip installed via ensurepip")
+                return true
+            }
+
+            // Try pip installation via python-pip package
+            println("[Backend] Trying to install pip via package manager...")
+            val pipInstallResult = runCommand(listOf("winget", "install", "Python.pip", "--silent", "--accept-package-agreements"))
+            
+            if (pipInstallResult) {
+                println("[Backend] ✓ pip installed via winget")
+                return true
+            }
+
+            println("[Backend] Failed to install pip on Windows")
+            false
+        } catch (e: Exception) {
+            println("[Backend] ERROR: Windows module installation failed: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * Install missing modules on Linux using package managers
+     */
+    private fun installMissingModulesLinux(pythonCmd: String): Boolean {
+        return try {
+            // First try ensurepip
+            println("[Backend] Trying ensurepip to bootstrap pip...")
+            val ensurepipResult = runCommand(
+                if (pythonCmd.contains(" ")) pythonCmd.split(" ") + listOf("-m", "ensurepip", "--default-pip", "--upgrade")
+                else listOf(pythonCmd, "-m", "ensurepip", "--default-pip", "--upgrade")
+            )
+            
+            if (ensurepipResult) {
+                println("[Backend] ✓ pip installed via ensurepip")
+                return true
+            }
+
+            // Try different package managers
+            val packageManagers = listOf(
+                Triple("apt", listOf("sudo", "apt", "update", "-qq"), listOf("sudo", "apt", "install", "-y", "python3-pip", "python3-venv")),
+                Triple("apt-get", listOf("sudo", "apt-get", "update", "-qq"), listOf("sudo", "apt-get", "install", "-y", "python3-pip", "python3-venv")),
+                Triple("yum", emptyList<String>(), listOf("sudo", "yum", "install", "-y", "python3-pip")),
+                Triple("dnf", emptyList<String>(), listOf("sudo", "dnf", "install", "-y", "python3-pip", "python3-venv")),
+                Triple("pacman", emptyList<String>(), listOf("sudo", "pacman", "-S", "--noconfirm", "python-pip")),
+                Triple("zypper", emptyList<String>(), listOf("sudo", "zypper", "-n", "install", "python3-pip"))
+            )
+
+            for ((manager, updateCmd, installCmd) in packageManagers) {
+                try {
+                    // Check if package manager exists
+                    val checkResult = runCommand(listOf("which", manager))
+                    if (!checkResult) continue
+
+                    println("[Backend] Trying $manager package manager...")
+                    
+                    // Run update command if provided
+                    if (updateCmd.isNotEmpty()) {
+                        runCommand(updateCmd)
+                    }
+                    
+                    // Install packages
+                    val installResult = runCommand(installCmd)
+                    if (installResult) {
+                        println("[Backend] ✓ Modules installed via $manager")
+                        return true
+                    }
+                } catch (e: Exception) {
+                    println("[Backend] $manager failed: ${e.message}")
+                    continue
+                }
+            }
+
+            println("[Backend] All Linux package managers failed")
+            false
+        } catch (e: Exception) {
+            println("[Backend] ERROR: Linux module installation failed: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * Install missing modules on macOS using Homebrew
+     */
+    private fun installMissingModulesMac(pythonCmd: String): Boolean {
+        return try {
+            // First try ensurepip
+            println("[Backend] Trying ensurepip to bootstrap pip...")
+            val ensurepipResult = runCommand(
+                if (pythonCmd.contains(" ")) pythonCmd.split(" ") + listOf("-m", "ensurepip", "--default-pip", "--upgrade")
+                else listOf(pythonCmd, "-m", "ensurepip", "--default-pip", "--upgrade")
+            )
+            
+            if (ensurepipResult) {
+                println("[Backend] ✓ pip installed via ensurepip")
+                return true
+            }
+
+            // Try Homebrew
+            println("[Backend] Trying Homebrew...")
+            val brewCheck = runCommand(listOf("which", "brew"))
+            if (brewCheck) {
+                val brewResult = runCommand(listOf("brew", "install", "python-pip", "--quiet"))
+                if (brewResult) {
+                    println("[Backend] ✓ pip installed via Homebrew")
+                    return true
+                }
+            }
+
+            println("[Backend] Failed to install pip on macOS")
+            false
+        } catch (e: Exception) {
+            println("[Backend] ERROR: macOS module installation failed: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * Helper function to run commands safely
+     */
+    private fun runCommand(command: List<String>): Boolean {
+        return try {
+            val process = ProcessBuilder(command).start()
+            val exitCode = process.waitFor()
+            exitCode == 0
+        } catch (e: Exception) {
             false
         }
     }
