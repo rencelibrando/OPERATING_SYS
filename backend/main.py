@@ -34,7 +34,6 @@ from error_logger import get_logger
 from tts_service import get_tts_service
 from elevenlabs_agent_routes import router as elevenlabs_agent_router
 from whisper_analysis_routes import router as whisper_analysis_router
-from auto_installer import auto_install_dependencies
 import shutil
 import subprocess
 
@@ -121,14 +120,9 @@ async def lifespan(app: FastAPI):
         logger.error("This is required because Python caches the PATH at startup.")
         logger.error("="*60)
     
-    # Auto-install voice analysis dependencies (skip FFmpeg check since we did it above)
-    logger.info("Checking voice analysis dependencies...")
-    try:
-        success = auto_install_dependencies(force_reinstall=False, skip_requirements=True)
-        if not success:
-            logger.warning("Some voice analysis dependencies are missing. Voice analysis may not work properly.")
-    except Exception as e:
-        logger.error(f"Auto-installation failed: {e}")
+    # Skip dependency verification during startup to avoid delays
+    logger.info("Skipping dependency verification during startup")
+    logger.info("Dependencies will be checked when needed")
     
     # Initialize AI providers
     gemini_key = None
@@ -240,12 +234,16 @@ async def generate_tts_audio(request: dict):
 
 @app.get("/", tags=["General"])
 async def root():
-
     return {
         "message": "Language Learning AI Backend",
         "version": "1.0.0",
         "status": "online"
     }
+
+@app.get("/ping", tags=["General"])
+async def ping():
+    """Simple ping endpoint for quick health check"""
+    return {"status": "ok", "message": "pong"}
 
 
 @app.get("/health", response_model=HealthResponse, tags=["General"])
@@ -448,22 +446,18 @@ if __name__ == "__main__":
     # Required for Windows multiprocessing support with Uvicorn's reload feature
     multiprocessing.freeze_support()
     
-    # On Windows, disable reload to avoid multiprocessing spawn issues with numpy/fasttext
-    # These libraries don't play well with Uvicorn's WatchFiles reloader on Windows
-    is_windows = sys.platform == "win32"
-    enable_reload = settings.environment == "development" and not is_windows
-    
-    if is_windows and settings.environment == "development":
-        logger.warning(
-            "Hot-reload disabled on Windows to prevent multiprocessing issues. "
-            "Restart the server manually to apply changes."
-        )
+    # Disable reload to prevent multiprocessing issues with numpy/fasttext
+    # These libraries don't play well with Uvicorn's WatchFiles reloader
+    logger.warning(
+        "Hot-reload disabled to prevent startup issues. "
+        "Restart the server manually to apply changes."
+    )
     
     logger.info(f"Starting server on {settings.host}:{settings.port}")
     uvicorn.run(
         "main:app",
         host=settings.host,
         port=settings.port,
-        reload=enable_reload,
+        reload=False,
     )
 

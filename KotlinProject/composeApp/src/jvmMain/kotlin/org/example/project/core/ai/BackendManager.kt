@@ -131,18 +131,21 @@ object BackendManager {
                 return false
             }
 
-            // Install/update dependencies with retry
+            // Check if dependencies are already installed (skip during startup)
             if (requirementsTxt.exists()) {
-                println("[Backend] Ensuring dependencies are installed...")
-                if (!installDependenciesWithRetry(venvPython.absolutePath, backendDir, attempt)) {
-                    if (attempt < maxRetryAttempts - 1) {
-                        println("[Backend] Dependency installation failed, will retry...")
-                        Thread.sleep(3000)
-                        return startBackendWithRetry(attempt + 1)
+                println("[Backend] Checking if dependencies are installed...")
+                if (!areDependenciesInstalled(venvPython.absolutePath, backendDir)) {
+                    println("[Backend] Dependencies missing, installing...")
+                    if (!installDependenciesWithRetry(venvPython.absolutePath, backendDir, attempt)) {
+                        if (attempt < maxRetryAttempts - 1) {
+                            println("[Backend] Dependency installation failed, will retry...")
+                            Thread.sleep(3000)
+                            return startBackendWithRetry(attempt + 1)
+                        }
+                        lastSetupError = "Failed to install dependencies after multiple attempts. Please check your internet connection."
+                        println("[Backend] ERROR: $lastSetupError")
+                        return false
                     }
-                    lastSetupError = "Failed to install dependencies after multiple attempts. Please check your internet connection."
-                    println("[Backend] ERROR: $lastSetupError")
-                    return false
                 }
                 println("[Backend] Dependencies verified")
             }
@@ -374,16 +377,31 @@ object BackendManager {
 
     private fun isBackendHealthy(): Boolean {
         return try {
-            val url = java.net.URL("http://localhost:8000/health")
-            val connection = url.openConnection() as java.net.HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.connectTimeout = 2000
-            connection.readTimeout = 2000
+            // First try the fast ping endpoint
+            val pingUrl = java.net.URL("http://localhost:8000/ping")
+            val pingConnection = pingUrl.openConnection() as java.net.HttpURLConnection
+            pingConnection.requestMethod = "GET"
+            pingConnection.connectTimeout = 1000
+            pingConnection.readTimeout = 1000
 
-            val responseCode = connection.responseCode
-            connection.disconnect()
+            val pingResponseCode = pingConnection.responseCode
+            pingConnection.disconnect()
 
-            responseCode == 200
+            if (pingResponseCode == 200) {
+                return true
+            }
+
+            // Fallback to health endpoint if ping fails
+            val healthUrl = java.net.URL("http://localhost:8000/health")
+            val healthConnection = healthUrl.openConnection() as java.net.HttpURLConnection
+            healthConnection.requestMethod = "GET"
+            healthConnection.connectTimeout = 3000
+            healthConnection.readTimeout = 3000
+
+            val healthResponseCode = healthConnection.responseCode
+            healthConnection.disconnect()
+
+            healthResponseCode == 200
         } catch (e: IOException) {
             false
         }
@@ -1553,6 +1571,42 @@ object BackendManager {
             }
         } catch (e: Exception) {
             println("[Backend] Error checking virtual environment: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * Check if critical dependencies are installed (quick check)
+     */
+    private fun areDependenciesInstalled(
+        venvPython: String,
+        backendDir: File,
+    ): Boolean {
+        return try {
+            // Check for critical packages
+            val criticalPackages = listOf("fastapi", "torch", "whisper", "speechbrain")
+            
+            for (pkg in criticalPackages) {
+                val checkProcess = ProcessBuilder(
+                    venvPython,
+                    "-c",
+                    "import $pkg; print('OK')"
+                )
+                    .directory(backendDir)
+                    .redirectErrorStream(false)
+                    .start()
+                
+                val exitCode = checkProcess.waitFor()
+                if (exitCode != 0) {
+                    println("[Backend] Missing package: $pkg")
+                    return false
+                }
+            }
+            
+            println("[Backend] All critical dependencies found")
+            true
+        } catch (e: Exception) {
+            println("[Backend] Error checking dependencies: ${e.message}")
             false
         }
     }

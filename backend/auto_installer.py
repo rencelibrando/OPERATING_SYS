@@ -71,12 +71,17 @@ def safe_print(text: str):
 class AutoInstaller:
     """Cross-platform dependency installer for voice analysis."""
     
+    # PyTorch versions - pinned for SpeechBrain compatibility
+    PYTORCH_VERSION = "2.2.0"
+    TORCHAUDIO_VERSION = "2.2.0"
+    CUDA_VERSION = "cu121"  # CUDA 12.1
+    
     def __init__(self):
         self.required_packages = {
             'whisper': 'openai-whisper',
             'speechbrain': 'speechbrain', 
-            'torch': 'torch==2.2.0',  # Pinned for SpeechBrain compatibility
-            'torchaudio': 'torchaudio==2.2.0',  # Pinned for SpeechBrain compatibility
+            'torch': f'torch=={self.PYTORCH_VERSION}',  # Pinned for SpeechBrain compatibility
+            'torchaudio': f'torchaudio=={self.TORCHAUDIO_VERSION}',  # Pinned for SpeechBrain compatibility
             'soundfile': 'soundfile',
             'ffmpeg': 'ffmpeg-python',
             'numpy': 'numpy',
@@ -99,7 +104,8 @@ class AutoInstaller:
                 'libsndfile1-dev'
             ],
             'macos': [
-                'portaudio'
+                'portaudio',
+                'libsndfile'
             ],
             'windows': []  # PyAudio wheels are available for Windows
         }
@@ -108,6 +114,263 @@ class AutoInstaller:
         self.is_windows = self.platform == 'win32' or self.platform.startswith('windows')
         self.is_linux = self.platform.startswith('linux')
         self.is_macos = self.platform.startswith('darwin')
+        
+        # Architecture detection
+        self.architecture = self._detect_architecture()
+        self.is_arm64 = self.architecture in ('arm64', 'aarch64')
+        self.is_x86_64 = self.architecture in ('x86_64', 'amd64', 'AMD64')
+        
+        # GPU detection (will be populated on first check)
+        self._has_nvidia_gpu = None
+        self._cuda_available = None
+        
+        # macOS Homebrew prefix
+        self.homebrew_prefix = self._get_homebrew_prefix() if self.is_macos else None
+    
+    def _detect_architecture(self) -> str:
+        """Detect system architecture."""
+        import platform as plat
+        machine = plat.machine().lower()
+        return machine
+    
+    def _get_homebrew_prefix(self) -> str:
+        """Get Homebrew prefix based on architecture (Apple Silicon vs Intel)."""
+        if self.is_arm64:
+            return "/opt/homebrew"
+        return "/usr/local"
+    
+    def detect_nvidia_gpu(self) -> Tuple[bool, bool]:
+        """
+        Detect NVIDIA GPU and CUDA availability.
+        
+        Returns:
+            (has_nvidia_gpu, cuda_available)
+        """
+        if self._has_nvidia_gpu is not None:
+            return self._has_nvidia_gpu, self._cuda_available
+        
+        has_gpu = False
+        cuda_available = False
+        
+        # Check for nvidia-smi
+        if shutil.which("nvidia-smi"):
+            try:
+                result = subprocess.run(
+                    ["nvidia-smi"], 
+                    capture_output=True, 
+                    text=True, 
+                    timeout=10
+                )
+                if result.returncode == 0:
+                    has_gpu = True
+                    logger.info("NVIDIA GPU detected via nvidia-smi")
+                    
+                    # Check CUDA version from nvidia-smi output
+                    if "CUDA Version" in result.stdout:
+                        cuda_available = True
+                        # Extract CUDA version
+                        import re
+                        cuda_match = re.search(r'CUDA Version:\s*(\d+\.\d+)', result.stdout)
+                        if cuda_match:
+                            logger.info(f"CUDA version detected: {cuda_match.group(1)}")
+            except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
+                logger.debug(f"nvidia-smi check failed: {e}")
+        
+        # Windows: Also check via WMIC if nvidia-smi not found
+        if self.is_windows and not has_gpu:
+            try:
+                result = subprocess.run(
+                    ["wmic", "path", "win32_VideoController", "get", "name"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                if "NVIDIA" in result.stdout.upper():
+                    has_gpu = True
+                    logger.info("NVIDIA GPU detected via WMIC")
+                    # Assume CUDA might be available if GPU is present
+                    cuda_available = shutil.which("nvcc") is not None
+            except Exception as e:
+                logger.debug(f"WMIC GPU check failed: {e}")
+        
+        # Linux: Check /proc/driver/nvidia/version
+        if self.is_linux and not has_gpu:
+            try:
+                nvidia_version_path = Path("/proc/driver/nvidia/version")
+                if nvidia_version_path.exists():
+                    has_gpu = True
+                    cuda_available = True
+                    logger.info("NVIDIA GPU detected via /proc/driver/nvidia/version")
+            except Exception:
+                pass
+        
+        self._has_nvidia_gpu = has_gpu
+        self._cuda_available = cuda_available
+        return has_gpu, cuda_available
+    
+    def get_pytorch_install_command(self) -> List[str]:
+        """
+        Get the appropriate PyTorch installation command based on platform and GPU.
+        
+        Returns:
+            List of pip install arguments for PyTorch
+        """
+        has_gpu, cuda_available = self.detect_nvidia_gpu()
+        
+        torch_pkg = f"torch=={self.PYTORCH_VERSION}"
+        torchaudio_pkg = f"torchaudio=={self.TORCHAUDIO_VERSION}"
+        
+        # macOS: Always CPU/MPS version (no CUDA support)
+        if self.is_macos:
+            logger.info("macOS detected - using CPU/MPS PyTorch (MPS auto-enabled on Apple Silicon)")
+            return [torch_pkg, torchaudio_pkg]
+        
+        # Linux/Windows with NVIDIA GPU: Use CUDA version
+        if has_gpu and cuda_available:
+            logger.info(f"NVIDIA GPU with CUDA detected - using CUDA {self.CUDA_VERSION} PyTorch")
+            return [
+                torch_pkg, torchaudio_pkg,
+                "--index-url", f"https://download.pytorch.org/whl/{self.CUDA_VERSION}"
+            ]
+        
+        # Linux/Windows without GPU: Use CPU version
+        if self.is_linux or self.is_windows:
+            logger.info("No NVIDIA GPU detected - using CPU-only PyTorch")
+            return [
+                torch_pkg, torchaudio_pkg,
+                "--index-url", "https://download.pytorch.org/whl/cpu"
+            ]
+        
+        # Default fallback
+        return [torch_pkg, torchaudio_pkg]
+    
+    def install_pytorch(self) -> Tuple[bool, str]:
+        """
+        Install PyTorch and Torchaudio with intelligent version selection.
+        
+        Returns:
+            (success, message)
+        """
+        safe_print("\n⏳ Installing PyTorch and Torchaudio...")
+        
+        # Print system info
+        has_gpu, cuda_available = self.detect_nvidia_gpu()
+        safe_print(f"   Platform: {platform.system()} ({self.architecture})")
+        safe_print(f"   NVIDIA GPU: {'Yes' if has_gpu else 'No'}")
+        safe_print(f"   CUDA Available: {'Yes' if cuda_available else 'No'}")
+        
+        install_args = self.get_pytorch_install_command()
+        
+        # Build pip command
+        cmd = [sys.executable, '-m', 'pip', 'install', '--upgrade'] + install_args
+        
+        safe_print(f"   Installing: {' '.join(install_args[:2])}")
+        if len(install_args) > 2:
+            safe_print(f"   Index URL: {install_args[-1]}")
+        
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=900  # 15 minutes for large PyTorch download
+            )
+            
+            if result.returncode == 0:
+                msg = f"PyTorch {self.PYTORCH_VERSION} and Torchaudio {self.TORCHAUDIO_VERSION} installed successfully"
+                logger.info(msg)
+                safe_print(f"✓ {msg}")
+                return True, msg
+            else:
+                error_msg = f"PyTorch installation failed: {result.stderr[:500]}"
+                logger.error(error_msg)
+                return False, error_msg
+                
+        except subprocess.TimeoutExpired:
+            return False, "PyTorch installation timed out (>15 minutes)"
+        except Exception as e:
+            return False, f"PyTorch installation error: {str(e)}"
+    
+    def install_pyaudio(self) -> Tuple[bool, str]:
+        """
+        Install PyAudio with platform-specific handling.
+        
+        Returns:
+            (success, message)
+        """
+        safe_print("\n⏳ Installing PyAudio...")
+        
+        # Windows: Use pre-built wheels
+        if self.is_windows:
+            try:
+                result = subprocess.run(
+                    [sys.executable, '-m', 'pip', 'install', 'pyaudio>=0.2.14'],
+                    capture_output=True,
+                    text=True,
+                    timeout=120
+                )
+                if result.returncode == 0:
+                    return True, "PyAudio installed from wheel"
+                
+                # Fallback: try pipwin
+                if shutil.which('pipwin'):
+                    result = subprocess.run(
+                        ['pipwin', 'install', 'pyaudio'],
+                        capture_output=True,
+                        text=True,
+                        timeout=120
+                    )
+                    if result.returncode == 0:
+                        return True, "PyAudio installed via pipwin"
+                
+                return False, f"PyAudio installation failed: {result.stderr[:200]}"
+            except Exception as e:
+                return False, f"PyAudio installation error: {str(e)}"
+        
+        # macOS: Use build flags based on architecture
+        if self.is_macos:
+            prefix = self.homebrew_prefix
+            env = os.environ.copy()
+            
+            # Set build flags for PortAudio
+            env['LDFLAGS'] = f"-L{prefix}/lib"
+            env['CPPFLAGS'] = f"-I{prefix}/include"
+            env['CFLAGS'] = f"-I{prefix}/include"
+            
+            safe_print(f"   Using Homebrew prefix: {prefix}")
+            
+            try:
+                result = subprocess.run(
+                    [sys.executable, '-m', 'pip', 'install', 'pyaudio>=0.2.14'],
+                    capture_output=True,
+                    text=True,
+                    timeout=300,
+                    env=env
+                )
+                if result.returncode == 0:
+                    return True, f"PyAudio installed with {prefix} build flags"
+                else:
+                    return False, f"PyAudio build failed: {result.stderr[:200]}"
+            except Exception as e:
+                return False, f"PyAudio installation error: {str(e)}"
+        
+        # Linux: Build from source using system PortAudio
+        if self.is_linux:
+            try:
+                result = subprocess.run(
+                    [sys.executable, '-m', 'pip', 'install', 'pyaudio>=0.2.14'],
+                    capture_output=True,
+                    text=True,
+                    timeout=300
+                )
+                if result.returncode == 0:
+                    return True, "PyAudio installed from source"
+                else:
+                    return False, f"PyAudio build failed (ensure portaudio19-dev is installed): {result.stderr[:200]}"
+            except Exception as e:
+                return False, f"PyAudio installation error: {str(e)}"
+        
+        return False, "Unsupported platform for PyAudio"
     
     def check_package(self, package_name: str) -> bool:
         """Check if a Python package is installed."""
@@ -783,19 +1046,12 @@ class AutoInstaller:
         failed_packages = []
         
         try:
-            # First, install torch and torchaudio with pinned versions for SpeechBrain compatibility
+            # First, install PyTorch and Torchaudio with intelligent version selection
             # This must be done BEFORE installing speechbrain to avoid version conflicts
-            safe_print("⏳ Installing torch==2.2.0 and torchaudio==2.2.0 first (SpeechBrain compatibility)...")
-            torch_result = subprocess.run(
-                [sys.executable, '-m', 'pip', 'install', 'torch==2.2.0', 'torchaudio==2.2.0'],
-                capture_output=True,
-                text=True,
-                timeout=600  # 10 minutes
-            )
-            if torch_result.returncode == 0:
-                safe_print("✓ torch and torchaudio installed with compatible versions")
-            else:
-                logger.warning(f"torch/torchaudio install warning: {torch_result.stderr}")
+            pytorch_success, pytorch_msg = self.install_pytorch()
+            if not pytorch_success:
+                logger.warning(f"PyTorch installation warning: {pytorch_msg}")
+                failed_packages.append(f"PyTorch: {pytorch_msg}")
             
             # Now install all requirements (torch/torchaudio versions already satisfied)
             result = subprocess.run(
@@ -908,6 +1164,14 @@ class AutoInstaller:
             safe_print(f"✓ {audio_message}")
         else:
             safe_print(f"⚠️  {audio_message}")
+        
+        # Install PyAudio with platform-specific handling
+        pyaudio_success, pyaudio_message = self.install_pyaudio()
+        results.append(("pyaudio", pyaudio_success, pyaudio_message))
+        if pyaudio_success:
+            safe_print(f"✓ {pyaudio_message}")
+        else:
+            safe_print(f"⚠️  {pyaudio_message}")
         
         # Step 2: Install from requirements.txt
         if install_from_requirements:
@@ -1069,27 +1333,110 @@ def install_ffmpeg_only(password: str = None) -> bool:
 
 
 def verify_installation() -> bool:
-    """Verify all dependencies are properly installed."""
+    """Comprehensive verification of all dependencies."""
     installer = AutoInstaller()
     all_ok = True
     
     safe_print("\n" + "="*60)
-    safe_print("🔍 DEPENDENCY VERIFICATION")
+    safe_print("🔍 COMPREHENSIVE DEPENDENCY VERIFICATION")
     safe_print("="*60)
     
+    # System Information
+    safe_print("\n📋 System Information:")
+    safe_print(f"  Platform: {platform.system()} ({installer.architecture})")
+    safe_print(f"  Python: {platform.python_version()}")
+    has_gpu, cuda_available = installer.detect_nvidia_gpu()
+    safe_print(f"  NVIDIA GPU: {'Yes' if has_gpu else 'No'}")
+    safe_print(f"  CUDA Available: {'Yes' if cuda_available else 'No'}")
+    if installer.is_macos:
+        safe_print(f"  Homebrew Prefix: {installer.homebrew_prefix}")
+    
     # Check Python packages
-    safe_print("\nPython Packages:")
+    safe_print("\n📦 Python Packages:")
     for module_name, package_name in installer.required_packages.items():
         if installer.check_package(module_name):
-            safe_print(f"  ✓ {package_name}")
+            # Try to get version
+            try:
+                mod = importlib.import_module(module_name)
+                version = getattr(mod, '__version__', 'unknown')
+                safe_print(f"  ✓ {package_name} (v{version})")
+            except:
+                safe_print(f"  ✓ {package_name}")
         else:
             safe_print(f"  ✗ {package_name} - NOT INSTALLED")
             all_ok = False
     
+    # Check PyAudio specifically
+    safe_print("\n🎤 PyAudio Verification:")
+    try:
+        import pyaudio
+        safe_print(f"  ✓ PyAudio imported successfully")
+        # Try to list audio devices
+        try:
+            p = pyaudio.PyAudio()
+            device_count = p.get_device_count()
+            safe_print(f"  ✓ Audio devices found: {device_count}")
+            p.terminate()
+        except Exception as e:
+            safe_print(f"  ⚠️  PyAudio device enumeration failed: {e}")
+    except ImportError:
+        safe_print("  ✗ PyAudio - NOT INSTALLED")
+        all_ok = False
+    except Exception as e:
+        safe_print(f"  ⚠️  PyAudio error: {e}")
+    
+    # Check PyTorch and CUDA
+    safe_print("\n🔥 PyTorch Verification:")
+    try:
+        import torch
+        safe_print(f"  ✓ PyTorch {torch.__version__}")
+        
+        # Test tensor creation
+        try:
+            tensor = torch.zeros(2, 3)
+            safe_print(f"  ✓ Tensor creation works")
+        except Exception as e:
+            safe_print(f"  ✗ Tensor creation failed: {e}")
+            all_ok = False
+        
+        # Check CUDA
+        if torch.cuda.is_available():
+            safe_print(f"  ✓ CUDA available: {torch.cuda.get_device_name(0)}")
+            safe_print(f"  ✓ CUDA version: {torch.version.cuda}")
+        elif has_gpu:
+            safe_print(f"  ⚠️  NVIDIA GPU detected but CUDA not available in PyTorch")
+        else:
+            safe_print(f"  ℹ️  CUDA not available (CPU-only installation)")
+        
+        # Check MPS (Apple Silicon)
+        if installer.is_macos and hasattr(torch.backends, 'mps'):
+            if torch.backends.mps.is_available():
+                safe_print(f"  ✓ MPS (Metal) available for Apple Silicon")
+            elif installer.is_arm64:
+                safe_print(f"  ⚠️  Apple Silicon detected but MPS not available")
+    except ImportError:
+        safe_print("  ✗ PyTorch - NOT INSTALLED")
+        all_ok = False
+    except Exception as e:
+        safe_print(f"  ✗ PyTorch error: {e}")
+        all_ok = False
+    
+    # Check Torchaudio
+    safe_print("\n🔊 Torchaudio Verification:")
+    try:
+        import torchaudio
+        safe_print(f"  ✓ Torchaudio {torchaudio.__version__}")
+    except ImportError:
+        safe_print("  ✗ Torchaudio - NOT INSTALLED")
+        all_ok = False
+    except Exception as e:
+        safe_print(f"  ✗ Torchaudio error: {e}")
+        all_ok = False
+    
     # Check FFmpeg
-    safe_print("\nSystem Dependencies:")
+    safe_print("\n🎬 FFmpeg Verification:")
     if installer.check_system_command('ffmpeg'):
-        safe_print("  ✓ ffmpeg")
+        safe_print("  ✓ FFmpeg found in PATH")
         try:
             result = subprocess.run(['ffmpeg', '-version'], capture_output=True, text=True, timeout=10)
             first_line = result.stdout.split('\n')[0] if result.stdout else ""
@@ -1098,14 +1445,39 @@ def verify_installation() -> bool:
         except:
             pass
     else:
-        safe_print("  ✗ ffmpeg - NOT INSTALLED")
+        safe_print("  ✗ FFmpeg - NOT INSTALLED or not in PATH")
         all_ok = False
     
+    # Check Whisper
+    safe_print("\n🗣️ Whisper Verification:")
+    try:
+        import whisper
+        safe_print(f"  ✓ Whisper imported successfully")
+    except ImportError:
+        safe_print("  ✗ Whisper - NOT INSTALLED")
+        all_ok = False
+    except Exception as e:
+        safe_print(f"  ⚠️  Whisper import warning: {e}")
+    
+    # Check SpeechBrain
+    safe_print("\n🧠 SpeechBrain Verification:")
+    try:
+        import speechbrain
+        safe_print(f"  ✓ SpeechBrain {speechbrain.__version__}")
+    except ImportError:
+        safe_print("  ✗ SpeechBrain - NOT INSTALLED")
+        all_ok = False
+    except Exception as e:
+        safe_print(f"  ⚠️  SpeechBrain import warning: {e}")
+    
+    # Summary
     safe_print("\n" + "="*60)
     if all_ok:
         safe_print("✓ All dependencies are properly installed!")
+        safe_print("  Voice analysis is ready to use.")
     else:
-        safe_print("⚠️  Some dependencies are missing. Run: python auto_installer.py")
+        safe_print("⚠️  Some dependencies are missing or have issues.")
+        safe_print("  Run: python auto_installer.py --force")
     safe_print("="*60)
     
     return all_ok
