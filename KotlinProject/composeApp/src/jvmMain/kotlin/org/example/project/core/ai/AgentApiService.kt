@@ -132,6 +132,7 @@ class AgentApiService : Closeable {
 
     private var audioCaptureJob: Job? = null
     private val isUserSpeaking = AtomicBoolean(false)
+    private val isStoppingSession = AtomicBoolean(false) // Dedicated stop flag for immediate loop exit
     private var keepAliveJob: Job? = null
 
     private val sessionLock = Any()
@@ -179,9 +180,9 @@ class AgentApiService : Closeable {
         onAudioReceived: ((ByteArray) -> Unit)? = null,
         onUserAudioCaptured: ((ByteArray) -> Unit)? = null,
     ): Result<String> {
-        // Basic validation
-        if (apiKey.isBlank() || language.isBlank() || scenario.isBlank()) {
-            return Result.failure(IllegalArgumentException("API key, language, and scenario cannot be blank"))
+        // Basic validation - API key is now optional
+        if (language.isBlank() || scenario.isBlank()) {
+            return Result.failure(IllegalArgumentException("Language and scenario cannot be blank"))
         }
 
         return try {
@@ -197,6 +198,8 @@ class AgentApiService : Closeable {
             // Also update the atomic reference for backward compatibility
             connectionState.set(ConnectionState.CONNECTING)
 
+            // Reset stop flag for new session
+            isStoppingSession.set(false)
             agentReady.set(false)
             onMessageCallback = onMessage
             onAudioReceivedCallback = onAudioReceived
@@ -307,6 +310,9 @@ class AgentApiService : Closeable {
         return try {
             logInfo { "Stopping conversation" }
 
+            // IMMEDIATELY set stop flag to break audio capture loop
+            isStoppingSession.set(true)
+
             // For ElevenLabs, send a stop signal before disconnecting
             if (customPipelineConfig != null) {
                 stopElevenLabsSession()
@@ -382,6 +388,9 @@ class AgentApiService : Closeable {
             onUserAudioCapturedCallback.set(null)
             onAudioReceivedCallback = null
 
+            // Reset stop flag for future sessions
+            isStoppingSession.set(false)
+
             logInfo { "Conversation stopped successfully" }
             Result.success(Unit)
         } catch (e: Exception) {
@@ -391,6 +400,7 @@ class AgentApiService : Closeable {
             agentReady.set(false)
             isAgentPlayingAudio.set(false)
             isUserSpeaking.set(false)
+            isStoppingSession.set(false) // Reset stop flag on error too
             stopAudioCapture()
             Result.failure(e)
         }
@@ -484,12 +494,17 @@ class AgentApiService : Closeable {
                                     when (type) {
                                         "connection" -> {
                                             logInfo { "ElevenLabs Agent connection established" }
-                                            onMessageCallback?.invoke(
-                                                AgentMessage(
-                                                    type = "agent_message",
-                                                    event = "Welcome",
-                                                ),
-                                            )
+                                            // Non-blocking callback dispatch
+                                            onMessageCallback?.let { callback ->
+                                                scope.launch(Dispatchers.Default) {
+                                                    callback.invoke(
+                                                        AgentMessage(
+                                                            type = "agent_message",
+                                                            event = "Welcome",
+                                                        ),
+                                                    )
+                                                }
+                                            }
                                         }
                                         "conversation_text" -> {
                                             // ElevenLabs sends transcripts and agent responses
@@ -506,17 +521,21 @@ class AgentApiService : Closeable {
                                             }
 
                                             if (!content.isNullOrEmpty()) {
-                                                // Use agent_message type with ConversationText event for ViewModel compatibility
-                                                onMessageCallback?.invoke(
-                                                    AgentMessage(
-                                                        type = "agent_message",
-                                                        event = "ConversationText",
-                                                        content = content,
-                                                        role = role,
-                                                        isFinal = isFinal,
-                                                        turnId = turnId,
-                                                    ),
-                                                )
+                                                // Non-blocking callback dispatch for conversation text (high frequency updates)
+                                                onMessageCallback?.let { callback ->
+                                                    scope.launch(Dispatchers.Default) {
+                                                        callback.invoke(
+                                                            AgentMessage(
+                                                                type = "conversation_text",
+                                                                event = "ConversationText",
+                                                                content = content,
+                                                                role = role,
+                                                                isFinal = isFinal,
+                                                                turnId = turnId,
+                                                            ),
+                                                        )
+                                                    }
+                                                }
                                             }
                                         }
                                         "agent_message" -> {
@@ -524,40 +543,57 @@ class AgentApiService : Closeable {
 
                                             logDebug { "ElevenLabs event: $event" }
 
+                                            // Non-blocking callback dispatch for all agent messages
                                             when (event) {
                                                 "Welcome" -> {
-                                                    onMessageCallback?.invoke(
-                                                        AgentMessage(
-                                                            type = "agent_message",
-                                                            event = "Welcome",
-                                                        ),
-                                                    )
+                                                    onMessageCallback?.let { callback ->
+                                                        scope.launch(Dispatchers.Default) {
+                                                            callback.invoke(
+                                                                AgentMessage(
+                                                                    type = "agent_message",
+                                                                    event = "Welcome",
+                                                                ),
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                                 "AgentStartedSpeaking" -> {
                                                     isAgentPlayingAudio.set(true)
-                                                    onMessageCallback?.invoke(
-                                                        AgentMessage(
-                                                            type = "agent_message",
-                                                            event = "AgentStartedSpeaking",
-                                                        ),
-                                                    )
+                                                    onMessageCallback?.let { callback ->
+                                                        scope.launch(Dispatchers.Default) {
+                                                            callback.invoke(
+                                                                AgentMessage(
+                                                                    type = "agent_message",
+                                                                    event = "AgentStartedSpeaking",
+                                                                ),
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                                 "AgentAudioDone" -> {
                                                     isAgentPlayingAudio.set(false)
-                                                    onMessageCallback?.invoke(
-                                                        AgentMessage(
-                                                            type = "agent_message",
-                                                            event = "AgentAudioDone",
-                                                        ),
-                                                    )
+                                                    onMessageCallback?.let { callback ->
+                                                        scope.launch(Dispatchers.Default) {
+                                                            callback.invoke(
+                                                                AgentMessage(
+                                                                    type = "agent_message",
+                                                                    event = "AgentAudioDone",
+                                                                ),
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                                 "UserStartedSpeaking" -> {
-                                                    onMessageCallback?.invoke(
-                                                        AgentMessage(
-                                                            type = "agent_message",
-                                                            event = "UserStartedSpeaking",
-                                                        ),
-                                                    )
+                                                    onMessageCallback?.let { callback ->
+                                                        scope.launch(Dispatchers.Default) {
+                                                            callback.invoke(
+                                                                AgentMessage(
+                                                                    type = "agent_message",
+                                                                    event = "UserStartedSpeaking",
+                                                                ),
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -566,12 +602,16 @@ class AgentApiService : Closeable {
                                                 jsonMessage["error"]?.jsonPrimitive?.content
                                                     ?: jsonMessage["message"]?.jsonPrimitive?.content
                                             logError("ElevenLabs") { "Error: $errorMsg" }
-                                            onMessageCallback?.invoke(
-                                                AgentMessage(
-                                                    type = "error",
-                                                    error = errorMsg,
-                                                ),
-                                            )
+                                            onMessageCallback?.let { callback ->
+                                                scope.launch(Dispatchers.Default) {
+                                                    callback.invoke(
+                                                        AgentMessage(
+                                                            type = "error",
+                                                            error = errorMsg,
+                                                        ),
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 } catch (e: Exception) {
@@ -734,16 +774,22 @@ class AgentApiService : Closeable {
                     var audioBytesSent = 0L
                     var userAudioChunksSent = 0L
 
-                    // Continuous mode: always capture audio while conversation is active
-                    // ElevenLabs will detect when a user speaks and handle interruption
-                    while (stateMachine.get() == ConnectionState.READY && targetDataLine?.isOpen == true) {
+                    // Continuous mode: capture audio while conversation is active
+                    // BUT skip sending when agent is speaking to prevent echo/feedback
+                    // Check isStoppingSession for immediate exit when stop is requested
+                    while (!isStoppingSession.get() && stateMachine.get() == ConnectionState.READY && targetDataLine?.isOpen == true) {
                         val bytesRead = targetDataLine?.read(buffer, 0, buffer.size) ?: 0
                         if (bytesRead > 0) {
-                            audioBytesSent += bytesRead
                             val audioChunk = buffer.copyOf(bytesRead)
 
-                            // Send audio as a binary frame to ElevenLabs via backend
-                            currentSession?.send(Frame.Binary(true, audioChunk))
+                            // ECHO PREVENTION: Only send audio when agent is NOT speaking
+                            // This prevents the microphone from picking up the agent's audio output
+                            // and sending it back as user input
+                            if (!isAgentPlayingAudio.get()) {
+                                audioBytesSent += bytesRead
+                                // Send audio as a binary frame to ElevenLabs via backend
+                                currentSession?.send(Frame.Binary(true, audioChunk))
+                            }
 
                             // Send to callback for session recording (user audio)
                             // Re-get the callback each time in case it was set after capture started
@@ -846,6 +892,6 @@ class AgentApiService : Closeable {
     }
 
     fun getApiKey(): String? {
-        return org.example.project.core.config.ApiKeyConfig.getDeepgramApiKey()
+        return org.example.project.core.config.ApiKeyConfig.getElevenLabsApiKey()
     }
 }

@@ -87,37 +87,7 @@ object ApiKeyConfig {
         }
     }
 
-    /**
-     * Get API key with fallback order:
-     * 1. System environment variable
-     * 2. .env file
-     * 3. config.properties file
-     */
-    fun getDeepgramApiKey(): String? {
-        // First try system environment
-        System.getenv("DEEPGRAM_API_KEY")?.let {
-            println(
-                "Using DEEPGRAM_API_KEY from system environment",
-            )
-            return it
-        }
-
-        // Then try loaded properties (from .env or config.properties)
-        properties.getProperty("DEEPGRAM_API_KEY")?.let {
-            println(
-                "Using DEEPGRAM_API_KEY from config file",
-            )
-            return it
-        }
-
-        println("   DEEPGRAM_API_KEY not found in any configuration source")
-        println("   Please set it in one of these locations:")
-        println("   1. System environment variable: DEEPGRAM_API_KEY")
-        println("   2. File: composeApp/.env")
-        println("   3. File: composeApp/config.properties")
-        return null
-    }
-
+    
     fun getElevenLabsApiKey(): String? {
         // First try system environment
         System.getenv("ELEVEN_LABS_API_KEY")?.let {

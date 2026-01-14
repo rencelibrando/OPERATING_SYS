@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     
     # AI Provider API Keys
     gemini_api_key: str = Field(..., env="GEMINI_API_KEY")
-    deepgram_api_key: str = Field(..., env="DEEPGRAM_API_KEY")
+    deepgram_api_key: str = Field(default="", env="DEEPGRAM_API_KEY")
     deepseek_api_key: str = Field(..., env="DEEPSEEK_API_KEY")
     eleven_labs_api_key: str = Field(..., env="ELEVEN_LABS_API_KEY")
     

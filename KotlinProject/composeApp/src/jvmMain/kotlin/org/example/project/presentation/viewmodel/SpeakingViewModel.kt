@@ -117,6 +117,10 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
     private val _conversationTurns = mutableStateListOf<ConversationTurnUI>()
     val conversationTurns: SnapshotStateList<ConversationTurnUI> get() = _conversationTurns
 
+    // O(1) lookup maps for conversation turn management (prevents main thread blocking)
+    private val turnIdToIndex = mutableMapOf<String, Int>()
+    private val existingTurnIds = mutableSetOf<String>()
+
     private val _isAgentSpeaking = mutableStateOf(false)
     val isAgentSpeaking: State<Boolean> = _isAgentSpeaking
 
@@ -1162,6 +1166,8 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
      */
     private fun clearConversationData() {
         _conversationTurns.clear()
+        turnIdToIndex.clear()
+        existingTurnIds.clear()
         _conversationError.value = null
 
         // Clear any residual audio chunks (BoundedAudioBuffer is thread-safe)
@@ -1196,11 +1202,11 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
     private fun generateErrorMessage(error: Throwable?): String {
         return when {
             error?.message?.contains("408", ignoreCase = true) == true ->
-                "Connection timeout. Deepgram servers may be busy. Please try again in a moment."
+                "Connection timeout. Servers may be busy. Please try again in a moment."
             error?.message?.contains("handshake", ignoreCase = true) == true ->
                 "WebSocket handshake failed. Please check your internet connection."
             error?.message?.contains("401", ignoreCase = true) == true ->
-                "Invalid API key. Please check your Deepgram API key."
+                "Invalid API key. Please check your API key."
             else -> error?.message ?: "Unknown error occurred"
         }
     }
@@ -1253,9 +1259,13 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                         _isAgentThinking.value = true
                         _isAgentSpeaking.value = false
 
-                        // Add a temporary thinking bubble (efficient append)
+                        // Add a temporary thinking bubble with tracked ID
+                        val thinkingId = "thinking-${java.util.UUID.randomUUID()}"
+                        existingTurnIds.add(thinkingId)
+                        turnIdToIndex[thinkingId] = _conversationTurns.size
                         _conversationTurns.add(
                             ConversationTurnUI(
+                                id = thinkingId,
                                 role = "assistant",
                                 text = "",
                             ),
@@ -1271,11 +1281,14 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                         _isAgentThinking.value = false
                         _isAgentSpeaking.value = false
 
-                        // Remove the empty thinking bubble if it exists (efficient in-place removal)
+                        // Remove the empty thinking bubble if it exists (with proper cleanup)
                         if (_conversationTurns.isNotEmpty() &&
                             _conversationTurns.last().role == "assistant" &&
                             _conversationTurns.last().text.isBlank()
                         ) {
+                            val removedId = _conversationTurns.last().id
+                            existingTurnIds.remove(removedId)
+                            turnIdToIndex.remove(removedId)
                             _conversationTurns.removeAt(_conversationTurns.lastIndex)
                         }
                     }
@@ -1401,6 +1414,8 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
         // Only clear data if not preserving (for fresh starts vs. retries)
         if (!preserveData) {
             _conversationTurns.clear()
+            turnIdToIndex.clear()
+            existingTurnIds.clear()
             _conversationError.value = null
 
             // Initialize session recording only for fresh starts
@@ -1450,13 +1465,8 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                 conversationMutex.withLock {
                     val languageCode = getLanguageCode(_voiceTutorLanguage.value)
 
-                    // Get Deepgram API key from environment
-                    val apiKey = agentService.getApiKey() ?: System.getenv("DEEPGRAM_API_KEY")
-                    if (apiKey == null) {
-                        _conversationError.value = "DEEPGRAM_API_KEY not set in environment"
-                        SpeakingLogger.error("Conversation") { "DEEPGRAM_API_KEY not found in environment" }
-                        return@withLock
-                    }
+                    // Get API key from environment
+                    val apiKey = agentService.getApiKey() ?: ""
 
                     // Start a fresh connection
                     val result =
@@ -1504,15 +1514,8 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                 conversationMutex.withLock {
                     val languageCode = getLanguageCode(_voiceTutorLanguage.value)
 
-                    // Get Deepgram API key from environment
-                    val apiKey = agentService.getApiKey() ?: System.getenv("DEEPGRAM_API_KEY")
-                    if (apiKey == null) {
-                        _conversationError.value = "DEEPGRAM_API_KEY not set in environment"
-                        // Don't reset conversation mode - keep UI stable
-                        SpeakingLogger.error("Conversation") { "DEEPGRAM_API_KEY not found in environment" }
-                        isStartingConversation.set(false)
-                        return@withLock
-                    }
+                    // Get API key from environment
+                    val apiKey = agentService.getApiKey() ?: ""
 
                     val result =
                         startAgentConversation(
@@ -1591,16 +1594,26 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
             try {
                 SpeakingLogger.info("Conversation") { "Stopping conversation agent" }
 
-                // Save conversation audio before stopping
-                saveConversationAudio()
-
+                // IMPORTANT: Stop the agent FIRST to immediately halt audio capture
+                // This prevents the audio loop from continuing while we save
                 agentService.stopConversation()
+                
+                // Update UI state immediately after stopping
                 _isConversationActive.value = false
                 _isConversationRecording.value = false
                 _isAgentSpeaking.value = false
                 _isAgentThinking.value = false
                 _isConversationMode.value = false
                 recordingStreamJob?.cancel()
+                
+                // Save conversation audio AFTER stopping (in background, non-blocking)
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        saveConversationAudio()
+                    } catch (e: Exception) {
+                        SpeakingLogger.error("SaveAudio") { "Background save failed: ${e.message}" }
+                    }
+                }
 
                 SpeakingLogger.info("Conversation") { "Stopped" }
             } catch (e: Exception) {
@@ -1775,7 +1788,8 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
 
     /**
      * Handle streaming conversation text updates.
-     * Uses efficient in-place mutations on SnapshotStateList to avoid full list recomposition.
+     * Uses O(1) HashMap lookups and efficient in-place mutations on SnapshotStateList
+     * to avoid blocking the main thread.
      *
      * @param content The transcript content
      * @param role "user" or "assistant"
@@ -1798,14 +1812,22 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
             val lastIndex = _conversationTurns.lastIndex
             val uniqueId = turnId ?: java.util.UUID.randomUUID().toString()
 
-            // Ensure we don't create duplicate IDs when replacing thinking bubble
-            val finalId =
-                if (_conversationTurns.any { it.id == uniqueId && it != _conversationTurns[lastIndex] }) {
-                    SpeakingLogger.warn("Conversation") { "Duplicate ID detected in thinking bubble replacement: $uniqueId, generating new UUID" }
-                    java.util.UUID.randomUUID().toString()
-                } else {
-                    uniqueId
-                }
+            // O(1) duplicate check using Set instead of O(n) list iteration
+            val finalId = if (existingTurnIds.contains(uniqueId)) {
+                SpeakingLogger.warn("Conversation") { "Duplicate ID detected in thinking bubble replacement: $uniqueId, generating new UUID" }
+                java.util.UUID.randomUUID().toString()
+            } else {
+                uniqueId
+            }
+
+            // Remove old ID from tracking if present
+            val oldId = _conversationTurns[lastIndex].id
+            existingTurnIds.remove(oldId)
+            turnIdToIndex.remove(oldId)
+
+            // Add new ID to tracking
+            existingTurnIds.add(finalId)
+            turnIdToIndex[finalId] = lastIndex
 
             _conversationTurns[lastIndex] =
                 ConversationTurnUI(
@@ -1819,11 +1841,11 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
             return
         }
 
-        // Try to find existing turn with same turnId to update in-place
+        // O(1) lookup for existing turn with same turnId
         if (turnId != null) {
-            val existingIndex = _conversationTurns.indexOfFirst { it.id == turnId }
+            val existingIndex = turnIdToIndex[turnId]
 
-            if (existingIndex >= 0) {
+            if (existingIndex != null && existingIndex < _conversationTurns.size) {
                 // Efficient in-place update - only this item recomposes
                 _conversationTurns[existingIndex] =
                     _conversationTurns[existingIndex].copy(
@@ -1831,7 +1853,6 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
                         isFinal = isFinal,
                         isStreaming = !isFinal,
                     )
-                SpeakingLogger.debug { "Updated turn in-place: $turnId (final=$isFinal)" }
                 return
             }
         }
@@ -1855,32 +1876,29 @@ class SpeakingViewModel(private val userId: String = "current_user") : ViewModel
         // Add a new conversation turn (efficient append to SnapshotStateList)
         val newTurnId = turnId ?: java.util.UUID.randomUUID().toString()
 
-        // Ensure we don't create duplicate IDs
-        if (_conversationTurns.any { it.id == newTurnId }) {
+        // O(1) duplicate check using Set
+        val finalTurnId = if (existingTurnIds.contains(newTurnId)) {
             SpeakingLogger.warn("Conversation") { "Duplicate ID detected: $newTurnId, generating new UUID" }
-            val fallbackId = java.util.UUID.randomUUID().toString()
-            _conversationTurns.add(
-                ConversationTurnUI(
-                    id = fallbackId,
-                    role = role,
-                    text = content,
-                    isFinal = isFinal,
-                    isStreaming = !isFinal,
-                ),
-            )
-            SpeakingLogger.debug { "Added new turn with fallback ID: role=$role, final=$isFinal, id=$fallbackId" }
+            java.util.UUID.randomUUID().toString()
         } else {
-            _conversationTurns.add(
-                ConversationTurnUI(
-                    id = newTurnId,
-                    role = role,
-                    text = content,
-                    isFinal = isFinal,
-                    isStreaming = !isFinal,
-                ),
-            )
-            SpeakingLogger.debug { "Added new turn: role=$role, final=$isFinal, id=$newTurnId" }
+            newTurnId
         }
+
+        // Track the new turn ID for O(1) lookups
+        existingTurnIds.add(finalTurnId)
+        val newIndex = _conversationTurns.size
+        turnIdToIndex[finalTurnId] = newIndex
+
+        _conversationTurns.add(
+            ConversationTurnUI(
+                id = finalTurnId,
+                role = role,
+                text = content,
+                isFinal = isFinal,
+                isStreaming = !isFinal,
+            ),
+        )
+        SpeakingLogger.debug { "Added new turn: role=$role, final=$isFinal, id=$finalTurnId" }
     }
 
     private fun getSpeakingFeatures(): List<SpeakingFeature> {

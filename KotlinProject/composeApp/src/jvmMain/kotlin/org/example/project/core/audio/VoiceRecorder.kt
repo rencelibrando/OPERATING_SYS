@@ -54,11 +54,11 @@ class VoiceRecorder {
                 }
                 lastStartTime = now
 
-                // Deepgram default: 24kHz, 16-bit, mono for best quality
+                // Default: 24kHz, 16-bit, mono for best quality
                 val format =
                     AudioFormat(
                         AudioFormat.Encoding.PCM_SIGNED,
-                        24000f, // Sample rate (24kHz - Deepgram default)
+                        24000f, // Sample rate (24kHz)
                         16, // Bits per sample
                         1, // Mono
                         2, // Frame size
@@ -304,7 +304,7 @@ class VoiceRecorder {
          */
         fun isMicrophoneAvailable(): Boolean {
             return try {
-                val format = AudioFormat(24000f, 16, 1, true, false) // 24kHz Deepgram default
+                val format = AudioFormat(24000f, 16, 1, true, false) // 24kHz default
                 val info = DataLine.Info(TargetDataLine::class.java, format)
                 AudioSystem.isLineSupported(info)
             } catch (e: Exception) {
