@@ -1,4 +1,4 @@
-```markdown
+
 # WordBridge — AI-powered Language Learning (OPERATING_SYS)
 
 WordBridge is a cross-platform desktop language-learning project with an AI backend, speaking practice, 
