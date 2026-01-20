@@ -1,5 +1,5 @@
 
-# WordBridge — AI-powered Language Learning (OPERATING_SYS)
+# WordBridge — AI-powered Language Learning
 
 WordBridge is a cross-platform desktop language-learning project with an AI backend, speaking practice, 
 pronunciation feedback tools, and admin utilities for managing lesson topics. 
