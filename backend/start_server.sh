@@ -1,10 +1,15 @@
 #!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+# Activate virtual environment if available
+if [ -f "$SCRIPT_DIR/venv/bin/activate" ]; then
+    source "$SCRIPT_DIR/venv/bin/activate"
+elif [ -f "$SCRIPT_DIR/../.venv/bin/activate" ]; then
+    source "$SCRIPT_DIR/../.venv/bin/activate"
+fi
+
 echo "Starting AI Backend Server..."
-echo ""
-echo "Make sure you have:"
-echo "1. Python installed"
-echo "2. Dependencies installed: pip install -r requirements.txt"
-echo "3. .env file configured with API keys"
-echo ""
 python main.py
+
 

@@ -1,5 +1,6 @@
 package org.example.project.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import org.example.project.models.PracticeLanguage
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 
 @Composable
 fun LanguageSelectionDialog(
@@ -27,12 +29,13 @@ fun LanguageSelectionDialog(
                 modifier
                     .width(600.dp)
                     .padding(16.dp),
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(16.dp),
             colors =
                 CardDefaults.cardColors(
-                    containerColor = WordBridgeColors.BackgroundWhite,
+                    containerColor = WordBridgeColors.Surface,
                 ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
+            border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         ) {
             Column(
                 modifier =
@@ -41,16 +44,28 @@ fun LanguageSelectionDialog(
                         .padding(32.dp),
             ) {
                 // Header
-                Text(
-                    text = "🌍 Choose Your Practice Language",
-                    style =
-                        MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    color = WordBridgeColors.TextPrimary,
-                    textAlign = TextAlign.Center,
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                )
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = WordBridgeIcons.Language,
+                        contentDescription = null,
+                        tint = WordBridgeColors.Primary,
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Choose Your Practice Language",
+                        style =
+                            MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
+                        color = WordBridgeColors.TextPrimary,
+                        textAlign = TextAlign.Center,
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -151,12 +166,12 @@ private fun LanguageCard(
         shape = RoundedCornerShape(12.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = WordBridgeColors.BackgroundLight,
+                containerColor = WordBridgeColors.SurfaceVariant,
             ),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
         elevation =
             CardDefaults.cardElevation(
-                defaultElevation = 2.dp,
-                hoveredElevation = 6.dp,
+                defaultElevation = 0.dp,
             ),
     ) {
         Column(

@@ -61,7 +61,12 @@ private fun TextInput(
         trailingIcon = {
             if (question.allowsVoiceInput) {
                 IconButton(onClick = { /* voice input hook */ }) {
-                    Text("🎤")
+                    androidx.compose.material3.Icon(
+                        imageVector = org.example.project.ui.theme.WordBridgeIcons.Mic,
+                        contentDescription = "Voice Input",
+                        tint = WordBridgeColors.PrimaryPurple,
+                        modifier = Modifier.size(20.dp),
+                    )
                 }
             }
         },

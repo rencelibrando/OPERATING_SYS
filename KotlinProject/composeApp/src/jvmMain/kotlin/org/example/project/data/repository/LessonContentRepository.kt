@@ -373,7 +373,7 @@ class LessonContentRepositoryImpl(
                 println("[LessonContentRepo] Lesson progress updated successfully")
 
                 // Step 4: Create response
-                val now = kotlinx.datetime.Clock.System.now().toString()
+                val now = java.time.Instant.now().toString()
                 val response =
                     SubmitLessonAnswersResponse(
                         score = score,

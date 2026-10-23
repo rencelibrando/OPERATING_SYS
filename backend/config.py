@@ -46,15 +46,10 @@ class Settings(BaseSettings):
     )
     
     # AI Provider API Keys
-    gemini_api_key: str = Field(..., env="GEMINI_API_KEY")
-    deepgram_api_key: str = Field(..., env="DEEPGRAM_API_KEY")
-    deepseek_api_key: str = Field(..., env="DEEPSEEK_API_KEY")
-    eleven_labs_api_key: str = Field(..., env="ELEVEN_LABS_API_KEY")
-    
-    # Deepgram Configuration
-    deepgram_model: str = Field(default="nova-3", env="DEEPGRAM_MODEL")
-    deepgram_language: str = Field(default="multi", env="DEEPGRAM_LANGUAGE")
-    deepgram_endpointing: int = Field(default=100, env="DEEPGRAM_ENDPOINTING")
+    gemini_api_key: str = Field(default="", env="GEMINI_API_KEY")
+    deepseek_api_key: str = Field(default="", env="DEEPSEEK_API_KEY")
+    eleven_labs_api_key: str = Field(default="", env="ELEVEN_LABS_API_KEY")
+    openai_api_key: str = Field(default="", env="OPENAI_API_KEY")
     
     # Supabase Configuration
     # Accept both SUPABASE_KEY and SUPABASE_ANON_KEY

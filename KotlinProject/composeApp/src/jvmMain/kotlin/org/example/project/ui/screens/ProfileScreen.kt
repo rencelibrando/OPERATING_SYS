@@ -1,5 +1,6 @@
 package org.example.project.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,6 +27,7 @@ import org.example.project.domain.model.*
 import org.example.project.presentation.viewmodel.ProfileViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 import org.jetbrains.skia.Image
 import org.example.project.core.auth.User as AuthUser
 
@@ -61,6 +63,7 @@ fun ProfileScreen(
         modifier =
             modifier
                 .fillMaxSize()
+                .background(WordBridgeColors.BackgroundLight)
                 .padding(32.dp)
                 .verticalScroll(rememberScrollState()),
     ) {
@@ -73,33 +76,14 @@ fun ProfileScreen(
             Text(
                 text = "Profile",
                 style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFF1E293B), // slate-800
+                color = WordBridgeColors.TextPrimary,
             )
 
-            // User Avatar Circle (top right)
-            Box(
-                modifier =
-                    Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(
-                            brush =
-                                Brush.linearGradient(
-                                    colors =
-                                        listOf(
-                                            Color(0xFF3B82F6), // blue-500
-                                            Color(0xFFA855F7), // purple-500
-                                        ),
-                                ),
-                        ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = userProfile.personalInfo.initials,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color.White,
-                )
-            }
+            UserAvatar(
+                initials = userProfile.personalInfo.initials,
+                profileImageUrl = null,
+                size = 48.dp,
+            )
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -286,17 +270,21 @@ private fun ProfileHeaderGradient(
 
                     // Camera Button
                     if (!isEditingPicture) {
-                        Box(
+                        IconButton(
+                            onClick = onStartEditPhoto,
                             modifier =
                                 Modifier
-                                    .size(40.dp)
+                                    .size(36.dp)
                                     .clip(CircleShape)
-                                    .background(Color.White)
-                                    .border(2.dp, Color(0xFFE9D5FF), CircleShape) // purple-200
-                                    .clickable(onClick = onStartEditPhoto),
-                            contentAlignment = Alignment.Center,
+                                    .background(WordBridgeColors.Surface)
+                                    .border(BorderStroke(1.dp, WordBridgeColors.BorderLight), CircleShape),
                         ) {
-                            Text(text = "📷", style = MaterialTheme.typography.titleMedium)
+                            Icon(
+                                imageVector = WordBridgeIcons.Camera,
+                                contentDescription = "Edit photo",
+                                tint = WordBridgeColors.TextPrimary,
+                                modifier = Modifier.size(18.dp),
+                            )
                         }
                     }
                 }
@@ -315,7 +303,7 @@ private fun ProfileHeaderGradient(
                             profile.personalInfo.fullName
                         },
                     style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF1E293B), // slate-800
+                    color = WordBridgeColors.TextPrimary,
                     textAlign = TextAlign.Center,
                 )
 
@@ -324,7 +312,7 @@ private fun ProfileHeaderGradient(
                 Text(
                     text = profile.personalInfo.email.ifBlank { "No email set" },
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color(0xFF64748B), // slate-500
+                    color = WordBridgeColors.TextSecondary,
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -446,9 +434,9 @@ private fun PersonalInformationSection(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.Surface),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(32.dp)) {
             Row(
@@ -460,63 +448,51 @@ private fun PersonalInformationSection(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    brush =
-                                        Brush.linearGradient(
-                                            colors =
-                                                listOf(
-                                                    Color(0xFF60A5FA), // blue-400
-                                                    Color(0xFFA855F7), // purple-500
-                                                ),
-                                        ),
-                                ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(text = "👤", style = MaterialTheme.typography.headlineMedium)
-                    }
+                    Icon(
+                        imageVector = WordBridgeIcons.Person,
+                        contentDescription = null,
+                        tint = WordBridgeColors.TextPrimary,
+                        modifier = Modifier.size(24.dp),
+                    )
 
                     Text(
                         text = "Personal Information",
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF1E293B), // slate-800
+                        color = WordBridgeColors.TextPrimary,
                     )
                 }
 
                 if (isEditing) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick = onCancel) {
-                            Text("Cancel", color = Color(0xFF64748B))
+                            Text("Cancel", color = WordBridgeColors.TextSecondary)
                         }
                         Button(
                             onClick = onSave,
                             colors =
                                 ButtonDefaults.buttonColors(
-                                    containerColor = Color.Transparent,
+                                    containerColor = WordBridgeColors.Primary,
+                                    contentColor = WordBridgeColors.PrimaryForeground,
                                 ),
-                            modifier =
-                                Modifier.background(
-                                    brush =
-                                        Brush.horizontalGradient(
-                                            colors =
-                                                listOf(
-                                                    Color(0xFFA855F7), // purple-500
-                                                    Color(0xFF3B82F6), // blue-500
-                                                ),
-                                        ),
-                                    shape = RoundedCornerShape(8.dp),
-                                ),
+                            shape = RoundedCornerShape(8.dp),
                         ) {
-                            Text("Save", color = Color.White)
+                            Text("Save")
                         }
                     }
                 } else {
                     TextButton(onClick = onEdit) {
-                        Text("✏️ Edit", color = Color(0xFFA855F7))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Icon(
+                                imageVector = WordBridgeIcons.Edit,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = WordBridgeColors.TextPrimary,
+                            )
+                            Text("Edit", color = WordBridgeColors.TextPrimary)
+                        }
                     }
                 }
             }
@@ -629,9 +605,9 @@ private fun InfoFieldDisplay(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFF8FAFC)) // slate-50
-                    .border(2.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp)) // slate-200
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(WordBridgeColors.Surface)
+                    .border(BorderStroke(1.dp, WordBridgeColors.BorderLight), RoundedCornerShape(8.dp))
                     .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
@@ -639,7 +615,7 @@ private fun InfoFieldDisplay(
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (value.contains("YYYY") || value.contains("City")) Color(0xFF94A3B8) else Color(0xFF1E293B),
+                color = if (value.contains("YYYY") || value.contains("City")) WordBridgeColors.TextSecondary else WordBridgeColors.TextPrimary,
                 modifier = Modifier.weight(1f),
             )
             trailingContent?.invoke()
@@ -659,110 +635,68 @@ private fun LearningProfileGradientSection(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.Surface),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
     ) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .background(
-                        brush =
-                            Brush.linearGradient(
-                                colors =
-                                    listOf(
-                                        Color(0xFFF5F3FF), // purple-50
-                                        Color(0xFFEFF6FF), // blue-50
-                                        Color(0xFFECFEFF), // cyan-50
-                                    ),
-                            ),
-                    )
-                    .border(2.dp, Color.White, RoundedCornerShape(24.dp)),
-        ) {
-            // Decorative blur circle
-            Box(
-                modifier =
-                    Modifier
-                        .size(384.dp)
-                        .offset(x = (-100).dp, y = (-50).dp)
-                        .background(
-                            brush =
-                                Brush.radialGradient(
-                                    colors =
-                                        listOf(
-                                            Color(0x33A855F7), // purple-400/20
-                                            Color(0x333B82F6), // blue-400/20
-                                            Color.Transparent,
-                                        ),
-                                ),
-                            shape = CircleShape,
-                        ),
-            )
-
-            Column(modifier = Modifier.fillMaxWidth().padding(32.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(32.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Box(
-                            modifier =
-                                Modifier
-                                    .size(48.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(
-                                        brush =
-                                            Brush.linearGradient(
-                                                colors =
-                                                    listOf(
-                                                        Color(0xFFA855F7), // purple-400
-                                                        Color(0xFF3B82F6), // blue-500
-                                                    ),
-                                            ),
-                                    ),
-                            contentAlignment = Alignment.Center,
+                    Icon(
+                        imageVector = WordBridgeIcons.Lessons,
+                        contentDescription = null,
+                        tint = WordBridgeColors.TextPrimary,
+                        modifier = Modifier.size(24.dp),
+                    )
+
+                    Text(
+                        text = "Learning Profile",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                        color = WordBridgeColors.TextPrimary,
+                    )
+                }
+
+                if (isEditing) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = onCancel) {
+                            Text("Cancel", color = WordBridgeColors.TextSecondary)
+                        }
+                        Button(
+                            onClick = onSave,
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = WordBridgeColors.Primary,
+                                    contentColor = WordBridgeColors.PrimaryForeground,
+                                ),
+                            shape = RoundedCornerShape(8.dp),
                         ) {
-                            Text(text = "📚", style = MaterialTheme.typography.headlineMedium)
+                            Text("Save")
                         }
-
-                        Text(
-                            text = "Learning Profile",
-                            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                            color = Color(0xFF1E293B),
-                        )
                     }
-
-                    if (isEditing) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            TextButton(onClick = onCancel) {
-                                Text("Cancel", color = Color(0xFF64748B))
-                            }
-                            Button(
-                                onClick = onSave,
-                                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                                modifier =
-                                    Modifier.background(
-                                        brush =
-                                            Brush.horizontalGradient(
-                                                colors = listOf(Color(0xFFA855F7), Color(0xFF3B82F6)),
-                                            ),
-                                        shape = RoundedCornerShape(8.dp),
-                                    ),
-                            ) {
-                                Text("Save", color = Color.White)
-                            }
-                        }
-                    } else {
-                        TextButton(onClick = onEdit) {
-                            Text("✏️ Edit", color = Color(0xFFA855F7))
+                } else {
+                    TextButton(onClick = onEdit) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Icon(
+                                imageVector = WordBridgeIcons.Edit,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = WordBridgeColors.TextPrimary,
+                            )
+                            Text("Edit", color = WordBridgeColors.TextPrimary)
                         }
                     }
                 }
+            }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -776,7 +710,6 @@ private fun LearningProfileGradientSection(
                     } else {
                         LearningProfileViewGrid(learningProfile = profile)
                     }
-                }
             }
         }
     }
@@ -856,24 +789,24 @@ private fun LearningFieldCard(
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(8.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = Color(0x99FFFFFF), // white/60 with backdrop blur effect
+                containerColor = WordBridgeColors.Surface,
             ),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE9D5FF)), // purple-100
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = Color(0xFF64748B), // slate-600
+                color = WordBridgeColors.TextSecondary,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFF1E293B), // slate-800
+                color = WordBridgeColors.TextPrimary,
             )
         }
     }
@@ -889,39 +822,26 @@ private fun AccountSecuritySection(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.Surface),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(32.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                brush =
-                                    Brush.linearGradient(
-                                        colors =
-                                            listOf(
-                                                Color(0xFFFBBF24), // amber-400
-                                                Color(0xFFF97316), // orange-500
-                                            ),
-                                    ),
-                            ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(text = "🔒", style = MaterialTheme.typography.headlineMedium)
-                }
+                Icon(
+                    imageVector = WordBridgeIcons.Lock,
+                    contentDescription = null,
+                    tint = WordBridgeColors.TextPrimary,
+                    modifier = Modifier.size(24.dp),
+                )
 
                 Text(
                     text = "Account & Security",
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF1E293B),
+                    color = WordBridgeColors.TextPrimary,
                 )
             }
 
@@ -931,9 +851,9 @@ private fun AccountSecuritySection(
                 // Subscription
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-                    border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF1F5F9)),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = CardDefaults.cardColors(containerColor = WordBridgeColors.Surface),
+                    border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
                 ) {
                     Row(
                         modifier =
@@ -947,29 +867,26 @@ private fun AccountSecuritySection(
                             Text(
                                 text = "Subscription",
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                                color = Color(0xFF1E293B),
+                                color = WordBridgeColors.TextPrimary,
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "${userProfile.accountInfo.subscriptionType} (${userProfile.accountInfo.subscriptionStatus})",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFF64748B),
+                                color = WordBridgeColors.TextSecondary,
                             )
                         }
 
                         Button(
                             onClick = onManageSubscription,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                            modifier =
-                                Modifier.background(
-                                    brush =
-                                        Brush.horizontalGradient(
-                                            colors = listOf(Color(0xFFA855F7), Color(0xFF3B82F6)),
-                                        ),
-                                    shape = RoundedCornerShape(8.dp),
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = WordBridgeColors.Primary,
+                                    contentColor = WordBridgeColors.PrimaryForeground,
                                 ),
+                            shape = RoundedCornerShape(8.dp),
                         ) {
-                            Text("Upgrade", color = Color.White)
+                            Text("Upgrade")
                         }
                     }
                 }
@@ -1011,9 +928,9 @@ private fun SecurityToggleCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-        border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF1F5F9)),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.Surface),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
     ) {
         Row(
             modifier =
@@ -1027,16 +944,24 @@ private fun SecurityToggleCard(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color(0xFF1E293B),
+                    color = WordBridgeColors.TextPrimary,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF64748B),
+                    color = WordBridgeColors.TextSecondary,
                 )
             }
-            Switch(checked = isEnabled, onCheckedChange = onToggle)
+            Switch(
+                checked = isEnabled,
+                onCheckedChange = onToggle,
+                colors =
+                    SwitchDefaults.colors(
+                        checkedThumbColor = WordBridgeColors.PrimaryForeground,
+                        checkedTrackColor = WordBridgeColors.Primary,
+                    ),
+            )
         }
     }
 }
@@ -1050,9 +975,9 @@ private fun SecurityActionCard(
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-        border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF1F5F9)),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.Surface),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
     ) {
         Row(
             modifier =
@@ -1066,16 +991,21 @@ private fun SecurityActionCard(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color(0xFF1E293B),
+                    color = WordBridgeColors.TextPrimary,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF64748B),
+                    color = WordBridgeColors.TextSecondary,
                 )
             }
-            Text(text = "›", style = MaterialTheme.typography.headlineMedium, color = Color(0xFF94A3B8))
+            Icon(
+                imageVector = WordBridgeIcons.ChevronRight,
+                contentDescription = null,
+                tint = WordBridgeColors.TextSecondary,
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }
@@ -1084,123 +1014,67 @@ private fun SecurityActionCard(
 private fun StatisticsGradientSection(stats: ProfileStats) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.Surface),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
     ) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .background(
-                        brush =
-                            Brush.linearGradient(
-                                colors =
-                                    listOf(
-                                        Color(0xFFECFDF5), // emerald-50
-                                        Color(0xFFECFEFF), // cyan-50
-                                        Color(0xFFEFF6FF), // blue-50
-                                    ),
-                            ),
-                    )
-                    .border(2.dp, Color.White, RoundedCornerShape(24.dp)),
-        ) {
-            // Decorative blur circle
-            Box(
-                modifier =
-                    Modifier
-                        .size(384.dp)
-                        .align(Alignment.BottomEnd)
-                        .offset(x = 100.dp, y = 100.dp)
-                        .background(
-                            brush =
-                                Brush.radialGradient(
-                                    colors =
-                                        listOf(
-                                            Color(0x3334D399), // emerald-400/20
-                                            Color(0x3306B6D4), // cyan-400/20
-                                            Color.Transparent,
-                                        ),
-                                ),
-                            shape = CircleShape,
-                        ),
-            )
+        Column(modifier = Modifier.fillMaxWidth().padding(32.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Icon(
+                    imageVector = WordBridgeIcons.Progress,
+                    contentDescription = null,
+                    tint = WordBridgeColors.TextPrimary,
+                    modifier = Modifier.size(24.dp),
+                )
 
-            Column(modifier = Modifier.fillMaxWidth().padding(32.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    brush =
-                                        Brush.linearGradient(
-                                            colors =
-                                                listOf(
-                                                    Color(0xFF34D399), // emerald-400
-                                                    Color(0xFF06B6D4), // cyan-500
-                                                ),
-                                        ),
-                                ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(text = "📊", style = MaterialTheme.typography.headlineMedium)
-                    }
+                Text(
+                    text = "Your Statistics",
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                    color = WordBridgeColors.TextPrimary,
+                )
+            }
 
-                    Text(
-                        text = "Your Statistics",
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF1E293B),
-                    )
-                }
+            Spacer(modifier = Modifier.height(32.dp))
 
-                Spacer(modifier = Modifier.height(32.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                StatCard(
+                    icon = WordBridgeIcons.Time,
+                    value = "${stats.totalStudyTime / 60}h",
+                    label = "Study Time",
+                    modifier = Modifier.weight(1f),
+                )
+                StatCard(
+                    icon = WordBridgeIcons.Lessons,
+                    value = "${stats.lessonsCompleted}",
+                    label = "Lessons",
+                    modifier = Modifier.weight(1f),
+                )
+            }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    StatCard(
-                        icon = "⏰",
-                        value = "${stats.totalStudyTime / 60}h",
-                        label = "Study Time",
-                        gradient = listOf(Color(0xFF60A5FA), Color(0xFF06B6D4)),
-                        modifier = Modifier.weight(1f),
-                    )
-                    StatCard(
-                        icon = "📚",
-                        value = "${stats.lessonsCompleted}",
-                        label = "Lessons",
-                        gradient = listOf(Color(0xFFA855F7), Color(0xFFEC4899)),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
+            Spacer(modifier = Modifier.height(16.dp))
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    StatCard(
-                        icon = "💬",
-                        value = "${stats.wordsLearned}",
-                        label = "Words Learned",
-                        gradient = listOf(Color(0xFF34D399), Color(0xFF14B8A6)),
-                        modifier = Modifier.weight(1f),
-                    )
-                    StatCard(
-                        icon = "🏆",
-                        value = "${stats.achievementsUnlocked}",
-                        label = "Achievements",
-                        gradient = listOf(Color(0xFFFBBF24), Color(0xFFF97316)),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                StatCard(
+                    icon = WordBridgeIcons.Chat,
+                    value = "${stats.wordsLearned}",
+                    label = "Words Learned",
+                    modifier = Modifier.weight(1f),
+                )
+                StatCard(
+                    icon = WordBridgeIcons.Trophy,
+                    value = "${stats.achievementsUnlocked}",
+                    label = "Achievements",
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }
@@ -1208,39 +1082,34 @@ private fun StatisticsGradientSection(stats: ProfileStats) {
 
 @Composable
 private fun StatCard(
-    icon: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     value: String,
     label: String,
-    gradient: List<Color>,
     modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0x99FFFFFF)),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.Surface),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(24.dp),
+            modifier = Modifier.fillMaxWidth().padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(56.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(brush = Brush.linearGradient(colors = gradient)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(text = icon, style = MaterialTheme.typography.headlineMedium.copy(color = Color.White))
-            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = WordBridgeColors.TextPrimary,
+                modifier = Modifier.size(24.dp),
+            )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
                 text = value,
                 style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                color = gradient.first(), // Use gradient start color
+                color = WordBridgeColors.TextPrimary,
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -1248,7 +1117,7 @@ private fun StatCard(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                color = Color(0xFF64748B),
+                color = WordBridgeColors.TextSecondary,
             )
         }
     }
@@ -1258,39 +1127,26 @@ private fun StatCard(
 private fun ProfileCustomizationSection() {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.Surface),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(32.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                brush =
-                                    Brush.linearGradient(
-                                        colors =
-                                            listOf(
-                                                Color(0xFFF472B6), // pink-400
-                                                Color(0xFFF43F5E), // rose-500
-                                            ),
-                                    ),
-                            ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(text = "🎨", style = MaterialTheme.typography.headlineMedium)
-                }
+                Icon(
+                    imageVector = WordBridgeIcons.Palette,
+                    contentDescription = null,
+                    tint = WordBridgeColors.TextPrimary,
+                    modifier = Modifier.size(24.dp),
+                )
 
                 Text(
                     text = "Profile Customization",
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF1E293B),
+                    color = WordBridgeColors.TextPrimary,
                 )
             }
 
@@ -1299,7 +1155,8 @@ private fun ProfileCustomizationSection() {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 CustomizationCard(
                     label = "App Theme",
-                    currentValue = "Light Mode",
+                    currentValue = if (org.example.project.ui.theme.ThemeController.isDarkTheme) "Dark Mode" else "Light Mode",
+                    onToggle = { org.example.project.ui.theme.ThemeController.toggle() },
                 )
             }
         }
@@ -1310,12 +1167,13 @@ private fun ProfileCustomizationSection() {
 private fun CustomizationCard(
     label: String,
     currentValue: String,
+    onToggle: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-        border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF1F5F9)),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.Surface),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
     ) {
         Row(
             modifier =
@@ -1329,25 +1187,26 @@ private fun CustomizationCard(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color(0xFF1E293B),
+                    color = WordBridgeColors.TextPrimary,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = currentValue,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF64748B),
+                    color = WordBridgeColors.TextSecondary,
                 )
             }
 
             Button(
-                onClick = { },
+                onClick = onToggle,
                 colors =
                     ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFE2E8F0),
-                        contentColor = Color(0xFF334155),
+                        containerColor = WordBridgeColors.Primary,
+                        contentColor = WordBridgeColors.PrimaryForeground,
                     ),
+                shape = RoundedCornerShape(8.dp),
             ) {
-                Text("Change")
+                Text("Toggle")
             }
         }
     }
@@ -1388,7 +1247,12 @@ private fun PersonalInfoEditForm(
             enabled = !isEmailVerified,
             trailingIcon = {
                 if (isEmailVerified) {
-                    Text("✅", style = MaterialTheme.typography.bodySmall)
+                    Icon(
+                        imageVector = WordBridgeIcons.Check,
+                        contentDescription = "Verified",
+                        tint = WordBridgeColors.Success,
+                        modifier = Modifier.size(16.dp),
+                    )
                 } else {
                     TextButton(onClick = onVerifyEmail) {
                         Text("Verify", style = MaterialTheme.typography.bodySmall)

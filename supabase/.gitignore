@@ -1,0 +1,22 @@
+# Supabase internal CLI state
+.branches/
+.temp/
+migrations/
+
+# Environment and sensitive keys
+.env
+.env.*
+.env.keys
+.env.local
+.env.*.local
+!.env.example
+
+# Sensitive database dumps and seed data
+auth_users.sql
+schema.sql
+seed.sql
+*.dump
+*.tar
+*.bak
+*.csv
+dumps/

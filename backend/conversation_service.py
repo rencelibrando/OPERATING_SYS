@@ -5,22 +5,38 @@ Based on official Deepgram SDK documentation.
 import os
 import json
 from typing import Optional, Dict, List, Callable
-from deepgram import DeepgramClient
-from deepgram.core.events import EventType
-from deepgram.extensions.types.sockets import (
-    AgentV1Agent,
-    AgentV1AudioConfig,
-    AgentV1AudioInput,
-    AgentV1AudioOutput,
-    AgentV1DeepgramSpeakProvider,
-    AgentV1Listen,
-    AgentV1ListenProvider,
-    AgentV1OpenAiThinkProvider,
-    AgentV1SettingsMessage,
-    AgentV1SocketClientResponse,
-    AgentV1SpeakProviderConfig,
-    AgentV1Think,
-)
+try:
+    from deepgram import DeepgramClient
+    from deepgram.core.events import EventType
+    from deepgram.extensions.types.sockets import (
+        AgentV1Agent,
+        AgentV1AudioConfig,
+        AgentV1AudioInput,
+        AgentV1AudioOutput,
+        AgentV1DeepgramSpeakProvider,
+        AgentV1Listen,
+        AgentV1ListenProvider,
+        AgentV1OpenAiThinkProvider,
+        AgentV1SettingsMessage,
+        AgentV1SocketClientResponse,
+        AgentV1SpeakProviderConfig,
+        AgentV1Think,
+    )
+except ImportError:
+    DeepgramClient = None
+    AgentV1Agent = Any
+    AgentV1AudioConfig = Any
+    AgentV1AudioInput = Any
+    AgentV1AudioOutput = Any
+    AgentV1DeepgramSpeakProvider = Any
+    AgentV1Listen = Any
+    AgentV1ListenProvider = Any
+    AgentV1OpenAiThinkProvider = Any
+    AgentV1SettingsMessage = Any
+    AgentV1SocketClientResponse = Any
+    AgentV1SpeakProviderConfig = Any
+    AgentV1Think = Any
+    EventType = None
 from config import get_settings
 
 settings = get_settings()

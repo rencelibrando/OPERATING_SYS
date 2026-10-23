@@ -167,9 +167,13 @@ private fun ErrorState(
             Spacer(modifier = Modifier.size(24.dp))
             Button(
                 onClick = onRetry,
-                colors = ButtonDefaults.buttonColors(containerColor = WordBridgeColors.PrimaryPurple),
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = WordBridgeColors.Primary,
+                        contentColor = WordBridgeColors.OnPrimary,
+                    ),
             ) {
-                Text("Retry", color = WordBridgeColors.BackgroundWhite)
+                Text("Retry")
             }
         }
     }
@@ -179,7 +183,7 @@ private fun ErrorState(
 private fun SavingState() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator(color = WordBridgeColors.PrimaryPurple)
+            CircularProgressIndicator(color = WordBridgeColors.Primary)
             Spacer(modifier = Modifier.size(16.dp))
             Text("Creating your personalized profile...", color = WordBridgeColors.TextSecondary)
         }
@@ -196,7 +200,7 @@ private fun CompletionState(
             Text(
                 text = "You're all set!",
                 style = MaterialTheme.typography.headlineMedium,
-                color = WordBridgeColors.PrimaryPurple,
+                color = WordBridgeColors.Primary,
             )
             Spacer(modifier = Modifier.size(12.dp))
             Text(
@@ -209,9 +213,13 @@ private fun CompletionState(
             Spacer(modifier = Modifier.size(24.dp))
             Button(
                 onClick = onContinue,
-                colors = ButtonDefaults.buttonColors(containerColor = WordBridgeColors.PrimaryPurple),
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = WordBridgeColors.Primary,
+                        contentColor = WordBridgeColors.OnPrimary,
+                    ),
             ) {
-                Text("Start learning", color = WordBridgeColors.BackgroundWhite)
+                Text("Start learning")
             }
         }
     }

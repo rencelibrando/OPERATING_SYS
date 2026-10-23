@@ -1,6 +1,5 @@
 package org.example.project.core.audio
 
-import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.storage.storage
 import org.example.project.core.config.SupabaseConfig
 import java.io.File
@@ -15,7 +14,7 @@ class AudioUploadService {
 
     /**
      * Upload user's pronunciation recording to Supabase Storage
-     * 
+     *
      * @param audioFile The audio file to upload
      * @param userId The user's ID
      * @param wordId The vocabulary word ID
@@ -24,11 +23,11 @@ class AudioUploadService {
     suspend fun uploadPronunciationAudio(
         audioFile: File,
         userId: String,
-        wordId: String
+        wordId: String,
     ): Result<String> {
         return try {
             println("Uploading pronunciation audio to Supabase Storage")
-            
+
             if (!SupabaseConfig.isConfigured()) {
                 throw Exception("Supabase is not configured")
             }
@@ -39,7 +38,7 @@ class AudioUploadService {
 
             // Create storage path: user-pronunciations/{userId}/{wordId}_{timestamp}.wav
             val timestamp = System.currentTimeMillis()
-            val fileName = "${wordId}_${timestamp}.wav"
+            val fileName = "${wordId}_$timestamp.wav"
             val storagePath = "$userId/$fileName"
 
             println("Uploading file: $storagePath (${audioFile.length()} bytes)")
@@ -65,36 +64,38 @@ class AudioUploadService {
             // Upload the file (upsert = true to replace if exists)
             // Upload the file (upsert = true to replace if exists)
             // Note: If bucket doesn't exist, this will fail with NotFoundRestException
-            val uploadResult = try {
-                storage.upload(
-                    path = storagePath,
-                    data = audioBytes,
-                    upsert = true
-                )
-            } catch (e: io.github.jan.supabase.exceptions.NotFoundRestException) {
-                throw Exception(
-                    "Storage bucket '$bucketName' not found. " +
-                    "Please create it in Supabase Dashboard → Storage → New Bucket. " +
-                    "Bucket name: '$bucketName', Public: false"
-                )
-            }
+            val uploadResult =
+                try {
+                    storage.upload(
+                        path = storagePath,
+                        data = audioBytes,
+                        upsert = true,
+                    )
+                } catch (e: io.github.jan.supabase.exceptions.NotFoundRestException) {
+                    throw Exception(
+                        "Storage bucket '$bucketName' not found. " +
+                            "Please create it in Supabase Dashboard → Storage → New Bucket. " +
+                            "Bucket name: '$bucketName', Public: false",
+                    )
+                }
 
             println("Upload result: $uploadResult")
 
             // Get public URL (or signed URL if bucket is private)
             // Using 365 days expiry for signed URLs
-            val audioUrl = try {
-                // Try to create signed URL (works for both public and private buckets)
-                storage.createSignedUrl(
-                    path = storagePath,
-                    expiresIn = 365.days
-                )
-            } catch (e: Exception) {
-                // If signed URL fails, try to construct public URL manually
-                // Get Supabase URL from the client
-                val supabaseUrl = supabase.supabaseUrl
-                "$supabaseUrl/storage/v1/object/public/$bucketName/$storagePath"
-            }
+            val audioUrl =
+                try {
+                    // Try to create signed URL (works for both public and private buckets)
+                    storage.createSignedUrl(
+                        path = storagePath,
+                        expiresIn = 365.days,
+                    )
+                } catch (e: Exception) {
+                    // If signed URL fails, try to construct public URL manually
+                    // Get Supabase URL from the client
+                    val supabaseUrl = supabase.supabaseUrl
+                    "$supabaseUrl/storage/v1/object/public/$bucketName/$storagePath"
+                }
 
             println("Pronunciation audio uploaded successfully: $audioUrl")
             Result.success(audioUrl)
@@ -140,11 +141,11 @@ class AudioUploadService {
         return try {
             val parts = url.split("/storage/v1/object/")
             if (parts.size < 2) return null
-            
+
             val afterObject = parts[1]
             // Remove query parameters if present (for signed URLs)
             val withoutQuery = afterObject.split("?")[0]
-            
+
             // Remove bucket name prefix
             val bucketPrefix = "$bucketName/"
             if (withoutQuery.startsWith(bucketPrefix)) {
@@ -158,4 +159,3 @@ class AudioUploadService {
         }
     }
 }
-

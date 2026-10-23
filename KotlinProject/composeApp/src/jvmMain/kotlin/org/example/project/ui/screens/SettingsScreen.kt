@@ -1,20 +1,24 @@
 package org.example.project.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.example.project.presentation.viewmodel.*
 import org.example.project.presentation.viewmodel.SettingsViewModel
-import org.example.project.ui.components.*
+import org.example.project.ui.theme.ThemeController
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 
 @Composable
 fun SettingsScreen(
@@ -77,7 +81,7 @@ fun SettingsScreen(
         } else {
             SettingsSection(
                 title = "Notifications",
-                icon = "🔔",
+                icon = WordBridgeIcons.Notifications,
                 description = "Manage how you receive notifications",
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -129,7 +133,7 @@ fun SettingsScreen(
 
             SettingsSection(
                 title = "Learning",
-                icon = "📚",
+                icon = WordBridgeIcons.School,
                 description = "Customize your learning experience",
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -171,8 +175,11 @@ fun SettingsScreen(
                     SettingsToggleItem(
                         title = "Dark Mode",
                         description = "Use dark theme for the app",
-                        isChecked = userSettings.learningSettings.darkMode,
-                        onToggle = { viewModel.onLearningSettingChanged(LearningSettingType.DARK_MODE, it) },
+                        isChecked = userSettings.learningSettings.darkMode || ThemeController.isDarkTheme,
+                        onToggle = {
+                            viewModel.onLearningSettingChanged(LearningSettingType.DARK_MODE, it)
+                            ThemeController.setDarkMode(it)
+                        },
                     )
 
                     SettingsSelectionItem(
@@ -188,7 +195,7 @@ fun SettingsScreen(
 
             SettingsSection(
                 title = "App",
-                icon = "⚙️",
+                icon = WordBridgeIcons.Settings,
                 description = "Application preferences",
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -240,7 +247,7 @@ fun SettingsScreen(
 
             SettingsSection(
                 title = "Privacy",
-                icon = "🔒",
+                icon = WordBridgeIcons.Lock,
                 description = "Control your privacy settings",
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -278,7 +285,7 @@ fun SettingsScreen(
 
             SettingsSection(
                 title = "Account",
-                icon = "👤",
+                icon = WordBridgeIcons.Person,
                 description = "Account management and support",
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -334,15 +341,17 @@ fun SettingsScreen(
 @Composable
 private fun SettingsSection(
     title: String,
-    icon: String,
+    icon: ImageVector,
     description: String?,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.BackgroundWhite),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.CardBackground),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderSubtle),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(12.dp),
     ) {
         Column(
             modifier =
@@ -353,9 +362,11 @@ private fun SettingsSection(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = icon,
-                    style = MaterialTheme.typography.headlineSmall,
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = WordBridgeColors.PrimaryPurple,
+                    modifier = Modifier.size(24.dp),
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -429,7 +440,7 @@ private fun SettingsToggleItem(
                     checkedThumbColor = Color.White,
                     checkedTrackColor = WordBridgeColors.PrimaryPurple,
                     uncheckedThumbColor = Color.White,
-                    uncheckedTrackColor = WordBridgeColors.TextMuted.copy(alpha = 0.3f),
+                    uncheckedTrackColor = WordBridgeColors.BorderSubtle,
                 ),
         )
     }

@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.LessonTopic
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 
 @Composable
 fun LessonTimelineView(
@@ -75,10 +76,9 @@ private fun LessonTimelineItem(
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
 
-    val freshGreen = Color(0xFF22C55E)
-
-    val timelineGray = Color(0xFFE2E8F0)
-    val inactiveGray = Color(0xFFCBD5E1)
+    val freshGreen = WordBridgeColors.Primary
+    val timelineGray = WordBridgeColors.BorderSubtle
+    val inactiveGray = WordBridgeColors.BorderLight
 
     val itemProgress = itemIndex.toFloat() / totalItems.toFloat()
     val nextItemProgress = (itemIndex + 1).toFloat() / totalItems.toFloat()
@@ -282,7 +282,7 @@ private fun LessonTimelineItem(
                             .background(nodeColorState)
                             .border(
                                 width = if (isHovered && !topic.isLocked) 2.dp else 1.5.dp,
-                                color = Color.White.copy(alpha = if (isHovered && !topic.isLocked) 1f else 0.9f),
+                                color = WordBridgeColors.CardBackground.copy(alpha = if (isHovered && !topic.isLocked) 1f else 0.9f),
                                 shape = CircleShape,
                             ),
                     contentAlignment = Alignment.Center,
@@ -291,7 +291,7 @@ private fun LessonTimelineItem(
                         modifier =
                             Modifier
                                 .size(6.dp)
-                                .background(Color.White, CircleShape),
+                                .background(WordBridgeColors.CardBackground, CircleShape),
                     )
                 }
             }
@@ -384,7 +384,7 @@ private fun LessonNumberLabel(
             if (isHovered && !isLocked) {
                 freshGreen.copy(alpha = 0.15f)
             } else {
-                Color(0xFFF8FAFC)
+                WordBridgeColors.SurfaceVariant
             },
         border =
             BorderStroke(
@@ -393,7 +393,7 @@ private fun LessonNumberLabel(
                     if (isHovered && !isLocked) {
                         freshGreen.copy(alpha = 0.3f)
                     } else {
-                        Color(0xFFE2E8F0)
+                        WordBridgeColors.BorderSubtle
                     },
             ),
     ) {
@@ -418,8 +418,8 @@ private fun LessonTimelineCard(
     scale: Float,
     modifier: Modifier = Modifier,
 ) {
-    val freshGreen = Color(0xFF22C55E)
-    val neutralBorder = Color(0xFFE2E8F0)
+    val freshGreen = WordBridgeColors.Primary
+    val neutralBorder = WordBridgeColors.BorderSubtle
 
     val elevation by animateDpAsState(
         targetValue = if (isHovered && !topic.isLocked) 16.dp else 4.dp,
@@ -452,7 +452,7 @@ private fun LessonTimelineCard(
         shape = RoundedCornerShape(16.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = Color.White,
+                containerColor = WordBridgeColors.CardBackground,
             ),
         elevation =
             CardDefaults.cardElevation(
@@ -521,7 +521,7 @@ private fun CardContent(topic: LessonTopic) {
                             .width(60.dp)
                             .height(3.dp)
                             .background(
-                                color = Color(0xFF22C55E),
+                                color = WordBridgeColors.Primary,
                                 shape = RoundedCornerShape(2.dp),
                             ),
                 )
@@ -550,17 +550,19 @@ private fun CardContent(topic: LessonTopic) {
                     if (topic.durationMinutes != null) {
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFFECFDF5),
-                            border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.2f)),
+                            color = WordBridgeColors.Primary.copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, WordBridgeColors.Primary.copy(alpha = 0.25f)),
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text(
-                                    text = "⏱",
-                                    style = MaterialTheme.typography.bodyMedium,
+                                Icon(
+                                    imageVector = WordBridgeIcons.Timer,
+                                    contentDescription = null,
+                                    tint = WordBridgeColors.Primary,
+                                    modifier = Modifier.size(14.dp),
                                 )
                                 Text(
                                     text = "${topic.durationMinutes} min",
@@ -568,7 +570,7 @@ private fun CardContent(topic: LessonTopic) {
                                         MaterialTheme.typography.bodyMedium.copy(
                                             fontWeight = FontWeight.SemiBold,
                                         ),
-                                    color = Color(0xFF059669),
+                                    color = WordBridgeColors.Primary,
                                 )
                             }
                         }
@@ -578,21 +580,19 @@ private fun CardContent(topic: LessonTopic) {
                         topic.isCompleted -> {
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = Color(0xFFD1FAE5),
-                                border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.3f)),
+                                color = WordBridgeColors.SurfaceVariant,
+                                border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text(
-                                        text = "✓",
-                                        style =
-                                            MaterialTheme.typography.bodyMedium.copy(
-                                                fontWeight = FontWeight.Bold,
-                                            ),
-                                        color = Color(0xFF059669),
+                                    Icon(
+                                        imageVector = WordBridgeIcons.Check,
+                                        contentDescription = "Completed",
+                                        tint = WordBridgeColors.Success,
+                                        modifier = Modifier.size(14.dp),
                                     )
                                     Text(
                                         text = "Completed",
@@ -600,7 +600,7 @@ private fun CardContent(topic: LessonTopic) {
                                             MaterialTheme.typography.bodyMedium.copy(
                                                 fontWeight = FontWeight.SemiBold,
                                             ),
-                                        color = Color(0xFF059669),
+                                        color = WordBridgeColors.Success,
                                     )
                                 }
                             }
@@ -608,17 +608,19 @@ private fun CardContent(topic: LessonTopic) {
                         topic.isLocked -> {
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = Color(0xFFF1F5F9),
-                                border = BorderStroke(1.dp, Color(0xFF94A3B8).copy(alpha = 0.3f)),
+                                color = WordBridgeColors.SurfaceVariant,
+                                border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text(
-                                        text = "🔒",
-                                        style = MaterialTheme.typography.bodyMedium,
+                                    Icon(
+                                        imageVector = WordBridgeIcons.Lock,
+                                        contentDescription = "Locked",
+                                        tint = WordBridgeColors.TextSecondary,
+                                        modifier = Modifier.size(14.dp),
                                     )
                                     Text(
                                         text = "Locked",
@@ -626,7 +628,7 @@ private fun CardContent(topic: LessonTopic) {
                                             MaterialTheme.typography.bodyMedium.copy(
                                                 fontWeight = FontWeight.SemiBold,
                                             ),
-                                        color = Color(0xFF64748B),
+                                        color = WordBridgeColors.TextSecondary,
                                     )
                                 }
                             }
@@ -634,18 +636,19 @@ private fun CardContent(topic: LessonTopic) {
                         else -> {
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = Color(0xFFCCFBF1),
-                                border = BorderStroke(1.dp, Color(0xFF14B8A6).copy(alpha = 0.3f)),
+                                color = WordBridgeColors.SurfaceVariant,
+                                border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text(
-                                        text = "▶",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = Color(0xFF0D9488),
+                                    Icon(
+                                        imageVector = WordBridgeIcons.Play,
+                                        contentDescription = "Start",
+                                        tint = WordBridgeColors.Primary,
+                                        modifier = Modifier.size(12.dp),
                                     )
                                     Text(
                                         text = "Start",
@@ -653,7 +656,7 @@ private fun CardContent(topic: LessonTopic) {
                                             MaterialTheme.typography.bodyMedium.copy(
                                                 fontWeight = FontWeight.SemiBold,
                                             ),
-                                        color = Color(0xFF0D9488),
+                                        color = WordBridgeColors.TextPrimary,
                                     )
                                 }
                             }

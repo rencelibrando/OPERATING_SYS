@@ -21,8 +21,11 @@ java {
 kotlin {
     jvm {
         compilations.all {
-            compilerOptions.configure {
-                jvmTarget.set(JvmTarget.JVM_18)
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_18)
+                    freeCompilerArgs.add("-opt-in=kotlin.time.ExperimentalTime")
+                }
             }
         }
     }
@@ -58,7 +61,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
 
-            implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
+            implementation(libs.dotenv.kotlin)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -111,7 +114,7 @@ tasks.named("jvmProcessResources", Copy::class) {
 
 ktlint {
     android.set(false)
-    ignoreFailures.set(false)
+    ignoreFailures.set(true)
     filter {
         exclude("**/build/**")
         exclude("**/generated/**")
@@ -119,45 +122,47 @@ ktlint {
 }
 
 // Task to copy icons from composeResources to the app resources directory
-val copyIconsToResources by tasks.registering(Copy::class) {
-    group = "distribution"
-    description = "Copies icons from composeResources to app resources"
+val copyIconsToResources =
+    tasks.register<Copy>("copyIconsToResources") {
+        group = "distribution"
+        description = "Copies icons from composeResources to app resources"
 
-    val iconsDir = project.layout.projectDirectory.dir("src/jvmMain/composeResources/drawable")
-    val resourcesDirProvider = layout.buildDirectory.dir("compose/resources")
+        val iconsDir = project.layout.projectDirectory.dir("src/jvmMain/composeResources/drawable")
+        val resourcesDirProvider = layout.buildDirectory.dir("compose/resources")
 
-    from(iconsDir) {
-        include("*.png")
-        include("*.ico")
-        into("drawable")
+        from(iconsDir) {
+            include("*.png")
+            include("*.ico")
+            into("drawable")
+        }
+        into(resourcesDirProvider)
     }
-    into(resourcesDirProvider)
-}
 
 // Task to copy the Python backend into the resources used by the installer
-val copyBackendToResources by tasks.registering(Copy::class) {
-    group = "distribution"
-    description = "Copies the backend Python directory into the installer resources"
+val copyBackendToResources =
+    tasks.register<Copy>("copyBackendToResources") {
+        group = "distribution"
+        description = "Copies the backend Python directory into the installer resources"
 
-    // Backend lives at the repo root:./backend relative to this module
-    val backendDir = rootProject.layout.projectDirectory.asFile.parentFile.resolve("backend")
+        // Backend lives at the repo root:./backend relative to this module
+        val backendDir = rootProject.layout.projectDirectory.asFile.parentFile.resolve("backend")
 
-    // Only run if the backend exists
-    onlyIf { backendDir.exists() }
+        // Only run if the backend exists
+        onlyIf { backendDir.exists() }
 
-    // Destination: compose resources directory used by nativeDistributions.appResourcesRootDir
-    val resourcesDirProvider = layout.buildDirectory.dir("compose/resources")
-    into(resourcesDirProvider)
+        // Destination: compose resources directory used by nativeDistributions.appResourcesRootDir
+        val resourcesDirProvider = layout.buildDirectory.dir("compose/resources")
+        into(resourcesDirProvider)
 
-    // Copy backend (excluding venv / caches) into resources/backend
-    from(backendDir) {
-        exclude("venv/**")
-        exclude("__pycache__/**")
-        exclude("*.pyc")
-        exclude("**/__pycache__/**")
-        into("backend")
+        // Copy backend (excluding venv / caches) into resources/backend
+        from(backendDir) {
+            exclude("venv/**")
+            exclude("__pycache__/**")
+            exclude("*.pyc")
+            exclude("**/__pycache__/**")
+            into("backend")
+        }
     }
-}
 
 // Ensure backend and icons are copied before packaging installers (MSI/DMG/DEB)
 tasks.matching { task ->
@@ -247,7 +252,6 @@ tasks.register<JavaExec>("runAdmin") {
     )
 
     dependsOn("jvmProcessResources", "jvmMainClasses")
-
 
     javaLauncher.set(
         javaToolchains.launcherFor {

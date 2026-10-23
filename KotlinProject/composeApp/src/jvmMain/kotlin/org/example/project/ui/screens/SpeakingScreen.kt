@@ -18,16 +18,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import org.example.project.models.PracticeLanguage
 import org.example.project.models.PracticeFeedback
-import org.example.project.domain.model.VocabularyWord
+import org.example.project.models.PracticeLanguage
 import org.example.project.presentation.viewmodel.SpeakingViewModel
+import org.example.project.ui.components.ConversationModeCard
 import org.example.project.ui.components.LanguageSelectionDialog
 import org.example.project.ui.components.SpeakingEmptyState
 import org.example.project.ui.components.UserAvatar
 import org.example.project.ui.components.VoiceTutorSelectionFlow
-import org.example.project.ui.components.ConversationModeCard
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 import org.example.project.core.auth.User as AuthUser
 
 /**
@@ -71,7 +71,7 @@ fun SpeakingScreen(
         VoiceTutorSelectionFlow(
             onStartPractice = viewModel::startVoiceTutorPractice,
             onBack = viewModel::hideVoiceTutorSelection,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         )
         return // Don't show other content when selection is active
     }
@@ -93,10 +93,21 @@ fun SpeakingScreen(
             // Show back button if onBackClick is provided (from VocabularyScreen)
             if (onBackClick != null) {
                 TextButton(onClick = onBackClick) {
-                    Text(
-                        text = "← Back to Vocabulary",
-                        color = WordBridgeColors.TextPrimary,
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Icon(
+                            imageVector = WordBridgeIcons.ChevronLeft,
+                            contentDescription = "Back",
+                            tint = WordBridgeColors.TextPrimary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Text(
+                            text = "Back to Vocabulary",
+                            color = WordBridgeColors.TextPrimary,
+                        )
+                    }
                 }
             } else {
                 // Otherwise show title (from sidebar navigation)
@@ -127,15 +138,27 @@ fun SpeakingScreen(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 TextButton(
                     onClick = viewModel::exitVoiceTutorPractice,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = WordBridgeColors.TextPrimary
-                    )
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = WordBridgeColors.TextPrimary,
+                        ),
                 ) {
-                    Text("← Back to Selection")
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Icon(
+                            imageVector = WordBridgeIcons.ChevronLeft,
+                            contentDescription = "Back",
+                            tint = WordBridgeColors.TextPrimary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Text("Back to Selection")
+                    }
                 }
             }
 
@@ -146,36 +169,38 @@ fun SpeakingScreen(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = WordBridgeColors.BackgroundWhite,
-                    shadowElevation = 2.dp
+                    shadowElevation = 2.dp,
                 ) {
                     Row(
-                        modifier = Modifier.padding(4.dp)
+                        modifier = Modifier.padding(4.dp),
                     ) {
                         Button(
                             onClick = { viewModel.exitConversationMode() },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (!isConversationMode) WordBridgeColors.PrimaryPurple else Color.Transparent,
-                                contentColor = if (!isConversationMode) Color.White else WordBridgeColors.TextPrimary
-                            ),
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = if (!isConversationMode) WordBridgeColors.Primary else Color.Transparent,
+                                    contentColor = if (!isConversationMode) WordBridgeColors.OnPrimary else WordBridgeColors.TextPrimary,
+                                ),
                             elevation = if (!isConversationMode) ButtonDefaults.buttonElevation(2.dp) else ButtonDefaults.buttonElevation(0.dp),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(8.dp),
                         ) {
                             Text("Practice Mode")
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
                             onClick = { viewModel.enterConversationMode() },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isConversationMode) WordBridgeColors.PrimaryPurple else Color.Transparent,
-                                contentColor = if (isConversationMode) Color.White else WordBridgeColors.TextPrimary
-                            ),
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = if (isConversationMode) WordBridgeColors.Primary else Color.Transparent,
+                                    contentColor = if (isConversationMode) WordBridgeColors.OnPrimary else WordBridgeColors.TextPrimary,
+                                ),
                             elevation = if (isConversationMode) ButtonDefaults.buttonElevation(2.dp) else ButtonDefaults.buttonElevation(0.dp),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(8.dp),
                         ) {
                             Text("Conversation Mode")
                         }
@@ -192,7 +217,7 @@ fun SpeakingScreen(
                 val isAgentSpeaking = viewModel.isAgentSpeaking.value
                 val isConversationRecording = viewModel.isConversationRecording.value
                 val isConversationActive = viewModel.isConversationActive.value
-                
+
                 ConversationModeCard(
                     language = voiceTutorLanguage!!,
                     level = voiceTutorLevel!!,
@@ -204,7 +229,7 @@ fun SpeakingScreen(
                     onStartConversation = viewModel::startConversationMode,
                     onStopConversation = viewModel::stopConversationMode,
                     onStartRecording = viewModel::startConversationRecording,
-                    onStopRecording = viewModel::stopConversationRecording
+                    onStopRecording = viewModel::stopConversationRecording,
                 )
             } else {
                 // Practice Mode UI
@@ -212,7 +237,7 @@ fun SpeakingScreen(
                     language = voiceTutorLanguage!!,
                     level = voiceTutorLevel!!,
                     scenario = voiceTutorScenario!!,
-                    prompt = currentPrompt!!
+                    prompt = currentPrompt!!,
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -246,7 +271,6 @@ fun SpeakingScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-
         } else if (currentWord != null && selectedLanguage != null) {
             // Word Information Card
             WordInfoCard(
@@ -338,15 +362,16 @@ private fun VoiceTutorPracticeCard(
                     // Language indicator
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.1f)
+                        color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.1f),
                     ) {
                         Text(
                             text = language.displayName,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold
-                            ),
+                            style =
+                                MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                ),
                             color = WordBridgeColors.PrimaryPurple,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         )
                     }
                 }
@@ -354,24 +379,26 @@ private fun VoiceTutorPracticeCard(
                 // Level badge
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = when (level) {
-                        "beginner" -> WordBridgeColors.AccentGreen.copy(alpha = 0.1f)
-                        "intermediate" -> WordBridgeColors.AccentOrange.copy(alpha = 0.1f)
-                        "advanced" -> WordBridgeColors.PrimaryPurple.copy(alpha = 0.1f)
-                        else -> WordBridgeColors.TextMuted.copy(alpha = 0.1f)
-                    }
+                    color =
+                        when (level) {
+                            "beginner" -> WordBridgeColors.AccentGreen.copy(alpha = 0.1f)
+                            "intermediate" -> WordBridgeColors.AccentOrange.copy(alpha = 0.1f)
+                            "advanced" -> WordBridgeColors.PrimaryPurple.copy(alpha = 0.1f)
+                            else -> WordBridgeColors.TextMuted.copy(alpha = 0.1f)
+                        },
                 ) {
                     Text(
                         text = level.replaceFirstChar { it.uppercase() },
                         style = MaterialTheme.typography.labelMedium,
-                        color = when (level) {
-                            "beginner" -> WordBridgeColors.AccentGreen
-                            "intermediate" -> WordBridgeColors.AccentOrange
-                            "advanced" -> WordBridgeColors.PrimaryPurple
-                            else -> WordBridgeColors.TextMuted
-                        },
+                        color =
+                            when (level) {
+                                "beginner" -> WordBridgeColors.AccentGreen
+                                "intermediate" -> WordBridgeColors.AccentOrange
+                                "advanced" -> WordBridgeColors.PrimaryPurple
+                                else -> WordBridgeColors.TextMuted
+                            },
                         fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     )
                 }
             }
@@ -381,14 +408,14 @@ private fun VoiceTutorPracticeCard(
             // Scenario tag
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = WordBridgeColors.AccentBlue.copy(alpha = 0.1f)
+                color = WordBridgeColors.AccentBlue.copy(alpha = 0.1f),
             ) {
                 Text(
                     text = scenario.replaceFirstChar { it.uppercase() }.replace("_", " "),
                     style = MaterialTheme.typography.labelMedium,
                     color = WordBridgeColors.AccentBlue,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                 )
             }
 
@@ -414,17 +441,18 @@ private fun VoiceTutorPracticeCard(
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = WordBridgeColors.BackgroundLight,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
                     text = "\"$prompt\"",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Medium,
-                        lineHeight = 28.sp
-                    ),
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Medium,
+                            lineHeight = 28.sp,
+                        ),
                     color = WordBridgeColors.TextPrimary,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(16.dp),
                 )
             }
 
@@ -435,7 +463,7 @@ private fun VoiceTutorPracticeCard(
                 text = "Speak this phrase clearly in ${language.displayName}. The AI will analyze your pronunciation, fluency, and accuracy.",
                 style = MaterialTheme.typography.bodySmall,
                 color = WordBridgeColors.TextSecondary,
-                lineHeight = 18.sp
+                lineHeight = 18.sp,
             )
         }
     }
@@ -471,14 +499,14 @@ private fun WordInfoCard(
             // Language badge
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.1f)
+                color = WordBridgeColors.PrimaryPurple.copy(alpha = 0.1f),
             ) {
                 Text(
                     text = language.displayName,
                     style = MaterialTheme.typography.labelMedium,
                     color = WordBridgeColors.PrimaryPurple,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                 )
             }
 
@@ -524,7 +552,7 @@ private fun WordInfoCard(
                 text = definition,
                 style = MaterialTheme.typography.bodyMedium,
                 color = WordBridgeColors.TextSecondary,
-                lineHeight = 20.sp
+                lineHeight = 20.sp,
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -549,7 +577,7 @@ private fun WordInfoCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = WordBridgeColors.TextPrimary,
                     modifier = Modifier.padding(12.dp),
-                    lineHeight = 20.sp
+                    lineHeight = 20.sp,
                 )
             }
         }
@@ -615,31 +643,33 @@ private fun RecordingControlsCard(
             // Microphone Button
             Box(
                 modifier = Modifier.size(80.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 // Pulsing background ring for recording state
                 if (isRecording) {
                     Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape)
-                            .background(WordBridgeColors.AccentRed.copy(alpha = 0.15f))
+                        modifier =
+                            Modifier
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(WordBridgeColors.AccentRed.copy(alpha = 0.15f)),
                     )
                 }
 
                 // Main button
                 IconButton(
                     onClick = onToggleRecording,
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (isRecording) WordBridgeColors.AccentRed else WordBridgeColors.PrimaryPurple,
-                        ),
+                    modifier =
+                        Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (isRecording) WordBridgeColors.AccentRed else WordBridgeColors.PrimaryPurple,
+                            ),
                 ) {
                     // Microphone icon using Canvas
                     androidx.compose.foundation.Canvas(
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(28.dp),
                     ) {
                         val canvasWidth = size.width
                         val canvasHeight = size.height
@@ -649,62 +679,71 @@ private fun RecordingControlsCard(
                             // Stop icon (square)
                             drawRoundRect(
                                 color = iconColor,
-                                topLeft = androidx.compose.ui.geometry.Offset(
-                                    canvasWidth * 0.25f,
-                                    canvasHeight * 0.25f
-                                ),
-                                size = androidx.compose.ui.geometry.Size(
-                                    canvasWidth * 0.5f,
-                                    canvasHeight * 0.5f
-                                ),
-                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+                                topLeft =
+                                    androidx.compose.ui.geometry.Offset(
+                                        canvasWidth * 0.25f,
+                                        canvasHeight * 0.25f,
+                                    ),
+                                size =
+                                    androidx.compose.ui.geometry.Size(
+                                        canvasWidth * 0.5f,
+                                        canvasHeight * 0.5f,
+                                    ),
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f),
                             )
                         } else {
                             // Microphone icon
                             // Mic body (rounded rectangle)
                             drawRoundRect(
                                 color = iconColor,
-                                topLeft = androidx.compose.ui.geometry.Offset(
-                                    canvasWidth * 0.35f,
-                                    canvasHeight * 0.2f
-                                ),
-                                size = androidx.compose.ui.geometry.Size(
-                                    canvasWidth * 0.3f,
-                                    canvasHeight * 0.35f
-                                ),
-                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(
-                                    canvasWidth * 0.15f,
-                                    canvasWidth * 0.15f
-                                )
+                                topLeft =
+                                    androidx.compose.ui.geometry.Offset(
+                                        canvasWidth * 0.35f,
+                                        canvasHeight * 0.2f,
+                                    ),
+                                size =
+                                    androidx.compose.ui.geometry.Size(
+                                        canvasWidth * 0.3f,
+                                        canvasHeight * 0.35f,
+                                    ),
+                                cornerRadius =
+                                    androidx.compose.ui.geometry.CornerRadius(
+                                        canvasWidth * 0.15f,
+                                        canvasWidth * 0.15f,
+                                    ),
                             )
 
                             // Mic stand (vertical line)
                             drawLine(
                                 color = iconColor,
-                                start = androidx.compose.ui.geometry.Offset(
-                                    canvasWidth * 0.5f,
-                                    canvasHeight * 0.55f
-                                ),
-                                end = androidx.compose.ui.geometry.Offset(
-                                    canvasWidth * 0.5f,
-                                    canvasHeight * 0.75f
-                                ),
-                                strokeWidth = 3f
+                                start =
+                                    androidx.compose.ui.geometry.Offset(
+                                        canvasWidth * 0.5f,
+                                        canvasHeight * 0.55f,
+                                    ),
+                                end =
+                                    androidx.compose.ui.geometry.Offset(
+                                        canvasWidth * 0.5f,
+                                        canvasHeight * 0.75f,
+                                    ),
+                                strokeWidth = 3f,
                             )
 
                             // Mic base (horizontal line)
                             drawLine(
                                 color = iconColor,
-                                start = androidx.compose.ui.geometry.Offset(
-                                    canvasWidth * 0.35f,
-                                    canvasHeight * 0.75f
-                                ),
-                                end = androidx.compose.ui.geometry.Offset(
-                                    canvasWidth * 0.65f,
-                                    canvasHeight * 0.75f
-                                ),
+                                start =
+                                    androidx.compose.ui.geometry.Offset(
+                                        canvasWidth * 0.35f,
+                                        canvasHeight * 0.75f,
+                                    ),
+                                end =
+                                    androidx.compose.ui.geometry.Offset(
+                                        canvasWidth * 0.65f,
+                                        canvasHeight * 0.75f,
+                                    ),
                                 strokeWidth = 3f,
-                                cap = androidx.compose.ui.graphics.StrokeCap.Round
+                                cap = androidx.compose.ui.graphics.StrokeCap.Round,
                             )
                         }
                     }
@@ -773,7 +812,7 @@ private fun AnalyzingIndicator(modifier: Modifier = Modifier) {
             CircularProgressIndicator(
                 modifier = Modifier.size(28.dp),
                 color = WordBridgeColors.AccentOrange,
-                strokeWidth = 3.dp
+                strokeWidth = 3.dp,
             )
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -923,7 +962,7 @@ private fun FeedbackCard(
                         text = message,
                         style = MaterialTheme.typography.bodySmall,
                         color = WordBridgeColors.TextSecondary,
-                        lineHeight = 18.sp
+                        lineHeight = 18.sp,
                     )
                 }
             }
@@ -956,7 +995,7 @@ private fun FeedbackCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = WordBridgeColors.TextPrimary,
                         modifier = Modifier.padding(12.dp),
-                        lineHeight = 18.sp
+                        lineHeight = 18.sp,
                     )
                 }
             }
@@ -972,10 +1011,11 @@ private fun FeedbackCard(
                     onClick = onTryAgain,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = WordBridgeColors.PrimaryPurple
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(1.5.dp, WordBridgeColors.PrimaryPurple)
+                    colors =
+                        ButtonDefaults.outlinedButtonColors(
+                            contentColor = WordBridgeColors.PrimaryPurple,
+                        ),
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, WordBridgeColors.PrimaryPurple),
                 ) {
                     Text(
                         text = "Try Again",
@@ -988,7 +1028,8 @@ private fun FeedbackCard(
                     modifier = Modifier.weight(1f),
                     colors =
                         ButtonDefaults.buttonColors(
-                            containerColor = WordBridgeColors.PrimaryPurple,
+                            containerColor = WordBridgeColors.Primary,
+                            contentColor = WordBridgeColors.OnPrimary,
                         ),
                     shape = RoundedCornerShape(10.dp),
                 ) {

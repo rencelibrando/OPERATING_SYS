@@ -35,8 +35,8 @@ This README gives an overview, developer quickstart, architecture notes, and whe
 ## Quickstart — Development
 
 Prerequisites
-- JDK 11+ (or the JDK used by the project)
-- Gradle (wrapper included: use ./gradlew)
+- JDK 18+ or JDK 21 LTS
+- Gradle (Gradle 9.8.2 wrapper included under KotlinProject: use ./gradlew)
 - Python 3.12 for compatibility and pip
 - (Optional) Supabase/Postgres or other configured remote DB for topics and user data
 - AI provider credentials if you want AI features gemini, deepseek, elevenlabs

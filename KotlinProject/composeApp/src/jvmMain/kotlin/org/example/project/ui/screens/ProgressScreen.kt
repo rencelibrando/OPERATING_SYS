@@ -1,5 +1,6 @@
 package org.example.project.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -24,6 +26,7 @@ import org.example.project.domain.model.SkillArea
 import org.example.project.presentation.viewmodel.ProgressViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 import org.example.project.core.auth.User as AuthUser
 
 @Composable
@@ -45,6 +48,7 @@ fun ProgressScreen(
         modifier =
             modifier
                 .fillMaxSize()
+                .background(WordBridgeColors.BackgroundLight)
                 .padding(24.dp)
                 .verticalScroll(rememberScrollState()),
     ) {
@@ -85,16 +89,14 @@ fun ProgressScreen(
                 ProgressStatsCard(
                     title = "Overall Level",
                     value = learningProgress.overallLevel.toString(),
-                    icon = "🎯",
-                    backgroundColor = Color(0xFF8B5CF6),
+                    icon = WordBridgeIcons.Trophy,
                     modifier = Modifier.weight(1f),
                 )
 
                 ProgressStatsCard(
                     title = "Total XP",
                     value = learningProgress.xpPoints.toString(),
-                    icon = "⭐",
-                    backgroundColor = Color(0xFF10B981),
+                    icon = WordBridgeIcons.Star,
                     modifier = Modifier.weight(1f),
                 )
 
@@ -102,8 +104,7 @@ fun ProgressScreen(
                     title = "Current Streak",
                     value = learningProgress.streakDays.toString(),
                     unit = "days",
-                    icon = "🔥",
-                    backgroundColor = Color(0xFFF59E0B),
+                    icon = WordBridgeIcons.Streak,
                     modifier = Modifier.weight(1f),
                 )
 
@@ -111,8 +112,7 @@ fun ProgressScreen(
                     title = "Study Time",
                     value = "${learningProgress.totalStudyTime / 60}",
                     unit = "hrs",
-                    icon = "⏱️",
-                    backgroundColor = Color(0xFFEF4444),
+                    icon = WordBridgeIcons.Time,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -233,9 +233,11 @@ private fun ProgressEmptyState(
     ) {
         Spacer(modifier = Modifier.height(40.dp))
 
-        Text(
-            text = "📊",
-            style = MaterialTheme.typography.displayMedium,
+        Icon(
+            imageVector = WordBridgeIcons.Progress,
+            contentDescription = null,
+            tint = WordBridgeColors.TextSecondary,
+            modifier = Modifier.size(48.dp),
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -253,7 +255,7 @@ private fun ProgressEmptyState(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Start your learning adventure and watch your progress grow! Set goals, earn achievements, and see your improvement over time with detailed analytics and insights.",
+            text = "Start your learning adventure and watch your progress grow. Set goals, earn achievements, and see your improvement over time with detailed analytics.",
             style = MaterialTheme.typography.bodyLarge,
             color = WordBridgeColors.TextSecondary,
             textAlign = TextAlign.Center,
@@ -267,19 +269,29 @@ private fun ProgressEmptyState(
             modifier = Modifier.fillMaxWidth(0.6f),
             colors =
                 ButtonDefaults.buttonColors(
-                    containerColor = WordBridgeColors.PrimaryPurple,
+                    containerColor = WordBridgeColors.Primary,
+                    contentColor = WordBridgeColors.PrimaryForeground,
                 ),
             shape = RoundedCornerShape(8.dp),
         ) {
-            Text(
-                text = "🎯 Set Your First Goal",
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Medium,
-                    ),
-                color = Color.White,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(vertical = 4.dp),
-            )
+            ) {
+                Icon(
+                    imageVector = WordBridgeIcons.Trophy,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    text = "Set Your First Goal",
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Medium,
+                        ),
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -298,8 +310,8 @@ private fun ProgressEmptyState(
             ) {
                 Text(
                     text = "explore achievements to earn",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = WordBridgeColors.PrimaryPurple,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    color = WordBridgeColors.TextPrimary,
                 )
             }
         }
@@ -311,18 +323,17 @@ private fun ProgressStatsCard(
     title: String,
     value: String,
     unit: String? = null,
-    icon: String,
-    backgroundColor: Color,
+    icon: ImageVector,
     modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
         colors =
             CardDefaults.cardColors(
-                containerColor = WordBridgeColors.BackgroundWhite,
+                containerColor = WordBridgeColors.Surface,
             ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(
             modifier =
@@ -331,19 +342,12 @@ private fun ProgressStatsCard(
                     .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(backgroundColor),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = icon,
-                    style = MaterialTheme.typography.titleLarge,
-                )
-            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = WordBridgeColors.TextPrimary,
+                modifier = Modifier.size(24.dp),
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -384,8 +388,9 @@ private fun WeeklyProgressChart(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.BackgroundWhite),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
+        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.Surface),
     ) {
         Column(
             modifier =
@@ -393,16 +398,27 @@ private fun WeeklyProgressChart(
                     .fillMaxWidth()
                     .padding(20.dp),
         ) {
-            Text(
-                text = "📈 Weekly XP Chart Placeholder",
-                style = MaterialTheme.typography.titleMedium,
-                color = WordBridgeColors.TextPrimary,
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    imageVector = WordBridgeIcons.Progress,
+                    contentDescription = null,
+                    tint = WordBridgeColors.TextPrimary,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    text = "Weekly Activity",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = WordBridgeColors.TextPrimary,
+                )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Chart visualization would go here showing daily XP and study time",
+                text = "Chart visualization showing daily XP and study time breakdown",
                 style = MaterialTheme.typography.bodyMedium,
                 color = WordBridgeColors.TextSecondary,
             )
@@ -417,20 +433,37 @@ private fun SkillProgressCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val icon = when (skill) {
+        SkillArea.VOCABULARY -> WordBridgeIcons.Vocabulary
+        SkillArea.GRAMMAR -> WordBridgeIcons.Edit
+        SkillArea.SPEAKING -> WordBridgeIcons.Speaking
+        SkillArea.LISTENING -> WordBridgeIcons.Headphones
+        SkillArea.READING -> WordBridgeIcons.Lessons
+        SkillArea.WRITING -> WordBridgeIcons.Edit
+    }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         onClick = onClick,
         shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
+        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.Surface),
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(text = skill.icon, style = MaterialTheme.typography.titleMedium)
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = WordBridgeColors.TextPrimary,
+                modifier = Modifier.size(24.dp),
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "Lv.${progress.level}",
                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                color = WordBridgeColors.TextPrimary,
             )
             Text(
                 text = skill.displayName,
@@ -450,17 +483,38 @@ private fun GoalProgressCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderSubtle),
+        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.CardBackground),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = goal.title,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "${goal.current}/${goal.target} ${goal.unit}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = WordBridgeColors.TextSecondary,
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = goal.title,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = WordBridgeColors.TextPrimary,
+                )
+                Text(
+                    text = "${goal.current}/${goal.target} ${goal.unit}",
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    color = WordBridgeColors.Primary,
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            val goalProgress = if (goal.target > 0) (goal.current.toFloat() / goal.target.toFloat()).coerceIn(0f, 1f) else 0f
+            LinearProgressIndicator(
+                progress = goalProgress,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
+                color = WordBridgeColors.Primary,
+                trackColor = WordBridgeColors.ProgressBackground,
             )
         }
     }
@@ -475,16 +529,25 @@ private fun AchievementCard(
     Card(
         modifier = modifier.width(120.dp),
         onClick = onClick,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
+        colors = CardDefaults.cardColors(containerColor = WordBridgeColors.Surface),
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(text = achievement.icon, style = MaterialTheme.typography.headlineMedium)
-            Spacer(modifier = Modifier.height(4.dp))
+            Icon(
+                imageVector = WordBridgeIcons.Trophy,
+                contentDescription = null,
+                tint = WordBridgeColors.TextPrimary,
+                modifier = Modifier.size(28.dp),
+            )
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = achievement.title,
                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                color = WordBridgeColors.TextPrimary,
                 textAlign = TextAlign.Center,
             )
         }

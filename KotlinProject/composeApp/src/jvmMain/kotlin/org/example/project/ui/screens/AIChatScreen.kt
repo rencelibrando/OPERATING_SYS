@@ -28,6 +28,7 @@ import org.example.project.domain.model.MessageSender
 import org.example.project.presentation.viewmodel.AIChatViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 import java.text.SimpleDateFormat
 import java.util.*
 import org.example.project.core.auth.User as AuthUser
@@ -126,7 +127,7 @@ fun AIChatScreen(
                         .fillMaxHeight(),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = WordBridgeColors.PrimaryPurple)
+                CircularProgressIndicator(color = WordBridgeColors.Primary)
             }
         } else {
             // Active Chat
@@ -140,7 +141,7 @@ fun AIChatScreen(
                 ChatHeader(
                     bot = selectedBot,
                     authenticatedUser = authenticatedUser,
-                    onBackClick = { /* TODO: implement back navigation */ },
+                    onBackClick = { /* Navigate back */ },
                     onUserAvatarClick = onUserAvatarClick,
                 )
 
@@ -150,16 +151,7 @@ fun AIChatScreen(
                         Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .background(
-                                brush =
-                                    Brush.verticalGradient(
-                                        colors =
-                                            listOf(
-                                                Color(0xFFF8FAFC), // slate-50
-                                                Color.White,
-                                            ),
-                                    ),
-                            ),
+                            .background(WordBridgeColors.Background),
                 ) {
                     val listState = rememberLazyListState()
 
@@ -176,7 +168,7 @@ fun AIChatScreen(
                                 message = message.content,
                                 isFromUser = message.sender == MessageSender.USER,
                                 timestamp = message.timestamp,
-                                botAvatar = selectedBot?.avatar ?: "🤖",
+                                botAvatar = selectedBot?.avatar ?: "",
                                 botName = selectedBot?.name ?: "AI",
                             )
                         }
@@ -184,7 +176,7 @@ fun AIChatScreen(
                         if (isTyping) {
                             item {
                                 TypingIndicator(
-                                    botAvatar = selectedBot?.avatar ?: "🤖",
+                                    botAvatar = selectedBot?.avatar ?: "",
                                     botName = selectedBot?.name ?: "AI",
                                 )
                             }
@@ -235,8 +227,8 @@ private fun ChatHeader(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color.White,
-        shadowElevation = 2.dp,
+        color = WordBridgeColors.Surface,
+        shadowElevation = 1.dp,
     ) {
         Row(
             modifier =
@@ -253,42 +245,23 @@ private fun ChatHeader(
                 // Back Button
                 IconButton(
                     onClick = onBackClick,
-                    modifier =
-                        Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(8.dp)),
+                    modifier = Modifier.size(40.dp),
                 ) {
-                    Text(
-                        text = "←",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = WordBridgeColors.TextSecondary,
+                    Icon(
+                        imageVector = WordBridgeIcons.ChevronLeft,
+                        contentDescription = "Back",
+                        tint = WordBridgeColors.TextSecondary,
+                        modifier = Modifier.size(24.dp),
                     )
                 }
 
                 if (bot != null) {
-                    // Bot Avatar
-                    Box(
-                        modifier =
-                            Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    brush =
-                                        Brush.linearGradient(
-                                            colors =
-                                                listOf(
-                                                    Color(0xFFF472B6), // pink-400
-                                                    Color(0xFFFB923C), // orange-400
-                                                ),
-                                        ),
-                                ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = bot.avatar,
-                            style = MaterialTheme.typography.headlineMedium,
-                        )
-                    }
+                    Icon(
+                        imageVector = WordBridgeIcons.Robot,
+                        contentDescription = bot.name,
+                        tint = WordBridgeColors.TextPrimary,
+                        modifier = Modifier.size(28.dp),
+                    )
 
                     Column {
                         Text(
@@ -312,18 +285,16 @@ private fun ChatHeader(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // More Options
+                // Options
                 IconButton(
                     onClick = { },
-                    modifier =
-                        Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(8.dp)),
+                    modifier = Modifier.size(40.dp),
                 ) {
-                    Text(
-                        text = "⋮",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = WordBridgeColors.TextSecondary,
+                    Icon(
+                        imageVector = WordBridgeIcons.Settings,
+                        contentDescription = "Options",
+                        tint = WordBridgeColors.TextSecondary,
+                        modifier = Modifier.size(20.dp),
                     )
                 }
 
@@ -362,7 +333,7 @@ private fun ChatMessageBubble(
                 shape = RoundedCornerShape(16.dp),
                 colors =
                     CardDefaults.cardColors(
-                        containerColor = Color.Transparent,
+                        containerColor = WordBridgeColors.Primary,
                     ),
                 elevation =
                     CardDefaults.cardElevation(
@@ -370,25 +341,12 @@ private fun ChatMessageBubble(
                     ),
             ) {
                 Box(
-                    modifier =
-                        Modifier
-                            .background(
-                                brush =
-                                    Brush.linearGradient(
-                                        colors =
-                                            listOf(
-                                                Color(0xFFA855F7), // purple-500
-                                                Color(0xFF3B82F6), // blue-500
-                                            ),
-                                    ),
-                                shape = RoundedCornerShape(16.dp),
-                            )
-                            .padding(16.dp),
+                    modifier = Modifier.padding(16.dp),
                 ) {
                     Text(
                         text = message,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = Color.White,
+                        color = WordBridgeColors.Surface,
                     )
                 }
             }
@@ -400,31 +358,14 @@ private fun ChatMessageBubble(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top,
         ) {
-            // Bot Avatar
-            Box(
-                modifier =
-                    Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            brush =
-                                Brush.linearGradient(
-                                    colors =
-                                        listOf(
-                                            Color(0xFFF472B6), // pink-400
-                                            Color(0xFFFB923C), // orange-400
-                                        ),
-                                ),
-                        ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = botAvatar,
-                    style = MaterialTheme.typography.titleLarge,
-                )
-            }
+            Icon(
+                imageVector = WordBridgeIcons.Robot,
+                contentDescription = botName,
+                tint = WordBridgeColors.TextPrimary,
+                modifier = Modifier.size(24.dp),
+            )
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
             Column(
                 modifier = Modifier.weight(1f),
@@ -461,12 +402,12 @@ private fun ChatMessageBubble(
                         ),
                     colors =
                         CardDefaults.cardColors(
-                            containerColor = Color.Transparent,
+                            containerColor = WordBridgeColors.SurfaceVariant,
                         ),
                     border =
                         androidx.compose.foundation.BorderStroke(
                             1.dp,
-                            Color(0xFFE9D5FF), // purple-100
+                            WordBridgeColors.BorderLight,
                         ),
                     elevation =
                         CardDefaults.cardElevation(
@@ -474,26 +415,7 @@ private fun ChatMessageBubble(
                         ),
                 ) {
                     Box(
-                        modifier =
-                            Modifier
-                                .background(
-                                    brush =
-                                        Brush.linearGradient(
-                                            colors =
-                                                listOf(
-                                                    Color(0xFFF3E5F5), // purple-50
-                                                    Color(0xFFEFF6FF), // blue-50
-                                                ),
-                                        ),
-                                    shape =
-                                        RoundedCornerShape(
-                                            topStart = 16.dp,
-                                            topEnd = 16.dp,
-                                            bottomStart = 4.dp,
-                                            bottomEnd = 16.dp,
-                                        ),
-                                )
-                                .padding(16.dp),
+                        modifier = Modifier.padding(16.dp),
                     ) {
                         Text(
                             text = message,
@@ -517,30 +439,14 @@ private fun TypingIndicator(
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.Top,
     ) {
-        Box(
-            modifier =
-                Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        brush =
-                            Brush.linearGradient(
-                                colors =
-                                    listOf(
-                                        Color(0xFFF472B6),
-                                        Color(0xFFFB923C),
-                                    ),
-                            ),
-                    ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = botAvatar,
-                style = MaterialTheme.typography.titleLarge,
-            )
-        }
+        Icon(
+            imageVector = WordBridgeIcons.Robot,
+            contentDescription = botName,
+            tint = WordBridgeColors.TextPrimary,
+            modifier = Modifier.size(24.dp),
+        )
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(12.dp))
 
         Column {
             Text(
@@ -558,7 +464,12 @@ private fun TypingIndicator(
                 shape = RoundedCornerShape(12.dp),
                 colors =
                     CardDefaults.cardColors(
-                        containerColor = Color(0xFFF3F4F6), // gray-100
+                        containerColor = WordBridgeColors.SurfaceVariant,
+                    ),
+                border =
+                    androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        WordBridgeColors.BorderLight,
                     ),
             ) {
                 Row(
@@ -571,7 +482,7 @@ private fun TypingIndicator(
                                 Modifier
                                     .size(8.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFF9CA3AF)), // gray-400
+                                    .background(WordBridgeColors.TextMuted),
                         )
                     }
                 }
@@ -652,24 +563,24 @@ private fun QuickReplyButton(
             modifier
                 .hoverable(interactionSource)
                 .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(8.dp),
         colors =
             CardDefaults.cardColors(
                 containerColor =
                     if (isHovered) {
-                        Color(0xFFF3E5F5) // purple-50
+                        WordBridgeColors.SurfaceVariant
                     } else {
-                        Color.White
+                        WordBridgeColors.Surface
                     },
             ),
         border =
             androidx.compose.foundation.BorderStroke(
-                2.dp,
-                if (isHovered) Color(0xFFC084FC) else Color(0xFFE2E8F0), // purple-300 : slate-200
+                1.dp,
+                if (isHovered) WordBridgeColors.BorderDark else WordBridgeColors.BorderLight,
             ),
         elevation =
             CardDefaults.cardElevation(
-                defaultElevation = if (isHovered) 4.dp else 2.dp,
+                defaultElevation = 0.dp,
             ),
     ) {
         Box(
@@ -682,7 +593,7 @@ private fun QuickReplyButton(
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (isHovered) Color(0xFF9333EA) else WordBridgeColors.TextPrimary, // purple-700
+                color = WordBridgeColors.TextPrimary,
             )
         }
     }
@@ -699,8 +610,8 @@ private fun ModernChatInput(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color.White,
-        shadowElevation = 8.dp,
+        color = WordBridgeColors.Surface,
+        shadowElevation = 1.dp,
     ) {
         Column(
             modifier =
@@ -724,14 +635,16 @@ private fun ModernChatInput(
                         )
                     },
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(12.dp),
                     enabled = enabled,
                     colors =
                         OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = Color(0xFFF1F5F9), // slate-100
-                            focusedContainerColor = Color.White,
-                            focusedBorderColor = Color(0xFFA855F7), // purple-500
-                            unfocusedBorderColor = Color.Transparent,
+                            unfocusedContainerColor = WordBridgeColors.SurfaceVariant,
+                            focusedContainerColor = WordBridgeColors.Surface,
+                            focusedBorderColor = WordBridgeColors.Primary,
+                            unfocusedBorderColor = WordBridgeColors.BorderLight,
+                            focusedTextColor = WordBridgeColors.TextPrimary,
+                            unfocusedTextColor = WordBridgeColors.TextPrimary,
                         ),
                     maxLines = 3,
                 )
@@ -757,21 +670,13 @@ private fun ModernChatInput(
                             .scale(buttonScale)
                             .hoverable(buttonInteraction)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                brush =
-                                    Brush.horizontalGradient(
-                                        colors =
-                                            listOf(
-                                                Color(0xFFA855F7),
-                                                Color(0xFF3B82F6),
-                                            ),
-                                    ),
-                            ),
+                            .background(WordBridgeColors.Primary),
                 ) {
-                    Text(
-                        text = "➤",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = Color.White,
+                    Icon(
+                        imageVector = WordBridgeIcons.Send,
+                        contentDescription = "Send",
+                        tint = WordBridgeColors.Surface,
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }
@@ -794,7 +699,7 @@ private fun ModernChatInput(
                                 Modifier
                                     .size(8.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFF10B981)), // green-500
+                                    .background(WordBridgeColors.Success),
                         )
                         Text(
                             text = "$botName is online",

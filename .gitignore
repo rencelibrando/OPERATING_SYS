@@ -137,21 +137,16 @@ logs/
 
 # Environment variables
 **/.env
-**/.env.local
-**/.env.*.local
+**/.env.*
 *.env
 .env
-.env.local
-.env.development
-.env.production
-.env.staging
-.env.test
-backend/.env
-composeApp/.env
-env.local
+.env.*
+!**/.env.example
+!**/*.example
 
 # Node modules
 node_modules/
+**/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -160,6 +155,15 @@ yarn.lock
 
 # Supabase
 .supabase/
+supabase/.branches/
+supabase/.temp/
+supabase/migrations/
+supabase/auth_users.sql
+supabase/schema.sql
+supabase/seed.sql
+supabase/*.dump
+supabase/*.tar
+supabase/dumps/
 
 # Secrets and sensitive data
 secrets/
@@ -198,3 +202,7 @@ backend/models/
 docs/_build/
 docs/build/
 .md/
+
+# AI Agent configuration
+.agents/
+.agent/

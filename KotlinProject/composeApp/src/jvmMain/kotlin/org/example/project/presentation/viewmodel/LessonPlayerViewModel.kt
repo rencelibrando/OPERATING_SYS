@@ -111,7 +111,7 @@ class LessonPlayerViewModel : ViewModel() {
                 println("[LessonPlayer] Repository call: getLessonById(lessonId=$lessonId, includeQuestions=true)")
                 repository.getLessonById(lessonId, includeQuestions = true)
                     .onSuccess { lesson ->
-                        println("[LessonPlayer] ✓ Lesson loaded successfully!")
+                        println("[LessonPlayer] Lesson loaded successfully!")
                         println("[LessonPlayer] Lesson title: ${lesson.title}")
                         println("[LessonPlayer] Description: ${lesson.description ?: "(none)"}")
                         println("[LessonPlayer] Number of questions: ${lesson.questions.size}")
@@ -143,14 +143,14 @@ class LessonPlayerViewModel : ViewModel() {
                     }
                     .onFailure { error ->
                         val errorMsg = "Failed to load lesson: ${error.message}"
-                        println("[LessonPlayer] ✗ ERROR: $errorMsg")
+                        println("[LessonPlayer] ERROR: $errorMsg")
                         println("[LessonPlayer] Error type: ${error.javaClass.simpleName}")
                         println("[LessonPlayer] Error details: ${error.stackTraceToString()}")
                         _errorMessage.value = errorMsg
                     }
             } catch (e: Exception) {
                 val errorMsg = "Unexpected error loading lesson: ${e.message}"
-                println("[LessonPlayer] ✗ EXCEPTION: $errorMsg")
+                println("[LessonPlayer] EXCEPTION: $errorMsg")
                 println("[LessonPlayer] Exception type: ${e.javaClass.simpleName}")
                 println("[LessonPlayer] Exception details: ${e.stackTraceToString()}")
                 _errorMessage.value = errorMsg
@@ -292,7 +292,7 @@ class LessonPlayerViewModel : ViewModel() {
 
                 // Must match all left items, and all matches must be correct
                 if (matches.isEmpty() || matches.size != leftItems.size) {
-                    println("[LessonPlayer]   ✗ Not all items matched (need ${leftItems.size}, have ${matches.size})")
+                    println("[LessonPlayer]   Not all items matched (need ${leftItems.size}, have ${matches.size})")
                     false
                 } else {
                     // Check that all matches are correct
@@ -310,9 +310,9 @@ class LessonPlayerViewModel : ViewModel() {
                                 } ?: false
 
                             if (!pairMatch) {
-                                println("[LessonPlayer]     ✗ Match incorrect: $leftId (${leftChoice?.matchPairId}) != $rightId (${rightChoice?.matchPairId})")
+                                println("[LessonPlayer]     Match incorrect: $leftId (${leftChoice?.matchPairId}) != $rightId (${rightChoice?.matchPairId})")
                             } else {
-                                println("[LessonPlayer]     ✓ Match correct: $leftId -> $rightId (pairId=${leftChoice?.matchPairId})")
+                                println("[LessonPlayer]     Match correct: $leftId -> $rightId (pairId=${leftChoice?.matchPairId})")
                             }
                             pairMatch
                         }
@@ -389,7 +389,7 @@ class LessonPlayerViewModel : ViewModel() {
         println("[LessonPlayer] ========== SUBMITTING LESSON ==========")
         val lesson = _currentLesson.value
         if (lesson == null) {
-            println("[LessonPlayer] ✗ ERROR: Cannot submit - no lesson loaded")
+            println("[LessonPlayer] ERROR: Cannot submit - no lesson loaded")
             return
         }
 
@@ -402,7 +402,7 @@ class LessonPlayerViewModel : ViewModel() {
         // Check for unanswered questions
         val unanswered = lesson.questions.filter { !_userAnswers.value.containsKey(it.id) }
         if (unanswered.isNotEmpty()) {
-            println("[LessonPlayer] ⚠ WARNING: ${unanswered.size} unanswered questions")
+            println("[LessonPlayer] WARNING: ${unanswered.size} unanswered questions")
             unanswered.forEach { q ->
                 println("[LessonPlayer]   - Question ${lesson.questions.indexOf(q) + 1}: ${q.questionText.take(30)}...")
             }
@@ -488,7 +488,7 @@ class LessonPlayerViewModel : ViewModel() {
 
                 repository.submitLessonAnswers(request)
                     .onSuccess { result ->
-                        println("[LessonPlayer] ✓ Lesson submitted successfully!")
+                        println("[LessonPlayer] Lesson submitted successfully!")
                         println(
                             "[LessonPlayer] Result: score=${result.score}%, correct=${result.correctAnswers}/${result.totalQuestions}, passed=${result.isPassed}",
                         )
@@ -498,21 +498,20 @@ class LessonPlayerViewModel : ViewModel() {
                     }
                     .onFailure { error ->
                         val errorMsg = "Failed to submit lesson: ${error.message}"
-                        println("[LessonPlayer] ✗ ERROR: $errorMsg")
+                        println("[LessonPlayer] ERROR: $errorMsg")
                         println("[LessonPlayer] Error type: ${error.javaClass.simpleName}")
                         println("[LessonPlayer] Error details: ${error.stackTraceToString()}")
                         _errorMessage.value = errorMsg
                     }
             } catch (e: Exception) {
                 val errorMsg = "Unexpected error submitting lesson: ${e.message}"
-                println("[LessonPlayer] ✗ EXCEPTION: $errorMsg")
+                println("[LessonPlayer] EXCEPTION: $errorMsg")
                 println("[LessonPlayer] Exception type: ${e.javaClass.simpleName}")
                 println("[LessonPlayer] Exception details: ${e.stackTraceToString()}")
                 _errorMessage.value = errorMsg
             }
 
             _isLoading.value = false
-            println("[LessonPlayer] =========================================")
         }
     }
 

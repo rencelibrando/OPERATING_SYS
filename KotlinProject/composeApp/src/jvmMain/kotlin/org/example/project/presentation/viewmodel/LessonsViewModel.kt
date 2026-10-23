@@ -136,14 +136,13 @@ class LessonsViewModel : ViewModel() {
         _isLoading.value = true
         try {
             val language = _selectedLanguage.value
-            println("[LessonsViewModel] ========================================")
-            println("[LessonsViewModel] 🔍 Loading topics for ${language.displayName} - ${difficulty.displayName} from Supabase...")
+            println("[LessonsViewModel] Loading topics for ${language.displayName} - ${difficulty.displayName} from Supabase...")
 
             val result = lessonTopicsRepository.getTopicsByDifficulty(difficulty, language)
 
             result.fold(
                 onSuccess = { topicsFromDb ->
-                    println("[LessonsViewModel] ✅ Successfully loaded ${topicsFromDb.size} topics from Supabase")
+                    println("[LessonsViewModel] Successfully loaded ${topicsFromDb.size} topics from Supabase")
 
                     // Debug: Print each topic's language to verify filtering
                     if (topicsFromDb.isNotEmpty()) {
@@ -160,19 +159,19 @@ class LessonsViewModel : ViewModel() {
                         // Warn if any topics don't match the selected language
                         val mismatchedTopics = topicsFromDb.filter { it.language != language }
                         if (mismatchedTopics.isNotEmpty()) {
-                            println("[LessonsViewModel] ⚠️ WARNING: ${mismatchedTopics.size} topics don't match selected language!")
+                            println("[LessonsViewModel] WARNING: ${mismatchedTopics.size} topics don't match selected language!")
                             mismatchedTopics.take(3).forEach { topic ->
                                 println(
-                                    "[LessonsViewModel]   ⚠️ ${topic.id}: language=${topic.language?.displayName ?: "NULL"} (expected: ${language.displayName})",
+                                    "[LessonsViewModel]   ${topic.id}: language=${topic.language?.displayName ?: "NULL"} (expected: ${language.displayName})",
                                 )
                             }
                             println(
-                                "[LessonsViewModel] 💡 Fix: Run migration 009_fix_chinese_lesson_language.sql to update lesson language tags",
+                                "[LessonsViewModel] Fix: Run migration 009_fix_chinese_lesson_language.sql to update lesson language tags",
                             )
                         }
                     } else {
-                        println("[LessonsViewModel] 📭 No topics found for ${language.displayName} - ${difficulty.displayName}")
-                        println("[LessonsViewModel] 💡 Use Admin Panel to create lessons for this language")
+                        println("[LessonsViewModel] No topics found for ${language.displayName} - ${difficulty.displayName}")
+                        println("[LessonsViewModel] Use Admin Panel to create lessons for this language")
                     }
 
                     val filteredTopics =
@@ -183,23 +182,22 @@ class LessonsViewModel : ViewModel() {
                     val removedCount = topicsFromDb.size - filteredTopics.size
                     if (removedCount > 0) {
                         println(
-                            "[LessonsViewModel] ⚠️ Removed $removedCount topic(s) that were tagged with a different language than ${language.displayName}",
+                            "[LessonsViewModel] Removed $removedCount topic(s) that were tagged with a different language than ${language.displayName}",
                         )
                     }
 
                     val unknownLanguageCount = filteredTopics.count { it.language == null }
                     if (unknownLanguageCount > 0) {
                         println(
-                            "[LessonsViewModel] ⚠️ $unknownLanguageCount topic(s) are missing a language tag. They will default to ${language.displayName}.",
+                            "[LessonsViewModel] $unknownLanguageCount topic(s) are missing a language tag. They will default to ${language.displayName}.",
                         )
                     }
 
                     _lessonTopics.value = filteredTopics
                 },
                 onFailure = { e ->
-                    println("[LessonsViewModel] ❌ Error loading lesson topics: ${e.message}")
+                    println("[LessonsViewModel] Error loading lesson topics: ${e.message}")
                     e.printStackTrace()
-                    // Show empty list instead of hardcoded data
                     _lessonTopics.value = emptyList()
                 },
             )
@@ -207,11 +205,9 @@ class LessonsViewModel : ViewModel() {
             println(
                 "[LessonsViewModel] Final count: ${_lessonTopics.value.size} topics for ${language.displayName} - ${difficulty.displayName}",
             )
-            println("[LessonsViewModel] ========================================")
         } catch (e: Exception) {
-            println("[LessonsViewModel] ❌ Exception loading lesson topics: ${e.message}")
+            println("[LessonsViewModel] Exception loading lesson topics: ${e.message}")
             e.printStackTrace()
-            // Show empty list instead of hardcoded data
             _lessonTopics.value = emptyList()
         } finally {
             _isLoading.value = false
@@ -227,7 +223,7 @@ class LessonsViewModel : ViewModel() {
             _selectedTopicForLessons.value = topic
             loadLessonsForTopic(topicId)
         } else {
-            println("[LessonsViewModel] ⚠️ Topic not found: $topicId")
+            println("[LessonsViewModel] Topic not found: $topicId")
         }
     }
 
@@ -235,23 +231,23 @@ class LessonsViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoadingLessons.value = true
             try {
-                println("[LessonsViewModel] 🔍 Loading lessons for topic: $topicId")
+                println("[LessonsViewModel] Loading lessons for topic: $topicId")
 
                 val result = lessonContentRepository.getLessonsByTopic(topicId, publishedOnly = true)
 
                 result.fold(
                     onSuccess = { lessons ->
-                        println("[LessonsViewModel] ✅ Successfully loaded ${lessons.size} lessons")
+                        println("[LessonsViewModel] Successfully loaded ${lessons.size} lessons")
                         _topicLessons.value = lessons
                     },
                     onFailure = { error ->
-                        println("[LessonsViewModel] ❌ Error loading lessons: ${error.message}")
+                        println("[LessonsViewModel] Error loading lessons: ${error.message}")
                         error.printStackTrace()
                         _topicLessons.value = emptyList()
                     },
                 )
             } catch (e: Exception) {
-                println("[LessonsViewModel] ❌ Exception loading lessons: ${e.message}")
+                println("[LessonsViewModel] Exception loading lessons: ${e.message}")
                 e.printStackTrace()
                 _topicLessons.value = emptyList()
             } finally {

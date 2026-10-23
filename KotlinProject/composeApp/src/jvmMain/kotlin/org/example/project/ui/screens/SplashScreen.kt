@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import org.example.project.core.initialization.AppInitializer
+import org.example.project.ui.theme.WordBridgeIcons
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -81,8 +82,8 @@ fun SplashScreen(
                         androidx.compose.ui.graphics.Brush.verticalGradient(
                             colors =
                                 listOf(
-                                    Color(0xFF7C3AED),
-                                    Color(0xFF5B21B6),
+                                    Color(0xFF09090B),
+                                    Color(0xFF18181B),
                                 ),
                         ),
                 ),
@@ -108,7 +109,7 @@ fun SplashScreen(
             Text(
                 text = "Language Learning Assistant",
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color.White.copy(alpha = 0.9f),
+                color = Color(0xFFA1A1AA),
             )
 
             Spacer(modifier = Modifier.height(64.dp))
@@ -123,8 +124,8 @@ fun SplashScreen(
                         Modifier
                             .fillMaxWidth()
                             .height(6.dp),
-                    color = Color.White,
-                    trackColor = Color.White.copy(alpha = 0.3f),
+                    color = Color(0xFF3ECF8E),
+                    trackColor = Color(0xFF27272A),
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -158,22 +159,12 @@ fun SplashScreen(
                 visible = isComplete,
                 enter = scaleIn() + fadeIn(),
             ) {
-                Surface(
-                    modifier = Modifier.size(64.dp),
-                    shape = androidx.compose.foundation.shape.CircleShape,
-                    color = Color.White.copy(alpha = 0.2f),
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "✓",
-                            style = MaterialTheme.typography.displayMedium,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                }
+                Icon(
+                    imageVector = WordBridgeIcons.Check,
+                    contentDescription = "Complete",
+                    tint = Color.White,
+                    modifier = Modifier.size(48.dp),
+                )
             }
         }
     }

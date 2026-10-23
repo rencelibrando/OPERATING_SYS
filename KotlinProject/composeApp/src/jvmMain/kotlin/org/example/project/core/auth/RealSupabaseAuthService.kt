@@ -23,19 +23,25 @@ class RealSupabaseAuthService {
                 throw Exception("Supabase is not configured. Please check your Supabase credentials in SupabaseConfig.kt.")
             }
 
-            supabase.auth.signUpWith(Email) {
-                email = request.email
-                password = request.password
+            val userInfo =
+                supabase.auth.signUpWith(Email, redirectUrl = SupabaseConfig.EMAIL_REDIRECT_URL) {
+                    email = request.email
+                    password = request.password
 
-                data =
-                    buildJsonObject {
-                        put("first_name", request.firstName)
-                        put("last_name", request.lastName)
-                        put("full_name", "${request.firstName} ${request.lastName}")
-                    }
+                    data =
+                        buildJsonObject {
+                            put("first_name", request.firstName)
+                            put("last_name", request.lastName)
+                            put("full_name", "${request.firstName} ${request.lastName}")
+                        }
+                }
+
+            if (userInfo?.identities.isNullOrEmpty()) {
+                println("User already exists: ${request.email} (empty identities returned by Supabase)")
+                return Result.failure(Exception("An account with this email already exists. Please sign in with your password."))
             }
 
-            println("User created successfully")
+            println("User created successfully: ${userInfo?.id}")
             println("Confirmation email sent to: ${request.email}")
             println("User must confirm email before signing in")
             println("After email verification, return to app and sign in with your credentials")
@@ -45,20 +51,21 @@ class RealSupabaseAuthService {
             val session = supabase.auth.currentSessionOrNull()
             val supabaseUser = session?.user
 
+            val effectiveUser = supabaseUser ?: userInfo
             val appUser =
-                if (supabaseUser != null) {
-                    val firstName = supabaseUser.userMetadata?.get("first_name")?.toString()?.removeSurrounding("\"") ?: ""
-                    val lastName = supabaseUser.userMetadata?.get("last_name")?.toString()?.removeSurrounding("\"") ?: ""
+                if (effectiveUser != null) {
+                    val firstName = effectiveUser.userMetadata?.get("first_name")?.toString()?.removeSurrounding("\"") ?: request.firstName
+                    val lastName = effectiveUser.userMetadata?.get("last_name")?.toString()?.removeSurrounding("\"") ?: request.lastName
 
                     User(
-                        id = supabaseUser.id,
-                        email = supabaseUser.email ?: request.email,
+                        id = effectiveUser.id,
+                        email = effectiveUser.email ?: request.email,
                         firstName = firstName,
                         lastName = lastName,
-                        profileImageUrl = supabaseUser.userMetadata?.get("avatar_url")?.toString()?.removeSurrounding("\""),
-                        isEmailVerified = supabaseUser.emailConfirmedAt != null,
-                        createdAt = supabaseUser.createdAt.toString(),
-                        lastLoginAt = supabaseUser.lastSignInAt?.toString(),
+                        profileImageUrl = effectiveUser.userMetadata?.get("avatar_url")?.toString()?.removeSurrounding("\""),
+                        isEmailVerified = effectiveUser.emailConfirmedAt != null,
+                        createdAt = effectiveUser.createdAt.toString(),
+                        lastLoginAt = null,
                     )
                 } else {
                     User(

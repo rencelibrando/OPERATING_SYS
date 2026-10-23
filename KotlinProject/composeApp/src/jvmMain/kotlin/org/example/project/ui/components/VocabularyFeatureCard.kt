@@ -1,43 +1,31 @@
 package org.example.project.ui.components
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.VocabularyFeature
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 
 @Composable
 fun VocabularyFeatureCard(
     feature: VocabularyFeature,
     modifier: Modifier = Modifier,
 ) {
-    val featureColor =
-        try {
-            Color(feature.color.removePrefix("#").toLong(16) or 0xFF000000)
-        } catch (e: Exception) {
-            WordBridgeColors.PrimaryPurple
-        }
-
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = WordBridgeColors.BackgroundWhite,
+                containerColor = WordBridgeColors.CardBackground,
             ),
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = 2.dp,
-                hoveredElevation = 4.dp,
-            ),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderSubtle),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(
             modifier =
@@ -45,21 +33,14 @@ fun VocabularyFeatureCard(
                     .fillMaxWidth()
                     .padding(20.dp),
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(featureColor.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = feature.icon,
-                    style = MaterialTheme.typography.headlineSmall,
-                )
-            }
+            Icon(
+                imageVector = WordBridgeIcons.getByName(feature.title),
+                contentDescription = feature.title,
+                tint = WordBridgeColors.PrimaryPurple,
+                modifier = Modifier.size(24.dp),
+            )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             Text(
                 text = feature.title,
@@ -70,13 +51,12 @@ fun VocabularyFeatureCard(
                 color = WordBridgeColors.TextPrimary,
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Text(
                 text = feature.description,
                 style = MaterialTheme.typography.bodyMedium,
                 color = WordBridgeColors.TextSecondary,
-                lineHeight = MaterialTheme.typography.bodyMedium.lineHeight,
             )
         }
     }

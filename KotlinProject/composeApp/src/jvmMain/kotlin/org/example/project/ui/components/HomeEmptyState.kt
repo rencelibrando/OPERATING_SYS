@@ -1,6 +1,7 @@
 package org.example.project.ui.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -9,6 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 
 @Composable
 fun HomeEmptyState(
@@ -22,62 +24,62 @@ fun HomeEmptyState(
                 .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
-        Text(
-            text = "🚀",
-            style = MaterialTheme.typography.displayMedium,
+        Icon(
+            imageVector = WordBridgeIcons.Explore,
+            contentDescription = null,
+            tint = WordBridgeColors.Primary,
+            modifier = Modifier.size(44.dp),
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Text(
             text = "Ready to Start Learning?",
             style =
-                MaterialTheme.typography.headlineMedium.copy(
+                MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.Bold,
                 ),
             color = WordBridgeColors.TextPrimary,
             textAlign = TextAlign.Center,
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Welcome to WordBridge! Your personalized AI-powered language learning journey is about to begin. Start with lessons, build your vocabulary, or practice speaking - the choice is yours!",
-            style = MaterialTheme.typography.bodyLarge,
+            text = "Welcome to WordBridge. Your personalized AI-powered language journey begins here. Start lessons, build vocabulary, or practice speaking.",
+            style = MaterialTheme.typography.bodyMedium,
             color = WordBridgeColors.TextSecondary,
             textAlign = TextAlign.Center,
-            lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = onGetStartedClick,
-            modifier = Modifier.fillMaxWidth(0.6f),
             colors =
                 ButtonDefaults.buttonColors(
-                    containerColor = WordBridgeColors.PrimaryPurple,
+                    containerColor = WordBridgeColors.Primary,
+                    contentColor = WordBridgeColors.OnPrimary,
                 ),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(8.dp),
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
         ) {
             Text(
                 text = "Get Started",
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Medium,
+                        fontWeight = FontWeight.SemiBold,
                     ),
-                color = androidx.compose.ui.graphics.Color.White,
-                modifier = Modifier.padding(vertical = 4.dp),
             )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Explore the sections in the sidebar to begin your learning adventure",
-            style = MaterialTheme.typography.bodyMedium,
+            text = "Explore the sections in the sidebar to begin your lessons",
+            style = MaterialTheme.typography.bodySmall,
             color = WordBridgeColors.TextMuted,
             textAlign = TextAlign.Center,
         )

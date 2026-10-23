@@ -14,6 +14,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.example.project.core.auth.User
 import org.example.project.ui.components.AnimatedNetworkBackground
+import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 
 @Composable
 fun EmailVerificationSuccessScreen(
@@ -83,24 +85,12 @@ private fun SuccessCard(
                     .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Card(
-                modifier = Modifier.size(80.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors =
-                    CardDefaults.cardColors(
-                        containerColor = Color(0xFF22C55E).copy(alpha = 0.1f),
-                    ),
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "✅",
-                        style = MaterialTheme.typography.headlineLarge,
-                    )
-                }
-            }
+            Icon(
+                imageVector = WordBridgeIcons.Check,
+                contentDescription = "Success",
+                tint = WordBridgeColors.Success,
+                modifier = Modifier.size(48.dp),
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 

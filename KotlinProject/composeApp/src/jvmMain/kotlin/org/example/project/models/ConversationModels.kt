@@ -6,5 +6,5 @@ package org.example.project.models
 data class ConversationTurnUI(
     val role: String, // "user" or "assistant"
     val text: String,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
 )

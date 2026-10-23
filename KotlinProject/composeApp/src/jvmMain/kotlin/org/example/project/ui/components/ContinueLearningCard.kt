@@ -1,17 +1,16 @@
 package org.example.project.ui.components
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 
 @Composable
 fun ContinueLearningCard(
@@ -26,83 +25,98 @@ fun ContinueLearningCard(
         modifier = modifier.fillMaxWidth(),
         colors =
             CardDefaults.cardColors(
-                containerColor = Color.Transparent,
+                containerColor = WordBridgeColors.CardBackground,
             ),
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = 8.dp,
-            ),
-        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderSubtle),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(12.dp),
     ) {
-        Box(
+        Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .background(
-                        brush =
-                            Brush.horizontalGradient(
-                                colors =
-                                    listOf(
-                                        WordBridgeColors.PrimaryPurple,
-                                        WordBridgeColors.PrimaryPurpleLight,
-                                    ),
-                            ),
-                        shape = RoundedCornerShape(20.dp),
-                    )
                     .padding(24.dp),
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
-                    text = title,
-                    style =
-                        MaterialTheme.typography.headlineSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    color = WordBridgeColors.BackgroundWhite,
+                Icon(
+                    imageVector = WordBridgeIcons.Sparkle,
+                    contentDescription = null,
+                    tint = WordBridgeColors.Primary,
+                    modifier = Modifier.size(16.dp),
                 )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
                 Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = WordBridgeColors.BackgroundWhite.copy(alpha = 0.9f),
+                    text = "Daily Focus",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                    color = WordBridgeColors.Primary,
                 )
+            }
 
-                Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-                Button(
-                    onClick = onButtonClick,
-                    enabled = !isLoading,
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = WordBridgeColors.BackgroundWhite,
-                            contentColor = WordBridgeColors.PrimaryPurple,
-                        ),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.height(48.dp),
-                ) {
-                    if (isLoading) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = WordBridgeColors.PrimaryPurple,
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Loading...",
-                                style =
-                                    MaterialTheme.typography.labelLarge.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                    ),
-                            )
-                        }
-                    } else {
+            Text(
+                text = title,
+                style =
+                    MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
+                color = WordBridgeColors.TextPrimary,
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = WordBridgeColors.TextSecondary,
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Button(
+                onClick = onButtonClick,
+                enabled = !isLoading,
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = WordBridgeColors.Primary,
+                        contentColor = WordBridgeColors.OnPrimary,
+                    ),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+                modifier = Modifier.height(44.dp),
+            ) {
+                if (isLoading) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                        Text(
+                            text = "Loading...",
+                            style =
+                                MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.Medium,
+                                ),
+                        )
+                    }
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            imageVector = WordBridgeIcons.Play,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
                         Text(
                             text = buttonText,
                             style =

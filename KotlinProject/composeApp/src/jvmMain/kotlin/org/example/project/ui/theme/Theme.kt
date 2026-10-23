@@ -4,64 +4,91 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+
+object ThemeController {
+    var isDarkTheme by mutableStateOf(false)
+
+    fun toggle() {
+        isDarkTheme = !isDarkTheme
+        WordBridgeColors.currentPalette = if (isDarkTheme) DarkWordBridgePalette else LightWordBridgePalette
+    }
+
+    fun setDarkMode(dark: Boolean) {
+        isDarkTheme = dark
+        WordBridgeColors.currentPalette = if (dark) DarkWordBridgePalette else LightWordBridgePalette
+    }
+}
 
 private val LightColorScheme =
     lightColorScheme(
-        primary = WordBridgeColors.PrimaryPurple,
-        onPrimary = WordBridgeColors.BackgroundWhite,
-        primaryContainer = WordBridgeColors.PrimaryPurpleLight,
-        onPrimaryContainer = WordBridgeColors.TextPrimary,
-        secondary = WordBridgeColors.AccentBlue,
-        onSecondary = WordBridgeColors.BackgroundWhite,
-        tertiary = WordBridgeColors.AccentGreen,
-        onTertiary = WordBridgeColors.BackgroundWhite,
-        background = WordBridgeColors.BackgroundLight,
-        onBackground = WordBridgeColors.TextPrimary,
-        surface = WordBridgeColors.BackgroundWhite,
-        onSurface = WordBridgeColors.TextPrimary,
-        surfaceVariant = WordBridgeColors.BackgroundLight,
-        onSurfaceVariant = WordBridgeColors.TextSecondary,
-        outline = WordBridgeColors.TextMuted,
-        error = WordBridgeColors.AccentRed,
-        onError = WordBridgeColors.BackgroundWhite,
+        primary = LightWordBridgePalette.primary,
+        onPrimary = LightWordBridgePalette.onPrimary,
+        primaryContainer = LightWordBridgePalette.primaryLight,
+        onPrimaryContainer = LightWordBridgePalette.textPrimary,
+        secondary = LightWordBridgePalette.accentBlue,
+        onSecondary = LightWordBridgePalette.surface,
+        tertiary = LightWordBridgePalette.accentGreen,
+        onTertiary = LightWordBridgePalette.surface,
+        background = LightWordBridgePalette.background,
+        onBackground = LightWordBridgePalette.textPrimary,
+        surface = LightWordBridgePalette.surface,
+        onSurface = LightWordBridgePalette.textPrimary,
+        surfaceVariant = LightWordBridgePalette.surfaceVariant,
+        onSurfaceVariant = LightWordBridgePalette.textSecondary,
+        outline = LightWordBridgePalette.border,
+        outlineVariant = LightWordBridgePalette.borderSubtle,
+        error = LightWordBridgePalette.accentRed,
+        onError = LightWordBridgePalette.surface,
     )
 
 private val DarkColorScheme =
     darkColorScheme(
-        primary = WordBridgeColors.PrimaryPurpleLight,
-        onPrimary = WordBridgeColors.SidebarBackgroundDark,
-        primaryContainer = WordBridgeColors.PrimaryPurpleDark,
-        onPrimaryContainer = WordBridgeColors.SidebarText,
-        secondary = WordBridgeColors.AccentBlue,
-        onSecondary = WordBridgeColors.SidebarBackgroundDark,
-        tertiary = WordBridgeColors.AccentGreen,
-        onTertiary = WordBridgeColors.SidebarBackgroundDark,
-        background = WordBridgeColors.SidebarBackgroundDark,
-        onBackground = WordBridgeColors.SidebarText,
-        surface = WordBridgeColors.SidebarBackground,
-        onSurface = WordBridgeColors.SidebarText,
-        surfaceVariant = WordBridgeColors.SidebarBackground,
-        onSurfaceVariant = WordBridgeColors.SidebarTextSecondary,
-        outline = WordBridgeColors.TextMuted,
-        error = WordBridgeColors.AccentRed,
-        onError = WordBridgeColors.BackgroundWhite,
+        primary = DarkWordBridgePalette.primary,
+        onPrimary = DarkWordBridgePalette.onPrimary,
+        primaryContainer = DarkWordBridgePalette.primaryDark,
+        onPrimaryContainer = DarkWordBridgePalette.textPrimary,
+        secondary = DarkWordBridgePalette.accentBlue,
+        onSecondary = DarkWordBridgePalette.surface,
+        tertiary = DarkWordBridgePalette.accentGreen,
+        onTertiary = DarkWordBridgePalette.surface,
+        background = DarkWordBridgePalette.background,
+        onBackground = DarkWordBridgePalette.textPrimary,
+        surface = DarkWordBridgePalette.surface,
+        onSurface = DarkWordBridgePalette.textPrimary,
+        surfaceVariant = DarkWordBridgePalette.surfaceVariant,
+        onSurfaceVariant = DarkWordBridgePalette.textSecondary,
+        outline = DarkWordBridgePalette.border,
+        outlineVariant = DarkWordBridgePalette.borderSubtle,
+        error = DarkWordBridgePalette.accentRed,
+        onError = DarkWordBridgePalette.onPrimary,
     )
 
 @Composable
 fun WordBridgeTheme(
-    darkTheme: Boolean = false,
+    darkTheme: Boolean = ThemeController.isDarkTheme,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme =
-        if (darkTheme) {
-            DarkColorScheme
-        } else {
-            LightColorScheme
-        }
+    val palette = if (darkTheme) DarkWordBridgePalette else LightWordBridgePalette
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = WordBridgeTypography,
-        content = content,
-    )
+    SideEffect {
+        if (WordBridgeColors.currentPalette != palette) {
+            WordBridgeColors.currentPalette = palette
+        }
+    }
+
+    CompositionLocalProvider(
+        LocalWordBridgeColors provides palette,
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = WordBridgeTypography,
+            content = content,
+        )
+    }
 }

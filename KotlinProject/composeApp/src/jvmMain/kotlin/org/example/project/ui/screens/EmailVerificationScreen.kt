@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.components.AnimatedNetworkBackground
+import org.example.project.ui.theme.WordBridgeIcons
 
 @Composable
 fun EmailVerificationScreen(
@@ -156,24 +157,12 @@ private fun EmailVerificationCard(
                     .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Card(
-                modifier = Modifier.size(80.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors =
-                    CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    ),
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "📧",
-                        style = MaterialTheme.typography.headlineLarge,
-                    )
-                }
-            }
+            Icon(
+                imageVector = WordBridgeIcons.Notifications,
+                contentDescription = "Email",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(48.dp),
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -248,7 +237,7 @@ private fun EmailVerificationCard(
                             Spacer(modifier = Modifier.width(8.dp))
                         }
                         Text(
-                            text = if (isLoading) "Sending verification email..." else "📧 Verification email sent!",
+                            text = if (isLoading) "Sending verification email..." else "Verification email sent!",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary,
                             textAlign = TextAlign.Center,

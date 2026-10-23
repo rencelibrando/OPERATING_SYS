@@ -1,18 +1,22 @@
 package org.example.project.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 
 @Composable
 fun TodaysProgressCard(
@@ -23,18 +27,14 @@ fun TodaysProgressCard(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier =
-            modifier
-                .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         colors =
             CardDefaults.cardColors(
-                containerColor = WordBridgeColors.BackgroundWhite,
+                containerColor = WordBridgeColors.CardBackground,
             ),
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = 2.dp,
-            ),
-        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderSubtle),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(12.dp),
     ) {
         Column(
             modifier =
@@ -45,13 +45,13 @@ fun TodaysProgressCard(
             Text(
                 text = "Today's Progress",
                 style =
-                    MaterialTheme.typography.titleLarge.copy(
+                    MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                     ),
                 color = WordBridgeColors.TextPrimary,
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -64,7 +64,8 @@ fun TodaysProgressCard(
                     ProgressMetric(
                         label = "Streak",
                         value = "$streak days",
-                        color = WordBridgeColors.AccentOrange,
+                        icon = WordBridgeIcons.Streak,
+                        color = WordBridgeColors.StreakFire,
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -72,6 +73,7 @@ fun TodaysProgressCard(
                     ProgressMetric(
                         label = "Words Learned",
                         value = wordsLearned.toString(),
+                        icon = WordBridgeIcons.Book,
                         color = WordBridgeColors.AccentBlue,
                     )
                 }
@@ -83,7 +85,9 @@ fun TodaysProgressCard(
                     ProgressMetric(
                         label = "XP Points",
                         value = xpPoints.toString(),
-                        color = WordBridgeColors.AccentGreen,
+                        icon = WordBridgeIcons.Trophy,
+                        color = WordBridgeColors.AccentOrange,
+                        alignEnd = true,
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -91,7 +95,9 @@ fun TodaysProgressCard(
                     ProgressMetric(
                         label = "Accuracy",
                         value = "$accuracy%",
-                        color = WordBridgeColors.PrimaryPurple,
+                        icon = WordBridgeIcons.Check,
+                        color = WordBridgeColors.AccentGreen,
+                        alignEnd = true,
                     )
                 }
             }
@@ -103,17 +109,14 @@ fun TodaysProgressCard(
 private fun ProgressMetric(
     label: String,
     value: String,
+    icon: ImageVector,
     color: Color,
+    alignEnd: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier,
-        horizontalAlignment =
-            if (label == "Streak" || label == "Words Learned") {
-                Alignment.Start
-            } else {
-                Alignment.End
-            },
+        horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start,
     ) {
         Text(
             text = label,
@@ -125,23 +128,34 @@ private fun ProgressMetric(
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            if (label == "Streak") {
-                Text(
-                    text = "🔥",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(end = 4.dp),
+            if (!alignEnd) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(16.dp),
                 )
             }
 
             Text(
                 text = value,
                 style =
-                    MaterialTheme.typography.titleLarge.copy(
+                    MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                     ),
-                color = color,
+                color = WordBridgeColors.TextPrimary,
             )
+
+            if (alignEnd) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
         }
     }
 }

@@ -8,22 +8,39 @@ import threading
 import time
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Callable
-from deepgram import DeepgramClient
-from deepgram.core.events import EventType
-from deepgram.extensions.types.sockets import (
-    AgentV1Agent,
-    AgentV1AudioConfig,
-    AgentV1AudioInput,
-    AgentV1AudioOutput,
-    AgentV1DeepgramSpeakProvider,
-    AgentV1Listen,
-    AgentV1ListenProvider,
-    AgentV1OpenAiThinkProvider,
-    AgentV1SettingsMessage,
-    AgentV1SocketClientResponse,
-    AgentV1SpeakProviderConfig,
-    AgentV1Think,
-)
+try:
+    from deepgram import DeepgramClient
+    from deepgram.core.events import EventType
+    from deepgram.extensions.types.sockets import (
+        AgentV1Agent,
+        AgentV1AudioConfig,
+        AgentV1AudioInput,
+        AgentV1AudioOutput,
+        AgentV1DeepgramSpeakProvider,
+        AgentV1Listen,
+        AgentV1ListenProvider,
+        AgentV1OpenAiThinkProvider,
+        AgentV1SettingsMessage,
+        AgentV1SocketClientResponse,
+        AgentV1SpeakProviderConfig,
+        AgentV1Think,
+    )
+except ImportError:
+    DeepgramClient = None
+    AgentV1Agent = Any
+    AgentV1AudioConfig = Any
+    AgentV1AudioInput = Any
+    AgentV1AudioOutput = Any
+    AgentV1DeepgramSpeakProvider = Any
+    AgentV1Listen = Any
+    AgentV1ListenProvider = Any
+    AgentV1OpenAiThinkProvider = Any
+    AgentV1SettingsMessage = Any
+    AgentV1SocketClientResponse = Any
+    AgentV1SpeakProviderConfig = Any
+    AgentV1Think = Any
+    EventType = None
+
 from providers.gemini import GeminiProvider
 from supabase_client import SupabaseManager
 from config import settings
@@ -31,8 +48,9 @@ from config import settings
 
 class VoiceAgentService:
     def __init__(self):
-        # Initialize Deepgram client
-        self.deepgram_client = DeepgramClient(api_key=settings.deepgram_api_key)
+        # Initialize Deepgram client if SDK installed and key present
+        deepgram_key = getattr(settings, "deepgram_api_key", None)
+        self.deepgram_client = DeepgramClient(api_key=deepgram_key) if (DeepgramClient and deepgram_key) else None
         
         # Initialize Gemini provider for fallback functionality
         self.gemini_provider = GeminiProvider()

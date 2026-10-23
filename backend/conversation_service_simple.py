@@ -1,10 +1,10 @@
 """
 Simplified voice conversation service for real-time AI tutor dialogue.
-Uses Deepgram for transcription and Gemini for AI responses.
+Uses multimodal transcription and Gemini for AI responses.
 """
 import asyncio
 from typing import Dict, List, Callable, Optional
-from deepgram import DeepgramClient
+from transcription_service import get_transcription_service
 from providers.gemini import GeminiProvider
 from config import get_settings
 
@@ -30,8 +30,8 @@ class ConversationAgent:
         self.on_transcript = on_transcript
         self.on_agent_response = on_agent_response
         
-        # Initialize clients (use same pattern as voice_service.py)
-        self.deepgram_client = DeepgramClient(api_key=settings.DEEPGRAM_API_KEY)
+        # Initialize services
+        self.transcription_service = get_transcription_service()
         self.gemini_provider = GeminiProvider()
         
         self.conversation_history: List[Dict[str, str]] = []
@@ -96,27 +96,10 @@ Be enthusiastic and educational. Encourage questions about culture.""",
         print(f"[Agent] Started conversation: {self.language} / {self.level} / {self.scenario}")
     
     async def transcribe_audio(self, audio_bytes: bytes) -> Optional[str]:
-        """Transcribe audio using Deepgram (same pattern as voice_service.py)."""
+        """Transcribe audio using multimodal transcription service."""
         try:
-            # Prepare transcription options (same as voice_service.py)
-            options = {
-                "model": "nova-2",
-                "language": self.language,
-                "punctuate": True,
-                "paragraphs": True,
-                "diarize": False,
-                "profanity_filter": True,
-                "smart_format": True
-            }
-            
-            # Transcribe the audio (same method as voice_service.py)
-            response = self.deepgram_client.listen.v1.media.transcribe_file(
-                request=audio_bytes,
-                **options
-            )
-            
-            # Extract transcription (same as voice_service.py)
-            transcript = response.results.channels[0].alternatives[0].transcript
+            result = await self.transcription_service.transcribe(audio_bytes, language=self.language)
+            transcript = result.get("transcript", "")
             
             if transcript and len(transcript.strip()) > 0:
                 print(f"[Transcript] {transcript}")
@@ -129,8 +112,6 @@ Be enthusiastic and educational. Encourage questions about culture.""",
             
         except Exception as e:
             print(f"[Agent] Transcription error: {e}")
-            import traceback
-            traceback.print_exc()
             return None
     
     async def generate_response(self, user_message: str) -> Optional[str]:

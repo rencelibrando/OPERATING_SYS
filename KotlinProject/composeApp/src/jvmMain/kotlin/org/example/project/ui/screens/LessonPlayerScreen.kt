@@ -171,7 +171,7 @@ fun LessonPlayerScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFF15121F), // WordBridgeColors.Background
+        color = WordBridgeColors.Background,
     ) {
         if (isLoading && currentLesson == null) {
             println("[LessonPlayerScreen] Showing loading screen...")
@@ -245,10 +245,10 @@ private fun LessonContent(
                                     }
                                 }
                                 loadedImages++
-                                println("[LessonPlayerScreen] ✓ Preloaded image: $url")
+                                println("[LessonPlayerScreen] Preloaded image: $url")
                             } catch (e: Exception) {
                                 failedImages++
-                                println("[LessonPlayerScreen] ✗ Failed to preload image $url: ${e.javaClass.simpleName} - ${e.message}")
+                                println("[LessonPlayerScreen] Failed to preload image $url: ${e.javaClass.simpleName} - ${e.message}")
                             }
                         } else {
                             println("[LessonPlayerScreen] Image already cached: $url")
@@ -293,21 +293,21 @@ private fun LessonContent(
                     shape = RoundedCornerShape(8.dp),
                     color =
                         when (question.questionType) {
-                            QuestionType.MULTIPLE_CHOICE -> Color(0xFF8B5CF6).copy(alpha = 0.1f)
-                            QuestionType.TEXT_ENTRY -> Color(0xFF10B981).copy(alpha = 0.1f)
-                            QuestionType.MATCHING -> Color(0xFFF59E0B).copy(alpha = 0.1f)
-                            QuestionType.PARAPHRASING -> Color(0xFF3B82F6).copy(alpha = 0.1f)
-                            QuestionType.ERROR_CORRECTION -> Color(0xFFEF4444).copy(alpha = 0.1f)
+                            QuestionType.MULTIPLE_CHOICE -> WordBridgeColors.Primary.copy(alpha = 0.1f)
+                            QuestionType.TEXT_ENTRY -> WordBridgeColors.Primary.copy(alpha = 0.1f)
+                            QuestionType.MATCHING -> WordBridgeColors.AccentOrange.copy(alpha = 0.1f)
+                            QuestionType.PARAPHRASING -> WordBridgeColors.AccentBlue.copy(alpha = 0.1f)
+                            QuestionType.ERROR_CORRECTION -> WordBridgeColors.Error.copy(alpha = 0.1f)
                         },
                     border =
                         BorderStroke(
                             1.dp,
                             when (question.questionType) {
-                                QuestionType.MULTIPLE_CHOICE -> Color(0xFF8B5CF6).copy(alpha = 0.3f)
-                                QuestionType.TEXT_ENTRY -> Color(0xFF10B981).copy(alpha = 0.3f)
-                                QuestionType.MATCHING -> Color(0xFFF59E0B).copy(alpha = 0.3f)
-                                QuestionType.PARAPHRASING -> Color(0xFF3B82F6).copy(alpha = 0.3f)
-                                QuestionType.ERROR_CORRECTION -> Color(0xFFEF4444).copy(alpha = 0.3f)
+                                QuestionType.MULTIPLE_CHOICE -> WordBridgeColors.Primary.copy(alpha = 0.3f)
+                                QuestionType.TEXT_ENTRY -> WordBridgeColors.Primary.copy(alpha = 0.3f)
+                                QuestionType.MATCHING -> WordBridgeColors.AccentOrange.copy(alpha = 0.3f)
+                                QuestionType.PARAPHRASING -> WordBridgeColors.AccentBlue.copy(alpha = 0.3f)
+                                QuestionType.ERROR_CORRECTION -> WordBridgeColors.Error.copy(alpha = 0.3f)
                             },
                         ),
                 ) {
@@ -327,11 +327,11 @@ private fun LessonContent(
                             contentDescription = null,
                             tint =
                                 when (question.questionType) {
-                                    QuestionType.MULTIPLE_CHOICE -> Color(0xFF8B5CF6)
-                                    QuestionType.TEXT_ENTRY -> Color(0xFF10B981)
-                                    QuestionType.MATCHING -> Color(0xFFF59E0B)
-                                    QuestionType.PARAPHRASING -> Color(0xFF3B82F6)
-                                    QuestionType.ERROR_CORRECTION -> Color(0xFFEF4444)
+                                    QuestionType.MULTIPLE_CHOICE -> WordBridgeColors.Primary
+                                    QuestionType.TEXT_ENTRY -> WordBridgeColors.Primary
+                                    QuestionType.MATCHING -> WordBridgeColors.AccentOrange
+                                    QuestionType.PARAPHRASING -> WordBridgeColors.AccentBlue
+                                    QuestionType.ERROR_CORRECTION -> WordBridgeColors.Error
                                 },
                             modifier = Modifier.size(16.dp),
                         )
@@ -342,11 +342,11 @@ private fun LessonContent(
                             fontWeight = FontWeight.Bold,
                             color =
                                 when (question.questionType) {
-                                    QuestionType.MULTIPLE_CHOICE -> Color(0xFF8B5CF6)
-                                    QuestionType.TEXT_ENTRY -> Color(0xFF10B981)
-                                    QuestionType.MATCHING -> Color(0xFFF59E0B)
-                                    QuestionType.PARAPHRASING -> Color(0xFF3B82F6)
-                                    QuestionType.ERROR_CORRECTION -> Color(0xFFEF4444)
+                                    QuestionType.MULTIPLE_CHOICE -> WordBridgeColors.Primary
+                                    QuestionType.TEXT_ENTRY -> WordBridgeColors.Primary
+                                    QuestionType.MATCHING -> WordBridgeColors.AccentOrange
+                                    QuestionType.PARAPHRASING -> WordBridgeColors.AccentBlue
+                                    QuestionType.ERROR_CORRECTION -> WordBridgeColors.Error
                                 },
                         )
                     }
@@ -434,7 +434,7 @@ private fun LessonContent(
                         onClick = { viewModel.checkCurrentAnswer() },
                         colors =
                             ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF8B5CF6),
+                                containerColor = WordBridgeColors.Primary,
                             ),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth(),
@@ -477,8 +477,8 @@ private fun LessonHeader(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color(0xFF15121F),
-        shadowElevation = 4.dp,
+        color = WordBridgeColors.Surface,
+        shadowElevation = 0.dp,
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
@@ -497,7 +497,7 @@ private fun LessonHeader(
                     Icon(
                         Icons.Default.Close,
                         "Close",
-                        tint = Color.White,
+                        tint = WordBridgeColors.TextPrimary,
                         modifier = Modifier.size(20.dp),
                     )
                 }
@@ -505,7 +505,7 @@ private fun LessonHeader(
                 Text(
                     text = "Question $currentQuestion / $totalQuestions",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFB4B4C4),
+                    color = WordBridgeColors.TextSecondary,
                 )
             }
 
@@ -521,7 +521,7 @@ private fun LessonHeader(
                             .weight(1f)
                             .height(6.dp),
                     shape = RoundedCornerShape(3.dp),
-                    color = Color(0xFF2D2A3E),
+                    color = WordBridgeColors.ProgressBackground,
                 ) {
                     Box {
                         Surface(
@@ -529,7 +529,7 @@ private fun LessonHeader(
                                 Modifier
                                     .fillMaxHeight()
                                     .fillMaxWidth(progress),
-                            color = WordBridgeColors.PrimaryPurple,
+                            color = WordBridgeColors.Primary,
                             shape = RoundedCornerShape(3.dp),
                         ) {}
                     }
@@ -539,7 +539,7 @@ private fun LessonHeader(
                     "${(progress * 100).toInt()}%",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFB4B4C4),
+                    color = WordBridgeColors.TextSecondary,
                 )
             }
         }
@@ -567,10 +567,10 @@ private fun QuestionTextSection(
         modifier = Modifier.fillMaxWidth(),
         colors =
             CardDefaults.cardColors(
-                containerColor = Color(0xFF2D2A3E).copy(alpha = 0.5f),
+                containerColor = WordBridgeColors.Surface,
             ),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, Color(0xFF3A3147).copy(alpha = 0.5f)),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderSubtle),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -581,7 +581,7 @@ private fun QuestionTextSection(
             Surface(
                 modifier = Modifier.size(40.dp),
                 shape = RoundedCornerShape(10.dp),
-                color = WordBridgeColors.PrimaryPurple,
+                color = WordBridgeColors.Primary,
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -590,7 +590,7 @@ private fun QuestionTextSection(
                         "$questionNumber",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = WordBridgeColors.OnPrimary,
                     )
                 }
             }
@@ -600,7 +600,7 @@ private fun QuestionTextSection(
                 questionText,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = WordBridgeColors.TextPrimary,
                 modifier = Modifier.weight(1f),
             )
 
@@ -627,9 +627,9 @@ private fun QuestionTextSection(
                         shape = CircleShape,
                         color =
                             if (isPlayingAudio) {
-                                WordBridgeColors.PrimaryPurple.copy(alpha = 0.8f)
+                                WordBridgeColors.Primary.copy(alpha = 0.2f)
                             } else {
-                                Color(0xFF3A3147).copy(alpha = 0.5f)
+                                WordBridgeColors.SurfaceVariant
                             },
                     ) {
                         Box(
@@ -639,7 +639,7 @@ private fun QuestionTextSection(
                             Icon(
                                 if (isPlayingAudio) Icons.Default.Stop else Icons.Default.VolumeUp,
                                 contentDescription = if (isPlayingAudio) "Stop audio" else "Play question audio",
-                                tint = if (isPlayingAudio) Color.White else WordBridgeColors.PrimaryPurple,
+                                tint = if (isPlayingAudio) WordBridgeColors.Primary else WordBridgeColors.TextPrimary,
                                 modifier = Modifier.size(22.dp),
                             )
                         }
@@ -682,7 +682,7 @@ private fun MultipleChoiceQuestion(
             "Select your answer:",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Medium,
-            color = Color(0xFFB4B4C4),
+            color = WordBridgeColors.TextSecondary,
         )
 
         // Show feedback message only after checking answer
@@ -694,8 +694,8 @@ private fun MultipleChoiceQuestion(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    color = if (isCorrect) Color(0xFF10B981).copy(alpha = 0.2f) else Color(0xFFEF4444).copy(alpha = 0.2f),
-                    border = BorderStroke(1.dp, if (isCorrect) Color(0xFF10B981) else Color(0xFFEF4444)),
+                    color = if (isCorrect) WordBridgeColors.Success.copy(alpha = 0.2f) else WordBridgeColors.Error.copy(alpha = 0.2f),
+                    border = BorderStroke(1.dp, if (isCorrect) WordBridgeColors.Success else WordBridgeColors.Error),
                 ) {
                     Row(
                         modifier = Modifier.padding(12.dp),
@@ -705,7 +705,7 @@ private fun MultipleChoiceQuestion(
                         Icon(
                             if (isCorrect) Icons.Default.CheckCircle else Icons.Default.Cancel,
                             contentDescription = null,
-                            tint = if (isCorrect) Color(0xFF10B981) else Color(0xFFEF4444),
+                            tint = if (isCorrect) WordBridgeColors.Success else WordBridgeColors.Error,
                             modifier = Modifier.size(20.dp),
                         )
                         Text(
@@ -717,7 +717,7 @@ private fun MultipleChoiceQuestion(
                             },
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
-                            color = if (isCorrect) Color(0xFF10B981) else Color(0xFFEF4444),
+                            color = if (isCorrect) WordBridgeColors.Success else WordBridgeColors.Error,
                         )
                     }
                 }
@@ -727,8 +727,8 @@ private fun MultipleChoiceQuestion(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFF8B5CF6).copy(alpha = 0.15f),
-                        border = BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.5f)),
+                        color = WordBridgeColors.Primary.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, WordBridgeColors.Primary.copy(alpha = 0.25f)),
                     ) {
                         Column(
                             modifier = Modifier.padding(12.dp),
@@ -746,14 +746,14 @@ private fun MultipleChoiceQuestion(
                                     Icon(
                                         Icons.Default.Info,
                                         contentDescription = null,
-                                        tint = Color(0xFF8B5CF6),
+                                        tint = WordBridgeColors.Primary,
                                         modifier = Modifier.size(20.dp),
                                     )
                                     Text(
                                         "Explanation",
                                         style = MaterialTheme.typography.labelLarge,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF8B5CF6),
+                                        color = WordBridgeColors.Primary,
                                     )
                                 }
 
@@ -790,9 +790,9 @@ private fun MultipleChoiceQuestion(
                                             shape = CircleShape,
                                             color =
                                                 if (isPlayingExplanation) {
-                                                    Color(0xFF8B5CF6).copy(alpha = 0.8f)
+                                                    WordBridgeColors.Primary.copy(alpha = 0.2f)
                                                 } else {
-                                                    Color(0xFF3A3147).copy(alpha = 0.5f)
+                                                    WordBridgeColors.SurfaceVariant
                                                 },
                                         ) {
                                             Box(
@@ -802,7 +802,7 @@ private fun MultipleChoiceQuestion(
                                                 Icon(
                                                     if (isPlayingExplanation) Icons.Default.Stop else Icons.Default.VolumeUp,
                                                     contentDescription = if (isPlayingExplanation) "Stop explanation audio" else "Play explanation audio",
-                                                    tint = if (isPlayingExplanation) Color.White else Color(0xFF8B5CF6),
+                                                    tint = if (isPlayingExplanation) WordBridgeColors.Primary else WordBridgeColors.TextPrimary,
                                                     modifier = Modifier.size(18.dp),
                                                 )
                                             }
@@ -813,7 +813,7 @@ private fun MultipleChoiceQuestion(
                             Text(
                                 question.explanation!!,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFFE0E0E8),
+                                color = WordBridgeColors.TextPrimary,
                                 lineHeight = 20.sp,
                             )
                         }
@@ -875,20 +875,20 @@ private fun ChoiceCard(
     val containerColor =
         remember(isSelected, showFeedback, isCorrectAnswer) {
             when {
-                showFeedback && isSelected && isCorrectAnswer -> Color(0xFF10B981).copy(alpha = 0.2f) // Green for correct
-                showFeedback && isSelected && !isCorrectAnswer -> Color(0xFFEF4444).copy(alpha = 0.2f) // Red for incorrect
-                isSelected -> Color(0xFF2D2A3E).copy(alpha = 0.5f)
-                else -> Color(0xFF2D2A3E).copy(alpha = 0.3f)
+                showFeedback && isSelected && isCorrectAnswer -> WordBridgeColors.Success.copy(alpha = 0.2f)
+                showFeedback && isSelected && !isCorrectAnswer -> WordBridgeColors.Error.copy(alpha = 0.2f)
+                isSelected -> WordBridgeColors.Primary.copy(alpha = 0.12f)
+                else -> WordBridgeColors.Surface
             }
         }
 
     val border =
         remember(isSelected, showFeedback, isCorrectAnswer) {
             when {
-                showFeedback && isSelected && isCorrectAnswer -> BorderStroke(2.dp, Color(0xFF10B981)) // Green border
-                showFeedback && isSelected && !isCorrectAnswer -> BorderStroke(2.dp, Color(0xFFEF4444)) // Red border
-                isSelected -> BorderStroke(2.dp, WordBridgeColors.PrimaryPurple)
-                else -> BorderStroke(2.dp, Color(0xFF3A3147).copy(alpha = 0.5f))
+                showFeedback && isSelected && isCorrectAnswer -> BorderStroke(2.dp, WordBridgeColors.Success)
+                showFeedback && isSelected && !isCorrectAnswer -> BorderStroke(2.dp, WordBridgeColors.Error)
+                isSelected -> BorderStroke(2.dp, WordBridgeColors.Primary)
+                else -> BorderStroke(1.dp, WordBridgeColors.BorderSubtle)
             }
         }
 
@@ -925,7 +925,7 @@ private fun ChoiceCard(
                                     .widthIn(max = 160.dp)
                                     .heightIn(max = 160.dp)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(Color(0xFF3A3147).copy(alpha = 0.3f))
+                                    .background(WordBridgeColors.SurfaceVariant)
                                     .padding(2.dp),
                             contentScale = ContentScale.Fit,
                         )
@@ -947,7 +947,7 @@ private fun ChoiceCard(
                                 MaterialTheme.typography.titleLarge
                             },
                         fontWeight = if (choice.imageUrl != null) FontWeight.Medium else FontWeight.SemiBold,
-                        color = Color.White,
+                        color = WordBridgeColors.TextPrimary,
                         textAlign = TextAlign.Center,
                         modifier =
                             if (choice.imageUrl == null) {
@@ -973,19 +973,19 @@ private fun ChoiceCard(
                 shape = CircleShape,
                 color =
                     when {
-                        showFeedback && isSelected && isCorrectAnswer -> Color(0xFF10B981)
-                        showFeedback && isSelected && !isCorrectAnswer -> Color(0xFFEF4444)
-                        isSelected -> WordBridgeColors.PrimaryPurple
+                        showFeedback && isSelected && isCorrectAnswer -> WordBridgeColors.Success
+                        showFeedback && isSelected && !isCorrectAnswer -> WordBridgeColors.Error
+                        isSelected -> WordBridgeColors.Primary
                         else -> Color.Transparent
                     },
-                border = if (!isSelected) BorderStroke(2.dp, Color(0xFF4A4658)) else null,
+                border = if (!isSelected) BorderStroke(1.5.dp, WordBridgeColors.Border) else null,
             ) {
                 if (isSelected) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             if (showFeedback && !isCorrectAnswer) Icons.Default.Close else Icons.Default.Check,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = WordBridgeColors.OnPrimary,
                             modifier = Modifier.size(16.dp),
                         )
                     }
@@ -1027,7 +1027,7 @@ private fun ChoiceAudioButton(audioUrl: String) {
         Icon(
             if (isPlaying) Icons.Default.Stop else Icons.Default.VolumeUp,
             contentDescription = if (isPlaying) "Stop audio" else "Play audio",
-            tint = if (isPlaying) Color(0xFFEF4444) else WordBridgeColors.PrimaryPurple,
+            tint = if (isPlaying) WordBridgeColors.Error else WordBridgeColors.Primary,
             modifier = Modifier.size(18.dp),
         )
     }
@@ -1056,13 +1056,13 @@ private fun IdentificationQuestion(
             placeholder = { Text("Enter your answer here...") },
             colors =
                 OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = WordBridgeColors.PrimaryPurple,
-                    unfocusedBorderColor = Color(0xFF3A3147),
-                    focusedContainerColor = WordBridgeColors.CardBackground,
-                    unfocusedContainerColor = WordBridgeColors.CardBackground,
+                    focusedBorderColor = WordBridgeColors.Primary,
+                    unfocusedBorderColor = WordBridgeColors.BorderSubtle,
+                    focusedContainerColor = WordBridgeColors.Surface,
+                    unfocusedContainerColor = WordBridgeColors.Surface,
                     focusedTextColor = WordBridgeColors.TextPrimary,
                     unfocusedTextColor = WordBridgeColors.TextPrimary,
-                    cursorColor = WordBridgeColors.PrimaryPurple,
+                    cursorColor = WordBridgeColors.Primary,
                 ),
             shape = RoundedCornerShape(12.dp),
         )
@@ -1088,7 +1088,7 @@ private fun TextEntryQuestion(
             "Type your answer:",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Medium,
-            color = Color(0xFFB4B4C4),
+            color = WordBridgeColors.TextSecondary,
         )
 
         OutlinedTextField(
@@ -1099,13 +1099,13 @@ private fun TextEntryQuestion(
             minLines = 3,
             colors =
                 OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF8B5CF6),
-                    unfocusedBorderColor = Color(0xFF3A3147),
-                    focusedContainerColor = Color(0xFF2D2A3E),
-                    unfocusedContainerColor = Color(0xFF2D2A3E),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = Color(0xFF8B5CF6),
+                    focusedBorderColor = WordBridgeColors.Primary,
+                    unfocusedBorderColor = WordBridgeColors.BorderSubtle,
+                    focusedContainerColor = WordBridgeColors.Surface,
+                    unfocusedContainerColor = WordBridgeColors.Surface,
+                    focusedTextColor = WordBridgeColors.TextPrimary,
+                    unfocusedTextColor = WordBridgeColors.TextPrimary,
+                    cursorColor = WordBridgeColors.Primary,
                 ),
             shape = RoundedCornerShape(12.dp),
         )
@@ -1146,8 +1146,8 @@ private fun TextEntryQuestion(
                 ) {
                     Surface(
                         shape = CircleShape,
-                        color = if (isPlaying) Color(0xFFEF4444).copy(alpha = 0.2f) else Color(0xFF8B5CF6).copy(alpha = 0.2f),
-                        border = BorderStroke(1.dp, if (isPlaying) Color(0xFFEF4444) else Color(0xFF8B5CF6)),
+                        color = if (isPlaying) WordBridgeColors.Error.copy(alpha = 0.2f) else WordBridgeColors.Primary.copy(alpha = 0.2f),
+                        border = BorderStroke(1.dp, if (isPlaying) WordBridgeColors.Error else WordBridgeColors.Primary),
                     ) {
                         Box(
                             modifier = Modifier.size(32.dp),
@@ -1156,7 +1156,7 @@ private fun TextEntryQuestion(
                             Icon(
                                 if (isPlaying) Icons.Default.Stop else Icons.Default.VolumeUp,
                                 contentDescription = if (isPlaying) "Stop hint audio" else "Play hint audio",
-                                tint = if (isPlaying) Color(0xFFEF4444) else Color(0xFF8B5CF6),
+                                tint = if (isPlaying) WordBridgeColors.Error else WordBridgeColors.Primary,
                                 modifier = Modifier.size(18.dp),
                             )
                         }
@@ -1166,7 +1166,7 @@ private fun TextEntryQuestion(
                 Text(
                     "Listen to pronunciation hint",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF8B5CF6),
+                    color = WordBridgeColors.Primary,
                 )
             }
         }
@@ -1180,8 +1180,8 @@ private fun TextEntryQuestion(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    color = if (isCorrect) Color(0xFF10B981).copy(alpha = 0.2f) else Color(0xFFEF4444).copy(alpha = 0.2f),
-                    border = BorderStroke(1.dp, if (isCorrect) Color(0xFF10B981) else Color(0xFFEF4444)),
+                    color = if (isCorrect) WordBridgeColors.Success.copy(alpha = 0.2f) else WordBridgeColors.Error.copy(alpha = 0.2f),
+                    border = BorderStroke(1.dp, if (isCorrect) WordBridgeColors.Success else WordBridgeColors.Error),
                 ) {
                     Row(
                         modifier = Modifier.padding(12.dp),
@@ -1191,7 +1191,7 @@ private fun TextEntryQuestion(
                         Icon(
                             if (isCorrect) Icons.Default.CheckCircle else Icons.Default.Cancel,
                             contentDescription = null,
-                            tint = if (isCorrect) Color(0xFF10B981) else Color(0xFFEF4444),
+                            tint = if (isCorrect) WordBridgeColors.Success else WordBridgeColors.Error,
                             modifier = Modifier.size(20.dp),
                         )
                         Text(
@@ -1203,7 +1203,7 @@ private fun TextEntryQuestion(
                             },
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
-                            color = if (isCorrect) Color(0xFF10B981) else Color(0xFFEF4444),
+                            color = if (isCorrect) WordBridgeColors.Success else WordBridgeColors.Error,
                         )
                     }
                 }
@@ -1213,8 +1213,8 @@ private fun TextEntryQuestion(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFF8B5CF6).copy(alpha = 0.15f),
-                        border = BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.5f)),
+                        color = WordBridgeColors.Primary.copy(alpha = 0.15f),
+                        border = BorderStroke(1.dp, WordBridgeColors.Primary.copy(alpha = 0.5f)),
                     ) {
                         Column(
                             modifier = Modifier.padding(12.dp),
@@ -1232,14 +1232,14 @@ private fun TextEntryQuestion(
                                     Icon(
                                         Icons.Default.Info,
                                         contentDescription = null,
-                                        tint = Color(0xFF8B5CF6),
+                                        tint = WordBridgeColors.Primary,
                                         modifier = Modifier.size(20.dp),
                                     )
                                     Text(
                                         "Explanation",
                                         style = MaterialTheme.typography.labelLarge,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF8B5CF6),
+                                        color = WordBridgeColors.Primary,
                                     )
                                 }
 
@@ -1276,9 +1276,9 @@ private fun TextEntryQuestion(
                                             shape = CircleShape,
                                             color =
                                                 if (isPlayingExplanation) {
-                                                    Color(0xFF8B5CF6).copy(alpha = 0.8f)
+                                                    WordBridgeColors.Primary.copy(alpha = 0.2f)
                                                 } else {
-                                                    Color(0xFF3A3147).copy(alpha = 0.5f)
+                                                    WordBridgeColors.SurfaceVariant
                                                 },
                                         ) {
                                             Box(
@@ -1288,7 +1288,7 @@ private fun TextEntryQuestion(
                                                 Icon(
                                                     if (isPlayingExplanation) Icons.Default.Stop else Icons.Default.VolumeUp,
                                                     contentDescription = if (isPlayingExplanation) "Stop explanation audio" else "Play explanation audio",
-                                                    tint = if (isPlayingExplanation) Color.White else Color(0xFF8B5CF6),
+                                                    tint = if (isPlayingExplanation) WordBridgeColors.Primary else WordBridgeColors.TextPrimary,
                                                     modifier = Modifier.size(18.dp),
                                                 )
                                             }
@@ -1299,7 +1299,7 @@ private fun TextEntryQuestion(
                             Text(
                                 question.explanation!!,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFFE0E0E8),
+                                color = WordBridgeColors.TextPrimary,
                                 lineHeight = 20.sp,
                             )
                         }
@@ -1343,12 +1343,12 @@ private fun MatchingQuestion(
                 CircularProgressIndicator(
                     modifier = Modifier.size(18.dp),
                     strokeWidth = 2.dp,
-                    color = WordBridgeColors.PrimaryPurple,
+                    color = WordBridgeColors.Primary,
                 )
                 Text(
                     text = "Loading images...",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFB4B4C4),
+                    color = WordBridgeColors.TextSecondary,
                 )
             }
         }
@@ -1357,7 +1357,7 @@ private fun MatchingQuestion(
             "Click items on the left, then click the matching answer on the right to connect them:",
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
-            color = Color(0xFFB4B4C4),
+            color = WordBridgeColors.TextSecondary,
         )
 
         // Group choices by pair ID, filtering out null/empty pair IDs
@@ -1378,13 +1378,14 @@ private fun MatchingQuestion(
 
         // Show message if no valid pairs
         if (leftItems.isEmpty()) {
-            println("[LessonPlayerScreen] ⚠ No valid matching pairs found")
+            println("[LessonPlayerScreen] No valid matching pairs found")
             Surface(
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                color = Color(0xFF3A3147),
+                color = WordBridgeColors.SurfaceVariant,
+                border = BorderStroke(1.dp, WordBridgeColors.BorderSubtle),
                 shape = RoundedCornerShape(12.dp),
             ) {
                 Column(
@@ -1395,18 +1396,18 @@ private fun MatchingQuestion(
                     Icon(
                         Icons.Default.Warning,
                         contentDescription = null,
-                        tint = Color(0xFFF59E0B),
+                        tint = WordBridgeColors.Warning,
                         modifier = Modifier.size(48.dp),
                     )
                     Text(
                         "No matching pairs available",
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color.White,
+                        color = WordBridgeColors.TextPrimary,
                     )
                     Text(
                         "Please contact the instructor",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFFB4B4C4),
+                        color = WordBridgeColors.TextSecondary,
                     )
                 }
             }
@@ -1428,8 +1429,8 @@ private fun MatchingQuestion(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
-                    color = if (isCorrect == true) Color(0xFF10B981).copy(alpha = 0.2f) else Color(0xFFEF4444).copy(alpha = 0.2f),
-                    border = BorderStroke(1.dp, if (isCorrect == true) Color(0xFF10B981) else Color(0xFFEF4444)),
+                    color = if (isCorrect == true) WordBridgeColors.Success.copy(alpha = 0.2f) else WordBridgeColors.Error.copy(alpha = 0.2f),
+                    border = BorderStroke(1.dp, if (isCorrect == true) WordBridgeColors.Success else WordBridgeColors.Error),
                 ) {
                     Row(
                         modifier = Modifier.padding(10.dp),
@@ -1439,19 +1440,19 @@ private fun MatchingQuestion(
                         Icon(
                             if (isCorrect == true) Icons.Default.CheckCircle else Icons.Default.Cancel,
                             contentDescription = null,
-                            tint = if (isCorrect == true) Color(0xFF10B981) else Color(0xFFEF4444),
+                            tint = if (isCorrect == true) WordBridgeColors.Success else WordBridgeColors.Error,
                             modifier = Modifier.size(18.dp),
                         )
                         Text(
                             if (isCorrect == true) {
-                                "All matches are correct! ✓"
+                                "All matches are correct!"
                             } else {
                                 // Use explanation as the error message when answer is wrong
                                 question.explanation?.takeIf { it.isNotBlank() }
                                     ?: "Some matches are incorrect. Please review your answers."
                             },
                             style = MaterialTheme.typography.bodyMedium,
-                            color = if (isCorrect == true) Color(0xFF10B981) else Color(0xFFEF4444),
+                            color = if (isCorrect == true) WordBridgeColors.Success else WordBridgeColors.Error,
                             fontWeight = FontWeight.Medium,
                         )
                     }
@@ -1462,8 +1463,8 @@ private fun MatchingQuestion(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFF8B5CF6).copy(alpha = 0.15f),
-                        border = BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.5f)),
+                        color = WordBridgeColors.Primary.copy(alpha = 0.15f),
+                        border = BorderStroke(1.dp, WordBridgeColors.Primary.copy(alpha = 0.5f)),
                     ) {
                         Column(
                             modifier = Modifier.padding(10.dp),
@@ -1481,14 +1482,14 @@ private fun MatchingQuestion(
                                     Icon(
                                         Icons.Default.Info,
                                         contentDescription = null,
-                                        tint = Color(0xFF8B5CF6),
+                                        tint = WordBridgeColors.Primary,
                                         modifier = Modifier.size(18.dp),
                                     )
                                     Text(
                                         "Explanation",
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF8B5CF6),
+                                        color = WordBridgeColors.Primary,
                                     )
                                 }
 
@@ -1525,9 +1526,9 @@ private fun MatchingQuestion(
                                             shape = CircleShape,
                                             color =
                                                 if (isPlayingExplanation) {
-                                                    Color(0xFF8B5CF6).copy(alpha = 0.8f)
+                                                    WordBridgeColors.Primary.copy(alpha = 0.2f)
                                                 } else {
-                                                    Color(0xFF3A3147).copy(alpha = 0.5f)
+                                                    WordBridgeColors.SurfaceVariant
                                                 },
                                         ) {
                                             Box(
@@ -1537,7 +1538,7 @@ private fun MatchingQuestion(
                                                 Icon(
                                                     if (isPlayingExplanation) Icons.Default.Stop else Icons.Default.VolumeUp,
                                                     contentDescription = if (isPlayingExplanation) "Stop explanation audio" else "Play explanation audio",
-                                                    tint = if (isPlayingExplanation) Color.White else Color(0xFF8B5CF6),
+                                                    tint = if (isPlayingExplanation) WordBridgeColors.Primary else WordBridgeColors.TextPrimary,
                                                     modifier = Modifier.size(16.dp),
                                                 )
                                             }
@@ -1548,7 +1549,7 @@ private fun MatchingQuestion(
                             Text(
                                 question.explanation!!,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFFE0E0E8),
+                                color = WordBridgeColors.TextPrimary,
                                 lineHeight = 18.sp,
                             )
                         }
@@ -1613,10 +1614,10 @@ private fun InteractiveMatchingInterface(
         modifier = Modifier.fillMaxWidth(),
         colors =
             CardDefaults.cardColors(
-                containerColor = Color(0xFF1E1B2E).copy(alpha = 0.5f),
+                containerColor = WordBridgeColors.Surface,
             ),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, Color(0xFF3A3147).copy(alpha = 0.5f)),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderSubtle),
     ) {
         Box(
             modifier =
@@ -1641,7 +1642,7 @@ private fun InteractiveMatchingInterface(
                     Text(
                         "Questions",
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color(0xFF8B5CF6),
+                        color = WordBridgeColors.Primary,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 4.dp),
                     )
@@ -1691,7 +1692,7 @@ private fun InteractiveMatchingInterface(
                     Text(
                         "Answers",
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color(0xFF10B981),
+                        color = WordBridgeColors.Primary,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 4.dp),
                     )
@@ -1763,12 +1764,12 @@ private fun InteractiveMatchingInterface(
                                     leftPairId != null && rightPairId != null &&
                                         leftPairId == rightPairId && leftPairId.isNotEmpty()
                                 if (isCorrect) {
-                                    Color(0xFF10B981) to Color(0xFF10B981)
+                                    WordBridgeColors.Success to WordBridgeColors.Success
                                 } else {
-                                    Color(0xFFEF4444) to Color(0xFFEF4444)
+                                    WordBridgeColors.Error to WordBridgeColors.Error
                                 }
                             } else {
-                                Color(0xFFA855F7) to Color(0xFF10B981) // Purple to Green gradient
+                                WordBridgeColors.Primary to WordBridgeColors.Primary
                             }
 
                         // Draw glow layer (thicker, semi-transparent)
@@ -1806,7 +1807,7 @@ private fun InteractiveMatchingInterface(
                         // Draw connection dots at both ends
                         val dotRadius = if (isHovered) 6.dp.toPx() else 5.dp.toPx()
 
-                        // Left dot (purple)
+                        // Left connection dot
                         drawCircle(
                             color = startColor,
                             radius = dotRadius,
@@ -1814,7 +1815,7 @@ private fun InteractiveMatchingInterface(
                             style = androidx.compose.ui.graphics.drawscope.Fill,
                         )
 
-                        // Right dot (green or color based on feedback)
+                        // Right connection dot
                         drawCircle(
                             color = endColor,
                             radius = dotRadius,
@@ -1833,8 +1834,8 @@ private fun InteractiveMatchingInterface(
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(6.dp),
-            color = Color(0xFFF59E0B).copy(alpha = 0.15f),
-            border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.3f)),
+            color = WordBridgeColors.Warning.copy(alpha = 0.15f),
+            border = BorderStroke(1.dp, WordBridgeColors.Warning.copy(alpha = 0.3f)),
         ) {
             Row(
                 modifier = Modifier.padding(8.dp),
@@ -1844,13 +1845,13 @@ private fun InteractiveMatchingInterface(
                 Icon(
                     Icons.Default.TouchApp,
                     contentDescription = null,
-                    tint = Color(0xFFF59E0B),
+                    tint = WordBridgeColors.Warning,
                     modifier = Modifier.size(16.dp),
                 )
                 Text(
                     "Now click an answer on the right to create a match",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFF59E0B),
+                    color = WordBridgeColors.Warning,
                     fontWeight = FontWeight.Medium,
                 )
             }
@@ -1882,22 +1883,22 @@ private fun MatchingItemCard(
     var isHovered by remember { mutableStateOf(false) }
     val containerColor =
         when {
-            showFeedback && isMatchCorrect == false -> Color(0xFFEF4444).copy(alpha = 0.2f)
-            showFeedback && isMatchCorrect == true -> Color(0xFF10B981).copy(alpha = 0.2f)
-            isMatched && side == MatchingSide.RIGHT -> Color(0xFF10B981).copy(alpha = 0.2f) // Green when matched (right side)
-            isMatched -> Color(0xFF8B5CF6).copy(alpha = 0.2f) // Purple when matched (left side)
-            isSelected -> Color(0xFFF59E0B).copy(alpha = 0.2f)
-            else -> Color(0xFF2D2A3E).copy(alpha = 0.5f)
+            showFeedback && isMatchCorrect == false -> WordBridgeColors.Error.copy(alpha = 0.2f)
+            showFeedback && isMatchCorrect == true -> WordBridgeColors.Success.copy(alpha = 0.2f)
+            isMatched && side == MatchingSide.RIGHT -> WordBridgeColors.Primary.copy(alpha = 0.15f)
+            isMatched -> WordBridgeColors.Primary.copy(alpha = 0.15f)
+            isSelected -> WordBridgeColors.Primary.copy(alpha = 0.2f)
+            else -> WordBridgeColors.Surface
         }
 
     val borderColor =
         when {
-            showFeedback && isMatchCorrect == false -> Color(0xFFEF4444)
-            showFeedback && isMatchCorrect == true -> Color(0xFF10B981)
-            isMatched && side == MatchingSide.RIGHT -> Color(0xFF10B981) // Green when matched (right side)
-            isMatched -> Color(0xFF8B5CF6) // Purple when matched (left side)
-            isSelected -> Color(0xFFF59E0B)
-            else -> Color(0xFF3A3147).copy(alpha = 0.5f)
+            showFeedback && isMatchCorrect == false -> WordBridgeColors.Error
+            showFeedback && isMatchCorrect == true -> WordBridgeColors.Success
+            isMatched && side == MatchingSide.RIGHT -> WordBridgeColors.Primary
+            isMatched -> WordBridgeColors.Primary
+            isSelected -> WordBridgeColors.Primary
+            else -> WordBridgeColors.BorderSubtle
         }
 
     Card(
@@ -1961,10 +1962,10 @@ private fun MatchingItemCard(
                         shape = CircleShape,
                         color =
                             when {
-                                showFeedback && isMatchCorrect == false -> Color(0xFFEF4444)
-                                showFeedback && isMatchCorrect == true -> Color(0xFF10B981)
-                                isMatched -> Color(0xFF8B5CF6)
-                                else -> Color(0xFF3A3147)
+                                showFeedback && isMatchCorrect == false -> WordBridgeColors.Error
+                                showFeedback && isMatchCorrect == true -> WordBridgeColors.Success
+                                isMatched -> WordBridgeColors.Primary
+                                else -> WordBridgeColors.SurfaceVariant
                             },
                     ) {
                         Box(
@@ -1974,7 +1975,7 @@ private fun MatchingItemCard(
                             Text(
                                 "$index",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White,
+                                color = if (showFeedback || isMatched) WordBridgeColors.OnPrimary else WordBridgeColors.TextPrimary,
                                 fontWeight = FontWeight.Bold,
                             )
                         }
@@ -1985,7 +1986,7 @@ private fun MatchingItemCard(
                 Text(
                     item.choiceText,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (isMatched || isSelected) Color.White else Color(0xFFB4B4C4),
+                    color = if (isMatched || isSelected) WordBridgeColors.TextPrimary else WordBridgeColors.TextSecondary,
                     fontWeight = if (isMatched || isSelected) FontWeight.SemiBold else FontWeight.Normal,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -2024,7 +2025,7 @@ private fun MatchingItemCard(
                         Icon(
                             if (isPlaying) Icons.Default.Stop else Icons.Default.VolumeUp,
                             contentDescription = if (isPlaying) "Stop audio" else "Play audio",
-                            tint = if (isPlaying) Color(0xFFEF4444) else Color(0xFF8B5CF6),
+                            tint = if (isPlaying) WordBridgeColors.Error else WordBridgeColors.Primary,
                             modifier = Modifier.size(16.dp),
                         )
                     }
@@ -2040,7 +2041,7 @@ private fun MatchingItemCard(
                     Icon(
                         Icons.Default.Close,
                         contentDescription = "Clear match",
-                        tint = Color(0xFF8B5CF6),
+                        tint = WordBridgeColors.Primary,
                         modifier = Modifier.size(16.dp),
                     )
                 }
@@ -2048,21 +2049,21 @@ private fun MatchingItemCard(
                 Icon(
                     if (isMatchCorrect == true) Icons.Default.CheckCircle else Icons.Default.Cancel,
                     contentDescription = if (isMatchCorrect == true) "Correct" else "Incorrect",
-                    tint = if (isMatchCorrect == true) Color(0xFF10B981) else Color(0xFFEF4444),
+                    tint = if (isMatchCorrect == true) WordBridgeColors.Success else WordBridgeColors.Error,
                     modifier = Modifier.size(18.dp),
                 )
             } else if (isMatched) {
                 Icon(
                     Icons.Default.Check,
                     contentDescription = "Matched",
-                    tint = Color(0xFF8B5CF6),
+                    tint = WordBridgeColors.Primary,
                     modifier = Modifier.size(18.dp),
                 )
             } else if (isSelected) {
                 Icon(
                     Icons.Default.TouchApp,
                     contentDescription = "Selected",
-                    tint = Color(0xFFF59E0B),
+                    tint = WordBridgeColors.Primary,
                     modifier = Modifier.size(18.dp),
                 )
             }
@@ -2085,7 +2086,7 @@ private fun ParaphrasingQuestion(
             "Rewrite the sentence in your own words:",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Medium,
-            color = Color(0xFFB4B4C4),
+            color = WordBridgeColors.TextSecondary,
         )
 
         OutlinedTextField(
@@ -2096,13 +2097,13 @@ private fun ParaphrasingQuestion(
             minLines = 4,
             colors =
                 OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF8B5CF6),
-                    unfocusedBorderColor = Color(0xFF3A3147),
-                    focusedContainerColor = Color(0xFF2D2A3E),
-                    unfocusedContainerColor = Color(0xFF2D2A3E),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = Color(0xFF8B5CF6),
+                    focusedBorderColor = WordBridgeColors.Primary,
+                    unfocusedBorderColor = WordBridgeColors.BorderSubtle,
+                    focusedContainerColor = WordBridgeColors.Surface,
+                    unfocusedContainerColor = WordBridgeColors.Surface,
+                    focusedTextColor = WordBridgeColors.TextPrimary,
+                    unfocusedTextColor = WordBridgeColors.TextPrimary,
+                    cursorColor = WordBridgeColors.Primary,
                 ),
             shape = RoundedCornerShape(12.dp),
         )
@@ -2112,8 +2113,8 @@ private fun ParaphrasingQuestion(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                color = if (isCorrect) Color(0xFF10B981).copy(alpha = 0.2f) else Color(0xFFEF4444).copy(alpha = 0.2f),
-                border = BorderStroke(1.dp, if (isCorrect) Color(0xFF10B981) else Color(0xFFEF4444)),
+                color = if (isCorrect) WordBridgeColors.Success.copy(alpha = 0.2f) else WordBridgeColors.Error.copy(alpha = 0.2f),
+                border = BorderStroke(1.dp, if (isCorrect) WordBridgeColors.Success else WordBridgeColors.Error),
             ) {
                 Row(
                     modifier = Modifier.padding(12.dp),
@@ -2123,7 +2124,7 @@ private fun ParaphrasingQuestion(
                     Icon(
                         if (isCorrect) Icons.Default.CheckCircle else Icons.Default.Cancel,
                         contentDescription = null,
-                        tint = if (isCorrect) Color(0xFF10B981) else Color(0xFFEF4444),
+                        tint = if (isCorrect) WordBridgeColors.Success else WordBridgeColors.Error,
                         modifier = Modifier.size(20.dp),
                     )
                     Text(
@@ -2135,7 +2136,7 @@ private fun ParaphrasingQuestion(
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
-                        color = if (isCorrect) Color(0xFF10B981) else Color(0xFFEF4444),
+                        color = if (isCorrect) WordBridgeColors.Success else WordBridgeColors.Error,
                     )
                 }
             }
@@ -2146,9 +2147,10 @@ private fun ParaphrasingQuestion(
                 modifier = Modifier.fillMaxWidth(),
                 colors =
                     CardDefaults.cardColors(
-                        containerColor = Color(0xFF2D2A3E),
+                        containerColor = WordBridgeColors.SurfaceVariant,
                     ),
                 shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, WordBridgeColors.BorderSubtle),
             ) {
                 Column(
                     modifier = Modifier.padding(12.dp),
@@ -2157,12 +2159,12 @@ private fun ParaphrasingQuestion(
                     Text(
                         "Sample Answer:",
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color(0xFFB4B4C4),
+                        color = WordBridgeColors.TextSecondary,
                     )
                     Text(
                         question.answerText,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFFB4B4C4),
+                        color = WordBridgeColors.TextPrimary,
                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
                     )
                 }
@@ -2174,8 +2176,8 @@ private fun ParaphrasingQuestion(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                color = Color(0xFF8B5CF6).copy(alpha = 0.15f),
-                border = BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.5f)),
+                color = WordBridgeColors.Primary.copy(alpha = 0.12f),
+                border = BorderStroke(1.dp, WordBridgeColors.Primary.copy(alpha = 0.25f)),
             ) {
                 Column(
                     modifier = Modifier.padding(12.dp),
@@ -2193,14 +2195,14 @@ private fun ParaphrasingQuestion(
                             Icon(
                                 Icons.Default.Info,
                                 contentDescription = null,
-                                tint = Color(0xFF8B5CF6),
+                                tint = WordBridgeColors.Primary,
                                 modifier = Modifier.size(20.dp),
                             )
                             Text(
                                 "Explanation",
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF8B5CF6),
+                                color = WordBridgeColors.Primary,
                             )
                         }
 
@@ -2237,9 +2239,9 @@ private fun ParaphrasingQuestion(
                                     shape = CircleShape,
                                     color =
                                         if (isPlayingExplanation) {
-                                            Color(0xFF8B5CF6).copy(alpha = 0.8f)
+                                            WordBridgeColors.Primary.copy(alpha = 0.2f)
                                         } else {
-                                            Color(0xFF3A3147).copy(alpha = 0.5f)
+                                            WordBridgeColors.SurfaceVariant
                                         },
                                 ) {
                                     Box(
@@ -2249,7 +2251,7 @@ private fun ParaphrasingQuestion(
                                         Icon(
                                             if (isPlayingExplanation) Icons.Default.Stop else Icons.Default.VolumeUp,
                                             contentDescription = if (isPlayingExplanation) "Stop explanation audio" else "Play explanation audio",
-                                            tint = if (isPlayingExplanation) Color.White else Color(0xFF8B5CF6),
+                                            tint = if (isPlayingExplanation) WordBridgeColors.Primary else WordBridgeColors.TextPrimary,
                                             modifier = Modifier.size(18.dp),
                                         )
                                     }
@@ -2260,7 +2262,7 @@ private fun ParaphrasingQuestion(
                     Text(
                         question.explanation!!,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFFE0E0E8),
+                        color = WordBridgeColors.TextPrimary,
                         lineHeight = 20.sp,
                     )
                 }
@@ -2284,7 +2286,7 @@ private fun ErrorCorrectionQuestion(
             "Find and correct the errors in the text below:",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Medium,
-            color = Color(0xFFB4B4C4),
+            color = WordBridgeColors.TextSecondary,
         )
 
         // Display text with errors
@@ -2292,10 +2294,10 @@ private fun ErrorCorrectionQuestion(
             modifier = Modifier.fillMaxWidth(),
             colors =
                 CardDefaults.cardColors(
-                    containerColor = Color(0xFFEF4444).copy(alpha = 0.1f),
+                    containerColor = WordBridgeColors.Error.copy(alpha = 0.1f),
                 ),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.3f)),
+            border = BorderStroke(1.dp, WordBridgeColors.Error.copy(alpha = 0.3f)),
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -2308,20 +2310,20 @@ private fun ErrorCorrectionQuestion(
                     Icon(
                         Icons.Default.BugReport,
                         null,
-                        tint = Color(0xFFEF4444),
+                        tint = WordBridgeColors.Error,
                         modifier = Modifier.size(20.dp),
                     )
                     Text(
                         "Text with errors:",
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color(0xFFEF4444),
+                        color = WordBridgeColors.Error,
                         fontWeight = FontWeight.Bold,
                     )
                 }
                 Text(
                     question.errorText ?: "",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White,
+                    color = WordBridgeColors.TextPrimary,
                 )
             }
         }
@@ -2329,7 +2331,7 @@ private fun ErrorCorrectionQuestion(
         Text(
             "Write the corrected text:",
             style = MaterialTheme.typography.labelLarge,
-            color = Color(0xFFB4B4C4),
+            color = WordBridgeColors.TextSecondary,
         )
 
         OutlinedTextField(
@@ -2340,13 +2342,13 @@ private fun ErrorCorrectionQuestion(
             minLines = 4,
             colors =
                 OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF8B5CF6),
-                    unfocusedBorderColor = Color(0xFF3A3147),
-                    focusedContainerColor = Color(0xFF2D2A3E),
-                    unfocusedContainerColor = Color(0xFF2D2A3E),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = Color(0xFF8B5CF6),
+                    focusedBorderColor = WordBridgeColors.Primary,
+                    unfocusedBorderColor = WordBridgeColors.BorderSubtle,
+                    focusedContainerColor = WordBridgeColors.Surface,
+                    unfocusedContainerColor = WordBridgeColors.Surface,
+                    focusedTextColor = WordBridgeColors.TextPrimary,
+                    unfocusedTextColor = WordBridgeColors.TextPrimary,
+                    cursorColor = WordBridgeColors.Primary,
                 ),
             shape = RoundedCornerShape(12.dp),
         )
@@ -2360,8 +2362,8 @@ private fun ErrorCorrectionQuestion(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    color = if (isCorrect) Color(0xFF10B981).copy(alpha = 0.2f) else Color(0xFFEF4444).copy(alpha = 0.2f),
-                    border = BorderStroke(1.dp, if (isCorrect) Color(0xFF10B981) else Color(0xFFEF4444)),
+                    color = if (isCorrect) WordBridgeColors.Success.copy(alpha = 0.2f) else WordBridgeColors.Error.copy(alpha = 0.2f),
+                    border = BorderStroke(1.dp, if (isCorrect) WordBridgeColors.Success else WordBridgeColors.Error),
                 ) {
                     Row(
                         modifier = Modifier.padding(12.dp),
@@ -2371,7 +2373,7 @@ private fun ErrorCorrectionQuestion(
                         Icon(
                             if (isCorrect) Icons.Default.CheckCircle else Icons.Default.Cancel,
                             contentDescription = null,
-                            tint = if (isCorrect) Color(0xFF10B981) else Color(0xFFEF4444),
+                            tint = if (isCorrect) WordBridgeColors.Success else WordBridgeColors.Error,
                             modifier = Modifier.size(20.dp),
                         )
                         Text(
@@ -2383,7 +2385,7 @@ private fun ErrorCorrectionQuestion(
                             },
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
-                            color = if (isCorrect) Color(0xFF10B981) else Color(0xFFEF4444),
+                            color = if (isCorrect) WordBridgeColors.Success else WordBridgeColors.Error,
                         )
                     }
                 }
@@ -2393,8 +2395,8 @@ private fun ErrorCorrectionQuestion(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFF8B5CF6).copy(alpha = 0.15f),
-                        border = BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.5f)),
+                        color = WordBridgeColors.Primary.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, WordBridgeColors.Primary.copy(alpha = 0.25f)),
                     ) {
                         Column(
                             modifier = Modifier.padding(12.dp),
@@ -2412,14 +2414,14 @@ private fun ErrorCorrectionQuestion(
                                     Icon(
                                         Icons.Default.Info,
                                         contentDescription = null,
-                                        tint = Color(0xFF8B5CF6),
+                                        tint = WordBridgeColors.Primary,
                                         modifier = Modifier.size(20.dp),
                                     )
                                     Text(
                                         "Explanation",
                                         style = MaterialTheme.typography.labelLarge,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF8B5CF6),
+                                        color = WordBridgeColors.Primary,
                                     )
                                 }
 
@@ -2456,9 +2458,9 @@ private fun ErrorCorrectionQuestion(
                                             shape = CircleShape,
                                             color =
                                                 if (isPlayingExplanation) {
-                                                    Color(0xFF8B5CF6).copy(alpha = 0.8f)
+                                                    WordBridgeColors.Primary.copy(alpha = 0.2f)
                                                 } else {
-                                                    Color(0xFF3A3147).copy(alpha = 0.5f)
+                                                    WordBridgeColors.SurfaceVariant
                                                 },
                                         ) {
                                             Box(
@@ -2468,7 +2470,7 @@ private fun ErrorCorrectionQuestion(
                                                 Icon(
                                                     if (isPlayingExplanation) Icons.Default.Stop else Icons.Default.VolumeUp,
                                                     contentDescription = if (isPlayingExplanation) "Stop explanation audio" else "Play explanation audio",
-                                                    tint = if (isPlayingExplanation) Color.White else Color(0xFF8B5CF6),
+                                                    tint = if (isPlayingExplanation) WordBridgeColors.Primary else WordBridgeColors.TextPrimary,
                                                     modifier = Modifier.size(18.dp),
                                                 )
                                             }
@@ -2479,7 +2481,7 @@ private fun ErrorCorrectionQuestion(
                             Text(
                                 question.explanation!!,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFFE0E0E8),
+                                color = WordBridgeColors.TextPrimary,
                                 lineHeight = 20.sp,
                             )
                         }
@@ -2511,8 +2513,9 @@ private fun VoiceRecordQuestion(
             modifier = Modifier.fillMaxWidth(),
             colors =
                 CardDefaults.cardColors(
-                    containerColor = WordBridgeColors.CardBackground,
+                    containerColor = WordBridgeColors.Surface,
                 ),
+            border = BorderStroke(1.dp, WordBridgeColors.BorderSubtle),
             shape = RoundedCornerShape(12.dp),
         ) {
             Column(
@@ -2524,7 +2527,7 @@ private fun VoiceRecordQuestion(
                     Icons.Default.Mic,
                     contentDescription = null,
                     modifier = Modifier.size(48.dp),
-                    tint = WordBridgeColors.PrimaryPurple,
+                    tint = WordBridgeColors.Primary,
                 )
 
                 if (recordingUrl == null) {
@@ -2536,7 +2539,8 @@ private fun VoiceRecordQuestion(
                         },
                         colors =
                             ButtonDefaults.buttonColors(
-                                containerColor = WordBridgeColors.PrimaryPurple,
+                                containerColor = WordBridgeColors.Primary,
+                                contentColor = WordBridgeColors.OnPrimary,
                             ),
                     ) {
                         Icon(Icons.Default.FiberManualRecord, null)
@@ -2554,21 +2558,21 @@ private fun VoiceRecordQuestion(
                     Icon(
                         Icons.Default.CheckCircle,
                         contentDescription = null,
-                        tint = Color(0xFF10B981),
+                        tint = WordBridgeColors.Success,
                         modifier = Modifier.size(48.dp),
                     )
 
                     Text(
                         "Recording complete!",
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFF10B981),
+                        color = WordBridgeColors.Success,
                         fontWeight = FontWeight.Bold,
                     )
 
                     TextButton(
                         onClick = { onRecordingComplete("") },
                     ) {
-                        Text("Re-record", color = WordBridgeColors.PrimaryPurple)
+                        Text("Re-record", color = WordBridgeColors.Primary)
                     }
                 }
             }
@@ -2590,7 +2594,8 @@ private fun AudioPlayer(
         },
         colors =
             ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2D2A3E),
+                containerColor = WordBridgeColors.SurfaceVariant,
+                contentColor = WordBridgeColors.TextPrimary,
             ),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
     ) {
@@ -2610,7 +2615,7 @@ private fun AudioPlayerButton(audioUrl: String) {
 
     Surface(
         shape = RoundedCornerShape(10.dp),
-        color = Color(0xFF3A3147).copy(alpha = 0.5f),
+        color = WordBridgeColors.SurfaceVariant,
         modifier =
             Modifier
                 .clickable {
@@ -2625,14 +2630,14 @@ private fun AudioPlayerButton(audioUrl: String) {
         ) {
             Surface(
                 shape = CircleShape,
-                color = WordBridgeColors.PrimaryPurple,
+                color = WordBridgeColors.Primary,
                 modifier = Modifier.size(28.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.Default.VolumeUp,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = WordBridgeColors.OnPrimary,
                         modifier = Modifier.size(16.dp),
                     )
                 }
@@ -2651,9 +2656,12 @@ private fun NavigationFooter(
     onSubmit: () -> Unit,
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = Color(0xFF15121F),
-        shadowElevation = 12.dp,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .border(BorderStroke(1.dp, WordBridgeColors.BorderSubtle)),
+        color = WordBridgeColors.Surface,
+        shadowElevation = 0.dp,
     ) {
         Row(
             modifier =
@@ -2667,8 +2675,8 @@ private fun NavigationFooter(
                 enabled = canGoPrevious,
                 colors =
                     ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFFB4B4C4),
-                        disabledContentColor = Color(0xFF4A4658),
+                        contentColor = WordBridgeColors.TextSecondary,
+                        disabledContentColor = WordBridgeColors.TextMuted,
                     ),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
             ) {
@@ -2691,9 +2699,10 @@ private fun NavigationFooter(
                     enabled = canGoNext,
                     colors =
                         ButtonDefaults.buttonColors(
-                            containerColor = WordBridgeColors.PrimaryPurple,
-                            disabledContainerColor = Color(0xFF2D2A3E),
-                            disabledContentColor = Color(0xFF4A4658),
+                            containerColor = WordBridgeColors.Primary,
+                            contentColor = WordBridgeColors.OnPrimary,
+                            disabledContainerColor = WordBridgeColors.SurfaceVariant,
+                            disabledContentColor = WordBridgeColors.TextMuted,
                         ),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
@@ -2720,9 +2729,10 @@ private fun NavigationFooter(
                     enabled = canGoNext,
                     colors =
                         ButtonDefaults.buttonColors(
-                            containerColor = WordBridgeColors.PrimaryPurple,
-                            disabledContainerColor = Color(0xFF2D2A3E),
-                            disabledContentColor = Color(0xFF4A4658),
+                            containerColor = WordBridgeColors.Primary,
+                            contentColor = WordBridgeColors.OnPrimary,
+                            disabledContainerColor = WordBridgeColors.SurfaceVariant,
+                            disabledContentColor = WordBridgeColors.TextMuted,
                         ),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
@@ -2755,7 +2765,7 @@ private fun LoadingScreen() {
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
-            color = WordBridgeColors.PrimaryPurple,
+            color = WordBridgeColors.Primary,
         )
     }
 }
@@ -2778,7 +2788,7 @@ private fun ErrorScreen(
             Icons.Default.Error,
             contentDescription = null,
             modifier = Modifier.size(64.dp),
-            tint = Color(0xFFEF4444),
+            tint = WordBridgeColors.Error,
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -2803,7 +2813,8 @@ private fun ErrorScreen(
                 onClick = onRetry,
                 colors =
                     ButtonDefaults.buttonColors(
-                        containerColor = WordBridgeColors.PrimaryPurple,
+                        containerColor = WordBridgeColors.Primary,
+                        contentColor = WordBridgeColors.OnPrimary,
                     ),
             ) {
                 Text("Retry")
@@ -2831,8 +2842,8 @@ private fun ResultsScreen(
                         Brush.verticalGradient(
                             colors =
                                 listOf(
-                                    Color(0xFF2D1B69).copy(alpha = 0.3f),
-                                    Color(0xFF1A0E2E).copy(alpha = 0.5f),
+                                    WordBridgeColors.Primary.copy(alpha = 0.05f),
+                                    Color.Transparent,
                                 ),
                         ),
                     ),
@@ -2853,9 +2864,9 @@ private fun ResultsScreen(
                         .size(120.dp)
                         .background(
                             if (result.isPassed) {
-                                Color(0xFF10B981).copy(alpha = 0.1f)
+                                WordBridgeColors.Success.copy(alpha = 0.1f)
                             } else {
-                                Color(0xFFEF4444).copy(alpha = 0.1f)
+                                WordBridgeColors.Error.copy(alpha = 0.1f)
                             },
                             CircleShape,
                         ),
@@ -2867,9 +2878,9 @@ private fun ResultsScreen(
                     modifier = Modifier.size(64.dp),
                     tint =
                         if (result.isPassed) {
-                            Color(0xFF34D399) // Softer green
+                            WordBridgeColors.Success
                         } else {
-                            Color(0xFFF87171) // Softer red
+                            WordBridgeColors.Error
                         },
                 )
             }
@@ -2881,7 +2892,7 @@ private fun ResultsScreen(
                 if (result.isPassed) "Excellent Work!" else "Keep Learning!",
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFFF8FAFC), // Soft white
+                color = WordBridgeColors.TextPrimary,
                 textAlign = TextAlign.Center,
             )
 
@@ -2894,7 +2905,7 @@ private fun ResultsScreen(
                     "Practice makes perfect. Try again!"
                 },
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color(0xFFCBD5E1), // Soft gray
+                color = WordBridgeColors.TextSecondary,
                 textAlign = TextAlign.Center,
             )
 
@@ -2906,12 +2917,12 @@ private fun ResultsScreen(
                 shape = RoundedCornerShape(20.dp),
                 colors =
                     CardDefaults.cardColors(
-                        containerColor = Color(0xFF1E1B4B).copy(alpha = 0.8f), // Soft purple background
+                        containerColor = WordBridgeColors.Surface,
                     ),
+                border = BorderStroke(1.dp, WordBridgeColors.BorderSubtle),
                 elevation =
                     CardDefaults.cardElevation(
-                        defaultElevation = 8.dp,
-                        pressedElevation = 12.dp,
+                        defaultElevation = 0.dp,
                     ),
             ) {
                 Column(
@@ -2919,31 +2930,30 @@ private fun ResultsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
-                    // Score percentage with gradient text effect
+                    // Score percentage with status color
                     Text(
                         "${result.score.toInt()}%",
                         style = MaterialTheme.typography.displayLarge,
                         fontWeight = FontWeight.Bold,
                         color =
                             if (result.isPassed) {
-                                Color(0xFF34D399) // Soft green
+                                WordBridgeColors.Primary
                             } else {
-                                Color(0xFFF87171)
+                                WordBridgeColors.AccentRed
                             },
-                        // Soft red
                         textAlign = TextAlign.Center,
                     )
 
                     Divider(
                         modifier = Modifier.fillMaxWidth(0.5f),
-                        color = Color(0xFF4C1D95).copy(alpha = 0.3f), // Soft purple divider
+                        color = WordBridgeColors.BorderSubtle,
                         thickness = 1.dp,
                     )
 
                     Text(
                         "${result.correctAnswers} of ${result.totalQuestions} correct",
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFFE2E8F0), // Soft light gray
+                        color = WordBridgeColors.TextSecondary,
                         textAlign = TextAlign.Center,
                     )
 
@@ -2957,18 +2967,18 @@ private fun ResultsScreen(
                                 .clip(RoundedCornerShape(4.dp)),
                         color =
                             if (result.isPassed) {
-                                Color(0xFF34D399)
+                                WordBridgeColors.Primary
                             } else {
-                                Color(0xFFF87171)
+                                WordBridgeColors.AccentRed
                             },
-                        trackColor = Color(0xFF4C1D95).copy(alpha = 0.2f),
+                        trackColor = WordBridgeColors.ProgressBackground,
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Action buttons with soft design
+            // Action buttons with neutral and Supabase green design
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxWidth(0.8f),
@@ -2979,9 +2989,9 @@ private fun ResultsScreen(
                     shape = RoundedCornerShape(12.dp),
                     colors =
                         ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color(0xFFCBD5E1),
+                            contentColor = WordBridgeColors.TextPrimary,
                         ),
-                    border = BorderStroke(1.dp, Color(0xFF4C1D95).copy(alpha = 0.3f)),
+                    border = BorderStroke(1.dp, WordBridgeColors.Border),
                 ) {
                     Text(
                         "Back to Lessons",
@@ -2998,11 +3008,11 @@ private fun ResultsScreen(
                         ButtonDefaults.buttonColors(
                             containerColor =
                                 if (result.isPassed) {
-                                    Color(0xFF34D399)
+                                    WordBridgeColors.Primary
                                 } else {
-                                    Color(0xFFF87171)
+                                    WordBridgeColors.AccentRed
                                 },
-                            contentColor = Color.White,
+                            contentColor = WordBridgeColors.OnPrimary,
                         ),
                     elevation =
                         ButtonDefaults.buttonElevation(
@@ -3068,21 +3078,21 @@ private fun NetworkImage(
                     org.jetbrains.skia.Image.makeFromEncoded(bytes).asImageBitmap()
                 }
             imageBitmap = bitmap
-            println("[LessonPlayerScreen] ✓ Image loaded and cached: $url")
+            println("[LessonPlayerScreen] Image loaded and cached: $url")
             isLoading = false
         } catch (e: java.net.SocketTimeoutException) {
             val errorMsg = "Timeout loading image from $url"
-            println("[LessonPlayerScreen] ✗ ERROR: $errorMsg")
+            println("[LessonPlayerScreen] ERROR: $errorMsg")
             error = true
             isLoading = false
         } catch (e: java.io.FileNotFoundException) {
             val errorMsg = "Image not found at $url"
-            println("[LessonPlayerScreen] ✗ ERROR: $errorMsg")
+            println("[LessonPlayerScreen] ERROR: $errorMsg")
             error = true
             isLoading = false
         } catch (e: Exception) {
             val errorMsg = "Error loading image from $url: ${e.javaClass.simpleName} - ${e.message}"
-            println("[LessonPlayerScreen] ✗ ERROR: $errorMsg")
+            println("[LessonPlayerScreen] ERROR: $errorMsg")
             println("[LessonPlayerScreen] Error details: ${e.stackTraceToString()}")
             error = true
             isLoading = false
@@ -3097,7 +3107,7 @@ private fun NetworkImage(
             isLoading -> {
                 CircularProgressIndicator(
                     modifier = Modifier.size(40.dp),
-                    color = WordBridgeColors.PrimaryPurple,
+                    color = WordBridgeColors.Primary,
                 )
             }
             error -> {
@@ -3108,13 +3118,13 @@ private fun NetworkImage(
                     Icon(
                         Icons.Outlined.BrokenImage,
                         contentDescription = "Failed to load image",
-                        tint = Color.Gray,
+                        tint = WordBridgeColors.TextMuted,
                         modifier = Modifier.size(48.dp),
                     )
                     Text(
                         "Failed to load image",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray,
+                        color = WordBridgeColors.TextMuted,
                     )
                 }
             }

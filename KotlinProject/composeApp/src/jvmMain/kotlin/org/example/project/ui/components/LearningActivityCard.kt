@@ -1,21 +1,28 @@
 package org.example.project.ui.components
 
-import androidx.compose.foundation.background
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.LearningActivity
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 
 @Composable
 fun LearningActivityCard(
@@ -23,22 +30,30 @@ fun LearningActivityCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+
+    val defaultBorder = WordBridgeColors.BorderSubtle
+    val activeBorder = WordBridgeColors.PrimaryPurple
+
+    val borderColor by animateColorAsState(
+        targetValue = if (isHovered) activeBorder else defaultBorder,
+        label = "learning_card_border",
+    )
+
     Card(
         modifier =
             modifier
                 .fillMaxWidth()
+                .hoverable(interactionSource)
                 .clickable { onClick() },
         colors =
             CardDefaults.cardColors(
-                containerColor = WordBridgeColors.BackgroundWhite,
+                containerColor = WordBridgeColors.CardBackground,
             ),
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = 2.dp,
-                hoveredElevation = 6.dp,
-                pressedElevation = 1.dp,
-            ),
-        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, borderColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(12.dp),
     ) {
         Row(
             modifier =
@@ -47,9 +62,11 @@ fun LearningActivityCard(
                     .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconPlaceholder(
-                icon = activity.icon,
-                modifier = Modifier.size(48.dp),
+            Icon(
+                imageVector = WordBridgeIcons.getByName(activity.icon),
+                contentDescription = activity.title,
+                tint = WordBridgeColors.PrimaryPurple,
+                modifier = Modifier.size(24.dp),
             )
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -75,39 +92,12 @@ fun LearningActivityCard(
                 )
             }
 
-            Text(
-                text = "→",
-                style = MaterialTheme.typography.titleLarge,
-                color = WordBridgeColors.TextMuted,
+            Icon(
+                imageVector = WordBridgeIcons.ChevronRight,
+                contentDescription = null,
+                tint = WordBridgeColors.TextMuted,
+                modifier = Modifier.size(18.dp),
             )
         }
-    }
-}
-
-@Composable
-private fun IconPlaceholder(
-    icon: String,
-    modifier: Modifier = Modifier,
-) {
-    val (emoji, backgroundColor) =
-        when (icon) {
-            "book" -> "📚" to WordBridgeColors.AccentBlue
-            "vocabulary" -> "📝" to WordBridgeColors.AccentGreen
-            "microphone" -> "🎤" to WordBridgeColors.AccentOrange
-            "chat" -> "💬" to WordBridgeColors.PrimaryPurple
-            else -> "📱" to WordBridgeColors.TextMuted
-        }
-
-    Box(
-        modifier =
-            modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(backgroundColor.copy(alpha = 0.1f)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = emoji,
-            style = MaterialTheme.typography.headlineSmall,
-        )
     }
 }

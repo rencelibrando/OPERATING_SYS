@@ -72,7 +72,6 @@ data class SpeakingStats(
     }
 }
 
-
 enum class SpeakingFilter(val displayName: String) {
     ALL("All"),
     PRONUNCIATION("Pronunciation"),

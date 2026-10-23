@@ -1,19 +1,19 @@
 [versions]
-androidx-lifecycle = "2.9.3"
+androidx-lifecycle = "2.8.4"
 androidx-collection = "1.5.0"
 composeHotReload = "1.0.0-beta06"
 composeMultiplatform = "1.8.2"
 composeBom = "2024.12.01"
 junit = "4.13.2"
-kotlin = "2.2.10"
-kotlinx-coroutines = "1.10.2"
-supabase = "2.5.4"
-ktor = "2.3.12"
-kotlinx-serialization = "1.7.3"
-kotlinx-datetime = "0.6.1"
-dotenv = "6.4.1"
+kotlin = "2.2.21"
+kotlinx-coroutines = "1.11.0"
+supabase = "2.6.1"
+ktor = "2.3.13"
+kotlinx-serialization = "1.8.0"
+kotlinx-datetime = "0.6.2"
+dotenv = "6.5.1"
 kamel = "0.9.1"
-ktlintPlugin = "12.1.1"
+ktlintPlugin = "12.2.0"
 
 [libraries]
 # Compose BOM for version alignment

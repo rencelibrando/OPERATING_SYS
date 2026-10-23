@@ -312,7 +312,6 @@ object BackendManager {
         }
     }
 
-
     /**
      * Delete a directory recursively
      */
@@ -340,9 +339,10 @@ object BackendManager {
 
         val possibleLocations = mutableListOf<File>()
 
-        // 1. Development location: current directory or parent
+        // 1. Development location: current directory, parent, or project root
         possibleLocations.add(File(currentDir, "backend"))
         possibleLocations.add(currentDir.parentFile?.resolve("backend") ?: File(currentDir, "backend"))
+        currentDir.parentFile?.parentFile?.resolve("backend")?.let { possibleLocations.add(it) }
 
         // 2. Installed application locations (Windows)
         val programFiles = System.getenv("ProgramFiles") ?: "C:\\Program Files"
@@ -443,12 +443,13 @@ object BackendManager {
                 Thread.sleep(5000)
 
                 // Check direct Python 3.12 paths
-                val directPaths = listOf(
-                    "C:\\Python312\\python.exe",
-                    "C:\\Program Files\\Python312\\python.exe",
-                    "${System.getProperty("user.home")}\\AppData\\Local\\Programs\\Python\\Python312\\python.exe"
-                )
-                
+                val directPaths =
+                    listOf(
+                        "C:\\Python312\\python.exe",
+                        "C:\\Program Files\\Python312\\python.exe",
+                        "${System.getProperty("user.home")}\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+                    )
+
                 for (path in directPaths) {
                     val file = File(path)
                     if (file.exists()) {
@@ -552,7 +553,24 @@ object BackendManager {
     }
 
     private fun findPythonCommand(): String? {
-        // First, try to find Python 3.12 specifically using py launcher
+        findBackendDirectory()?.let { bDir ->
+            val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+            val venvPy = if (isWindows) File(bDir, "venv/Scripts/python.exe") else File(bDir, "venv/bin/python")
+            if (venvPy.exists()) {
+                try {
+                    val process = ProcessBuilder(venvPy.absolutePath, "--version").start()
+                    if (process.waitFor() == 0) {
+                        val version = process.inputStream.bufferedReader().readText().trim()
+                        if (version.contains("3.12")) {
+                            println("[Backend]   Found existing venv Python 3.12: ${venvPy.absolutePath} - $version")
+                            return venvPy.absolutePath
+                        }
+                    }
+                } catch (e: Exception) {
+                }
+            }
+        }
+
         try {
             val process = ProcessBuilder("py", "-3.12", "--version").start()
             val exitCode = process.waitFor()
@@ -562,17 +580,19 @@ object BackendManager {
                 return "py -3.12"
             }
         } catch (e: Exception) {
-            // py launcher not available or Python 3.12 not found
         }
 
-        // Check common Python 3.12 installation paths on Windows
-        val python312Paths = listOf(
-            "C:\\Python312\\python.exe",
-            "C:\\Program Files\\Python312\\python.exe",
-            "C:\\Program Files (x86)\\Python312\\python.exe",
-            "${System.getProperty("user.home")}\\AppData\\Local\\Programs\\Python\\Python312\\python.exe"
-        )
-        
+        val python312Paths =
+            listOf(
+                "/usr/bin/python3.12",
+                "/usr/local/bin/python3.12",
+                "/opt/homebrew/bin/python3.12",
+                "C:\\Python312\\python.exe",
+                "C:\\Program Files\\Python312\\python.exe",
+                "C:\\Program Files (x86)\\Python312\\python.exe",
+                "${System.getProperty("user.home")}\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+            )
+
         for (path in python312Paths) {
             val file = File(path)
             if (file.exists()) {
@@ -587,13 +607,11 @@ object BackendManager {
                         }
                     }
                 } catch (e: Exception) {
-                    // Continue to next path
                 }
             }
         }
 
-        // Fallback: check generic commands but only accept Python 3.12
-        val commands = listOf("python", "python3", "py")
+        val commands = listOf("python3.12", "python3", "python", "py")
         for (cmd in commands) {
             try {
                 val process = ProcessBuilder(cmd, "--version").start()
@@ -609,7 +627,6 @@ object BackendManager {
                     }
                 }
             } catch (e: Exception) {
-                // Command not found, try next
             }
         }
 
@@ -623,12 +640,13 @@ object BackendManager {
     private fun validatePythonModules(pythonCmd: String): Boolean {
         return try {
             // Build command parts for ProcessBuilder
-            val cmdParts = if (pythonCmd.contains(" ")) {
-                pythonCmd.split(" ")
-            } else {
-                listOf(pythonCmd)
-            }
-            
+            val cmdParts =
+                if (pythonCmd.contains(" ")) {
+                    pythonCmd.split(" ")
+                } else {
+                    listOf(pythonCmd)
+                }
+
             // Check for pip
             val pipProcess = ProcessBuilder(cmdParts + listOf("-m", "pip", "--version")).start()
             val pipExitCode = pipProcess.waitFor()
@@ -638,7 +656,7 @@ object BackendManager {
                 return false
             }
             val pipVersion = pipProcess.inputStream.bufferedReader().readText().trim()
-            println("[Backend]   ✓ pip found: $pipVersion")
+            println("[Backend]   pip found: $pipVersion")
 
             // Check for venv
             val venvProcess = ProcessBuilder(cmdParts + listOf("-m", "venv", "--help")).start()
@@ -648,7 +666,7 @@ object BackendManager {
                 println("[Backend]   ERROR: venv module not found")
                 return false
             }
-            println("[Backend]   ✓ venv module available")
+            println("[Backend]   venv module available")
 
             true
         } catch (e: Exception) {
@@ -659,13 +677,14 @@ object BackendManager {
 
     private fun checkPythonVersion(pythonCmd: String): Boolean {
         return try {
-            val process = if (pythonCmd.contains(" ")) {
-                // Handle commands like "py -3.12"
-                val parts = pythonCmd.split(" ")
-                ProcessBuilder(parts + "--version").start()
-            } else {
-                ProcessBuilder(pythonCmd, "--version").start()
-            }
+            val process =
+                if (pythonCmd.contains(" ")) {
+                    // Handle commands like "py -3.12"
+                    val parts = pythonCmd.split(" ")
+                    ProcessBuilder(parts + "--version").start()
+                } else {
+                    ProcessBuilder(pythonCmd, "--version").start()
+                }
             process.waitFor()
             val versionOutput = process.inputStream.bufferedReader().readText().trim()
 
@@ -678,18 +697,18 @@ object BackendManager {
 
                 // Require Python 3.12 specifically
                 if (major == 3 && minor == 12) {
-                    println("[Backend]   ✓ Python version is compatible")
+                    println("[Backend]   Python version is compatible")
                     return true
                 }
 
-                println("[Backend]   ✗ Python 3.12 is required, found $major.$minor")
+                println("[Backend]   ERROR: Python 3.12 is required, found $major.$minor")
                 return false
             }
 
-            println("[Backend]   ✗ Could not determine Python version")
+            println("[Backend]   ERROR: Could not determine Python version")
             false
         } catch (e: Exception) {
-            println("[Backend]   ✗ Failed to check Python version: ${e.message}")
+            println("[Backend]   ERROR: Failed to check Python version: ${e.message}")
             false
         }
     }
@@ -750,18 +769,18 @@ object BackendManager {
     }
 
     private fun hasAdminRights(): Boolean {
-            return try {
-                val process = ProcessBuilder("net", "session").start()
-                process.waitFor() == 0
-            } catch (e: Exception) {
-                false
-            }
+        return try {
+            val process = ProcessBuilder("net", "session").start()
+            process.waitFor() == 0
+        } catch (e: Exception) {
+            false
         }
+    }
 
     private fun installPythonWindows(): Boolean {
         println("[Backend] Detected Windows - attempting to install Python...")
         println("[Backend] This may take a few minutes. Please wait...")
-        
+
         if (!hasAdminRights()) {
             println("[Backend] WARNING: Administrator rights not detected")
             println("[Backend] Python installation may fail without admin privileges")
@@ -782,7 +801,7 @@ object BackendManager {
 
             val exitCode = wingetProcess.waitFor()
             if (exitCode == 0) {
-                println("[Backend] ✓ Python installed successfully via winget")
+                println("[Backend] Python installed successfully via winget")
                 println("[Backend] Waiting for system to register installation...")
                 Thread.sleep(5000) // Give system time to register the installation
                 addPythonToPath()
@@ -844,26 +863,26 @@ object BackendManager {
             installerPath.delete()
 
             if (exitCode == 0) {
-                println("[Backend] ✓ Python installer completed successfully")
+                println("[Backend] Python installer completed successfully")
                 println("[Backend] Verifying installation...")
                 addPythonToPath()
                 Thread.sleep(5000) // Additional wait for PATH propagation
                 println("[Backend] Direct installation completed")
                 return true
             } else {
-                println("[Backend] ✗ Python installer exited with code $exitCode")
+                println("[Backend] ERROR: Python installer exited with code $exitCode")
                 println("[Backend] Installer output: ${installProcess.inputStream.bufferedReader().readText()}")
                 println("[Backend] This may indicate an installation error.")
                 println("[Backend] Please try installing Python manually from https://www.python.org/downloads/")
                 return false
             }
         } catch (e: java.net.UnknownHostException) {
-            println("[Backend] ✗ ERROR: Cannot connect to download server")
+            println("[Backend] ERROR: Cannot connect to download server")
             println("[Backend] Please check your internet connection and try again.")
             lastSetupError = "Failed to download Python installer: No internet connection"
             return false
         } catch (e: Exception) {
-            println("[Backend] ✗ ERROR: Failed to download/install Python: ${e.message}")
+            println("[Backend] ERROR: Failed to download/install Python: ${e.message}")
             e.printStackTrace()
             lastSetupError = "Failed to install Python: ${e.message}"
             return false
@@ -885,7 +904,7 @@ object BackendManager {
 
             val exitCode = brewProcess.waitFor()
             if (exitCode == 0) {
-                println("[Backend] ✓ Python installed successfully via Homebrew")
+                println("[Backend] Python installed successfully via Homebrew")
                 return true
             } else {
                 println("[Backend] Homebrew installation failed with exit code $exitCode")
@@ -908,7 +927,7 @@ object BackendManager {
                 val portProcess = ProcessBuilder("sudo", "port", "install", "python312").start()
                 val exitCode = portProcess.waitFor()
                 if (exitCode == 0) {
-                    println("[Backend] ✓ Python installed via MacPorts")
+                    println("[Backend] Python installed via MacPorts")
                     return true
                 }
             }
@@ -951,7 +970,7 @@ object BackendManager {
 
                 val exitCode = installProcess.waitFor()
                 if (exitCode == 0) {
-                    println("[Backend] ✓ Python installed successfully via apt")
+                    println("[Backend] Python installed successfully via apt")
                     return true
                 }
             }
@@ -972,7 +991,7 @@ object BackendManager {
 
                 val exitCode = yumProcess.waitFor()
                 if (exitCode == 0) {
-                    println("[Backend] ✓ Python installed successfully via yum")
+                    println("[Backend] Python installed successfully via yum")
                     return true
                 }
             }
@@ -1005,7 +1024,7 @@ object BackendManager {
 
                 val exitCode = dnfProcess.waitFor()
                 if (exitCode == 0) {
-                    println("[Backend] ✓ Python installed via dnf")
+                    println("[Backend] Python installed via dnf")
                     return true
                 }
             }
@@ -1026,7 +1045,7 @@ object BackendManager {
 
                 val exitCode = pacmanProcess.waitFor()
                 if (exitCode == 0) {
-                    println("[Backend] ✓ Python installed via pacman")
+                    println("[Backend] Python installed via pacman")
                     return true
                 }
             }
@@ -1047,7 +1066,7 @@ object BackendManager {
 
                 val exitCode = zypperProcess.waitFor()
                 if (exitCode == 0) {
-                    println("[Backend] ✓ Python installed via zypper")
+                    println("[Backend] Python installed via zypper")
                     return true
                 }
             }
@@ -1080,11 +1099,12 @@ object BackendManager {
     ): Boolean {
         return try {
             // Build command parts for ProcessBuilder
-            val cmdParts = if (pythonCmd.contains(" ")) {
-                pythonCmd.split(" ")
-            } else {
-                listOf(pythonCmd)
-            }
+            val cmdParts =
+                if (pythonCmd.contains(" ")) {
+                    pythonCmd.split(" ")
+                } else {
+                    listOf(pythonCmd)
+                }
 
             val processBuilder =
                 ProcessBuilder(cmdParts + listOf("-m", "venv", "venv"))
@@ -1109,19 +1129,23 @@ object BackendManager {
         }
     }
 
-    private fun isVenvValid(venvDir: File, pythonCmd: String): Boolean {
+    private fun isVenvValid(
+        venvDir: File,
+        pythonCmd: String,
+    ): Boolean {
         val isWindows = System.getProperty("os.name").lowercase().contains("windows")
-        val venvPython = if (isWindows) {
-            File(venvDir, "Scripts/python.exe")
-        } else {
-            File(venvDir, "bin/python")
-        }
-        
+        val venvPython =
+            if (isWindows) {
+                File(venvDir, "Scripts/python.exe")
+            } else {
+                File(venvDir, "bin/python")
+            }
+
         if (!venvPython.exists()) {
             println("[Backend] Virtual environment Python executable not found")
             return false
         }
-        
+
         // Check if the virtual environment is using Python 3.12
         return try {
             val process = ProcessBuilder(venvPython.absolutePath, "--version").start()

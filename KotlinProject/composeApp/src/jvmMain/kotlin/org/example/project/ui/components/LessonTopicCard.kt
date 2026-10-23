@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.LessonTopic
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 
 @Composable
 fun LessonTopicCard(
@@ -60,16 +61,16 @@ fun LessonTopicCard(
                 .fillMaxWidth()
                 .hoverable(interactionSource)
                 .clickable(enabled = !topic.isLocked) { onClick() },
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = Color.White,
+                containerColor = WordBridgeColors.Surface,
             ),
         elevation =
             CardDefaults.cardElevation(
-                defaultElevation = elevation,
+                defaultElevation = 0.dp,
             ),
-        border = BorderStroke(2.dp, borderColor),
+        border = BorderStroke(1.dp, if (isHovered && !topic.isLocked) WordBridgeColors.BorderDark else WordBridgeColors.BorderLight),
     ) {
         Row(
             modifier =
@@ -80,47 +81,21 @@ fun LessonTopicCard(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             if (topic.lessonNumber != null) {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                brush =
-                                    Brush.linearGradient(
-                                        colors = listOf(gradientStart, gradientEnd),
-                                    ),
-                            ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "${topic.lessonNumber}",
-                        style =
-                            MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                            ),
-                        color = Color.White,
-                    )
-                }
+                Text(
+                    text = "${topic.lessonNumber}",
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    color = WordBridgeColors.TextPrimary,
+                )
             } else {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                brush =
-                                    Brush.linearGradient(
-                                        colors = listOf(gradientStart, gradientEnd),
-                                    ),
-                            ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "📚",
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                }
+                Icon(
+                    imageVector = WordBridgeIcons.Lessons,
+                    contentDescription = topic.title,
+                    tint = WordBridgeColors.Primary,
+                    modifier = Modifier.size(24.dp),
+                )
             }
 
             Column(
@@ -144,16 +119,19 @@ fun LessonTopicCard(
                     if (topic.durationMinutes != null) {
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFFF1F5F9),
+                            color = WordBridgeColors.SurfaceVariant,
+                            border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text(
-                                    text = "🕐",
-                                    style = MaterialTheme.typography.bodySmall,
+                                Icon(
+                                    imageVector = WordBridgeIcons.Time,
+                                    contentDescription = "Duration",
+                                    tint = WordBridgeColors.TextSecondary,
+                                    modifier = Modifier.size(12.dp),
                                 )
                                 Text(
                                     text = "${topic.durationMinutes}m",
@@ -161,7 +139,7 @@ fun LessonTopicCard(
                                         MaterialTheme.typography.bodySmall.copy(
                                             fontWeight = FontWeight.Medium,
                                         ),
-                                    color = Color(0xFF64748B),
+                                    color = WordBridgeColors.TextSecondary,
                                 )
                             }
                         }
@@ -184,29 +162,27 @@ fun LessonTopicCard(
             ) {
                 when {
                     topic.isCompleted -> {
-                        Text(
-                            text = "✓",
-                            style =
-                                MaterialTheme.typography.headlineSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                            color = WordBridgeColors.AccentGreen,
+                        Icon(
+                            imageVector = WordBridgeIcons.Check,
+                            contentDescription = "Completed",
+                            tint = WordBridgeColors.Success,
+                            modifier = Modifier.size(20.dp),
                         )
                     }
                     topic.isLocked -> {
-                        Text(
-                            text = "🔒",
-                            style = MaterialTheme.typography.bodyLarge,
+                        Icon(
+                            imageVector = WordBridgeIcons.Lock,
+                            contentDescription = "Locked",
+                            tint = WordBridgeColors.TextSecondary,
+                            modifier = Modifier.size(20.dp),
                         )
                     }
                     else -> {
-                        Text(
-                            text = "›",
-                            style =
-                                MaterialTheme.typography.displayMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                            color = if (isHovered) gradientStart else Color(0xFFCBD5E1),
+                        Icon(
+                            imageVector = WordBridgeIcons.ChevronRight,
+                            contentDescription = "Open",
+                            tint = if (isHovered) WordBridgeColors.Primary else WordBridgeColors.TextSecondary,
+                            modifier = Modifier.size(20.dp),
                         )
                     }
                 }

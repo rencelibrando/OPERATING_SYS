@@ -1,12 +1,12 @@
 """
-Voice Tutor service using Deepgram API for speech-to-text and AI feedback.
+Voice Tutor service using Gemini multimodal audio and AI feedback.
 """
 import os
 import json
 import uuid
 from datetime import datetime
 from typing import Dict, Any, List, Optional
-from deepgram import DeepgramClient
+from transcription_service import get_transcription_service
 from providers.gemini import GeminiProvider
 from supabase_client import SupabaseManager
 from voice_models import (
@@ -27,10 +27,7 @@ from config import settings
 
 class VoiceService:
     def __init__(self):
-        # Initialize Deepgram client
-        self.deepgram_client = DeepgramClient(api_key=settings.deepgram_api_key)
-        
-        # Initialize Gemini provider for AI feedback
+        self.transcription_service = get_transcription_service()
         self.gemini_provider = GeminiProvider()
         
         # Initialize Supabase manager
@@ -169,64 +166,26 @@ class VoiceService:
         }
     
     async def transcribe_audio(self, request: VoiceTranscribeRequest) -> VoiceTranscribeResponse:
-        """Transcribe audio using Deepgram API with multilingual code-switching support."""
+        """Transcribe audio using multimodal audio transcription service."""
         try:
-            # Use multilingual model for code-switching support
-            # Override with multi if model supports it (nova-2 or nova-3)
-            model = request.model if request.model else settings.deepgram_model
-            language_code = settings.deepgram_language
-            
-            # Validate model supports multilingual
-            if model not in ["nova-2", "nova-3"]:
-                print(f"Warning: Model '{model}' may not support multilingual code-switching. Recommended: nova-2 or nova-3")
-            
-            # Prepare transcription options with multilingual support
-            options = {
-                "model": model,
-                "language": language_code,
-                "punctuate": True,
-                "paragraphs": True,
-                "diarize": False,
-                "profanity_filter": True,
-                "smart_format": True
-            }
-            
-            print(f"Transcribing with model={model}, language={language_code}")
-            
-            # Transcribe the audio
-            response = self.deepgram_client.listen.v1.media.transcribe_file(
-                request=request.audio_data,
-                **options
+            language_code = self.language_mapping.get(request.language, "en")
+            result = await self.transcription_service.transcribe(
+                request.audio_data,
+                language=language_code
             )
             
-            # Extract transcription data using direct attribute access
-            alternatives = response.results.channels[0].alternatives[0]
-            transcript = alternatives.transcript
-            confidence = alternatives.confidence
-            
-            # Extract words with language information
-            words = []
-            if hasattr(alternatives, 'words') and alternatives.words:
-                for word in alternatives.words:
-                    word_dict = word.__dict__ if hasattr(word, '__dict__') else {}
-                    words.append(word_dict)
-            
-            # Get detected languages from response
-            detected_languages = None
-            if hasattr(alternatives, 'languages'):
-                detected_languages = alternatives.languages
-            
-            duration = response.metadata.duration if hasattr(response, 'metadata') and hasattr(response.metadata, 'duration') else None
-            
-            print(f"Transcription successful: confidence={confidence:.2f}, detected_languages={detected_languages}")
+            transcript = result.get("transcript", "")
+            confidence = float(result.get("confidence", 0.95 if transcript else 0.0))
+            words = result.get("words", [])
+            language_detected = result.get("language_detected", language_code)
             
             return VoiceTranscribeResponse(
-                success=True,
+                success=result.get("success", bool(transcript)),
                 transcript=transcript,
                 confidence=confidence,
                 words=words,
-                language_detected=str(detected_languages) if detected_languages else language_code,
-                duration=duration
+                language_detected=language_detected,
+                duration=None
             )
             
         except Exception as e:

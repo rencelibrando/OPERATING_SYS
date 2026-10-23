@@ -1,5 +1,5 @@
 """
-Data models for Voice Tutor feature using Deepgram API.
+Data models for Voice Tutor feature.
 """
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any, Literal
@@ -33,7 +33,7 @@ class VoiceScenario(str, Enum):
 class VoiceTranscribeRequest(BaseModel):
     audio_data: bytes = Field(..., description="Raw audio data in WAV format")
     language: VoiceLanguage = Field(..., description="Target language for transcription")
-    model: str = Field(default="nova-3", description="Deepgram model to use")
+    model: str = Field(default="gemini", description="Transcription model to use")
     
     class Config:
         json_encoders = {
@@ -42,7 +42,7 @@ class VoiceTranscribeRequest(BaseModel):
 
 
 class VoiceFeedbackRequest(BaseModel):
-    transcript: str = Field(..., description="Transcribed text from Deepgram")
+    transcript: str = Field(..., description="Transcribed text from audio")
     expected_text: Optional[str] = Field(None, description="Expected phrase or prompt")
     language: VoiceLanguage = Field(..., description="Target language")
     level: VoiceLevel = Field(..., description="User proficiency level")

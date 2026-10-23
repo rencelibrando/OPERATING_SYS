@@ -1,14 +1,19 @@
 package org.example.project.ui.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -23,6 +28,7 @@ import org.example.project.domain.model.LessonLanguage
 import org.example.project.presentation.viewmodel.LessonsViewModel
 import org.example.project.ui.components.*
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 import org.example.project.core.auth.User as AuthUser
 
 @Composable
@@ -147,6 +153,7 @@ fun LessonsScreen(
             modifier =
                 modifier
                     .fillMaxSize()
+                    .background(WordBridgeColors.BackgroundLight)
                     .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -161,18 +168,17 @@ fun LessonsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Text(
-                            text = "←",
-                            style =
-                                MaterialTheme.typography.headlineMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                            color = WordBridgeColors.TextPrimary,
-                            modifier =
-                                Modifier
-                                    .clickable { viewModel.onBackFromCategory() }
-                                    .padding(8.dp),
-                        )
+                        IconButton(
+                            onClick = { viewModel.onBackFromCategory() },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(
+                                imageVector = WordBridgeIcons.ChevronLeft,
+                                contentDescription = "Back",
+                                tint = WordBridgeColors.TextPrimary,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
 
                         Text(
                             text = "${selectedLanguage.displayName} ${selectedCategory!!.displayName} Lessons",
@@ -264,6 +270,7 @@ fun LessonsScreen(
             modifier =
                 modifier
                     .fillMaxSize()
+                    .background(WordBridgeColors.BackgroundLight)
                     .padding(24.dp)
                     .verticalScroll(rememberScrollState()),
         ) {
@@ -277,18 +284,17 @@ fun LessonsScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     if (selectedCategory != null) {
-                        Text(
-                            text = "←",
-                            style =
-                                MaterialTheme.typography.headlineMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                            color = WordBridgeColors.TextPrimary,
-                            modifier =
-                                Modifier
-                                    .clickable { viewModel.onBackFromCategory() }
-                                    .padding(8.dp),
-                        )
+                        IconButton(
+                            onClick = { viewModel.onBackFromCategory() },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(
+                                imageVector = WordBridgeIcons.ChevronLeft,
+                                contentDescription = "Back",
+                                tint = WordBridgeColors.TextPrimary,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
                     }
 
                     Text(
@@ -377,9 +383,11 @@ fun LessonsScreen(
                             .padding(vertical = 48.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(
-                        text = "📚",
-                        style = MaterialTheme.typography.displayMedium,
+                    Icon(
+                        imageVector = WordBridgeIcons.Lessons,
+                        contentDescription = null,
+                        tint = WordBridgeColors.TextSecondary,
+                        modifier = Modifier.size(48.dp),
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -426,6 +434,7 @@ private fun LessonListView(
         modifier =
             modifier
                 .fillMaxSize()
+                .background(WordBridgeColors.BackgroundLight)
                 .padding(24.dp)
                 .verticalScroll(rememberScrollState()),
     ) {
@@ -439,18 +448,17 @@ private fun LessonListView(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
-                    text = "←",
-                    style =
-                        MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    color = WordBridgeColors.TextPrimary,
-                    modifier =
-                        Modifier
-                            .clickable { onBack() }
-                            .padding(8.dp),
-                )
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier.size(36.dp),
+                ) {
+                    Icon(
+                        imageVector = WordBridgeIcons.ChevronLeft,
+                        contentDescription = "Back",
+                        tint = WordBridgeColors.TextPrimary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
 
                 Text(
                     text = topic.title,
@@ -503,7 +511,7 @@ private fun LessonListView(
             ) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(32.dp),
-                    color = WordBridgeColors.PrimaryPurple,
+                    color = WordBridgeColors.Primary,
                     strokeWidth = 3.dp,
                 )
                 Spacer(modifier = Modifier.width(12.dp))
@@ -523,9 +531,11 @@ private fun LessonListView(
                         .padding(vertical = 48.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(
-                    text = "📝",
-                    style = MaterialTheme.typography.displayMedium,
+                Icon(
+                    imageVector = WordBridgeIcons.Edit,
+                    contentDescription = null,
+                    tint = WordBridgeColors.TextSecondary,
+                    modifier = Modifier.size(48.dp),
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -579,19 +589,15 @@ private fun LessonCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    androidx.compose.material3.Card(
+    Card(
         modifier =
             modifier
                 .clickable(onClick = onClick),
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
         colors =
-            androidx.compose.material3.CardDefaults.cardColors(
-                containerColor = WordBridgeColors.CardBackground,
-            ),
-        elevation =
-            androidx.compose.material3.CardDefaults.cardElevation(
-                defaultElevation = 2.dp,
-                pressedElevation = 4.dp,
+            CardDefaults.cardColors(
+                containerColor = WordBridgeColors.Surface,
             ),
     ) {
         Row(
@@ -644,13 +650,11 @@ private fun LessonCard(
                 }
             }
 
-            Text(
-                text = "→",
-                style =
-                    MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                    ),
-                color = WordBridgeColors.PrimaryPurple,
+            Icon(
+                imageVector = WordBridgeIcons.ChevronRight,
+                contentDescription = null,
+                tint = WordBridgeColors.TextSecondary,
+                modifier = Modifier.size(20.dp),
             )
         }
     }

@@ -12,7 +12,7 @@ data class VocabularyWord(
     val status: VocabularyStatus,
     val dateAdded: Long,
     val lastReviewed: Long?,
-    val language: String = "en" // ISO 639-1 language code (e.g., "en", "ko", "zh", "fr", "de", "es")
+    val language: String = "en", // ISO 639-1 language code (e.g., "en", "ko", "zh", "fr", "de", "es")
 )
 
 enum class VocabularyStatus(val displayName: String) {
@@ -53,42 +53,42 @@ data class VocabularyFeature(
                     id = "ai_learning",
                     title = "AI-Powered Learning",
                     description = "Smart spaced repetition algorithm adapts to your learning pace and retention patterns.",
-                    icon = "🧠",
+                    icon = "brain",
                     color = "#8B5CF6", // Purple
                 ),
                 VocabularyFeature(
                     id = "audio_pronunciation",
                     title = "Audio Pronunciation",
                     description = "Native speaker audio recordings help you master correct pronunciation.",
-                    icon = "🔊",
+                    icon = "volume",
                     color = "#10B981", // Green
                 ),
                 VocabularyFeature(
                     id = "contextual_examples",
                     title = "Contextual Examples",
                     description = "Real-world sentence examples show how words are used in context.",
-                    icon = "📝",
+                    icon = "book",
                     color = "#F59E0B", // Orange
                 ),
                 VocabularyFeature(
                     id = "progress_tracking",
                     title = "Progress Tracking",
                     description = "Visual progress indicators help you see your vocabulary growth over time.",
-                    icon = "📊",
+                    icon = "progress",
                     color = "#3B82F6", // Blue
                 ),
                 VocabularyFeature(
                     id = "smart_categorization",
                     title = "Smart Categorization",
                     description = "Automatic tagging by topic, difficulty level, and part of speech for organized learning.",
-                    icon = "🏷️",
+                    icon = "vocabulary",
                     color = "#8B5CF6", // Purple
                 ),
                 VocabularyFeature(
                     id = "personalized_practice",
                     title = "Personalized Practice",
                     description = "Tailored exercises and quizzes based on your learning style and performance.",
-                    icon = "💡",
+                    icon = "sparkle",
                     color = "#F59E0B", // Orange
                 ),
             )

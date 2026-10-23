@@ -1,5 +1,6 @@
 package org.example.project.ui.components
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -25,17 +26,22 @@ fun UserAvatar(
     initials: String,
     profileImageUrl: String? = null,
     size: Dp = 40.dp,
-    backgroundColor: Color = WordBridgeColors.PrimaryPurple,
-    textColor: Color = WordBridgeColors.BackgroundWhite,
+    backgroundColor: Color = Color.Unspecified,
+    textColor: Color = Color.Unspecified,
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    val actualBg = if (backgroundColor != Color.Unspecified) backgroundColor else WordBridgeColors.Primary
+    val actualText = if (textColor != Color.Unspecified) textColor else WordBridgeColors.OnPrimary
+    val borderColor = WordBridgeColors.BorderSubtle
+
     Box(
         modifier =
             modifier
                 .size(size)
                 .clip(CircleShape)
-                .background(backgroundColor)
+                .border(1.dp, borderColor, CircleShape)
+                .background(actualBg)
                 .let { if (onClick != null) it.clickable { onClick() } else it },
         contentAlignment = Alignment.Center,
     ) {
@@ -48,7 +54,7 @@ fun UserAvatar(
                 onLoading = {
                     Text(
                         text = initials.take(2).uppercase(),
-                        color = textColor,
+                        color = actualText,
                         style =
                             MaterialTheme.typography.labelLarge.copy(
                                 fontWeight = FontWeight.SemiBold,
@@ -58,7 +64,7 @@ fun UserAvatar(
                 onFailure = {
                     Text(
                         text = initials.take(2).uppercase(),
-                        color = textColor,
+                        color = actualText,
                         style =
                             MaterialTheme.typography.labelLarge.copy(
                                 fontWeight = FontWeight.SemiBold,
@@ -69,7 +75,7 @@ fun UserAvatar(
         } else {
             Text(
                 text = initials.take(2).uppercase(),
-                color = textColor,
+                color = actualText,
                 style =
                     MaterialTheme.typography.labelLarge.copy(
                         fontWeight = FontWeight.SemiBold,

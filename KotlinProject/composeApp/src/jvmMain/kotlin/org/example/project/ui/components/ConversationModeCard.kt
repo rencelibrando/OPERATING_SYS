@@ -2,6 +2,7 @@ package org.example.project.ui.components
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,10 +19,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.example.project.presentation.viewmodel.SpeakingViewModel
-import org.example.project.ui.theme.WordBridgeColors
-import org.example.project.models.PracticeLanguage
 import org.example.project.models.ConversationTurnUI
+import org.example.project.models.PracticeLanguage
+import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 
 /**
  * Conversation mode card showing real-time dialogue with AI tutor.
@@ -52,41 +53,46 @@ fun ConversationModeCard(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF2D2A3E).copy(alpha = 0.8f),
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = WordBridgeColors.Surface,
+            ),
+        border = BorderStroke(1.dp, WordBridgeColors.BorderLight),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
         ) {
             // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "💬",
-                        style = MaterialTheme.typography.headlineMedium
+                    Icon(
+                        imageVector = WordBridgeIcons.AIChat,
+                        contentDescription = null,
+                        tint = WordBridgeColors.TextPrimary,
+                        modifier = Modifier.size(24.dp),
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
                             text = "Conversation Mode",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = Color.White
+                            style =
+                                MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                            color = WordBridgeColors.TextPrimary,
                         )
                         Text(
                             text = "Chat with AI tutor in ${language.displayName}",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFFB4B4C4)
+                            color = WordBridgeColors.TextSecondary,
                         )
                     }
                 }
@@ -94,21 +100,21 @@ fun ConversationModeCard(
                 // Status indicator
                 Surface(
                     shape = RoundedCornerShape(20.dp),
-                    color = if (isConversationActive) Color(0xFF10B981) else Color(0xFF6B7280)
+                    color = if (isConversationActive) WordBridgeColors.Success.copy(alpha = 0.15f) else WordBridgeColors.SurfaceVariant,
                 ) {
                     Text(
                         text = if (isConversationActive) "Active" else "Inactive",
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color.White,
+                        color = if (isConversationActive) WordBridgeColors.Success else WordBridgeColors.TextSecondary,
                         fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            HorizontalDivider(color = Color(0xFF3A3147).copy(alpha = 0.5f))
+            HorizontalDivider(color = WordBridgeColors.BorderLight)
 
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -116,46 +122,51 @@ fun ConversationModeCard(
             if (conversationTurns.isEmpty()) {
                 // Empty state
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 40.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 40.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(
-                        text = "🎙️",
-                        style = MaterialTheme.typography.displayLarge
+                    Icon(
+                        imageVector = WordBridgeIcons.Mic,
+                        contentDescription = null,
+                        tint = WordBridgeColors.TextSecondary,
+                        modifier = Modifier.size(48.dp),
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "Start Conversation",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = Color.White
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
+                        color = WordBridgeColors.TextPrimary,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Click below to start a real-time conversation with your AI tutor",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White
+                        color = WordBridgeColors.TextSecondary,
                     )
                 }
             } else {
                 // Chat messages with animations
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(400.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(400.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     itemsIndexed(
                         items = conversationTurns,
-                        key = { index, _ -> index }
+                        key = { index, _ -> index },
                     ) { index, turn ->
                         ConversationBubble(
                             turn = turn,
-                            animationDelay = index * 50
+                            animationDelay = index * 50,
                         )
                     }
 
@@ -170,23 +181,25 @@ fun ConversationModeCard(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            HorizontalDivider(color = Color(0xFF3A3147).copy(alpha = 0.5f))
+            HorizontalDivider(color = WordBridgeColors.BorderLight)
 
             Spacer(modifier = Modifier.height(20.dp))
 
             // Control buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 if (!isConversationActive) {
                     Button(
                         onClick = onStartConversation,
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = WordBridgeColors.PrimaryPurple
-                        ),
-                        shape = RoundedCornerShape(12.dp)
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = WordBridgeColors.Primary,
+                                contentColor = WordBridgeColors.PrimaryForeground,
+                            ),
+                        shape = RoundedCornerShape(8.dp),
                     ) {
                         Text("Start Conversation")
                     }
@@ -194,38 +207,41 @@ fun ConversationModeCard(
                     Button(
                         onClick = onStopConversation,
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFEF4444)
-                        ),
-                        shape = RoundedCornerShape(12.dp)
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = WordBridgeColors.Error,
+                                contentColor = WordBridgeColors.ErrorForeground,
+                            ),
+                        shape = RoundedCornerShape(8.dp),
                     ) {
                         Text("End Conversation")
                     }
                 }
             }
-            
+
             // Audio is now continuous - show listening indicator when active
             if (isConversationActive) {
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = "🎤",
-                        style = MaterialTheme.typography.headlineSmall
+                    Icon(
+                        imageVector = WordBridgeIcons.Speaking,
+                        contentDescription = null,
+                        tint = WordBridgeColors.Success,
+                        modifier = Modifier.size(18.dp),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Listening continuously - just speak naturally",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF10B981)
+                        color = WordBridgeColors.Success,
                     )
                 }
             }
-
         }
     }
 }
@@ -236,48 +252,50 @@ fun ConversationModeCard(
 @Composable
 private fun ConversationBubble(
     turn: ConversationTurnUI,
-    animationDelay: Int = 0
+    animationDelay: Int = 0,
 ) {
     val isUser = turn.role == "user"
     var visible by remember { mutableStateOf(false) }
-    
+
     // Trigger animation on first composition
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(animationDelay.toLong())
         visible = true
     }
-    
+
     // Slide and fade animation
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(animationSpec = tween(300)) +
+        enter =
+            fadeIn(animationSpec = tween(300)) +
                 slideInHorizontally(
                     initialOffsetX = { if (isUser) 50 else -50 },
-                    animationSpec = tween(400, easing = FastOutSlowInEasing)
+                    animationSpec = tween(400, easing = FastOutSlowInEasing),
                 ),
-        exit = fadeOut() + slideOutHorizontally()
+        exit = fadeOut() + slideOutHorizontally(),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
+            horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
         ) {
             Surface(
-                shape = RoundedCornerShape(
-                    topStart = 12.dp,
-                    topEnd = 12.dp,
-                    bottomStart = if (isUser) 12.dp else 2.dp,
-                    bottomEnd = if (isUser) 2.dp else 12.dp
-                ),
-                color = if (isUser) Color(0xFF8B5CF6) else Color(0xFF3A3147).copy(alpha = 0.8f),
+                shape =
+                    RoundedCornerShape(
+                        topStart = 12.dp,
+                        topEnd = 12.dp,
+                        bottomStart = if (isUser) 12.dp else 2.dp,
+                        bottomEnd = if (isUser) 2.dp else 12.dp,
+                    ),
+                color = if (isUser) WordBridgeColors.Primary else WordBridgeColors.SurfaceVariant,
                 modifier = Modifier.widthIn(max = 280.dp),
-                shadowElevation = 1.dp
+                shadowElevation = 0.dp,
             ) {
                 Text(
                     text = turn.text,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White,
+                    color = if (isUser) WordBridgeColors.PrimaryForeground else WordBridgeColors.TextPrimary,
                     modifier = Modifier.padding(10.dp),
-                    lineHeight = 20.sp
+                    lineHeight = 20.sp,
                 )
             }
         }
@@ -292,21 +310,21 @@ private fun TypingIndicator() {
     AnimatedVisibility(
         visible = true,
         enter = fadeIn(animationSpec = tween(200)) + expandVertically(),
-        exit = fadeOut() + shrinkVertically()
+        exit = fadeOut() + shrinkVertically(),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start
+            horizontalArrangement = Arrangement.Start,
         ) {
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = Color(0xFF3A3147).copy(alpha = 0.6f),
-                shadowElevation = 1.dp
+                color = WordBridgeColors.SurfaceVariant,
+                shadowElevation = 0.dp,
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     repeat(3) { index ->
                         TypingDot(delay = index * 150)
@@ -324,15 +342,16 @@ private fun TypingIndicator() {
 private fun TypingDot(delay: Int = 0) {
     var visible by remember { mutableStateOf(false) }
     val infiniteTransition = rememberInfiniteTransition()
-    
+
     // Smooth scale animation
     val scale by infiniteTransition.animateFloat(
         initialValue = 0.7f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(600, delayMillis = delay),
-            repeatMode = RepeatMode.Reverse
-        )
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(600, delayMillis = delay),
+                repeatMode = RepeatMode.Reverse,
+            ),
     )
 
     LaunchedEffect(Unit) {
@@ -346,12 +365,13 @@ private fun TypingDot(delay: Int = 0) {
     }
 
     Box(
-        modifier = Modifier
-            .size(8.dp)
-            .scale(scale)
-            .background(
-                color = if (visible) Color(0xFFB4B4C4) else Color(0xFF6B7280),
-                shape = RoundedCornerShape(4.dp)
-            )
+        modifier =
+            Modifier
+                .size(8.dp)
+                .scale(scale)
+                .background(
+                    color = if (visible) WordBridgeColors.TextSecondary else WordBridgeColors.BorderLight,
+                    shape = RoundedCornerShape(4.dp),
+                ),
     )
 }

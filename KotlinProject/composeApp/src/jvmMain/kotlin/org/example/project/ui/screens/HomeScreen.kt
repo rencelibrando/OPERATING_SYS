@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -273,6 +274,8 @@ private fun HomeHeader(
     onSignOut: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    val isDark = org.example.project.ui.theme.ThemeController.isDarkTheme
+
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -292,14 +295,32 @@ private fun HomeHeader(
 
             Text(
                 text = userLevel,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 color = WordBridgeColors.TextSecondary,
             )
         }
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            androidx.compose.material3.IconButton(
+                onClick = { org.example.project.ui.theme.ThemeController.toggle() },
+                modifier = Modifier.size(36.dp),
+            ) {
+                androidx.compose.material3.Icon(
+                    imageVector =
+                        if (isDark) {
+                            org.example.project.ui.theme.WordBridgeIcons.LightMode
+                        } else {
+                            org.example.project.ui.theme.WordBridgeIcons.DarkMode
+                        },
+                    contentDescription = if (isDark) "Switch to Light Mode" else "Switch to Dark Mode",
+                    tint = WordBridgeColors.TextSecondary,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+
             if (authenticatedUser != null && onSignOut != null) {
                 TextButton(
                     onClick = onSignOut,
@@ -308,19 +329,23 @@ private fun HomeHeader(
                             contentColor = WordBridgeColors.TextSecondary,
                         ),
                 ) {
+                    androidx.compose.material3.Icon(
+                        imageVector = org.example.project.ui.theme.WordBridgeIcons.Logout,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "Sign Out",
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
-
-                Spacer(modifier = Modifier.width(12.dp))
             }
 
             UserAvatar(
                 initials = userInitials,
                 profileImageUrl = userProfileImageUrl,
-                size = 48.dp,
+                size = 40.dp,
                 onClick = onUserAvatarClick,
             )
         }

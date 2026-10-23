@@ -11,14 +11,13 @@ def main():
     env_file = backend_dir / ".env"
     
     print("Backend .env Setup")
-    print("=" * 60)
     print(f"Backend directory: {backend_dir}")
     print(f".env file location: {env_file}")
     print()
     
     # Check if .env already exists
     if env_file.exists():
-        print("⚠️  .env file already exists!")
+        print("Note: .env file already exists.")
         response = input("Do you want to overwrite it? (y/N): ")
         if response.lower() != 'y':
             print("Cancelled.")
@@ -41,10 +40,10 @@ def main():
     if not supabase_service_role_key:
         supabase_service_role_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
     
-    gemini_api_key = input("GEMINI_API_KEY (optional): ").strip()
-    if not gemini_api_key:
-        gemini_api_key = os.getenv("GEMINI_API_KEY", "")
-    
+    gemini_api_key = input("GEMINI_API_KEY (optional): ").strip() or os.getenv("GEMINI_API_KEY", "")
+    deepseek_api_key = input("DEEPSEEK_API_KEY (optional): ").strip() or os.getenv("DEEPSEEK_API_KEY", "")
+    eleven_labs_api_key = input("ELEVEN_LABS_API_KEY (optional): ").strip() or os.getenv("ELEVEN_LABS_API_KEY", "")
+
     # Write .env file
     env_content = f"""# Supabase Configuration
 SUPABASE_URL={supabase_url}
@@ -54,6 +53,8 @@ SUPABASE_SERVICE_ROLE_KEY={supabase_service_role_key}
 
 # AI Provider API Keys
 GEMINI_API_KEY={gemini_api_key}
+DEEPSEEK_API_KEY={deepseek_api_key}
+ELEVEN_LABS_API_KEY={eleven_labs_api_key}
 
 # Server Configuration
 HOST=0.0.0.0
@@ -63,10 +64,10 @@ ENVIRONMENT=development
     
     try:
         env_file.write_text(env_content)
-        print(f"\n✅ Successfully created .env file at: {env_file}")
+        print(f"\nSuccessfully created .env file at: {env_file}")
         print("\nYou can now start the backend server with: python main.py")
     except Exception as e:
-        print(f"\n❌ Error creating .env file: {e}")
+        print(f"\nError creating .env file: {e}")
 
 if __name__ == "__main__":
     main()

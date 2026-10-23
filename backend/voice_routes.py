@@ -34,15 +34,15 @@ supabase_manager = SupabaseManager()
 async def transcribe_audio(
     audio_file: UploadFile = File(...),
     language: VoiceLanguage = Form(...),
-    model: str = Form(default="nova-3")
+    model: str = Form(default="gemini")
 ):
     """
-    Transcribe audio file using Deepgram API.
+    Transcribe audio file using multimodal transcription service.
     
     Args:
         audio_file: Audio file in WAV format
         language: Target language for transcription
-        model: Deepgram model to use (default: nova-3)
+        model: Transcription model to use (default: gemini)
     
     Returns:
         Transcription result with confidence score

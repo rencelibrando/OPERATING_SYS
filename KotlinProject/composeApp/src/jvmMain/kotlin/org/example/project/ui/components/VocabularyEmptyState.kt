@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -13,6 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.model.VocabularyFeature
 import org.example.project.ui.theme.WordBridgeColors
+import org.example.project.ui.theme.WordBridgeIcons
 
 @Composable
 fun VocabularyEmptyState(
@@ -28,14 +30,16 @@ fun VocabularyEmptyState(
                 .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(36.dp))
 
-        Text(
-            text = "📖",
-            style = MaterialTheme.typography.displayMedium,
+        Icon(
+            imageVector = WordBridgeIcons.Vocabulary,
+            contentDescription = null,
+            tint = WordBridgeColors.Primary,
+            modifier = Modifier.size(44.dp),
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
         Text(
             text = "Your Vocabulary Library Awaits",
@@ -47,35 +51,34 @@ fun VocabularyEmptyState(
             textAlign = TextAlign.Center,
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Start building your personal vocabulary collection! Add words you encounter during lessons, reading, or conversations. Our AI-powered system will help you master each word with personalized practice and smart review schedules.",
-            style = MaterialTheme.typography.bodyLarge,
+            text = "Build your personalized vocabulary bank. Save words from lessons, practice with smart spaced repetition, and track your retention over time.",
+            style = MaterialTheme.typography.bodyMedium,
             color = WordBridgeColors.TextSecondary,
             textAlign = TextAlign.Center,
-            lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
+            modifier = Modifier.widthIn(max = 560.dp),
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(28.dp))
 
         Button(
             onClick = onAddFirstWordClick,
-            modifier = Modifier.fillMaxWidth(0.6f),
             colors =
                 ButtonDefaults.buttonColors(
-                    containerColor = WordBridgeColors.PrimaryPurple,
+                    containerColor = WordBridgeColors.Primary,
+                    contentColor = WordBridgeColors.OnPrimary,
                 ),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(8.dp),
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
         ) {
             Text(
-                text = "+ Add Your First Word",
+                text = "Add Your First Word",
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Medium,
+                        fontWeight = FontWeight.SemiBold,
                     ),
-                color = androidx.compose.ui.graphics.Color.White,
-                modifier = Modifier.padding(vertical = 4.dp),
             )
         }
 
@@ -83,36 +86,41 @@ fun VocabularyEmptyState(
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                text = "or ",
+                text = "or",
                 style = MaterialTheme.typography.bodyMedium,
                 color = WordBridgeColors.TextSecondary,
             )
 
             TextButton(
                 onClick = onExploreLessonsClick,
+                colors =
+                    ButtonDefaults.textButtonColors(
+                        contentColor = WordBridgeColors.Primary,
+                    ),
             ) {
                 Text(
                     text = "explore lessons to discover new vocabulary",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = WordBridgeColors.PrimaryPurple,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(36.dp))
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.height(400.dp), // Fixed height to prevent scroll conflicts
+            modifier = Modifier.height(400.dp),
         ) {
             items(features) { feature ->
-                VocabularyFeatureCard(
-                    feature = feature,
-                )
+                VocabularyFeatureCard(feature = feature)
             }
         }
 
